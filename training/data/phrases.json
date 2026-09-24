@@ -3,30 +3,49 @@
     "request": ["I need a {entity} today.", "Please help me with my {entity}."],
     "neutral": ["Just checking in about the {entity}.", "Any update on the {entity}?"],
     "urgent": ["The {entity} is blocking us right now!", "Losing sales because of the {entity}."],
-    "calm": ["No rush, whenever you can look at the {entity}.", "All good, noting the {entity}."]
+    "calm": ["No rush, whenever you can look at the {entity}.", "All good, noting the {entity}."],
+    "distractor": ["I also raised a {distractor}.", "There is also a {distractor} pending."]
   },
   "pt": {
     "request": ["Preciso de um {entity} hoje.", "Por favor, me ajude com o {entity}."],
     "neutral": ["Só verificando o {entity}.", "Alguma novidade sobre o {entity}?"],
     "urgent": ["O {entity} está nos bloqueando agora!", "Perdendo vendas por causa do {entity}."],
-    "calm": ["Sem pressa, quando puder ver o {entity}.", "Tudo bem, só registrando o {entity}."]
+    "calm": ["Sem pressa, quando puder ver o {entity}.", "Tudo bem, só registrando o {entity}."],
+    "distractor": ["Também mencionei um {distractor}.", "Há também um {distractor} em aberto."]
   },
   "es": {
     "request": ["Necesito un {entity} hoy.", "Por favor, ayúdame con el {entity}."],
     "neutral": ["Solo revisando el {entity}.", "¿Alguna novedad sobre el {entity}?"],
     "urgent": ["¡El {entity} nos está bloqueando ahora!", "Perdiendo ventas por el {entity}."],
-    "calm": ["Sin prisa, cuando puedas ver el {entity}.", "Todo bien, solo anotando el {entity}."]
+    "calm": ["Sin prisa, cuando puedas ver el {entity}.", "Todo bien, solo anotando el {entity}."],
+    "distractor": ["También mencioné un {distractor}.", "También hay un {distractor} pendiente."]
   },
   "fr": {
     "request": ["J'ai besoin d'un {entity} aujourd'hui.", "Aidez-moi avec le {entity} svp."],
     "neutral": ["Je vérifie juste le {entity}.", "Des nouvelles du {entity} ?"],
     "urgent": ["Le {entity} nous bloque maintenant !", "Perte de ventes à cause du {entity}."],
-    "calm": ["Pas pressé, quand vous pourrez voir le {entity}.", "Tout va bien, je note le {entity}."]
+    "calm": ["Pas pressé, quand vous pourrez voir le {entity}.", "Tout va bien, je note le {entity}."],
+    "distractor": ["J'ai aussi mentionné un {distractor}.", "Il y a aussi un {distractor} en attente."]
   },
   "de": {
     "request": ["Ich brauche heute eine {entity}.", "Bitte helfen Sie mir mit dem {entity}."],
     "neutral": ["Ich schaue nur nach dem {entity}.", "Gibt es Neuigkeiten zum {entity}?"],
     "urgent": ["Der {entity} blockiert uns gerade!", "Wir verlieren Verkäufe wegen des {entity}."],
-    "calm": ["Keine Eile, wenn Sie den {entity} ansehen können.", "Alles gut, ich notiere den {entity}."]
+    "calm": ["Keine Eile, wenn Sie den {entity} ansehen können.", "Alles gut, ich notiere den {entity}."],
+    "distractor": ["Ich habe auch ein {distractor} erwähnt.", "Es gibt auch ein {distractor} offen."]
+  },
+  "it": {
+    "request": ["Ho bisogno di un {entity} oggi.", "Per favore, aiutami con il {entity}."],
+    "neutral": ["Sto solo controllando il {entity}.", "Novità sul {entity}?"],
+    "urgent": ["Il {entity} ci sta bloccando adesso!", "Stiamo perdendo vendite per il {entity}."],
+    "calm": ["Nessuna fretta, quando puoi guarda il {entity}.", "Tutto bene, segnalo solo il {entity}."],
+    "distractor": ["Ho anche segnalato un {distractor}.", "C'è anche un {distractor} in sospeso."]
+  },
+  "nl": {
+    "request": ["Ik heb vandaag een {entity} nodig.", "Help me alsjeblieft met de {entity}."],
+    "neutral": ["Ik check alleen de {entity}.", "Nog nieuws over de {entity}?"],
+    "urgent": ["De {entity} blokkeert ons nu!", "We verliezen verkopen door de {entity}."],
+    "calm": ["Geen haast, wanneer je de {entity} kunt bekijken.", "Alles goed, ik noteer de {entity}."],
+    "distractor": ["Ik meldde ook een {distractor}.", "Er is ook een {distractor} open."]
   }
 }

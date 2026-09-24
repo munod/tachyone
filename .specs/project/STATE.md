@@ -127,6 +127,16 @@ contract test in the same PR.
 same contract tests.
 **Prevents:** Divergence between backends and broken existing clients.
 
+### L-002: The similarity baseline caps `choice`
+
+**Context:** v2 templates (localized team cues, a learnable `other` class, distractor clauses)
+improved `score` (0.574 → 0.890) but left `choice` at chance (~0.25 over four teams).
+**Problem:** The parameter-free cosine-similarity head cannot separate a four-way team mapping;
+more data does not fix an architectural limit.
+**Solution:** Keep the baseline for `noul`/`score`; for `choice`, add a dedicated (LoRA-trained)
+classification head or route that primitive to the LLM backend.
+**Prevents:** Spending more effort on data volume for a capability that needs a different head.
+
 ---
 
 ## Quick Tasks Completed

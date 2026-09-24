@@ -69,6 +69,19 @@ def test_languages_are_interleaved() -> None:
     assert langs <= {"en", "pt"}
 
 
+def test_choice_targets_cover_all_teams() -> None:
+    records = list(iter_records(DataConfig(seed=3, per_type=40, languages=("en", "pt"))))
+    teams = {r["target"] for r in records if r["type"] == "choice"}
+    assert {"billing", "technical", "sales", "other"} <= teams
+
+
+def test_choice_uses_localized_terms_and_distractors() -> None:
+    records = list(iter_records(DataConfig(seed=3, per_type=40, languages=("pt",))))
+    states = " ".join(r["state"] for r in records if r["type"] == "choice").lower()
+    assert any(word in states for word in ("reembolso", "fatura", "cobrança", "pagamento"))
+    assert any(word in states for word in ("também mencionei", "também há"))
+
+
 def test_boundary_cases_present() -> None:
     records = _records(40)
     states = [record["state"] for record in records if record["type"] == "noul"]

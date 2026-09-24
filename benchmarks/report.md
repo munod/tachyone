@@ -1,12 +1,12 @@
 # jeba Benchmark Report
 
-> Measured on a single RTX 3060 12GB: 6,000 train / 1,500 eval deterministic synthetic records, LoRA (r=16) 3 epochs, batch 16, bf16 + gradient checkpointing. Labels are synthetic and template-limited; choice has 4 options and score 4 levels (~0.25 chance), noul ~0.5 chance. Calibrated ECE is after temperature fitting on a held-out split. Latency is per-question (batch=1).
+> Measured on a single RTX 3060 12GB: 6,000 train / 1,500 eval deterministic synthetic records (v2 templates: localized cue terms per language incl. a learnable 'other' team, plus distractor clauses). LoRA (r=16) 3 epochs, batch 16, bf16 + gradient checkpointing. Calibrated ECE is after temperature fitting on a held-out split. Latency is per-question (batch=1). 'choice' stays near chance (~0.25 over 4 teams): the similarity baseline cannot separate the harder team mapping; a dedicated classification head (or the LLM backend) is the next step for that primitive.
 
 ## Environment
 
 ```json
 {
-  "git_commit": "4ab2e428006555274b04d913adfce7a5e8aa9b08",
+  "git_commit": "9016264b12d2da109c873aac80587b9bca7b8307",
   "jeba": "0.0.1",
   "peft": "0.21.0",
   "platform": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44",
@@ -21,13 +21,14 @@
 
 ```bash
 uv run python -m training.generate_data --seed 1 --per-type 2000 --languages en --out data/train_en.jsonl
-uv run python -m training.generate_data --seed 1 --per-type 2000 --languages pt,es,fr,de --out data/train_multi.jsonl
+uv run python -m training.generate_data --seed 1 --per-type 2000 --languages pt,es,fr,de,it,nl --out data/train_multi.jsonl
 uv run python -m training.generate_data --seed 2 --per-type 500 --languages en --out data/eval_en.jsonl
+uv run python -m training.generate_data --seed 2 --per-type 500 --languages pt,es,fr,de,it,nl --out data/eval_multi.jsonl
 uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json    # epochs=3 batch=16 max_len=256 grad_ckpt
 uv run python -m training.finetune_rlcd --config training/configs/finetune_multi.json
-uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en --out-predictions data/preds_en.jsonl
+uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en --max-len 256 --out-predictions data/preds_en.jsonl
 uv run python -m training.fit_calibration --calibration data/preds_en.jsonl --out checkpoints/en/temperature_calibration.json
-uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en --temperature checkpoints/en/temperature_calibration.json --out-report benchmarks/results/en.json
+uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en --max-len 256 --temperature checkpoints/en/temperature_calibration.json --out-report benchmarks/results/en.json
 # repeat predict/fit/predict for checkpoints/multi + data/eval_multi.jsonl
 uv run python -m benchmarks.report --entry 'english'=benchmarks/results/en.json --entry 'multilingual'=benchmarks/results/multi.json --out benchmarks/report.md
 ```
@@ -38,16 +39,16 @@ uv run python -m benchmarks.report --entry 'english'=benchmarks/results/en.json 
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.536 | 0.090 | 17.584 | 24.165 |
-| choice | 500 | 0.308 | 0.009 | 17.611 | 19.511 |
-| noul | 500 | 0.726 | 0.099 | 14.112 | 21.158 |
-| score | 500 | 0.574 | 0.191 | 18.245 | 24.396 |
+| overall | 1500 | 0.613 | 0.059 | 17.522 | 24.900 |
+| choice | 500 | 0.250 | 0.009 | 17.614 | 25.359 |
+| noul | 500 | 0.700 | 0.146 | 14.012 | 20.643 |
+| score | 500 | 0.890 | 0.062 | 18.208 | 24.714 |
 
 ### multilingual (mmBERT-base + LoRA)
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.533 | 0.016 | 12.246 | 16.159 |
-| choice | 500 | 0.320 | 0.010 | 12.300 | 15.482 |
-| noul | 500 | 0.726 | 0.012 | 12.100 | 18.452 |
-| score | 500 | 0.552 | 0.035 | 12.321 | 16.301 |
+| overall | 1500 | 0.493 | 0.034 | 12.267 | 17.023 |
+| choice | 500 | 0.256 | 0.065 | 12.860 | 17.791 |
+| noul | 500 | 0.730 | 0.026 | 11.765 | 15.693 |
+| score | 500 | 0.494 | 0.028 | 12.164 | 16.625 |
