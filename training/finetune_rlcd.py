@@ -20,6 +20,22 @@ from training.rlcd import categorical_loss
 
 _TRAIN_HINT = "the train extra is required for fine-tuning: uv sync --extra train"
 
+#: Candidate attention/MLP projections, tried in order. ModernBERT uses Wqkv/Wo/Wi;
+#: BERT/mmBERT-style trunks use query/key/value/dense.
+_LORA_CANDIDATES: tuple[str, ...] = (
+    "Wqkv",
+    "Wo",
+    "Wi",
+    "query",
+    "key",
+    "value",
+    "dense",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+)
+
 
 @dataclass(frozen=True, slots=True)
 class FinetuneConfig:
@@ -107,12 +123,20 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     encoder = AutoModel.from_pretrained(config.model_id)
     if config.gradient_checkpointing:
         encoder.gradient_checkpointing_enable()
+    linear_names = {
+        name.split(".")[-1]
+        for name, module in encoder.named_modules()
+        if isinstance(module, torch.nn.Linear)
+    }
+    target_modules = [candidate for candidate in _LORA_CANDIDATES if candidate in linear_names]
+    if not target_modules:  # last resort: adapt every linear projection
+        target_modules = sorted(linear_names)
     lora = LoraConfig(
         r=config.lora_rank,
         lora_alpha=config.lora_alpha,
         lora_dropout=config.lora_dropout,
         bias="none",
-        target_modules=["query", "key", "value", "dense"],
+        target_modules=target_modules,
     )
     model = get_peft_model(encoder, lora)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -166,7 +190,7 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
 
     output_dir = Path(config.out_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    model.save_pretrained(output_dir)
+    model.save_pretrained(str(output_dir))
     (output_dir / "finetune_config.json").write_text(
         json.dumps(config.to_dict(), indent=2, sort_keys=True), encoding="utf-8"
     )
