@@ -26,9 +26,9 @@ def build_backend(config: Config) -> Backend:
 
         return EncoderBackend.from_config(config)
     if config.backend == "onnx":
-        raise NotImplementedError(
-            "the onnx backend ships in M5; set JEBA_BACKEND=llm or fake for now"
-        )
+        from jeba.backends.onnx import OnnxBackend
+
+        return OnnxBackend.from_config(config)
     raise ValueError(f"unknown backend: {config.backend!r}")
 
 
