@@ -1,16 +1,16 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** Phase M1 (Wire Contract) complete. Next: M2 — LLM Backend + Serving.
+**Current Work:** Phase M2 (LLM Backend + Serving) complete. Next: M3 — Local Encoder.
 
 ## Milestone Status
 
 | Milestone | Status | Notes |
 | --- | --- | --- |
 | M0 Bootstrap | ✅ Complete | uv + py3.12, ruff/pyright/pytest, CI |
-| M1 Wire Contract | ✅ Complete | primitives + wire.py, 81 tests incl. contract suite |
-| M2 LLM Backend + Serve | ⏳ Next | config, llm backend, serve, SDK, CLI |
-| M3 Local Encoder | ⬜ Not started | |
+| M1 Wire Contract | ✅ Complete | primitives + wire.py, contract suite |
+| M2 LLM Backend + Serve | ✅ Complete | llm/fake backends, FastAPI, SDK, CLI, presets, decide, e2e |
+| M3 Local Encoder | ⏳ Next | encoder backend, router, calibration, hooks |
 | M4 Training + Calibration | ⬜ Not started | |
 | M5 Ecosystem + Accel | ⬜ Not started | |
 | M6 Proof + Release | ⬜ Not started | |
@@ -139,6 +139,14 @@ same contract tests.
 | M1-T5 | backend seam + fake backend | 2026-09-24 | `feat(backends): add backend protocol and fake backend` | ✅ |
 | M1-T6 | golden contract tests | 2026-09-24 | `test(contract): freeze systemone wire parity` | ✅ |
 | M1-T7 | error-shape tests | 2026-09-24 | `test(contract): cover systemone error shapes` | ✅ |
+| M2-T1 | env configuration | 2026-09-24 | `feat(config): add environment configuration` | ✅ |
+| M2-T2 | structured-output LLM backend | 2026-09-24 | `feat(backends): add structured-output LLM backend` | ✅ |
+| M2-T3 | `/v1/systemone` HTTP endpoint | 2026-09-24 | `feat(serve): add systemone HTTP endpoint` | ✅ |
+| M2-T4 | predict/batch/health endpoints | 2026-09-24 | `feat(serve): add predict, batch, and health endpoints` | ✅ |
+| M2-T5 | Python SDK client + backoff | 2026-09-24 | `feat(sdk): add python client with backoff` | ✅ |
+| M2-T6 | CLI + presets | 2026-09-24 | `feat(cli): add predict CLI and presets` | ✅ |
+| M2-T7 | `decide()` from JSON Schema | 2026-09-24 | `feat(schemas): add decide() from json schema` | ✅ |
+| M2-T8 | repointed-Jev-client e2e | 2026-09-24 | `test(e2e): verify repointed jev client` | ✅ |
 
 ---
 
@@ -154,14 +162,14 @@ same contract tests.
 
 ## Open Decisions (need resolution before the blocking phase)
 
-- [ ] **OD-1:** Exact LLM provider abstraction surface (single `complete_structured` call vs
-      provider plugin interface). Blocking: M2. See `docs/architecture.md`.
+- [x] **OD-1:** RESOLVED (2026-09-24, M2) — Provider-agnostic OpenAI-compatible surface with
+      an injectable transport; no new core dependency. See `docs/adr/ADR-0008`.
 - [ ] **OD-2:** Telemetry default (on vs off) and exact env var name. Blocking: M5.
 - [ ] **OD-3:** How model weights are distributed (Hugging Face hub vs bundled vs download-on-first-use).
       Blocking: M3. Note: offline-first implies weights must be cached/fetchable without a key.
 - [ ] **OD-4:** ONNX vs TileLang sequencing within M5. Blocking: M5.
-- [ ] **OD-5:** Whether to expose a `/predict` extension shape distinct from `/v1/systemone`,
-      and its schema. Blocking: M2.
+- [x] **OD-5:** RESOLVED (2026-09-24, M2) — ``/predict`` and ``/predict/batch`` mirror the
+      canonical response shape and are additive; ``/v1/systemone`` is untouched. See `docs/adr/ADR-0009`.
 
 ---
 

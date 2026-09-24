@@ -14,6 +14,8 @@ not edited in place to change its decision — supersede it with a new ADR inste
 | [ADR-0005](ADR-0005-encoder-rlcd.md) | Encoder backend trained with RLCD proper-scoring calibration | Accepted | 2026-09-24 |
 | [ADR-0006](ADR-0006-license-telemetry.md) | Apache-2.0 license and opt-out telemetry | Accepted | 2026-09-24 |
 | [ADR-0007](ADR-0007-multilingual-mmbert.md) | Multilingual from Phase 3 via mmBERT-base | Accepted | 2026-09-24 |
+| [ADR-0008](ADR-0008-llm-provider-surface.md) | LLM backend: OpenAI-compatible surface with injectable transport | Accepted | 2026-09-24 |
+| [ADR-0009](ADR-0009-extension-endpoints.md) | Extension endpoints mirror the canonical wire response | Accepted | 2026-09-24 |
 
 ## Template
 

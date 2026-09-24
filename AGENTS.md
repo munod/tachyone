@@ -4,9 +4,10 @@ Compact, high-signal guide for agents and contributors working in this repositor
 
 ## Status
 
-**M0 (Bootstrap) complete.** The uv project, quality gates, and CI exist; `src/jeba/` holds
-only importable stubs (no engine logic yet). M1 (Wire Contract) is next. Commands below are
-verified. Current milestone and blockers: `.specs/project/STATE.md`.
+**M2 (LLM Backend + Serving) complete.** `src/jeba/` has the wire contract, a pluggable
+backend seam, an OpenAI-compatible LLM backend, a model-free `FakeBackend`, FastAPI serving,
+an SDK client, a CLI, and preset/schema helpers. M3 (Local Encoder) is next. Current
+milestone and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
@@ -43,7 +44,17 @@ uv run pytest tests/test_package.py::test_version_is_exposed
 ```
 
 Ruff excludes `.opencode/`, `docs/`, `.specs/`, `docker/` (third-party skills and code
-fences are not linted). Optional extras are installed on demand: `uv sync --extra serve`.
+fences are not linted). Optional extras are installed on demand; the server, integration,
+and e2e tests need `serve`:
+
+```bash
+uv sync --extra serve          # adds fastapi + uvicorn (+ httpx from the dev group)
+uv run pytest -m "not e2e"     # skip the port-binding end-to-end tests
+uv run jeba --predict --preset triage --backend fake "refund please"   # offline demo
+```
+
+The default backend is `llm` (needs `JEBA_LLM_*`); use `--backend fake` or `JEBA_BACKEND=fake`
+for a model-free run.
 
 ## Directory boundaries (planned)
 

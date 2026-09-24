@@ -1,7 +1,7 @@
 # LLM Backend & Serving Specification
 
 **Phase:** M2 (Fase 2)
-**Status:** Draft
+**Status:** Implemented (M2 complete)
 **Related docs:** `docs/architecture.md`, `docs/protocol.md`, `docs/testing.md`
 
 ## Problem Statement
@@ -12,10 +12,10 @@ the Jev contract, we get a usable, verifiable product that existing Jev clients 
 
 ## Goals
 
-- [ ] Ship a `POST /v1/systemone` server backed by structured outputs of existing LLMs.
-- [ ] Provide a Python SDK and CLI that speak the same contract.
-- [ ] Prove a real Jev client can be repointed at jeba unchanged.
-- [ ] Keep the LLM backend optional so the base install stays offline/no-key.
+- [x] Ship a `POST /v1/systemone` server backed by structured outputs of existing LLMs.
+- [x] Provide a Python SDK and CLI that speak the same contract.
+- [x] Prove a real Jev client can be repointed at jeba unchanged.
+- [x] Keep the LLM backend optional so the base install stays offline/no-key.
 
 ## Out of Scope
 
@@ -100,22 +100,22 @@ locally and in scripts.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| BACK-01 | P1 stable backend | Design | Pending |
-| BACK-02 | P1 drop-in server | Design | Pending |
-| BACK-05 | P1 stable backend | Design | Pending |
-| SERVE-01 | P1 drop-in server | Design | Pending |
-| SERVE-03 | P2 SDK/CLI | Design | Pending |
-| SERVE-04 | P2 SDK/CLI | Design | Pending |
-| SERVE-05 | P2 SDK/CLI | Design | Pending |
-| SERVE-06 | P2 SDK/CLI | Design | Pending |
-| SERVE-07 | P2 presets | Design | Pending |
-| SERVE-08 | P2 presets | Design | Pending |
-| WIRE-05 | P1 drop-in server | Design | Pending |
+| BACK-01 | P1 stable backend | Design | Done |
+| BACK-02 | P1 drop-in server | Design | Done |
+| BACK-05 | P1 stable backend | Design | Done |
+| SERVE-01 | P1 drop-in server | Design | Done |
+| SERVE-03 | P2 SDK/CLI | Design | Done |
+| SERVE-04 | P2 SDK/CLI | Design | Done |
+| SERVE-05 | P2 SDK/CLI | Design | Done |
+| SERVE-06 | P2 SDK/CLI | Design | Done |
+| SERVE-07 | P2 presets | Design | Done |
+| SERVE-08 | P2 presets | Design | Done |
+| WIRE-05 | P1 drop-in server | Design | Done |
 
-**Coverage:** 11 requirements mapped to `docs/tasks.md` M2.
+**Coverage:** 11 requirements mapped to `docs/tasks.md` M2. All implemented (M2 complete; confidence derivation continues in M3).
 
 ## Success Criteria
 
-- [ ] Repointed Jev client returns a correct answer for all three primitives.
-- [ ] 429/529 retry behavior observed with a fault-injected provider.
-- [ ] Base install (no `serve`/LLM extra) imports and runs offline.
+- [x] Repointed Jev client returns a correct answer for all three primitives.
+- [x] 429/529 retry behavior observed with a fault-injected provider.
+- [x] Base install (no `serve`/LLM extra) imports and runs offline.

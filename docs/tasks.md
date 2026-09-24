@@ -1,6 +1,6 @@
 # Task Plan
 
-**Status:** Phases M0–M1 complete. M2 not started.
+**Status:** Phases M0–M2 complete. M3 not started.
 **Design:** `docs/architecture.md` · **Requirements:** `docs/requirements/`
 **Gates:** `uv run ruff check .` (lint) · `uv run pyright` (types) · `uv run pytest` (tests), per `docs/testing.md`.
 

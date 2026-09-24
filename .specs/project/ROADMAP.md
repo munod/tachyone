@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M2 — LLM Backend + Serving
-**Status:** M0 and M1 COMPLETE (contract frozen, 81 tests); M2 next
+**Current Milestone:** M3 — Local Encoder Backend
+**Status:** M0–M2 COMPLETE (server, SDK, CLI, presets, decide, e2e); M3 next
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -54,10 +54,10 @@ backend is swappable behind a stable interface.
 
 ### Features
 
-**Pluggable backend interface + LLM backend** - PLANNED
+**Pluggable backend interface + LLM backend** - DONE
 - `backends/base.py` contract, `backends/llm.py` structured-output implementation
 
-**Server, SDK, CLI** - PLANNED
+**Server, SDK, CLI** - DONE
 - `serve.py` (`/v1/systemone`, `/predict`, `/predict/batch`, `/health`)
 - Python SDK + `jeba` / `jeba-serve` entry points
 - Retry/backoff on 429/529; API-key handling
