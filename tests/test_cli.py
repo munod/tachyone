@@ -1,0 +1,58 @@
+"""Unit tests for presets and the CLI (M2-T6, SERVE-03 / SERVE-04 / SERVE-07)."""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from jeba.cli import main
+from jeba.presets import PRESETS, get_preset
+from jeba.wire import SystemOneRequest
+
+
+@pytest.mark.parametrize("name", sorted(PRESETS))
+def test_presets_expand_to_valid_questions(name: str) -> None:
+    questions = get_preset(name)
+    assert questions
+    SystemOneRequest.model_validate({"state": "x", "model": "m", "questions": questions})
+    for question in questions.values():
+        assert question.type in {"noul", "choice", "score"}
+
+
+def test_unknown_preset_raises() -> None:
+    with pytest.raises(ValueError):
+        get_preset("nope")
+
+
+def test_list_presets(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--list-presets"]) == 0
+    printed = capsys.readouterr().out.split()
+    assert set(printed) == set(PRESETS)
+
+
+def test_prints_questions_without_predicting(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--preset", "triage", "hello"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert "department" in payload["questions"]
+    assert payload["questions"]["department"]["type"] == "choice"
+
+
+def test_predict_with_fake_backend(capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(["--predict", "--preset", "triage", "--backend", "fake", "refund please"])
+    assert code == 0
+    result = json.loads(capsys.readouterr().out)
+    assert set(result) == {"model", "answers", "usage"}
+    assert set(result["answers"]) == {"department", "urgency", "frustration", "churn_risk"}
+
+
+def test_unknown_preset_exits_nonzero() -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--preset", "nope", "text"])
+    assert excinfo.value.code == 2
+
+
+def test_predict_requires_text() -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--predict", "--preset", "triage"])
+    assert excinfo.value.code == 2
