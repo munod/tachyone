@@ -106,6 +106,7 @@ addopts = "-ra"
 asyncio_mode = "auto"
 markers = [
     "contract: Jev wire contract / golden-fixture tests (locked)",
+    "e2e: end-to-end tests that bind a port (run serialized)",
     "slow: long-running tests (opt in)",
     "requires_serve: needs the 'serve' extra",
     "requires_onnx: needs the 'onnx' extra",

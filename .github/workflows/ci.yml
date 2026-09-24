@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   quality:
-    name: lint, types, tests (py3.12)
+    name: lint, types, tests (py3.12, serve)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,8 +23,8 @@ jobs:
           enable-cache: true
           python-version: "3.12"
 
-      - name: Sync environment from lockfile
-        run: uv sync --locked
+      - name: Sync environment from lockfile (with serve extra)
+        run: uv sync --locked --extra serve
 
       - name: Lint (ruff)
         run: uv run ruff check .
@@ -35,7 +35,26 @@ jobs:
       - name: Type check (pyright)
         run: uv run pyright
 
-      # Contract tests (tests/test_contract_wire.py) are part of the suite from M1;
-      # any public wire/primitives change must update them in the same commit (NFR-M03).
+      # Contract tests (tests/test_contract_*.py) are part of the suite; any public wire or
+      # primitives change must update them in the same commit (NFR-M03).
       - name: Tests (pytest)
         run: uv run pytest
+
+  base-install:
+    name: offline base install (no extras)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Sync core only (no dev, no extras)
+        run: uv sync --locked --no-dev
+
+      - name: Import core offline (NFR-R01)
+        run: uv run python -c "import jeba, jeba.cli, jeba.client, jeba.config, jeba.primitives, jeba.presets, jeba.schemas, jeba.wire, jeba.backends, jeba.backends.fake, jeba.backends.llm; print('base install ok')"
