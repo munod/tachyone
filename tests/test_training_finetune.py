@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from training.finetune_rlcd import (
     FinetuneConfig,
     load_config,

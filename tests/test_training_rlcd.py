@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from training.rlcd import (
     PROPER_RULES,
     categorical_loss,
