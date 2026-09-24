@@ -190,11 +190,11 @@ similarity head.
 
 ## Deferred Ideas
 
-- [ ] Provider registry + OpenAI-compatible LLM backend — captured during: design
-- [ ] Streaming multi-question responses — captured during: design
-- [ ] Optional opt-out telemetry — captured during: AD-006
-- [ ] TileLang/CUDA-graphs fast path micro-benchmark — captured during: roadmap M5
-- [ ] Web console for interactive triage — captured during: scope discussion
+Canonical backlog: [`BACKLOG.md`](BACKLOG.md). Active next steps: **B-1** multilingual
+`choice`/`score` quality (per-language data + per-language/per-primitive temperature) and **B-2**
+fast-path kernels (TileLang/CUDA graphs). Carried-over ideas (provider registry, extra
+checkpoints, streaming, web console, process items) are listed there too. Promote an item into
+`docs/tasks.md` when it is scheduled.
 
 ---
 

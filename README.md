@@ -10,7 +10,9 @@ server and it works unchanged; run the local encoder backend for fully offline i
 OpenAI-compatible LLM backend, a local encoder (ModernBERT/mmBERT + LoRA), an ONNX backend, an
 optional fast path, FastAPI serving, an SDK/CLI, MCP + LangChain integrations, a training
 pipeline, and a docs site. LoRA adapters are published on the Hugging Face Hub. See the
-[CHANGELOG](CHANGELOG.md) and [`.specs/project/STATE.md`](.specs/project/STATE.md).
+[CHANGELOG](CHANGELOG.md) for releases, next steps in
+[`.specs/project/BACKLOG.md`](.specs/project/BACKLOG.md), and
+[`.specs/project/STATE.md`](.specs/project/STATE.md) for decisions and blockers.
 
 ---
 

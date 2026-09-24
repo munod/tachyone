@@ -111,7 +111,16 @@ graph LR
 
 ## Future considerations
 
+Active next steps (canonical list: `.specs/project/BACKLOG.md`):
+
+- **B-1 Multilingual `choice`/`score` quality** — stratified per-language data and per-language
+  (primitive, language) temperature fitting; publish per-language ECE.
+- **B-2 Fast-path kernels (TileLang/CUDA graphs)** — implement the accelerated encoder forward
+  behind the `fast` extra (the seam + fallback exist) and measure `NFR-P01` latency.
+
+Carried-over ideas:
+
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).
 - Additional checkpoints (typed-decisions variant, larger multilingual).
 - Streaming multi-question responses.
-- Optional opt-out telemetry (only if it never blocks offline use).
+- Web console for interactive triage.

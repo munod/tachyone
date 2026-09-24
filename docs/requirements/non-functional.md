@@ -15,6 +15,7 @@ those marked **[open]** need confirmation after benchmarks.
 | NFR-P04 | LLM backend overhead beyond provider call | < 50 ms | M2 | timing measurement |
 | NFR-P05 | Batch throughput | near-linear scaling up to memory limit | M3 | batch sweep |
 | NFR-P06 | Server cold start (encoder preloaded) | ≤ 30 s **[open]** | M3 | timed startup |
+| NFR-P07 | Fast-path (TileLang/CUDA graphs) latency on supported CUDA | p50 improves vs stock forward; no shape change | Backlog B-2 | micro-benchmark |
 
 ## Resource footprint (NFR-R)
 
@@ -36,6 +37,7 @@ those marked **[open]** need confirmation after benchmarks.
 | NFR-C04 | Reproducible training given seed/config | within documented tolerance | M4 |
 | NFR-C05 | Graceful fallback when acceleration/extra unavailable | no crash | M5 |
 | NFR-C06 | Calibration quality | ECE ≤ 0.05 **[open]** | M4 |
+| NFR-C07 | Per-language calibration quality | ECE ≤ 0.05 per language (choice/score) **[open]** | Backlog B-1 |
 
 ## Compatibility (NFR-X)
 
@@ -93,5 +95,6 @@ accessibility requirements (see the `Accessibility Testing` skill) but is out of
 
 ---
 
-**Counts:** 39 non-functional requirements. Targets marked **[open]** are tracked in
+**Counts:** 41 non-functional requirements (39 baseline + NFR-P07/NFR-C07 tracked in
+`.specs/project/BACKLOG.md`). Targets marked **[open]** are tracked in
 `.specs/project/STATE.md` and resolved after M3/M4 measurements.

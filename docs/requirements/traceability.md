@@ -82,6 +82,7 @@ All rows are **Pending** at baseline (pre-implementation).
 | NFR-P04 | `backends/llm.py` | M2-T2 | Pending |
 | NFR-P05 | `agent.py` | M3-T4 | Pending |
 | NFR-P06 | `serve.py` + `router.py` | M3-T2 | Pending |
+| NFR-P07 | `fast.py` | Backlog B-2 | Pending |
 | NFR-R01 | packaging | M0-T1 | Pending |
 | NFR-R02 | `backends/encoder.py` | M3-T5 | Pending |
 | NFR-R03 | `backends/encoder.py` | M3-T5 | Pending |
@@ -93,6 +94,7 @@ All rows are **Pending** at baseline (pre-implementation).
 | NFR-C04 | `training/configs/` | M4-T6 | Pending |
 | NFR-C05 | `fast.py` / extras guards | M5-T2 | Pending |
 | NFR-C06 | `fit_calibration.py` | M4-T4 | Pending |
+| NFR-C07 | `fit_calibration.py` | Backlog B-1 | Pending |
 | NFR-X01 | `serve.py` + e2e | M2-T8 | Pending |
 | NFR-X02 | contract tests | M1-T6, M3-T6, M2-T8 | Pending |
 | NFR-X03 | `pyproject.toml` | M0-T1 | Pending |

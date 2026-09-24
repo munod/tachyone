@@ -116,6 +116,8 @@ distributions. Proper scoring directly optimizes the quantity users consume (`co
 **Goal:** minimize ECE on a held-out calibration split.
 
 - Fit a single temperature (or per-primitive temperatures) on a **calibration split**.
+- **Planned (B-1, `BACKLOG.md`):** per-**(primitive, language)** temperatures, so a weakly served
+  language is calibrated on its own data instead of borrowing the global fit.
 - **Never** fit on the test split.
 - Report ECE before/after; target is provisional (NFR-C06, `ECE ≤ 0.05` **[open]**).
 - Persist the fitted temperature with the checkpoint.
@@ -156,7 +158,7 @@ reproduction commands committed.
 | RTX 3060 12GB | Bounds model size and batch | LoRA/QLoRA, checkpointing, accumulation |
 | Synthetic data bias | Model inherits generator biases | Mix sources; human seed sets; eval on public probes |
 | Small calibration sets | Noisy temperature fit | Stratify; warn on small N; hold out test |
-| Multilingual imbalance | Weak languages | Stratify generation; per-language ECE reporting |
+| Multilingual imbalance | Weak languages | Stratify generation; per-language ECE reporting; per-language temperature (B-1) |
 | Two checkpoints | Memory pressure | `max_loaded`, LRU eviction (ROUTE-04) |
 
 ---
