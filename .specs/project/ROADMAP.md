@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M1 — Wire Contract
-**Status:** M0 COMPLETE (uv skeleton, quality gates, CI); M1 next
+**Current Milestone:** M2 — LLM Backend + Serving
+**Status:** M0 and M1 COMPLETE (contract frozen, 81 tests); M2 next
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -38,7 +38,7 @@ deterministic backend lets us validate the full request/response cycle offline.
 
 ### Features
 
-**Primitives & wire** - PLANNED
+**Primitives & wire** - DONE
 - `primitives.py`: `Choice` / `Score` / `Noul` pydantic models + `Answer` types
 - `wire.py`: request/response models with exact Jev field names, limits, and errors
 - Contract tests: offsets, 255-option cap, 2–10 score levels, 401/422/429/529

@@ -1,7 +1,7 @@
 # Testing & Quality Strategy
 
-**Status:** Planned (no tests exist yet). Commands below are the **planned** gates; they become
-real in M0-T2 and are frozen in `docs/tasks.md` at that point.
+**Status:** Active. Gates are real as of M0; the contract suite is live as of M1
+(`tests/test_contract_wire.py`, `tests/test_contract_errors.py`).
 
 ---
 

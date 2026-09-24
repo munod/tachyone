@@ -1,7 +1,7 @@
 # Wire Contract & Primitives Specification
 
 **Phase:** M0–M1 (Fase 0–1)
-**Status:** Draft
+**Status:** Implemented (M1 complete; contract frozen)
 **Related docs:** `docs/protocol.md`, `docs/architecture.md`, `docs/adr/ADR-0001-jev-drop-in-protocol.md`
 
 ## Problem Statement
@@ -13,9 +13,9 @@ authoritative definition. Getting this wrong causes cascading failures downstrea
 
 ## Goals
 
-- [ ] Freeze `primitives.py` and `wire.py` to exact Jev field parity.
-- [ ] Prove parity with golden contract tests (request → response → error shapes).
-- [ ] Provide a deterministic fake backend so the full cycle is testable offline.
+- [x] Freeze `primitives.py` and `wire.py` to exact Jev field parity.
+- [x] Prove parity with golden contract tests (request → response → error shapes).
+- [x] Provide a deterministic fake backend so the full cycle is testable offline.
 
 ## Out of Scope
 
@@ -117,19 +117,19 @@ logic behaves as it does against Jev.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| PRIM-01 | P1 primitives | Design | Pending |
-| PRIM-02 | P1 primitives | Design | Pending |
-| PRIM-03 | P1 primitives | Design | Pending |
-| PRIM-04 | P1 primitives | Design | Pending |
-| PRIM-05 | P1 primitives | Design | Pending |
-| PRIM-06 | P1 primitives | Design | Pending |
-| WIRE-01 | P1 request/response | Design | Pending |
-| WIRE-02 | P1 request/response | Design | Pending |
-| WIRE-03 | P1 request/response | Design | Pending |
-| WIRE-04 | P2 errors | Design | Pending |
-| WIRE-05 | P2 errors | - | Pending |
-| WIRE-06 | P1 request/response | Design | Pending |
-| WIRE-07 | P1 request/response | Design | Pending |
+| PRIM-01 | P1 primitives | Design | Done |
+| PRIM-02 | P1 primitives | Design | Done |
+| PRIM-03 | P1 primitives | Design | Done |
+| PRIM-04 | P1 primitives | Design | Done |
+| PRIM-05 | P1 primitives | Design | Pending (M3 confidence derivation) |
+| PRIM-06 | P1 primitives | Design | Done |
+| WIRE-01 | P1 request/response | Design | Pending (M2 transport) |
+| WIRE-02 | P1 request/response | Design | Done |
+| WIRE-03 | P1 request/response | Design | Done |
+| WIRE-04 | P2 errors | Design | Done (status shapes; transport in M2) |
+| WIRE-05 | P2 errors | - | Pending (M2 SDK retry) |
+| WIRE-06 | P1 request/response | Design | Done |
+| WIRE-07 | P1 request/response | Design | Done |
 
 **Coverage:** 13 requirements, all mapped to `docs/tasks.md` M0–M1.
 

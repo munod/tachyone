@@ -35,7 +35,7 @@ uv sync                        # create env from uv.lock (installs core + dev gr
 uv run ruff check .            # lint
 uv run ruff format --check .   # format check
 uv run pyright                 # types
-uv run pytest                  # full suite (contract suite joins it in M1)
+uv run pytest                  # full suite (includes the contract suite)
 
 # run one test / one file
 uv run pytest tests/test_package.py

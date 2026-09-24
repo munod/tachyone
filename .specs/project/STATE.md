@@ -1,15 +1,15 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** Phase M0 (Bootstrap) complete. Next: M1 — Wire Contract (`docs/tasks.md`).
+**Current Work:** Phase M1 (Wire Contract) complete. Next: M2 — LLM Backend + Serving.
 
 ## Milestone Status
 
 | Milestone | Status | Notes |
 | --- | --- | --- |
-| M0 Bootstrap | ✅ Complete | uv + py3.12, ruff/pyright/pytest, CI; 3 commits |
-| M1 Wire Contract | ⏳ Next | primitives + wire.py match Jev; golden fixtures |
-| M2 LLM Backend + Serve | ⬜ Not started | |
+| M0 Bootstrap | ✅ Complete | uv + py3.12, ruff/pyright/pytest, CI |
+| M1 Wire Contract | ✅ Complete | primitives + wire.py, 81 tests incl. contract suite |
+| M2 LLM Backend + Serve | ⏳ Next | config, llm backend, serve, SDK, CLI |
 | M3 Local Encoder | ⬜ Not started | |
 | M4 Training + Calibration | ⬜ Not started | |
 | M5 Ecosystem + Accel | ⬜ Not started | |
@@ -132,6 +132,13 @@ same contract tests.
 | M0-T2 | ruff + pyright + pytest config and dev deps | 2026-09-24 | `chore: configure ruff, pyright, pytest` | ✅ |
 | M0-T3 | repo hygiene (.gitignore, .editorconfig, LICENSE, git init) | 2026-09-24 | `chore: initialize repository with project specifications` | ✅ |
 | M0-T4 | CI workflow (ruff + pyright + pytest on py3.12) | 2026-09-24 | `ci: add lint, type, and test gates` | ✅ |
+| M1-T1 | `noul` primitive | 2026-09-24 | `feat(primitives): add noul question and answer` | ✅ |
+| M1-T2 | `choice` primitive (1..255 options) | 2026-09-24 | `feat(primitives): add choice question and answer` | ✅ |
+| M1-T3 | `score` primitive (2..10 levels) | 2026-09-24 | `feat(primitives): add score question and answer` | ✅ |
+| M1-T4 | wire envelope + errors + `answer()` | 2026-09-24 | `feat(wire): add systemone request and response` | ✅ |
+| M1-T5 | backend seam + fake backend | 2026-09-24 | `feat(backends): add backend protocol and fake backend` | ✅ |
+| M1-T6 | golden contract tests | 2026-09-24 | `test(contract): freeze systemone wire parity` | ✅ |
+| M1-T7 | error-shape tests | 2026-09-24 | `test(contract): cover systemone error shapes` | ✅ |
 
 ---
 
