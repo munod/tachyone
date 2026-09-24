@@ -67,6 +67,7 @@ packages = ["src/jeba"]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.27",
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pyright>=1.1.380",
