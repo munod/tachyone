@@ -43,6 +43,10 @@ jeba_models/
 data/
 datasets/
 benchmarks/results/
+# ...but keep committed training data (phrase banks, configs)
+!training/data/
+!training/data/**
+!training/configs/
 
 # Secrets and local environment
 .env
