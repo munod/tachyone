@@ -11,6 +11,7 @@ from jeba.router import (
     MULTILINGUAL,
     SUPPORTED_LANGUAGES,
     Router,
+    detect_language,
     detect_script,
     state_text,
 )
@@ -59,6 +60,27 @@ def test_non_latin_routes_to_multilingual(text: str) -> None:
 def test_non_english_latin_routes_to_multilingual() -> None:
     assert Router().route("hola gracias por el reembolso").checkpoint_id == MULTILINGUAL
     assert Router().route("devolva a cobrança duplicada").checkpoint_id == MULTILINGUAL
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Quero cancelar minha assinatura agora",
+        "meu pagamento falhou duas vezes",
+        "esqueci minha senha",
+        "preciso de ajuda com uma cobrança duplicada",
+        "gostaria de falar sobre o problema no pedido",
+    ],
+)
+def test_portuguese_without_accents_routes_to_multilingual(text: str) -> None:
+    decision = Router().route(text)
+    assert decision.checkpoint_id == MULTILINGUAL
+    assert decision.detected_language == "pt"
+
+
+def test_detect_language_identifies_portuguese() -> None:
+    assert detect_language("quero cancelar agora", "latin") == "pt"
+    assert detect_language("please refund the charge", "latin") == "en"
 
 
 def test_unknown_script_uses_default() -> None:

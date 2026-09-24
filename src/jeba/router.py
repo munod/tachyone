@@ -176,33 +176,249 @@ _ENGLISH_STOPWORDS = frozenset(
         "or",
     }
 )
-_NON_ENGLISH_STOPWORDS = frozenset(
-    {
-        "el",
-        "la",
-        "los",
-        "las",
-        "una",
-        "que",
-        "der",
-        "die",
-        "das",
-        "und",
-        "ist",
-        "le",
-        "les",
-        "des",
-        "une",
-        "et",
-        "não",
-        "obrigado",
-        "hola",
-        "gracias",
-        "bitte",
-        "danke",
-        "merci",
-    }
-)
+#: Function words per non-English Latin language, used as a cheap language signal. Words that
+#: also occur in English (e.g. "die") are deliberately omitted to avoid false non-English hits.
+_LANGUAGE_STOPWORDS: dict[str, frozenset[str]] = {
+    "pt": frozenset(
+        {
+            "quero",
+            "queria",
+            "preciso",
+            "gostaria",
+            "minha",
+            "meu",
+            "meus",
+            "minhas",
+            "para",
+            "com",
+            "uma",
+            "um",
+            "não",
+            "nao",
+            "sim",
+            "obrigado",
+            "obrigada",
+            "favor",
+            "por",
+            "senha",
+            "pagamento",
+            "cobrança",
+            "cobranca",
+            "cancelar",
+            "cancelamento",
+            "ajuda",
+            "ajudar",
+            "agora",
+            "hoje",
+            "amanhã",
+            "amanha",
+            "fazer",
+            "está",
+            "esta",
+            "estão",
+            "muito",
+            "bom",
+            "dia",
+            "tudo",
+            "bem",
+            "aqui",
+            "isso",
+            "esse",
+            "essa",
+            "você",
+            "voce",
+            "vocês",
+            "assinatura",
+            "conta",
+            "problema",
+            "erro",
+            "falha",
+            "falhou",
+            "duplicado",
+            "duplicada",
+            "reembolso",
+            "devolver",
+            "devolva",
+            "pedido",
+            "empresa",
+            "tempo",
+            "quando",
+            "como",
+            "onde",
+            "porque",
+            "também",
+            "tambem",
+            "mais",
+            "sobre",
+            "depois",
+            "antes",
+            "sempre",
+            "nunca",
+            "ainda",
+            "só",
+            "pode",
+            "consegue",
+        }
+    ),
+    "es": frozenset(
+        {
+            "hola",
+            "gracias",
+            "por",
+            "favor",
+            "el",
+            "la",
+            "los",
+            "las",
+            "una",
+            "que",
+            "para",
+            "con",
+            "mi",
+            "su",
+            "está",
+            "esta",
+            "problema",
+            "pago",
+            "factura",
+            "reembolso",
+            "cancelar",
+            "ayuda",
+            "necesito",
+            "quiero",
+            "tengo",
+            "cómo",
+            "como",
+            "dónde",
+            "donde",
+            "cuándo",
+            "porque",
+            "muy",
+            "bien",
+            "ahora",
+            "hoy",
+            "mañana",
+            "devolver",
+            "duplicado",
+        }
+    ),
+    "fr": frozenset(
+        {
+            "bonjour",
+            "merci",
+            "le",
+            "les",
+            "des",
+            "une",
+            "un",
+            "et",
+            "pour",
+            "avec",
+            "mon",
+            "ma",
+            "mes",
+            "est",
+            "sont",
+            "pas",
+            "plus",
+            "aide",
+            "besoin",
+            "remboursement",
+            "annuler",
+            "facture",
+            "paiement",
+            "problème",
+            "maintenant",
+            "comment",
+            "pourquoi",
+            "très",
+            "bien",
+            "vous",
+            "aujourd'hui",
+        }
+    ),
+    "de": frozenset(
+        {
+            "bitte",
+            "danke",
+            "der",
+            "das",
+            "und",
+            "ist",
+            "sind",
+            "nicht",
+            "mein",
+            "meine",
+            "mit",
+            "für",
+            "hilfe",
+            "brauche",
+            "rechnung",
+            "zahlung",
+            "rückerstattung",
+            "stornieren",
+            "problem",
+            "jetzt",
+            "heute",
+            "warum",
+            "sehr",
+            "gut",
+            "sie",
+            "ich",
+        }
+    ),
+    "it": frozenset(
+        {
+            "ciao",
+            "grazie",
+            "favore",
+            "il",
+            "lo",
+            "gli",
+            "una",
+            "non",
+            "mio",
+            "mia",
+            "aiuto",
+            "bisogno",
+            "fattura",
+            "pagamento",
+            "rimborso",
+            "annullare",
+            "problema",
+            "adesso",
+            "oggi",
+            "perché",
+            "molto",
+            "bene",
+            "sono",
+        }
+    ),
+    "nl": frozenset(
+        {
+            "hallo",
+            "bedankt",
+            "alstublieft",
+            "het",
+            "een",
+            "niet",
+            "mijn",
+            "met",
+            "voor",
+            "hulp",
+            "nodig",
+            "factuur",
+            "betaling",
+            "terugbetaling",
+            "annuleren",
+            "probleem",
+            "vandaag",
+            "waarom",
+            "heel",
+            "goed",
+        }
+    ),
+}
 
 
 class CheckpointInfo(BaseModel):
@@ -276,16 +492,26 @@ def detect_script(text: str) -> str:
 
 
 def detect_language(text: str, script: str) -> str | None:
-    """Best-effort language code for Latin text; ``None`` when the script is not Latin."""
+    """Best-effort language code for Latin text; ``None`` when the script is not Latin.
+
+    Returns a specific code when function-word hits identify a language, ``"und"`` for
+    accented Latin without a match, ``"en"`` for English signal, else ``None``.
+    """
     if script != "latin":
         return None
     words = {word.strip(".,!?;:\"'()[]").lower() for word in text.split()}
-    has_accented_latin = any(0x00C0 <= ord(char) <= 0x024F for char in text)
-    if words & _NON_ENGLISH_STOPWORDS or has_accented_latin:
-        return "und"  # Latin script, likely non-English
-    if words & _ENGLISH_STOPWORDS:
+    english_hits = len(words & _ENGLISH_STOPWORDS)
+    best_code: str | None = None
+    best_hits = 0
+    for code, stopwords in _LANGUAGE_STOPWORDS.items():
+        hits = len(words & stopwords)
+        if hits > best_hits:
+            best_code, best_hits = code, hits
+    if best_code is not None and best_hits >= english_hits:
+        return best_code
+    if english_hits > 0:
         return "en"
-    return None
+    return "und" if any(0x00C0 <= ord(char) <= 0x024F for char in text) else None
 
 
 @dataclass
@@ -387,19 +613,19 @@ class Router:
         text = state_text(state)
         script = detect_script(text)
         language = detect_language(text, script)
-        if script == "latin" and language != "und":
-            return RouteDecision(
-                checkpoint_id=ENGLISH,
-                detected_script=script,
-                detected_language=language or "en",
-                reason="Latin script, no non-English signal",
-            )
-        if script == "latin" and language == "und":
+        if script == "latin":
+            if language in (None, "en"):
+                return RouteDecision(
+                    checkpoint_id=ENGLISH,
+                    detected_script=script,
+                    detected_language="en",
+                    reason="Latin script, English or no non-English signal",
+                )
             return RouteDecision(
                 checkpoint_id=MULTILINGUAL,
                 detected_script=script,
-                detected_language=None,
-                reason="Latin script with non-English signal",
+                detected_language=language,
+                reason=f"Latin script detected as {language}",
             )
         if script == "unknown":
             return RouteDecision(
