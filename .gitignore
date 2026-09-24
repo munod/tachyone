@@ -43,6 +43,8 @@ jeba_models/
 data/
 datasets/
 benchmarks/results/
+# Docs site build output
+site/
 # ...but keep committed training data (phrase banks, configs)
 !training/data/
 !training/data/**
