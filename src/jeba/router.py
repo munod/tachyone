@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel, ConfigDict
 
+from jeba.hooks import ON_EVICT, ON_LOAD, ON_ROUTE, Hooks
 from jeba.primitives import State
 
 #: Built-in checkpoint ids.
@@ -302,6 +303,7 @@ class Router:
     )
     loader: Loader | None = None
     max_loaded: int = 2
+    hooks: Hooks | None = None
     _loaded: dict[str, object] = field(default_factory=dict, repr=False)
     _order: list[str] = field(default_factory=list, repr=False)
 
@@ -330,6 +332,8 @@ class Router:
         loaded = self.loader(self.checkpoints[checkpoint_id])
         self._loaded[checkpoint_id] = loaded
         self._touch(checkpoint_id)
+        if self.hooks is not None:
+            self.hooks.emit(ON_LOAD, checkpoint_id=checkpoint_id)
         return loaded
 
     def attach(self, checkpoint_id: str, checkpoint: object) -> None:
@@ -360,9 +364,20 @@ class Router:
             if candidate != exclude and candidate in self._loaded:
                 self._loaded.pop(candidate, None)
                 self._order.remove(candidate)
+                if self.hooks is not None:
+                    self.hooks.emit(ON_EVICT, checkpoint_id=candidate)
                 return
 
     def route(self, state: State) -> RouteDecision:
+        """Decide which checkpoint should answer ``state`` and emit ``on_route``."""
+        decision = self._decide(state)
+        if self.hooks is not None:
+            self.hooks.emit(
+                ON_ROUTE, state=state, route=decision, checkpoint_id=decision.checkpoint_id
+            )
+        return decision
+
+    def _decide(self, state: State) -> RouteDecision:
         """Decide which checkpoint should answer ``state``."""
         if self.lang_guess is not None:
             guess = self.lang_guess(state)
