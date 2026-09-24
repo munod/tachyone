@@ -82,3 +82,8 @@ def test_empty_strings_fall_back_to_defaults() -> None:
     assert config.host == "127.0.0.1"
     assert config.api_key is None
     assert config.llm_api_key is None
+
+
+def test_models_dir_defaults_and_override() -> None:
+    assert Config.from_env({}).models_dir.endswith(".cache/jeba/models")
+    assert Config.from_env({"JEBA_MODELS_DIR": "/models"}).models_dir == "/models"

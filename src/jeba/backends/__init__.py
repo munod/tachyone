@@ -22,9 +22,9 @@ def build_backend(config: Config) -> Backend:
 
         return LLMBackend.from_config(config)
     if config.backend == "encoder":
-        raise NotImplementedError(
-            "the encoder backend ships in M3; set JEBA_BACKEND=llm or fake for now"
-        )
+        from jeba.backends.encoder import EncoderBackend
+
+        return EncoderBackend.from_config(config)
     if config.backend == "onnx":
         raise NotImplementedError(
             "the onnx backend ships in M5; set JEBA_BACKEND=llm or fake for now"

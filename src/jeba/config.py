@@ -60,6 +60,10 @@ def _csv(env: Mapping[str, str], name: str) -> tuple[str, ...]:
     return tuple(item.strip() for item in env.get(name, "").split(",") if item.strip())
 
 
+def _default_models_dir() -> str:
+    return os.path.join(os.path.expanduser("~"), ".cache", "jeba", "models")
+
+
 @dataclass(frozen=True, slots=True)
 class Config:
     """Validated runtime configuration."""
@@ -69,6 +73,7 @@ class Config:
     device: str = "auto"
     backend: str = DEFAULT_BACKEND
     models: tuple[str, ...] = ()
+    models_dir: str = field(default_factory=_default_models_dir)
     preload: tuple[str, ...] = ()
     threads: int = 0  # 0 = let the runtime decide
     api_key: str | None = field(default=None, repr=False)
@@ -88,6 +93,7 @@ class Config:
             device=_choice(source, "JEBA_DEVICE", "auto", DEVICES),
             backend=_choice(source, "JEBA_BACKEND", DEFAULT_BACKEND, BACKENDS),
             models=_csv(source, "JEBA_MODELS"),
+            models_dir=_text(source, "JEBA_MODELS_DIR", _default_models_dir()),
             preload=_csv(source, "JEBA_PRELOAD"),
             threads=_int(source, "JEBA_THREADS", 0, 0, 4096),
             api_key=_text(source, "JEBA_API_KEY", "") or None,
