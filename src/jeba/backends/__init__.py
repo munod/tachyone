@@ -8,13 +8,14 @@ actionable message rather than silently misbehaving.
 from __future__ import annotations
 
 from jeba.backends.base import Backend, PredictionResult
-from jeba.backends.fake import FakeBackend
 from jeba.config import Config
 
 
 def build_backend(config: Config) -> Backend:
     """Instantiate the backend selected by ``config.backend``."""
     if config.backend == "fake":
+        from jeba.backends.fake import FakeBackend
+
         return FakeBackend()
     if config.backend == "llm":
         from jeba.backends.llm import LLMBackend

@@ -9,5 +9,13 @@ heavy backends and transports live behind optional extras. See ``docs/architectu
 
 from __future__ import annotations
 
+from jeba.client import JebaAPIError, JebaClient, JebaConnectionError, JebaError
+
 __version__ = "0.0.1"
-__all__ = ["__version__"]
+__all__ = [
+    "JebaAPIError",
+    "JebaClient",
+    "JebaConnectionError",
+    "JebaError",
+    "__version__",
+]
