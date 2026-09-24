@@ -54,6 +54,8 @@ def _answers() -> dict[str, Answer]:
 
 
 class _StubBackend:
+    name = "stub"
+
     def __init__(self, answers: dict[str, Answer] | None = None) -> None:
         self._answers = answers if answers is not None else _answers()
 

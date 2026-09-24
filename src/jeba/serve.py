@@ -13,16 +13,44 @@ import sys
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
+from pydantic import BaseModel, ConfigDict
+
 from jeba import __version__
 from jeba.backends import build_backend
 from jeba.backends.base import Backend
 from jeba.config import Config
-from jeba.wire import Unauthorized, UnprocessableEntity, WireError, answer, parse_request
+from jeba.primitives import Question, State
+from jeba.wire import (
+    SystemOneRequest,
+    Unauthorized,
+    UnprocessableEntity,
+    WireError,
+    answer,
+    parse_request,
+)
 
 if TYPE_CHECKING:
     from fastapi import FastAPI, Request
 
 _SERVE_HINT = "the serve extra is required: uv sync --extra serve"
+
+
+class _ExtensionBase(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+
+class PredictRequest(_ExtensionBase):
+    """Body for the ``/predict`` extension: a wire request with a default model."""
+
+    state: State
+    questions: dict[str, Question]
+    model: str = "jeba-latest"
+
+
+class BatchPredictRequest(_ExtensionBase):
+    """Body for the ``/predict/batch`` extension."""
+
+    requests: list[PredictRequest]
 
 
 def _fastapi() -> tuple[Any, Any, Any]:
@@ -65,6 +93,34 @@ def create_app(config: Config, backend: Backend) -> FastAPI:
         validated = parse_request(payload)
         response = await answer(validated, backend)
         return response.model_dump(mode="json")
+
+    @app.post("/predict")
+    async def predict(request: Request, body: PredictRequest) -> Any:
+        _authorize(request, config.api_key)
+        validated = SystemOneRequest(state=body.state, model=body.model, questions=body.questions)
+        response = await answer(validated, backend)
+        return response.model_dump(mode="json")
+
+    @app.post("/predict/batch")
+    async def predict_batch(request: Request, body: BatchPredictRequest) -> dict[str, Any]:
+        _authorize(request, config.api_key)
+        results = []
+        for item in body.requests:
+            validated = SystemOneRequest(
+                state=item.state, model=item.model, questions=item.questions
+            )
+            results.append((await answer(validated, backend)).model_dump(mode="json"))
+        return {"results": results}
+
+    @app.get("/health")
+    async def health() -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "version": __version__,
+            "backend": backend.name,
+            "device": config.device,
+            "models": list(config.models),
+        }
 
     return app
 

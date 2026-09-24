@@ -28,6 +28,8 @@ class PredictionResult:
 class Backend(Protocol):
     """Stable inference interface; implementations must not leak into the wire."""
 
+    name: str
+
     async def predict(
         self,
         questions: dict[str, Question],

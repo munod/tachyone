@@ -73,3 +73,41 @@ def test_auth_required_when_key_configured() -> None:
     )
     ok = client.post("/v1/systemone", json=_REQUEST, headers={"Authorization": "Bearer secret"})
     assert ok.status_code == 200
+
+
+def test_health_reports_backend() -> None:
+    response = _client().get("/health")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["backend"] == "fake"
+    assert "device" in body
+    assert "version" in body
+
+
+def test_predict_mirrors_canonical_shape() -> None:
+    body = {"state": _REQUEST["state"], "questions": _REQUEST["questions"]}
+    response = _client().post("/predict", json=body)
+    assert response.status_code == 200
+    result = response.json()
+    assert set(result) == {"model", "answers", "usage"}
+    assert set(result["answers"]) == set(_REQUEST["questions"])
+
+
+def test_predict_batch_preserves_order() -> None:
+    item = {"state": _REQUEST["state"], "questions": _REQUEST["questions"]}
+    response = _client().post("/predict/batch", json={"requests": [item, item]})
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert len(results) == 2
+    assert results[0] == results[1]
+
+
+def test_predict_requires_auth_when_configured() -> None:
+    client = _client(JEBA_API_KEY="secret")
+    body = {"state": "x", "questions": {}}
+    assert client.post("/predict", json=body).status_code == 401
+    assert (
+        client.post("/predict", json=body, headers={"Authorization": "Bearer secret"}).status_code
+        == 200
+    )
