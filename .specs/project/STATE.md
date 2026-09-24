@@ -1,8 +1,9 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** All milestones M0–M6 complete. Remaining external step: run the RTX 3060
-training job and publish the measured numbers + weights (see `docs/release.md`).
+**Current Work:** All milestones M0–M6 complete; an initial training smoke run was executed on
+the RTX 3060 and measured into `benchmarks/report.md`. Remaining: a full-scale training run and
+publishing weights/numbers to the Hugging Face Hub (see `docs/release.md`).
 
 ## Milestone Status
 
@@ -108,8 +109,9 @@ English checkpoint, selected automatically by a script/language router.
 **Discovered:** 2026-09-24
 **Impact:** Full fine-tuning of large encoders is infeasible; naive LoRA/QLoRA may OOM.
 **Workaround:** LoRA/QLoRA + gradient checkpointing + small effective batch + grad accumulation.
-**Resolution:** Pipeline implemented (M4-T2: LoRA/QLoRA + accumulation + checkpointing). The
-actual RTX 3060 run and documented VRAM ceilings are still pending (needs the `train` extra).
+**Resolution:** Pipeline implemented (M4-T2) and executed as a smoke run on the RTX 3060 12GB
+(English + multilingual LoRA, calibration, report). Numbers are in `benchmarks/report.md`;
+a full-scale run (more data/epochs, batched training) is still pending.
 
 ---
 

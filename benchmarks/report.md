@@ -1,46 +1,51 @@
 # jeba Benchmark Report
 
-> **Status: scaffold.** The harness and reproduction commands are in place; the numbers on
-> this page are **pending the RTX 3060 training run** (`uv sync --extra train`) and real
-> encoder/ONNX weights. Regenerate with `benchmarks/report.py` once results exist.
+> Initial smoke run on a single RTX 3060 12GB: small deterministic synthetic set, 3 epochs, per-record LoRA updates. Accuracy/ECE are low and expected to improve with more data, epochs, and batched training. Latency is per-question on GPU (batch=1).
 
 ## Environment
 
-Captured automatically by `training.config.environment()` when the report is generated
-(Python, platform, jeba, optional torch/transformers/peft versions, git commit).
+```json
+{
+  "git_commit": "c6d4007e9bad267dabba8f12cd1d4f74da3e46e0",
+  "jeba": "0.0.1",
+  "peft": "0.21.0",
+  "platform": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44",
+  "pydantic": "2.13.5",
+  "python": "3.12.13",
+  "torch": "2.14.0+cu130",
+  "transformers": "5.17.0"
+}
+```
 
 ## Reproduce
 
 ```bash
-# 1. Build a labeled evaluation set (deterministic, no GPU needed)
-uv run python -m training.generate_data --per-type 2000 --out data/eval.jsonl
-
-# 2. Evaluate each backend (produces benchmarks/results/*.json)
-uv run python -m training.evaluate --data data/eval.jsonl --out benchmarks/results/encoder.json --backend encoder
-uv run python -m training.evaluate --data data/eval.jsonl --out benchmarks/results/onnx.json    --backend onnx
-uv run python -m training.evaluate --data data/eval.jsonl --out benchmarks/results/fake.json     --backend fake
-
-# 3. Render this report
-uv run python -m benchmarks.report \
-  --entry encoder=benchmarks/results/encoder.json \
-  --entry onnx=benchmarks/results/onnx.json \
-  --entry fake=benchmarks/results/fake.json \
-  --note "Fill in the hardware and commit for the published run." \
-  --out benchmarks/report.md
+uv run python -m training.generate_data --seed 1 --per-type 60 --languages en --out data/train_en.jsonl
+uv run python -m training.generate_data --seed 1 --per-type 60 --languages pt,es,fr,de --out data/train_multi.jsonl
+uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json
+uv run python -m training.finetune_rlcd --config training/configs/finetune_multi.json
+uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en --out-predictions data/preds_en.jsonl
+uv run python -m training.fit_calibration --calibration data/preds_en.jsonl --out checkpoints/en/temperature_calibration.json
+uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en --temperature checkpoints/en/temperature_calibration.json --out-report benchmarks/results/en.json
+uv run python -m benchmarks.report --entry 'english'=benchmarks/results/en.json --entry 'multilingual'=benchmarks/results/multi.json --out benchmarks/report.md
 ```
 
 ## Results
 
-_No published run yet._ Metrics below are reported per scope (`overall` and each primitive:
-`noul`, `choice`, `score`), with accuracy, expected calibration error (ECE), and p50/p95
-latency in milliseconds.
+### english (ModernBERT-large + LoRA)
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| pending | 0 | 0.000 | 0.000 | 0.000 | 0.000 |
+| overall | 90 | 0.267 | 0.108 | 17.204 | 23.881 |
+| choice | 30 | 0.300 | 0.005 | 17.019 | 19.567 |
+| noul | 30 | 0.233 | 0.320 | 14.997 | 79.950 |
+| score | 30 | 0.267 | 0.000 | 17.597 | 23.881 |
 
-## Public probes (M6 follow-up)
+### multilingual (mmBERT-base + LoRA)
 
-Reproducible probes against **MASSIVE**, **XNLI**, and **typed-decisions** (evaluation only)
-will be added under `benchmarks/` and must record the exact command, seed, and hardware in the
-generated artifact.
+| Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
+| --- | --- | --- | --- | --- | --- |
+| overall | 90 | 0.167 | 0.187 | 12.628 | 19.085 |
+| choice | 30 | 0.100 | 0.162 | 12.641 | 19.085 |
+| noul | 30 | 0.233 | 0.313 | 11.973 | 35.965 |
+| score | 30 | 0.167 | 0.087 | 12.719 | 14.283 |

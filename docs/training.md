@@ -1,7 +1,8 @@
 # Data & Training Strategy
 
-**Status:** Implemented (M4). Scripts, configs, and pure-path tests exist; the RTX 3060
-training run and measured ECE/VRAM ceilings are still pending (`uv sync --extra train`).
+**Status:** Implemented (M4) and smoke-tested on the RTX 3060 12GB (English + multilingual
+LoRA + calibration; measured numbers in `benchmarks/report.md`). A full-scale run and the ECE
+target remain pending.
 **Related:** `docs/adr/ADR-0005-encoder-rlcd.md`, `.specs/features/training-calibration/spec.md`.
 
 ---

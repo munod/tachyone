@@ -58,7 +58,18 @@ split (`training/fit_calibration.py`). Configs and seed live under `training/con
 ## Evaluation
 
 Reported by `training/evaluate.py` and rendered by `benchmarks/report.py` (accuracy, ECE, p50/p95
-latency per primitive and language). **Results: to be published in `benchmarks/report.md`.**
+latency per primitive and language).
+
+**Initial smoke run (single RTX 3060 12GB, small synthetic set, 3 epochs):**
+
+| Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
+| --- | --- | --- | --- |
+| English (ModernBERT-large + LoRA) | 0.267 | 0.108 | 17.2 |
+| Multilingual (mmBERT-base + LoRA) | 0.167 | 0.187 | 12.6 |
+
+These are deliberately small-scale; accuracy is expected to improve substantially with more
+data, epochs, and batched training. Full numbers and the environment are in
+[`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
 
 ## Citation
 
