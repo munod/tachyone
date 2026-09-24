@@ -82,6 +82,16 @@ def test_choice_uses_localized_terms_and_distractors() -> None:
     assert any(word in states for word in ("também mencionei", "também há"))
 
 
+def test_choice_criteria_have_rich_descriptions_including_other() -> None:
+    records = list(iter_records(DataConfig(seed=3, per_type=8, languages=("en",))))
+    choice = next(r for r in records if r["type"] == "choice")
+    criteria = choice["criteria"]
+    assert all(isinstance(value, str) and value for value in criteria.values())
+    # "other" must be a semantically rich, learnable option (not a bare label).
+    assert len(criteria["other"]) > 60
+    assert "outside" in criteria["other"]
+
+
 def test_boundary_cases_present() -> None:
     records = _records(40)
     states = [record["state"] for record in records if record["type"] == "noul"]

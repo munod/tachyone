@@ -82,7 +82,7 @@ docs = [
 line-length = 100
 target-version = "py312"
 src = ["src", "tests", "training", "benchmarks"]
-extend-exclude = [".opencode", "docs", ".specs", "docker"]
+extend-exclude = [".opencode", "docs", ".specs", "docker", "*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]

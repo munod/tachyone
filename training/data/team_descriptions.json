@@ -1,0 +1,44 @@
+{
+  "en": {
+    "billing": "payments, invoices, refunds, duplicate charges, and subscriptions",
+    "technical": "bugs, outages, integrations, errors, and login or access issues",
+    "sales": "pricing, plans, upgrades, quotes, renewals, and new contracts",
+    "other": "anything outside billing, technical, and sales: general questions, partnerships, feedback, careers, and press"
+  },
+  "pt": {
+    "billing": "pagamentos, faturas, reembolsos, cobranças duplicadas e assinaturas",
+    "technical": "erros, indisponibilidade, integrações, falhas e problemas de acesso",
+    "sales": "preços, planos, upgrades, orçamentos, renovações e novos contratos",
+    "other": "qualquer assunto fora de cobrança, técnico e vendas: dúvidas gerais, parcerias, feedback, carreiras e imprensa"
+  },
+  "es": {
+    "billing": "pagos, facturas, reembolsos, cargos duplicados y suscripciones",
+    "technical": "errores, caídas, integraciones y problemas de acceso",
+    "sales": "precios, planes, mejoras, presupuestos, renovaciones y nuevos contratos",
+    "other": "cualquier tema fuera de facturación, técnico y ventas: preguntas generales, alianzas, comentarios, empleo y prensa"
+  },
+  "fr": {
+    "billing": "paiements, factures, remboursements, doubles prélèvements et abonnements",
+    "technical": "bugs, pannes, intégrations et problèmes de connexion",
+    "sales": "tarifs, forfaits, mises à niveau, devis, renouvellements et nouveaux contrats",
+    "other": "tout ce qui sort de la facturation, de la technique et des ventes : questions générales, partenariats, retours, carrières et presse"
+  },
+  "de": {
+    "billing": "Zahlungen, Rechnungen, Rückerstattungen, Doppelabbuchungen und Abonnements",
+    "technical": "Fehler, Ausfälle, Integrationen und Zugriffsprobleme",
+    "sales": "Preise, Tarife, Upgrades, Angebote, Verlängerungen und neue Verträge",
+    "other": "alles außerhalb von Abrechnung, Technik und Vertrieb: allgemeine Fragen, Partnerschaften, Feedback, Karriere und Presse"
+  },
+  "it": {
+    "billing": "pagamenti, fatture, rimborsi, addebiti duplicati e abbonamenti",
+    "technical": "errori, disservizi, integrazioni e problemi di accesso",
+    "sales": "prezzi, piani, upgrade, preventivi, rinnovi e nuovi contratti",
+    "other": "qualsiasi cosa fuori da fatturazione, tecnico e vendite: domande generali, partnership, feedback, carriere e stampa"
+  },
+  "nl": {
+    "billing": "betalingen, facturen, terugbetalingen, dubbele afschrijvingen en abonnementen",
+    "technical": "fouten, storingen, integraties en toegangsproblemen",
+    "sales": "prijzen, plannen, upgrades, offertes, verlengingen en nieuwe contracten",
+    "other": "alles buiten facturatie, techniek en verkoop: algemene vragen, partnerschappen, feedback, carriere en pers"
+  }
+}

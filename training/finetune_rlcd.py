@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from collections.abc import Iterable, Iterator
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
@@ -52,6 +53,8 @@ class FinetuneConfig:
     lora_rank: int = 16
     lora_alpha: int = 32
     lora_dropout: float = 0.05
+    choice_rank: int = 16
+    choice_init_std: float = 0.01
     max_len: int = 512
     val_split: float = 0.1
     bf16: bool = True
@@ -151,9 +154,32 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     if config.gradient_checkpointing:
         model.enable_input_require_grads()  # type: ignore[attr-defined]
     model.to(device)
+    model.train()
 
+    hidden_size = int(encoder.config.hidden_size)
+
+    class ChoiceScorer(torch.nn.Module):
+        """Low-rank choice residual; small init keeps training at the cosine baseline at first."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.w1 = torch.nn.Linear(2 * hidden_size, config.choice_rank, bias=False)
+            self.w2 = torch.nn.Linear(hidden_size, config.choice_rank, bias=False)
+            torch.nn.init.normal_(self.w1.weight, std=config.choice_init_std)
+            torch.nn.init.normal_(self.w2.weight, std=config.choice_init_std)
+
+        def context(self, states: Any, questions: Any) -> Any:
+            return self.w1(torch.cat([states, questions], dim=-1))
+
+        def project(self, block: Any) -> Any:
+            return self.w2(block)
+
+    choice_scorer = ChoiceScorer().to(device)
     log_temperature = torch.zeros((), requires_grad=True, device=device)
-    optimizer = torch.optim.AdamW([*model.parameters(), log_temperature], lr=config.learning_rate)
+    optimizer = torch.optim.AdamW(
+        [*model.parameters(), *choice_scorer.parameters(), log_temperature],
+        lr=config.learning_rate,
+    )
 
     records = list(read_records(config.data_path, limit=config.max_records))
     split = max(1, int(len(records) * (1.0 - config.val_split)))
@@ -183,6 +209,9 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
             return ((probabilities - targets) ** 2).mean()
         criterion_texts = [text for record in batch for text in _criterion_texts(record)]
         criteria = encode(criterion_texts)
+        choice_context = None
+        if kind == "choice":
+            choice_context = choice_scorer.context(states, questions)
         total = torch.zeros((), device=device)
         offset = 0
         for index, record in enumerate(batch):
@@ -195,6 +224,9 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
                 F.cosine_similarity(block, state, dim=-1)
                 + F.cosine_similarity(block, question, dim=-1)
             ) / temperature
+            if choice_context is not None:
+                residual = (choice_context[index] * choice_scorer.project(block)).sum(dim=-1)
+                logits = logits + residual / math.sqrt(config.choice_rank)
             probabilities = torch.softmax(logits, dim=0)
             target_index = (
                 int(record["target"])
@@ -243,6 +275,17 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     output_dir = Path(config.out_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(output_dir))
+    (output_dir / "choice_head.json").write_text(
+        json.dumps(
+            {
+                "rank": config.choice_rank,
+                "w1": choice_scorer.w1.weight.detach().cpu().tolist(),
+                "w2": choice_scorer.w2.weight.detach().cpu().tolist(),
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
     (output_dir / "finetune_config.json").write_text(
         json.dumps(config.to_dict(), indent=2, sort_keys=True), encoding="utf-8"
     )
@@ -260,6 +303,7 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     report["epochs"] = epochs_run
     report["batch_size"] = config.batch_size
     report["target_modules"] = target_modules
+    report["choice_rank"] = config.choice_rank
     report["checkpoint"] = str(output_dir)
     report["temperature"] = fitted_temperature
     report["val_loss"] = evaluate_loss(val_records)
@@ -276,7 +320,10 @@ def _question_text(record: dict[str, Any]) -> str:
 def _criterion_texts(record: dict[str, Any]) -> list[str]:
     criteria = record["criteria"]
     if isinstance(criteria, dict):
-        return [str(key) for key in criteria]
+        return [
+            f"{key}: {value}" if isinstance(value, str) and value else str(key)
+            for key, value in criteria.items()
+        ]
     return [str(level) for level in criteria]
 
 

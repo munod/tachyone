@@ -63,19 +63,20 @@ Reported by `training/evaluate.py` and rendered by `benchmarks/report.py` (accur
 latency per primitive and language).
 
 **Full-scale run (single RTX 3060 12GB):** 6,000 train / 1,500 eval deterministic synthetic
-records (localized cue terms per language incl. a learnable `other` team, plus distractor
-clauses), LoRA (r=16), 3 epochs, batch 16, bf16 + gradient checkpointing.
+records (localized cue terms per language, a learnable `other` team with rich descriptions, and
+distractor clauses), LoRA (r=16) plus a dedicated low-rank `choice` head (near-identity init),
+3 epochs, batch 16, bf16 + gradient checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA) | 0.613 | 0.059 | 17.5 |
-| Multilingual (mmBERT-base + LoRA) | 0.493 | 0.034 | 12.3 |
+| English (ModernBERT-large + LoRA + choice head) | 0.721 | 0.052 | 18.4 |
+| Multilingual (mmBERT-base + LoRA + choice head) | 0.609 | 0.086 | 12.6 |
 
-Per primitive (English): `score` 0.890, `noul` 0.700, `choice` 0.250; (multilingual): `noul`
-0.730, `score` 0.494, `choice` 0.256. `choice` remains near chance (~0.25 over four teams) —
-the similarity baseline does not separate the harder team mapping; a dedicated classification
-head (or the LLM backend) is the next step for that primitive. Full tables and environment are
-in [`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
+Per primitive (English): `choice` 0.782, `noul` 0.718, `score` 0.664; (multilingual): `noul`
+0.728, `score` 0.700, `choice` 0.398. The dedicated `choice` head lifted English `choice` from
+~0.25 (chance) to 0.78; multilingual `choice` and `score` calibration remain the next targets.
+Full tables and environment are in
+[`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
 
 ## Citation
 

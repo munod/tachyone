@@ -13,10 +13,12 @@ from pathlib import Path
 import pytest
 
 from jeba.backends.encoder import (
+    ChoiceScorer,
     EncoderBackend,
     EncoderCheckpoint,
     EncoderModel,
     apply_adapters,
+    load_choice_head,
     load_encoder,
     load_temperatures,
 )
@@ -193,3 +195,64 @@ def test_from_config_applies_adapter_overrides() -> None:
     )
     assert backend._router.checkpoints[ENGLISH].adapter == "acme/tuned"
     assert backend._router.checkpoints[MULTILINGUAL].adapter == "munod/jeba-multi"
+
+
+def _choice_question() -> ChoiceQuestion:
+    return ChoiceQuestion(
+        instructions="Which team?",
+        criteria={"billing": "invoices", "technical": "bugs", "sales": "pricing"},
+    )
+
+
+def _zero_scorer(rank: int = 1, hidden: int = 16) -> ChoiceScorer:
+    return ChoiceScorer([[0.0] * hidden] * rank, [[0.0] * (hidden // 2)] * rank)
+
+
+def _random_scorer(rank: int = 2, hidden: int = 16, seed: int = 0) -> ChoiceScorer:
+    import random
+
+    rng = random.Random(seed)
+    w1 = [[rng.uniform(-0.2, 0.2) for _ in range(hidden)] for _ in range(rank)]
+    w2 = [[rng.uniform(-0.2, 0.2) for _ in range(hidden // 2)] for _ in range(rank)]
+    return ChoiceScorer(w1, w2)
+
+
+def test_zero_choice_scorer_matches_baseline() -> None:
+    question = _choice_question()
+    base = EncoderModel(_encode).answer_state("please refund", {"q": question})["q"]
+    scored = EncoderModel(_encode, choice_scorer=_zero_scorer()).answer_state(
+        "please refund", {"q": question}
+    )["q"]
+    assert isinstance(base, ChoiceAnswer) and isinstance(scored, ChoiceAnswer)
+    assert scored.probabilities == base.probabilities  # residual is exactly zero
+
+
+def test_choice_scorer_changes_and_is_permutation_equivariant() -> None:
+    forward = _choice_question()
+    reversed_question = ChoiceQuestion(
+        instructions="Which team?",
+        criteria={"sales": "pricing", "technical": "bugs", "billing": "invoices"},
+    )
+    model = EncoderModel(_encode, choice_scorer=_random_scorer())
+    scored = model.answer_state("outage now", {"q": forward})["q"]
+    permuted = model.answer_state("outage now", {"q": reversed_question})["q"]
+    baseline = EncoderModel(_encode).answer_state("outage now", {"q": forward})["q"]
+    assert isinstance(scored, ChoiceAnswer)
+    assert isinstance(permuted, ChoiceAnswer)
+    assert isinstance(baseline, ChoiceAnswer)
+    assert scored.probabilities != baseline.probabilities
+    for option, probability in scored.probabilities.items():
+        assert probability == pytest.approx(permuted.probabilities[option])
+
+
+def test_load_choice_head_from_local_dir(tmp_path: Path) -> None:
+    (tmp_path / "choice_head.json").write_text(
+        json.dumps({"rank": 1, "w1": [[0.0] * 16], "w2": [[0.0] * 8]}), encoding="utf-8"
+    )
+    info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=str(tmp_path))
+    assert isinstance(load_choice_head(info, models_dir=str(tmp_path)), ChoiceScorer)
+
+
+def test_load_choice_head_without_adapter_is_none() -> None:
+    info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=None)
+    assert load_choice_head(info, models_dir="/tmp") is None

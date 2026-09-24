@@ -15,7 +15,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from jeba.backends.encoder import MODEL_IDS, EncoderModel, load_encoder
+from jeba.backends.encoder import MODEL_IDS, EncoderModel, load_choice_head, load_encoder
 from jeba.calibration import apply_temperature, confidence
 from jeba.primitives import (
     Answer,
@@ -31,7 +31,9 @@ from training.evaluate import EvalExample, evaluate, load_examples, save_report
 _DEFAULT_MODELS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "jeba", "models")
 
 
-def _build_encode(model_id: str, adapter_dir: str | None, *, device: str, max_len: int) -> Any:
+def _build_model(
+    model_id: str, adapter_dir: str | None, *, device: str, max_len: int
+) -> EncoderModel:
     """Reuse the runtime loader so training and inference share one encode implementation."""
     info = CheckpointInfo(
         id="adhoc",
@@ -41,7 +43,9 @@ def _build_encode(model_id: str, adapter_dir: str | None, *, device: str, max_le
         base_model=model_id,
         adapter=adapter_dir,
     )
-    return load_encoder(info, models_dir=_DEFAULT_MODELS_DIR, device=device)
+    encode = load_encoder(info, models_dir=_DEFAULT_MODELS_DIR, device=device)
+    choice_scorer = load_choice_head(info, models_dir=_DEFAULT_MODELS_DIR)
+    return EncoderModel(encode, choice_scorer=choice_scorer)
 
 
 def _load_temperatures(path: str | None) -> dict[str, float]:
@@ -129,7 +133,7 @@ def run(
     out_predictions: str | Path | None = None,
 ) -> dict[str, Any]:
     examples = load_examples(records_path, limit=limit)
-    model = EncoderModel(_build_encode(model_id, adapter_dir, device=device, max_len=max_len))
+    model = _build_model(model_id, adapter_dir, device=device, max_len=max_len)
     predictor = build_predictor(model, _load_temperatures(temperature_path))
 
     if out_predictions:

@@ -111,6 +111,48 @@ def _criterion_texts(question: Question) -> list[str]:
     return []
 
 
+class ChoiceScorer:
+    """Low-rank residual scorer for ``choice``.
+
+    The base score is the cosine baseline (``cos(state, option) + cos(question, option)``); the
+    scorer adds a learned low-rank bilinear residual
+    ``u = W1 [state; question]``, ``v_k = W2 c_k``, ``<u, v_k> / sqrt(rank)``. With the small
+    initialization used in training the residual starts near zero, so the model begins exactly at
+    the cosine baseline and learns a correction. It is permutation-equivariant across options and
+    parameter-free in the number of options (1..255). Stored as plain lists so it runs without
+    torch (and exports to ONNX).
+    """
+
+    def __init__(self, w1: list[list[float]], w2: list[list[float]]) -> None:
+        self._w1 = w1
+        self._w2 = w2
+        self._rank = len(w1)
+        self._scale = 1.0 / math.sqrt(self._rank) if self._rank else 0.0
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> ChoiceScorer:
+        return cls(
+            [[float(value) for value in row] for row in data["w1"]],
+            [[float(value) for value in row] for row in data["w2"]],
+        )
+
+    def residual(
+        self,
+        state_embedding: list[float],
+        question_embedding: list[float],
+        criteria_embeddings: list[list[float]],
+    ) -> list[float]:
+        if not criteria_embeddings:
+            return []
+        context = state_embedding + question_embedding  # [2H]
+        u = [_dot(row, context) for row in self._w1]
+        residual: list[float] = []
+        for criterion in criteria_embeddings:
+            v = [_dot(row, criterion) for row in self._w2]
+            residual.append(self._scale * sum(a * b for a, b in zip(u, v, strict=True)))
+        return residual
+
+
 class EncoderModel:
     """Turns embeddings into typed answers with a similarity baseline."""
 
@@ -120,10 +162,12 @@ class EncoderModel:
         *,
         temperature: float = 1.0,
         temperatures: Mapping[str, float] | None = None,
+        choice_scorer: ChoiceScorer | None = None,
     ) -> None:
         self._encode = encode
         self._temperature = temperature
         self._temperatures = dict(temperatures or {})
+        self._choice_scorer = choice_scorer
 
     def _temp(self, kind: str) -> float:
         return self._temperatures.get(kind, self._temperature)
@@ -156,6 +200,13 @@ class EncoderModel:
                 for index in criterion_indices
             ]
             if isinstance(question, ChoiceQuestion):
+                if self._choice_scorer is not None:
+                    residual = self._choice_scorer.residual(
+                        state_embedding,
+                        question_embedding,
+                        [embeddings[index] for index in criterion_indices],
+                    )
+                    scores = [base + extra for base, extra in zip(scores, residual, strict=True)]
                 probabilities = _softmax(scores, self._temp("choice"))
                 options = list(question.criteria)
                 distribution = {
@@ -192,9 +243,15 @@ class EncoderCheckpoint:
         *,
         temperature: float = 1.0,
         temperatures: Mapping[str, float] | None = None,
+        choice_scorer: ChoiceScorer | None = None,
     ) -> None:
         self.info = info
-        self.model = EncoderModel(encode, temperature=temperature, temperatures=temperatures)
+        self.model = EncoderModel(
+            encode,
+            temperature=temperature,
+            temperatures=temperatures,
+            choice_scorer=choice_scorer,
+        )
 
     def predict(
         self, states: list[State], questions: dict[str, Question]
@@ -300,6 +357,40 @@ def load_temperatures(
         return {}
 
 
+def load_choice_head(
+    info: CheckpointInfo, *, models_dir: str, offline: bool = False
+) -> ChoiceScorer | None:
+    """Load a trained ``choice`` scorer from the adapter repo/dir, if present."""
+    if not info.adapter:
+        return None
+    source: Path | None = None
+    local = Path(os.path.expanduser(info.adapter))
+    if local.is_dir():
+        candidate = local / "choice_head.json"
+        if candidate.exists():
+            source = candidate
+    else:
+        try:
+            from huggingface_hub import hf_hub_download  # pyright: ignore[reportMissingImports]
+
+            source = Path(
+                hf_hub_download(
+                    repo_id=info.adapter,
+                    filename="choice_head.json",
+                    cache_dir=models_dir,
+                    local_files_only=offline,
+                )
+            )
+        except Exception:
+            return None
+    if source is None or not source.exists():
+        return None
+    try:
+        return ChoiceScorer.from_dict(json.loads(source.read_text(encoding="utf-8")))
+    except (ValueError, KeyError, OSError):
+        return None
+
+
 def apply_adapters(router: Router, adapters: Mapping[str, str | None]) -> Router:
     """Override each checkpoint's adapter from a config mapping (empty value disables it)."""
     for checkpoint_id, adapter in adapters.items():
@@ -316,10 +407,11 @@ def load_checkpoint(
     device: str = "auto",
     offline: bool = False,
 ) -> EncoderCheckpoint:
-    """Load a full checkpoint: encoder (+ adapter) and its fitted temperatures."""
+    """Load a full checkpoint: encoder (+ adapter), fitted temperatures, and choice scorer."""
     encode = load_encoder(info, models_dir=models_dir, device=device, offline=offline)
     temperatures = load_temperatures(info, models_dir=models_dir, offline=offline)
-    return EncoderCheckpoint(info, encode, temperatures=temperatures)
+    choice_scorer = load_choice_head(info, models_dir=models_dir, offline=offline)
+    return EncoderCheckpoint(info, encode, temperatures=temperatures, choice_scorer=choice_scorer)
 
 
 def _usage(state: State, questions: dict[str, Question]) -> Usage:
@@ -401,6 +493,7 @@ def _fake_encode(texts: list[str]) -> list[list[float]]:
 
 __all__ = [
     "MODEL_IDS",
+    "ChoiceScorer",
     "EncodeFn",
     "EncoderBackend",
     "EncoderCheckpoint",
@@ -408,6 +501,7 @@ __all__ = [
     "EncoderModel",
     "apply_adapters",
     "load_checkpoint",
+    "load_choice_head",
     "load_encoder",
     "load_temperatures",
 ]

@@ -18,6 +18,7 @@ _ADAPTER_FILES: tuple[str, ...] = (
     "adapter_model.safetensors",
     "adapter_model.bin",
     "finetune_config.json",
+    "choice_head.json",
 )
 
 

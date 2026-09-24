@@ -194,6 +194,17 @@ _TEAM_TERMS: dict[str, dict[str, tuple[str, ...]]] = {
 _LEVELS: tuple[str, ...] = ("none", "low", "medium", "high")
 _LEVEL_BY_TONE: dict[str, int] = {"calm": 0, "neutral": 1, "request": 2, "urgent": 3}
 
+#: Rich option descriptions (esp. ``other``) so the option embedding c_k is informative; loaded
+#: from committed data. ``other`` must be a genuinely learnable class, not a bare label.
+_TEAM_DESCRIPTIONS: dict[str, dict[str, str]] = json.loads(
+    (Path(__file__).parent / "data" / "team_descriptions.json").read_text(encoding="utf-8")
+)
+
+
+def _team_description(lang: str, team: str) -> str:
+    table = _TEAM_DESCRIPTIONS.get(lang, _TEAM_DESCRIPTIONS["en"])
+    return table.get(team, _TEAM_DESCRIPTIONS["en"][team])
+
 
 def _team_terms(lang: str, team: str) -> tuple[str, ...]:
     table = _TEAM_TERMS.get(lang, _TEAM_TERMS["en"])
@@ -260,7 +271,7 @@ def _choice_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
         "type": "choice",
         "state": state,
         "instructions": "Which team should handle this request?",
-        "criteria": dict.fromkeys(_TEAMS),
+        "criteria": {team: _team_description(lang, team) for team in _TEAMS},
         "target": team,
         "lang": lang,
     }
