@@ -60,15 +60,17 @@ split (`training/fit_calibration.py`). Configs and seed live under `training/con
 Reported by `training/evaluate.py` and rendered by `benchmarks/report.py` (accuracy, ECE, p50/p95
 latency per primitive and language).
 
-**Initial smoke run (single RTX 3060 12GB, small synthetic set, 3 epochs):**
+**Full-scale run (single RTX 3060 12GB):** 6,000 train / 1,500 eval deterministic synthetic
+records, LoRA (r=16), 3 epochs, batch 16, bf16 + gradient checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA) | 0.267 | 0.108 | 17.2 |
-| Multilingual (mmBERT-base + LoRA) | 0.167 | 0.187 | 12.6 |
+| English (ModernBERT-large + LoRA) | 0.536 | 0.090 | 17.6 |
+| Multilingual (mmBERT-base + LoRA) | 0.533 | 0.016 | 12.2 |
 
-These are deliberately small-scale; accuracy is expected to improve substantially with more
-data, epochs, and batched training. Full numbers and the environment are in
+Per primitive (English): `noul` 0.726 acc, `score` 0.574, `choice` 0.308. Labels are synthetic
+and template-limited (choice ~0.25, score ~0.25, noul ~0.5 chance), so `choice` is near chance;
+richer data should lift it. Full tables and environment are in
 [`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
 
 ## Citation

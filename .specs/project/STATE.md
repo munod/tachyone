@@ -1,9 +1,10 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** All milestones M0–M6 complete; an initial training smoke run was executed on
-the RTX 3060 and measured into `benchmarks/report.md`. Remaining: a full-scale training run and
-publishing weights/numbers to the Hugging Face Hub (see `docs/release.md`).
+**Current Work:** All milestones M0–M6 complete. A full-scale training run was executed on the
+RTX 3060 (English + multilingual LoRA, 6k train / 1.5k eval) and measured into
+`benchmarks/report.md`. Remaining: publish the adapters + model card to the Hugging Face Hub
+(see `docs/huggingface.md`).
 
 ## Milestone Status
 
@@ -109,9 +110,9 @@ English checkpoint, selected automatically by a script/language router.
 **Discovered:** 2026-09-24
 **Impact:** Full fine-tuning of large encoders is infeasible; naive LoRA/QLoRA may OOM.
 **Workaround:** LoRA/QLoRA + gradient checkpointing + small effective batch + grad accumulation.
-**Resolution:** Pipeline implemented (M4-T2) and executed as a smoke run on the RTX 3060 12GB
-(English + multilingual LoRA, calibration, report). Numbers are in `benchmarks/report.md`;
-a full-scale run (more data/epochs, batched training) is still pending.
+**Resolution:** Pipeline implemented (M4-T2) and executed full-scale on the RTX 3060 12GB
+(English + multilingual LoRA, 6k train / 1.5k eval, calibration). Numbers are in
+`benchmarks/report.md`. Remaining: publish adapters to the HF Hub.
 
 ---
 

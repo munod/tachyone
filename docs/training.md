@@ -1,8 +1,7 @@
 # Data & Training Strategy
 
-**Status:** Implemented (M4) and smoke-tested on the RTX 3060 12GB (English + multilingual
-LoRA + calibration; measured numbers in `benchmarks/report.md`). A full-scale run and the ECE
-target remain pending.
+**Status:** Implemented (M4) and executed full-scale on the RTX 3060 12GB (English + multilingual
+LoRA, 6k train / 1.5k eval, temperature calibration; measured numbers in `benchmarks/report.md`).
 **Related:** `docs/adr/ADR-0005-encoder-rlcd.md`, `.specs/features/training-calibration/spec.md`.
 
 ---

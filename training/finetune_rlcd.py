@@ -107,9 +107,15 @@ def _ground_truth_loss(record: dict[str, Any], probabilities: Any) -> float:
 
 
 def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
-    """Run LoRA/QLoRA training. Imports torch lazily; requires the ``train`` extra."""
+    """Run LoRA/QLoRA training with batched forward passes.
+
+    The head math mirrors the runtime encoder (cosine similarity, softmaxed with a learned
+    temperature), so only the shared trunk is adapted. Batches are grouped by primitive and the
+    encoder runs once per batch; imports are lazy behind the ``train`` extra.
+    """
     try:
         import torch  # pyright: ignore[reportMissingImports]
+        import torch.nn.functional as F  # pyright: ignore[reportMissingImports]
         from peft import LoraConfig, get_peft_model  # pyright: ignore[reportMissingImports]
         from transformers import (  # pyright: ignore[reportMissingImports]
             AutoModel,
@@ -119,6 +125,9 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError(_TRAIN_HINT) from exc
 
     torch.manual_seed(config.seed)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    use_bf16 = config.bf16 and device == "cuda"
+
     tokenizer = AutoTokenizer.from_pretrained(config.model_id)
     encoder = AutoModel.from_pretrained(config.model_id)
     if config.gradient_checkpointing:
@@ -139,9 +148,9 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
         target_modules=target_modules,
     )
     model = get_peft_model(encoder, lora)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if config.gradient_checkpointing:
+        model.enable_input_require_grads()  # type: ignore[attr-defined]
     model.to(device)
-    model.train()
 
     log_temperature = torch.zeros((), requires_grad=True, device=device)
     optimizer = torch.optim.AdamW([*model.parameters(), log_temperature], lr=config.learning_rate)
@@ -149,44 +158,87 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     records = list(read_records(config.data_path, limit=config.max_records))
     split = max(1, int(len(records) * (1.0 - config.val_split)))
     train_records, val_records = records[:split], records[split:]
+    grouped: dict[str, list[dict[str, Any]]] = {kind: [] for kind in ("noul", "choice", "score")}
+    for record in train_records:
+        grouped[record["type"]].append(record)
 
     def encode(texts: list[str]) -> Any:
         batch = tokenizer(
             texts, padding=True, truncation=True, max_length=config.max_len, return_tensors="pt"
         ).to(device)
-        hidden = model(**batch).last_hidden_state
+        with torch.autocast(device_type=device, dtype=torch.bfloat16, enabled=use_bf16):
+            hidden = model(**batch).last_hidden_state
         mask = batch["attention_mask"].unsqueeze(-1).to(hidden.dtype)
-        return (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-6)
+        pooled = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-6)
+        return pooled.float()
 
-    def loss_for(record: dict[str, Any]) -> Any:
+    def batch_loss(kind: str, batch: list[dict[str, Any]]) -> Any:
         temperature = torch.exp(log_temperature) + 1e-3
-        state_embedding = encode([record["state"]])[0]
-        question_embedding = encode([_question_text(record)])[0]
-        criterion_texts = _criterion_texts(record)
-        if record["type"] == "noul":
-            logit = torch.dot(question_embedding, state_embedding) / temperature
-            probability = torch.sigmoid(logit)
-            target = torch.tensor(float(record["target"]), device=device)
-            return (probability - target) ** 2
+        states = encode([record["state"] for record in batch])
+        questions = encode([_question_text(record) for record in batch])
+        if kind == "noul":
+            similarity = F.cosine_similarity(questions, states, dim=-1)
+            probabilities = torch.sigmoid(similarity / temperature)
+            targets = torch.tensor([float(record["target"]) for record in batch], device=device)
+            return ((probabilities - targets) ** 2).mean()
+        criterion_texts = [text for record in batch for text in _criterion_texts(record)]
         criteria = encode(criterion_texts)
-        logits = (criteria @ state_embedding + criteria @ question_embedding) / temperature
-        probabilities = torch.softmax(logits, dim=0)
-        keys = list(range(len(criterion_texts)))
-        target_index = keys[record["target"]] if isinstance(record["target"], int) else None
-        if target_index is None:  # choice: target is an option key
-            target_index = _choice_index(record)
-        one_hot = torch.zeros_like(probabilities)
-        one_hot[target_index] = 1.0
-        return torch.sum((probabilities - one_hot) ** 2)
+        total = torch.zeros((), device=device)
+        offset = 0
+        for index, record in enumerate(batch):
+            count = len(_criterion_texts(record))
+            block = criteria[offset : offset + count]
+            offset += count
+            state = states[index].expand(count, -1)
+            question = questions[index].expand(count, -1)
+            logits = (
+                F.cosine_similarity(block, state, dim=-1)
+                + F.cosine_similarity(block, question, dim=-1)
+            ) / temperature
+            probabilities = torch.softmax(logits, dim=0)
+            target_index = (
+                int(record["target"])
+                if isinstance(record["target"], int)
+                else _choice_index(record)
+            )
+            one_hot = torch.zeros_like(probabilities)
+            one_hot[target_index] = 1.0
+            total = total + ((probabilities - one_hot) ** 2).sum()
+        return total / len(batch)
 
-    model.zero_grad(set_to_none=True)
-    for step, record in enumerate(train_records):
-        loss = loss_for(record) / config.grad_accum
-        loss.backward()
-        if (step + 1) % config.grad_accum == 0:
+    def evaluate_loss(items: list[dict[str, Any]]) -> float:
+        if not items:
+            return float("nan")
+        model.eval()  # type: ignore[attr-defined]
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for kind in ("noul", "choice", "score"):
+                subset = [record for record in items if record["type"] == kind]
+                for start in range(0, len(subset), config.batch_size):
+                    chunk = subset[start : start + config.batch_size]
+                    total += float(batch_loss(kind, chunk).item()) * len(chunk)
+                    count += len(chunk)
+        return total / count if count else float("nan")
+
+    epochs_run = 0
+    for _epoch in range(config.epochs):
+        model.train()  # type: ignore[attr-defined]
+        optimizer.zero_grad(set_to_none=True)
+        accumulations = 0
+        for kind in ("noul", "choice", "score"):
+            items = grouped[kind]
+            for start in range(0, len(items), config.batch_size):
+                chunk = items[start : start + config.batch_size]
+                loss = batch_loss(kind, chunk) / config.grad_accum
+                loss.backward()
+                accumulations += 1
+                if accumulations % config.grad_accum == 0:
+                    optimizer.step()
+                    optimizer.zero_grad(set_to_none=True)
+        if accumulations % config.grad_accum != 0:
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
-    optimizer.step()
+        epochs_run += 1
 
     output_dir = Path(config.out_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -194,14 +246,23 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     (output_dir / "finetune_config.json").write_text(
         json.dumps(config.to_dict(), indent=2, sort_keys=True), encoding="utf-8"
     )
+    fitted_temperature = float(torch.exp(log_temperature).item())
     (output_dir / "temperature.json").write_text(
-        json.dumps({"temperature": float(torch.exp(log_temperature).item())}, indent=2),
+        json.dumps(
+            {"temperature": fitted_temperature, "val_loss": evaluate_loss(val_records)},
+            indent=2,
+            sort_keys=True,
+        ),
         encoding="utf-8",
     )
     report["train_records"] = len(train_records)
     report["val_records"] = len(val_records)
+    report["epochs"] = epochs_run
+    report["batch_size"] = config.batch_size
+    report["target_modules"] = target_modules
     report["checkpoint"] = str(output_dir)
-    report["temperature"] = float(torch.exp(log_temperature).item())
+    report["temperature"] = fitted_temperature
+    report["val_loss"] = evaluate_loss(val_records)
     return report
 
 
