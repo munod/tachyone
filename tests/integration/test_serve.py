@@ -16,8 +16,10 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
+from jeba.backends.encoder import EncoderBackend, EncoderCheckpoint
 from jeba.backends.fake import FakeBackend
 from jeba.config import Config
+from jeba.router import Router
 from jeba.serve import create_app
 
 _FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -111,3 +113,26 @@ def test_predict_requires_auth_when_configured() -> None:
         client.post("/predict", json=body, headers={"Authorization": "Bearer secret"}).status_code
         == 200
     )
+
+
+def _encoder_encode(texts: list[str]) -> list[list[float]]:
+    return [[float(len(text)) + index for index in range(6)] for text in texts]
+
+
+def test_predict_batch_with_encoder_backend_is_aligned() -> None:
+    router = Router(loader=lambda info: EncoderCheckpoint(info, _encoder_encode), max_loaded=2)
+    client = TestClient(create_app(Config.from_env({}), EncoderBackend(router)))
+    questions = {"urgent": {"type": "noul", "instructions": "Is it urgent?"}}
+    body = {
+        "requests": [
+            {"state": "please refund now", "questions": questions},
+            {"state": "请尽快退款", "questions": questions},
+            {"state": "hello", "questions": questions},
+        ]
+    }
+    response = client.post("/predict/batch", json=body)
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert len(results) == 3
+    for result in results:
+        assert set(result["answers"]) == {"urgent"}
