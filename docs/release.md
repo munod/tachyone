@@ -30,7 +30,8 @@ uv run python -m benchmarks.report --entry encoder=benchmarks/results/encoder.js
 
 ## 4. Publish
 
-- [ ] Upload weights + temperatures to the Hugging Face Hub (`convai`-style namespace TBD).
-- [ ] Publish the model card (`docs/model-card.md`) beside the weights.
+- [ ] Package the adapters: `uv run python -m training.package_hf --adapter checkpoints/en --out dist/hf/en --name en` (and `multi`).
+- [ ] Upload to the Hugging Face Hub — full guide in [`huggingface.md`](huggingface.md).
+- [ ] Publish the model card (`docs/model-card.md`) beside the weights (included by packaging).
 - [ ] Tag the release (`git tag -a vX.Y.Z`) and create the GitHub release from `CHANGELOG.md`.
 - [ ] Verify the docs site build artifact is attached or deployed.

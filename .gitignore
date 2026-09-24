@@ -45,6 +45,8 @@ datasets/
 benchmarks/results/
 # Docs site build output
 site/
+# HF upload staging
+dist/
 # ...but keep committed training data (phrase banks, configs)
 !training/data/
 !training/data/**
