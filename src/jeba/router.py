@@ -280,7 +280,8 @@ def detect_language(text: str, script: str) -> str | None:
     if script != "latin":
         return None
     words = {word.strip(".,!?;:\"'()[]").lower() for word in text.split()}
-    if words & _NON_ENGLISH_STOPWORDS:
+    has_accented_latin = any(0x00C0 <= ord(char) <= 0x024F for char in text)
+    if words & _NON_ENGLISH_STOPWORDS or has_accented_latin:
         return "und"  # Latin script, likely non-English
     if words & _ENGLISH_STOPWORDS:
         return "en"

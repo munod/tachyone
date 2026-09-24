@@ -58,6 +58,7 @@ def test_non_latin_routes_to_multilingual(text: str) -> None:
 
 def test_non_english_latin_routes_to_multilingual() -> None:
     assert Router().route("hola gracias por el reembolso").checkpoint_id == MULTILINGUAL
+    assert Router().route("devolva a cobrança duplicada").checkpoint_id == MULTILINGUAL
 
 
 def test_unknown_script_uses_default() -> None:
