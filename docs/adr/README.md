@@ -17,6 +17,8 @@ not edited in place to change its decision — supersede it with a new ADR inste
 | [ADR-0008](ADR-0008-llm-provider-surface.md) | LLM backend: OpenAI-compatible surface with injectable transport | Accepted | 2026-09-24 |
 | [ADR-0009](ADR-0009-extension-endpoints.md) | Extension endpoints mirror the canonical wire response | Accepted | 2026-09-24 |
 | [ADR-0010](ADR-0010-weights-distribution.md) | Weights fetched from the Hugging Face Hub on demand and cached locally | Accepted | 2026-09-24 |
+| [ADR-0011](ADR-0011-no-telemetry.md) | No telemetry; opt-out variables reserved | Accepted | 2026-09-24 |
+| [ADR-0012](ADR-0012-onnx-before-fast-path.md) | Ship the ONNX backend before the TileLang fast path | Accepted | 2026-09-24 |
 
 ## Template
 

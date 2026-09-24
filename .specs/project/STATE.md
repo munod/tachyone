@@ -179,11 +179,13 @@ same contract tests.
 
 - [x] **OD-1:** RESOLVED (2026-09-24, M2) — Provider-agnostic OpenAI-compatible surface with
       an injectable transport; no new core dependency. See `docs/adr/ADR-0008`.
-- [ ] **OD-2:** Telemetry default (on vs off) and exact env var name. Blocking: M5.
+- [x] **OD-2:** RESOLVED (2026-09-24) — No telemetry; `jeba.telemetry` is a no-op guard and
+      `JEBA_TELEMETRY`/`DO_NOT_TRACK` are reserved for a future opt-out. See ADR-0011.
 - [x] **OD-3:** RESOLVED (2026-09-24) — Weights fetched from the Hugging Face Hub on demand and
       cached locally (`JEBA_MODELS_DIR` or `~/.cache/jeba/models`), with `jeba download` prefetch
       and cache-only offline mode. M3 uses public base encoders + untrained heads. See ADR-0010.
-- [ ] **OD-4:** ONNX vs TileLang sequencing within M5. Blocking: M5.
+- [x] **OD-4:** RESOLVED (2026-09-24) — ONNX backend first, TileLang/CUDA-graph fast path
+      afterwards behind the `fast` extra with graceful fallback. See ADR-0012.
 - [x] **OD-5:** RESOLVED (2026-09-24, M2) — ``/predict`` and ``/predict/batch`` mirror the
       canonical response shape and are additive; ``/v1/systemone`` is untouched. See `docs/adr/ADR-0009`.
 
