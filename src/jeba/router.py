@@ -236,6 +236,9 @@ DEFAULT_CHECKPOINTS: dict[str, CheckpointInfo] = {
 
 LangGuess = Callable[[State], str | None]
 
+#: Builds a loadable checkpoint object from its metadata.
+Loader = Callable[[CheckpointInfo], object]
+
 
 def state_text(state: State) -> str:
     """Flatten any accepted state shape into text, using string leaves (not JSON keys)."""
@@ -285,13 +288,79 @@ def detect_language(text: str, script: str) -> str | None:
 
 @dataclass
 class Router:
-    """Chooses a checkpoint id for a state without touching a model."""
+    """Chooses a checkpoint id for a state and manages checkpoint lifecycle.
+
+    Routing is model-free; loading is delegated to an injected ``loader``. With
+    ``max_loaded`` set, the least-recently-used checkpoint is evicted before a new one loads
+    (``0`` means unlimited).
+    """
 
     default: str = ENGLISH
     lang_guess: LangGuess | None = None
     checkpoints: dict[str, CheckpointInfo] = field(
         default_factory=lambda: dict(DEFAULT_CHECKPOINTS)
     )
+    loader: Loader | None = None
+    max_loaded: int = 2
+    _loaded: dict[str, object] = field(default_factory=dict, repr=False)
+    _order: list[str] = field(default_factory=list, repr=False)
+
+    @property
+    def loaded(self) -> tuple[str, ...]:
+        """Ids of currently loaded checkpoints, least- to most-recently used."""
+        return tuple(self._order)
+
+    def preload(self, ids: list[str] | tuple[str, ...] | None = None) -> None:
+        """Load the given checkpoints (all registered ones when ``ids`` is omitted)."""
+        for checkpoint_id in ids if ids is not None else list(self.checkpoints):
+            self.get(checkpoint_id)
+
+    def get(self, checkpoint_id: str) -> object:
+        """Return a loaded checkpoint, loading and (if needed) evicting on demand."""
+        if checkpoint_id in self._loaded:
+            self._touch(checkpoint_id)
+            return self._loaded[checkpoint_id]
+        if checkpoint_id not in self.checkpoints:
+            raise ValueError(f"unknown checkpoint: {checkpoint_id!r}")
+        if self.loader is None:
+            raise RuntimeError(f"no loader configured to load {checkpoint_id!r}")
+        if self.max_loaded > 0:
+            while len(self._loaded) >= self.max_loaded:
+                self._evict_lru(exclude=checkpoint_id)
+        loaded = self.loader(self.checkpoints[checkpoint_id])
+        self._loaded[checkpoint_id] = loaded
+        self._touch(checkpoint_id)
+        return loaded
+
+    def attach(self, checkpoint_id: str, checkpoint: object) -> None:
+        """Register an externally built checkpoint without invoking the loader."""
+        if checkpoint_id not in self._loaded and self.max_loaded > 0:
+            while len(self._loaded) >= self.max_loaded:
+                self._evict_lru(exclude=checkpoint_id)
+        self._loaded[checkpoint_id] = checkpoint
+        self._touch(checkpoint_id)
+
+    def unload(self, checkpoint_id: str | None = None) -> None:
+        """Drop one checkpoint, or all of them when ``checkpoint_id`` is omitted."""
+        if checkpoint_id is None:
+            self._loaded.clear()
+            self._order.clear()
+            return
+        self._loaded.pop(checkpoint_id, None)
+        if checkpoint_id in self._order:
+            self._order.remove(checkpoint_id)
+
+    def _touch(self, checkpoint_id: str) -> None:
+        if checkpoint_id in self._order:
+            self._order.remove(checkpoint_id)
+        self._order.append(checkpoint_id)
+
+    def _evict_lru(self, *, exclude: str) -> None:
+        for candidate in self._order:
+            if candidate != exclude and candidate in self._loaded:
+                self._loaded.pop(candidate, None)
+                self._order.remove(candidate)
+                return
 
     def route(self, state: State) -> RouteDecision:
         """Decide which checkpoint should answer ``state``."""
@@ -348,6 +417,7 @@ __all__ = [
     "SUPPORTED_LANGUAGES",
     "CheckpointInfo",
     "LangGuess",
+    "Loader",
     "RouteDecision",
     "Router",
     "detect_language",
