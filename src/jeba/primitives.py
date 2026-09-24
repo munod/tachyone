@@ -98,11 +98,55 @@ class ChoiceAnswer(_Base):
         return self
 
 
+class ScoreQuestion(_Base):
+    """Rate the state on an ordered scale of 2..10 levels."""
+
+    type: Literal["score"] = "score"
+    instructions: JsonValue
+    criteria: list[str]
+
+    @field_validator("criteria")
+    @classmethod
+    def _validate_level_count(cls, value: list[str]) -> list[str]:
+        if not MIN_SCORE_LEVELS <= len(value) <= MAX_SCORE_LEVELS:
+            raise ValueError(
+                f"score requires {MIN_SCORE_LEVELS}..{MAX_SCORE_LEVELS} levels, got {len(value)}"
+            )
+        return value
+
+
+class ScoreAnswer(_Base):
+    """Answer to a :class:`ScoreQuestion`: expected level + distribution.
+
+    ``score`` is the probability-weighted position along the levels and may land
+    between two levels (matches Jev, which returns a number, not a level index).
+    """
+
+    type: Literal["score"] = "score"
+    score: float
+    legend: dict[int, str]
+    probabilities: dict[int, Probability]
+    confidence: float = Field(ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _validate_levels(self) -> ScoreAnswer:
+        if not self.legend:
+            raise ValueError("legend must not be empty")
+        expected = set(range(len(self.legend)))
+        if set(self.legend) != expected:
+            raise ValueError("legend keys must be contiguous indices starting at 0")
+        if set(self.probabilities) != expected:
+            raise ValueError("probabilities keys must match the legend keys")
+        if not 0.0 <= self.score <= float(len(self.legend) - 1):
+            raise ValueError("score must fall within the legend range")
+        return self
+
+
 #: Discriminated union of every question type, keyed on ``type``.
-Question = Annotated[NoulQuestion | ChoiceQuestion, Field(discriminator="type")]
+Question = Annotated[NoulQuestion | ChoiceQuestion | ScoreQuestion, Field(discriminator="type")]
 
 #: Discriminated union of every answer type, keyed on ``type``.
-Answer = Annotated[NoulAnswer | ChoiceAnswer, Field(discriminator="type")]
+Answer = Annotated[NoulAnswer | ChoiceAnswer | ScoreAnswer, Field(discriminator="type")]
 
 __all__ = [
     "MAX_CHOICE_OPTIONS",
@@ -117,5 +161,7 @@ __all__ = [
     "NoulQuestion",
     "Probability",
     "Question",
+    "ScoreAnswer",
+    "ScoreQuestion",
     "State",
 ]

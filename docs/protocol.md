@@ -116,7 +116,7 @@ Rate on an ordered scale.
   "answers": {
     "q1": { "type": "noul", "noul": 0.97 },
     "q2": { "type": "choice", "choice": "tech", "probabilities": { "sports": 0.02, "tech": 0.95, "politics": 0.03 }, "confidence": 0.95 },
-    "q3": { "type": "score", "score": 3, "legend": { "0": "poor", "1": "fair", "2": "good", "3": "excellent" }, "probabilities": { "0": 0.01, "1": 0.05, "2": 0.31, "3": 0.63 }, "confidence": 0.63 }
+    "q3": { "type": "score", "score": 2.56, "legend": { "0": "poor", "1": "fair", "2": "good", "3": "excellent" }, "probabilities": { "0": 0.01, "1": 0.05, "2": 0.31, "3": 0.63 }, "confidence": 0.63 }
   },
   "usage": { "input_tokens": 214, "output_tokens": 18 }
 }
@@ -128,7 +128,7 @@ Rate on an ordered scale.
 | --- | --- |
 | `noul` | `type:"noul"`, `noul: float` in `0..1`. **No separate `confidence`.** |
 | `choice` | `type:"choice"`, `choice: string`, `probabilities: map<option,float>`, `confidence: float` |
-| `score` | `type:"score"`, `score: int` (level index), `legend: map<index,string>`, `probabilities: map<index,float>`, `confidence: float` |
+| `score` | `type:"score"`, `score: number`, `legend: map<index,string>`, `probabilities: map<index,float>`, `confidence: float` |
 
 **Confidence** is derived from the probability distribution: a distribution concentrated on
 one option yields confidence near 1; a near-uniform distribution yields low confidence.
