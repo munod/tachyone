@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from jeba.client import JebaAPIError, JebaClient, JebaConnectionError, JebaError
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 __all__ = [
     "JebaAPIError",
     "JebaClient",

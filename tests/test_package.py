@@ -33,7 +33,7 @@ _CORE_MODULES = [
 
 
 def test_version_is_exposed() -> None:
-    assert jeba.__version__ == "0.0.1"
+    assert jeba.__version__ == "0.1.0"
 
 
 @pytest.mark.parametrize("module_name", _CORE_MODULES)
