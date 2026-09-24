@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** Phase M4 (Training & Calibration) complete. Next: M5 — Ecosystem & Acceleration.
+**Current Work:** Phase M5 (Ecosystem & Acceleration) complete. Next: M6 — Proof & Release.
 
 ## Milestone Status
 
@@ -11,9 +11,9 @@
 | M1 Wire Contract | ✅ Complete | primitives + wire.py, contract suite |
 | M2 LLM Backend + Serve | ✅ Complete | llm/fake backends, FastAPI, SDK, CLI, presets, decide, e2e |
 | M3 Local Encoder | ✅ Complete | encoder backend, router+lifecycle, calibration, agent, hooks |
-| M4 Training + Calibration | ✅ Complete | data gen, LoRA/QLoRA, RLCD, temp fitting, eval, configs (GPU run pending) |
-| M5 Ecosystem + Accel | ⏳ Next | ONNX, fast path, MCP, LangChain, Docker |
-| M6 Proof + Release | ⬜ Not started | |
+| M4 Training + Calibration | ✅ Complete | pipeline; GPU run pending |
+| M5 Ecosystem + Accel | ✅ Complete | ONNX, fast fallback, MCP, LangChain, Docker, telemetry no-op |
+| M6 Proof + Release | ⏳ Next | benchmarks, docs site, HF release |
 
 > This is the persistent memory for the jeba project across sessions. Decisions here are
 > authoritative. Anything marked **DECIDED** must not be reopened without a new ADR.
@@ -162,6 +162,12 @@ same contract tests.
 | M4-T4 | calibration temperature fitting | 2026-09-24 | `feat(training): fit calibration temperature` | ✅ |
 | M4-T5 | accuracy/ECE/latency harness | 2026-09-24 | `feat(benchmarks): add accuracy, ECE, latency harness` | ✅ |
 | M4-T6 | reproducible configs | 2026-09-24 | `chore(training): add reproducible configs` | ✅ |
+| M5-T1 | ONNX runtime backend | 2026-09-24 | `feat(backends): add onnx runtime backend` | ✅ |
+| M5-T2 | optional fast path + router override | 2026-09-24 | `perf: add optional fast path` | ✅ |
+| M5-T3 | MCP stdio server | 2026-09-24 | `feat(mcp): add stdio server` | ✅ |
+| M5-T4 | LangChain adapter | 2026-09-24 | `feat(langchain): add runnable adapter` | ✅ |
+| M5-T5 | Docker + compose | 2026-09-24 | `build(docker): add image and compose` | ✅ |
+| M5-T6 | telemetry guard | 2026-09-24 | `feat(telemetry): add opt-out telemetry guard` | ✅ |
 
 ---
 

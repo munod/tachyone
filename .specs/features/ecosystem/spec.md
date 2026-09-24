@@ -1,7 +1,8 @@
 # Ecosystem & Acceleration Specification
 
 **Phase:** M5–M6 (Fase 5–6)
-**Status:** Draft
+**Status:** M5 implemented (ONNX, fast fallback, MCP, LangChain, Docker, telemetry no-op);
+M6 (benchmark report, docs site, HF release) pending
 **Related docs:** `docs/architecture.md`, `docs/roadmap.md`, `docs/adr/ADR-0006-license-telemetry.md`
 
 ## Problem Statement
@@ -12,10 +13,10 @@ changing the canonical contract.
 
 ## Goals
 
-- [ ] Add ONNX backend and an optional fast path (TileLang/CUDA graphs).
-- [ ] Ship an MCP stdio server and a LangChain adapter.
-- [ ] Provide Docker/compose and pip extras.
-- [ ] Publish reproducible benchmarks, docs site, and a Hugging Face release.
+- [x] Add ONNX backend and an optional fast path (TileLang/CUDA graphs).
+- [x] Ship an MCP stdio server and a LangChain adapter.
+- [x] Provide Docker/compose and pip extras.
+- [ ] Publish reproducible benchmarks, docs site, and a Hugging Face release (M6).
 
 ## Out of Scope
 
@@ -83,17 +84,17 @@ changing the canonical contract.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| BACK-04 | P1 acceleration | Design | Pending |
-| OPS-01 | P2 packaging | Design | Pending |
-| OPS-02 | P1 integrations | Design | Pending |
-| OPS-03 | P1 integrations | Design | Pending |
-| OPS-04 | P2 packaging | Design | Pending |
-| OPS-06 | P2 proof | Design | Pending |
-| OPS-07 | P2 proof | Design | Pending |
-| OPS-08 | P2 proof | Design | Pending |
-| EXT-01 | P1 integrations | Design | Pending |
-| EXT-03 | P1 acceleration | Design | Pending |
-| EXT-04 | P1 acceleration | Design | Pending |
+| BACK-04 | P1 acceleration | Design | Done |
+| OPS-01 | P2 packaging | Design | Done |
+| OPS-02 | P1 integrations | Design | Done |
+| OPS-03 | P1 integrations | Design | Done |
+| OPS-04 | P2 packaging | Design | Done |
+| OPS-06 | P2 proof | Design | Pending (M6) |
+| OPS-07 | P2 proof | Design | Pending (M6) |
+| OPS-08 | P2 proof | Design | Done |
+| EXT-01 | P1 integrations | Design | Done |
+| EXT-03 | P1 acceleration | Design | Done |
+| EXT-04 | P1 acceleration | Design | Done |
 
 **Coverage:** 11 requirements mapped to `docs/tasks.md` M5–M6.
 

@@ -4,13 +4,13 @@ Compact, high-signal guide for agents and contributors working in this repositor
 
 ## Status
 
-**M4 (Training & Calibration) complete.** `src/jeba/` has the wire contract, a pluggable
-backend seam (LLM, model-free `FakeBackend`, and a local encoder), language routing with
-checkpoint lifecycle, confidence/calibration, batched single-pass inference, hooks, FastAPI
-serving, an SDK, a CLI, and preset/schema helpers. `training/` has deterministic data
-generation, LoRA/QLoRA fine-tuning with RLCD proper-scoring, temperature fitting, an
-evaluation harness, and committed configs. M5 (Ecosystem & Acceleration) is next. The GPU
-training run is still pending. Current milestone and blockers: `.specs/project/STATE.md`.
+**M5 (Ecosystem & Acceleration) complete.** `src/jeba/` has the wire contract, a pluggable
+backend seam (LLM, model-free `FakeBackend`, local encoder, ONNX), language routing with
+checkpoint lifecycle, confidence/calibration, batched single-pass inference, hooks, an optional
+fast path, FastAPI serving, an SDK, a CLI, preset/schema helpers, an MCP stdio server, a
+LangChain adapter, and a no-op telemetry guard. `training/` has the full data → LoRA/RLCD →
+calibration → evaluation pipeline. M6 (Proof & Release) is next; the GPU training run is still
+pending. Current milestone and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
@@ -66,6 +66,10 @@ Training lives in `training/` (not installed): `uv run python -m training.genera
 `uv run python -m training.fit_calibration --calibration data/preds.jsonl --out temperature.json`,
 `uv run python -m training.evaluate --data data/eval.jsonl --out report.json`. Heavy modules
 (torch/transformers/peft) are imported lazily behind the `train` extra.
+
+Integration extras are similarly lazy: `JEBA_BACKEND=onnx` needs `--extra onnx`; `jeba-mcp-server`
+needs `--extra mcp`; `jeba.integrations.langchain` needs `--extra langchain`; the fast path needs
+`--extra fast`. Each raises a clear error naming the extra when it is missing.
 
 ## Directory boundaries (planned)
 

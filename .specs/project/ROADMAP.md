@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M5 — Ecosystem & Acceleration
-**Status:** M0–M4 COMPLETE (pipeline implemented; GPU run pending); M5 next
+**Current Milestone:** M6 — Proof & Release
+**Status:** M0–M5 COMPLETE; M6 (benchmarks, docs site, HF release) next
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -107,9 +107,9 @@ calibration within RTX 3060 12GB budget.
 
 ### Features
 
-**Acceleration** - PLANNED
+**Acceleration** - DONE
 - `backends/onnx.py`; TileLang fast path behind an extra
-**Integrations** - PLANNED
+**Integrations** - DONE
 - `mcp/` stdio server, `integrations/langchain.py`, `docker/` + compose
 
 ---

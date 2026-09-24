@@ -3,7 +3,7 @@
 > Canonical machine-facing roadmap lives in `.specs/project/ROADMAP.md`. This page is the
 > human-facing view with exit criteria and risk notes. Task-level detail: `docs/tasks.md`.
 
-**Current phase:** M4 Training & Calibration ✅ complete — M5 Ecosystem & Acceleration next
+**Current phase:** M5 Ecosystem & Acceleration ✅ complete — M6 Proof & Release next
 **Delivery model:** one shippable increment per milestone; no fixed dates.
 
 ```mermaid
