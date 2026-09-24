@@ -28,6 +28,8 @@ nav:
   - Tasks: tasks.md
   - Testing: testing.md
   - Training: training.md
+  - Release: release.md
+  - Model card: model-card.md
   - Requirements:
       - Functional: requirements/functional.md
       - Non-functional: requirements/non-functional.md
