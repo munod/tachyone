@@ -1,0 +1,6 @@
+{
+  "seed": 42,
+  "per_type": 2000,
+  "languages": ["en", "pt", "es", "fr", "de"],
+  "source": "synthetic"
+}
