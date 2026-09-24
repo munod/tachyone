@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M3 — Local Encoder Backend
-**Status:** M0–M2 COMPLETE (server, SDK, CLI, presets, decide, e2e); M3 next
+**Current Milestone:** M4 — Training & Calibration
+**Status:** M0–M3 COMPLETE (offline encoder, routing, calibration, hooks); M4 next
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -73,11 +73,11 @@ script/language; confidence reflects probability distribution.
 
 ### Features
 
-**Encoder backend & agent** - PLANNED
+**Encoder backend & agent** - DONE
 - `agent.py` single forward pass + batching + `sort_by_length`
 - `backends/encoder.py` (3 heads), checkpoint loading/eviction, `max_loaded`
 
-**Router & calibration** - PLANNED
+**Router & calibration** - DONE
 - `router.py` script/language detection → checkpoint selection
 - `calibration.py` confidence from distributions + temperature fitting hook
 

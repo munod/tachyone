@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** Phase M2 (LLM Backend + Serving) complete. Next: M3 — Local Encoder.
+**Current Work:** Phase M3 (Local Encoder) complete. Next: M4 — Training & Calibration.
 
 ## Milestone Status
 
@@ -10,8 +10,8 @@
 | M0 Bootstrap | ✅ Complete | uv + py3.12, ruff/pyright/pytest, CI |
 | M1 Wire Contract | ✅ Complete | primitives + wire.py, contract suite |
 | M2 LLM Backend + Serve | ✅ Complete | llm/fake backends, FastAPI, SDK, CLI, presets, decide, e2e |
-| M3 Local Encoder | ⏳ Next | encoder backend, router, calibration, hooks |
-| M4 Training + Calibration | ⬜ Not started | |
+| M3 Local Encoder | ✅ Complete | encoder backend, router+lifecycle, calibration, agent, hooks, offline multilingual |
+| M4 Training + Calibration | ⏳ Next | data gen, LoRA/QLoRA, RLCD, fit temperature |
 | M5 Ecosystem + Accel | ⬜ Not started | |
 | M6 Proof + Release | ⬜ Not started | |
 
@@ -147,6 +147,14 @@ same contract tests.
 | M2-T6 | CLI + presets | 2026-09-24 | `feat(cli): add predict CLI and presets` | ✅ |
 | M2-T7 | `decide()` from JSON Schema | 2026-09-24 | `feat(schemas): add decide() from json schema` | ✅ |
 | M2-T8 | repointed-Jev-client e2e | 2026-09-24 | `test(e2e): verify repointed jev client` | ✅ |
+| M3-T1 | script/language routing | 2026-09-24 | `feat(router): add script and language routing` | ✅ |
+| M3-T2 | checkpoint lifecycle | 2026-09-24 | `feat(router): add checkpoint lifecycle management` | ✅ |
+| M3-T3 | confidence derivation | 2026-09-24 | `feat(calibration): derive confidence from distributions` | ✅ |
+| M3-T4 | agent single-pass batching | 2026-09-24 | `feat(agent): add single-pass batching` | ✅ |
+| M3-T5 | encoder backend (3 heads) | 2026-09-24 | `feat(backends): add encoder backend with three heads` | ✅ |
+| M3-T6 | hooks registry | 2026-09-24 | `feat(hooks): add prediction and lifecycle hooks` | ✅ |
+| M3-T7 | batch prediction endpoint | 2026-09-24 | `feat(agent): expose batch prediction` | ✅ |
+| M3-T8 | offline multilingual smoke | 2026-09-24 | `test(integration): offline multilingual smoke` | ✅ |
 
 ---
 

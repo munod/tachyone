@@ -3,7 +3,7 @@
 > Canonical machine-facing roadmap lives in `.specs/project/ROADMAP.md`. This page is the
 > human-facing view with exit criteria and risk notes. Task-level detail: `docs/tasks.md`.
 
-**Current phase:** M2 LLM Backend + Serving ✅ complete — M3 Local Encoder next
+**Current phase:** M3 Local Encoder ✅ complete — M4 Training & Calibration next
 **Delivery model:** one shippable increment per milestone; no fixed dates.
 
 ```mermaid

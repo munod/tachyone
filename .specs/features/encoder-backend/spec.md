@@ -1,7 +1,7 @@
 # Local Encoder Backend Specification
 
 **Phase:** M3 (Fase 3)
-**Status:** Draft
+**Status:** Implemented (M3 complete; trained/calibrated heads land in M4)
 **Related docs:** `docs/architecture.md`, `docs/training.md`, `docs/adr/ADR-0005-encoder-rlcd.md`
 
 ## Problem Statement
@@ -12,10 +12,10 @@ primitives in a single forward pass, offline, in 100+ languages, with calibrated
 
 ## Goals
 
-- [ ] Answer all three primitives in one forward pass with ModernBERT/mmBERT + 3 heads.
-- [ ] Automatically route inputs to the right checkpoint by script/language.
-- [ ] Emit calibrated `confidence`/probabilities (no network, no API key).
-- [ ] Support batching and lifecycle management (preload/evict/unload, max_loaded).
+- [x] Answer all three primitives in one forward pass with ModernBERT/mmBERT + 3 heads.
+- [x] Automatically route inputs to the right checkpoint by script/language.
+- [x] Emit calibrated `confidence`/probabilities (no network, no API key).
+- [x] Support batching and lifecycle management (preload/evict/unload, max_loaded).
 
 ## Out of Scope
 
@@ -100,24 +100,24 @@ air-gapped environments.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| BACK-03 | P1 single-pass | Design | Pending |
-| BACK-06 | P1 single-pass | Design | Pending |
-| BACK-07 | P1 single-pass | Design | Pending |
-| ROUTE-01 | P1 router | Design | Pending |
-| ROUTE-02 | P1 router | Design | Pending |
-| ROUTE-03 | P1 router | Design | Pending |
-| ROUTE-04 | P1 router | Design | Pending |
-| ROUTE-05 | P1 router | Design | Pending |
-| CAL-03 | P1 confidence | Design | Pending |
-| CAL-04 | P1 confidence | Design | Pending |
-| CAL-05 | P1 confidence | Design | Pending |
-| EXT-01 | P2 hooks | Design | Pending |
-| EXT-02 | P2 hooks | Design | Pending |
+| BACK-03 | P1 single-pass | Design | Done |
+| BACK-06 | P1 single-pass | Design | Done |
+| BACK-07 | P1 single-pass | Design | Done |
+| ROUTE-01 | P1 router | Design | Done |
+| ROUTE-02 | P1 router | Design | Done |
+| ROUTE-03 | P1 router | Design | Done |
+| ROUTE-04 | P1 router | Design | Done |
+| ROUTE-05 | P1 router | Design | Done |
+| CAL-03 | P1 confidence | Design | Done |
+| CAL-04 | P1 confidence | Design | Pending (M4 ECE target) |
+| CAL-05 | P1 confidence | Design | Done |
+| EXT-01 | P2 hooks | Design | Done |
+| EXT-02 | P2 hooks | Design | Done |
 
 **Coverage:** 13 requirements mapped to `docs/tasks.md` M3.
 
 ## Success Criteria
 
-- [ ] Offline single-pass answers for all primitives across multiple languages.
-- [ ] Router selects correct checkpoint with documented overhead.
-- [ ] ECE target met on held-out calibration set.
+- [x] Offline single-pass answers for all primitives across multiple languages.
+- [x] Router selects correct checkpoint with documented overhead.
+- [ ] ECE target met on held-out calibration set (M4).

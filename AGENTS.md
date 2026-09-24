@@ -4,10 +4,11 @@ Compact, high-signal guide for agents and contributors working in this repositor
 
 ## Status
 
-**M2 (LLM Backend + Serving) complete.** `src/jeba/` has the wire contract, a pluggable
-backend seam, an OpenAI-compatible LLM backend, a model-free `FakeBackend`, FastAPI serving,
-an SDK client, a CLI, and preset/schema helpers. M3 (Local Encoder) is next. Current
-milestone and blockers: `.specs/project/STATE.md`.
+**M3 (Local Encoder) complete.** `src/jeba/` has the wire contract, a pluggable backend
+seam (LLM, model-free `FakeBackend`, and a local encoder), language routing with checkpoint
+lifecycle, confidence/calibration, batched single-pass inference, hooks, FastAPI serving, an
+SDK, a CLI, and preset/schema helpers. M4 (Training & Calibration) is next. Current milestone
+and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
@@ -54,7 +55,9 @@ uv run jeba --predict --preset triage --backend fake "refund please"   # offline
 ```
 
 The default backend is `llm` (needs `JEBA_LLM_*`); use `--backend fake` or `JEBA_BACKEND=fake`
-for a model-free run.
+for a model-free run, and `JEBA_BACKEND=encoder` for the local encoder. The encoder's real
+weights need the `train` extra (`uv sync --extra train`); the decision math and all tests work
+without it. Weights are fetched on demand (ADR-0010); tests use an injected fake encoder.
 
 ## Directory boundaries (planned)
 
