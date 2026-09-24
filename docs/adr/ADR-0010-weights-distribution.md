@@ -31,7 +31,9 @@ Hub access is an optional dependency (the `train` extra: `huggingface_hub`, `tor
 Laya/Needle model users expect.
 **Negative:** First use needs network unless prefetched; cache and revision management add code.
 **Neutral / follow-ups:** A future mirror/local-registry can be added behind the same loader
-seam without changing callers.
+seam without changing callers. The runtime loads published LoRA adapters by default
+(`CheckpointInfo.base_model` + `.adapter`, overridable with `JEBA_ADAPTERS`; cache-only with
+`JEBA_OFFLINE=1`).
 
 ## Alternatives Considered
 

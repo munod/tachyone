@@ -5,6 +5,10 @@ Ships the same decision math as the encoder backend but executes the transformer
 payload (BACK-04, OPS-01). The backend is a thin subclass of
 :class:`~jeba.backends.encoder.EncoderBackend`, so it passes the identical contract; only the
 embedding function differs. ``onnxruntime`` is imported lazily behind the ``onnx`` extra.
+
+**Adapters are not applied here:** an ONNX graph cannot take a LoRA adapter at runtime, so the
+weights must be merged and exported before loading (see ``docs/huggingface.md``). ``info.adapter``
+is ignored by :func:`load_onnx_encoder`.
 """
 
 from __future__ import annotations

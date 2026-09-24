@@ -60,6 +60,23 @@ def _csv(env: Mapping[str, str], name: str) -> tuple[str, ...]:
     return tuple(item.strip() for item in env.get(name, "").split(",") if item.strip())
 
 
+def _bool(env: Mapping[str, str], name: str, default: bool = False) -> bool:
+    raw = env.get(name)
+    if raw is None or raw == "":
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _pairs(env: Mapping[str, str], name: str) -> dict[str, str | None]:
+    """Parse ``key=value`` pairs (comma separated); an empty value disables the entry."""
+    result: dict[str, str | None] = {}
+    for item in env.get(name, "").split(","):
+        key, _, value = item.strip().partition("=")
+        if key:
+            result[key.strip()] = value.strip() or None
+    return result
+
+
 def _default_models_dir() -> str:
     return os.path.join(os.path.expanduser("~"), ".cache", "jeba", "models")
 
@@ -74,6 +91,8 @@ class Config:
     backend: str = DEFAULT_BACKEND
     models: tuple[str, ...] = ()
     models_dir: str = field(default_factory=_default_models_dir)
+    adapters: dict[str, str | None] = field(default_factory=dict)
+    offline: bool = False
     preload: tuple[str, ...] = ()
     threads: int = 0  # 0 = let the runtime decide
     api_key: str | None = field(default=None, repr=False)
@@ -94,6 +113,8 @@ class Config:
             backend=_choice(source, "JEBA_BACKEND", DEFAULT_BACKEND, BACKENDS),
             models=_csv(source, "JEBA_MODELS"),
             models_dir=_text(source, "JEBA_MODELS_DIR", _default_models_dir()),
+            adapters=_pairs(source, "JEBA_ADAPTERS"),
+            offline=_bool(source, "JEBA_OFFLINE", False),
             preload=_csv(source, "JEBA_PRELOAD"),
             threads=_int(source, "JEBA_THREADS", 0, 0, 4096),
             api_key=_text(source, "JEBA_API_KEY", "") or None,

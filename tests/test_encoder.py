@@ -7,10 +7,19 @@ no torch and no network.
 from __future__ import annotations
 
 import importlib.util
+import json
+from pathlib import Path
 
 import pytest
 
-from jeba.backends.encoder import EncoderBackend, EncoderCheckpoint, load_encoder
+from jeba.backends.encoder import (
+    EncoderBackend,
+    EncoderCheckpoint,
+    EncoderModel,
+    apply_adapters,
+    load_encoder,
+    load_temperatures,
+)
 from jeba.primitives import (
     ChoiceAnswer,
     ChoiceQuestion,
@@ -131,3 +140,56 @@ def test_load_encoder_requires_train_extra() -> None:
         pytest.skip("torch is installed; the real encoder path is exercised elsewhere")
     with pytest.raises(RuntimeError, match="train extra"):
         load_encoder(DEFAULT_CHECKPOINTS[ENGLISH], models_dir="/tmp/jeba-models", device="cpu")
+
+
+def test_default_checkpoints_declare_base_and_adapter() -> None:
+    english = DEFAULT_CHECKPOINTS[ENGLISH]
+    multilingual = DEFAULT_CHECKPOINTS[MULTILINGUAL]
+    assert english.base_model == "answerdotai/ModernBERT-large"
+    assert english.adapter == "munod/jeba-en"
+    assert multilingual.base_model == "jhu-clsp/mmBERT-base"
+    assert multilingual.adapter == "munod/jeba-multi"
+
+
+def test_apply_adapters_overrides_and_disables() -> None:
+    router = Router()
+    apply_adapters(router, {ENGLISH: "acme/tuned-en", MULTILINGUAL: None})
+    assert router.checkpoints[ENGLISH].adapter == "acme/tuned-en"
+    assert router.checkpoints[MULTILINGUAL].adapter is None
+
+
+def test_load_temperatures_from_local_adapter_dir(tmp_path: Path) -> None:
+    (tmp_path / "temperature_calibration.json").write_text(
+        json.dumps(
+            {"per_primitive": {"noul": {"temperature": 4.0}, "choice": {"temperature": 1.5}}}
+        ),
+        encoding="utf-8",
+    )
+    info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=str(tmp_path))
+    assert load_temperatures(info, models_dir=str(tmp_path)) == {"noul": 4.0, "choice": 1.5}
+
+
+def test_load_temperatures_without_adapter_is_empty() -> None:
+    info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=None)
+    assert load_temperatures(info, models_dir="/tmp") == {}
+
+
+def test_per_primitive_temperature_sharpens_noul() -> None:
+    question = NoulQuestion(instructions="Does this request urgency?")
+    base = EncoderModel(_encode).answer_state("please refund now", {"q": question})["q"]
+    tuned = EncoderModel(_encode, temperatures={"noul": 0.25}).answer_state(
+        "please refund now", {"q": question}
+    )["q"]
+    assert isinstance(base, NoulAnswer) and isinstance(tuned, NoulAnswer)
+    assert abs(tuned.noul - 0.5) >= abs(base.noul - 0.5)
+
+
+def test_from_config_applies_adapter_overrides() -> None:
+    from jeba.config import Config
+
+    backend = EncoderBackend.from_config(
+        Config.from_env({"JEBA_BACKEND": "encoder", "JEBA_ADAPTERS": "jeba-en=acme/tuned"}),
+        encode=_encode,
+    )
+    assert backend._router.checkpoints[ENGLISH].adapter == "acme/tuned"
+    assert backend._router.checkpoints[MULTILINGUAL].adapter == "munod/jeba-multi"

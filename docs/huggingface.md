@@ -89,9 +89,18 @@ base = AutoModel.from_pretrained("answerdotai/ModernBERT-large")
 model = PeftModel.from_pretrained(base, "<user>/jeba-en")
 ```
 
-The runtime `jeba` encoder backend will load published checkpoints from the hub on first use
-once their ids are registered in `jeba.backends.encoder.MODEL_IDS` / configured via
-`JEBA_MODELS_DIR`.
+The runtime `jeba` encoder backend loads these adapters **by default**:
+`CheckpointInfo` for each checkpoint carries `base_model` + `adapter`, so `JEBA_BACKEND=encoder`
+loads ModernBERT-large/mmBERT-base and applies `munod/jeba-en` / `munod/jeba-multi` (and their
+per-primitive fitted temperature) on first use, cached under `JEBA_MODELS_DIR`.
+
+```bash
+uv run jeba --predict --preset triage --backend encoder "Quero cancelar minha assinatura agora"
+
+# point a checkpoint at another adapter, or disable it (empty value):
+JEBA_ADAPTERS="jeba-en=acme/tuned-en,jeba-multi=" uv run jeba --predict --backend encoder "..."
+JEBA_OFFLINE=1 uv run jeba --predict --backend encoder "..."   # cache-only, no network
+```
 
 ## 5. After a full-scale run
 

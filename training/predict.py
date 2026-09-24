@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from jeba.backends.encoder import MODEL_IDS, EncoderModel
+from jeba.backends.encoder import MODEL_IDS, EncoderModel, load_encoder
 from jeba.calibration import apply_temperature, confidence
 from jeba.primitives import (
     Answer,
@@ -24,48 +25,23 @@ from jeba.primitives import (
     ScoreAnswer,
     State,
 )
+from jeba.router import CheckpointInfo
 from training.evaluate import EvalExample, evaluate, load_examples, save_report
 
-_TRAIN_HINT = "the train extra is required: uv sync --extra train"
+_DEFAULT_MODELS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "jeba", "models")
 
 
 def _build_encode(model_id: str, adapter_dir: str | None, *, device: str, max_len: int) -> Any:
-    try:
-        import torch  # pyright: ignore[reportMissingImports]
-        from transformers import (  # pyright: ignore[reportMissingImports]
-            AutoModel,
-            AutoTokenizer,
-        )
-    except ImportError as exc:  # pragma: no cover - exercised only without the extra
-        raise RuntimeError(_TRAIN_HINT) from exc
-
-    base = AutoModel.from_pretrained(model_id)
-    if adapter_dir:
-        from peft import PeftModel  # pyright: ignore[reportMissingImports]
-
-        model = PeftModel.from_pretrained(base, adapter_dir)
-    else:
-        model = base
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-    resolved = (
-        device
-        if device in {"cpu", "cuda", "mps"}
-        else ("cuda" if torch.cuda.is_available() else "cpu")
+    """Reuse the runtime loader so training and inference share one encode implementation."""
+    info = CheckpointInfo(
+        id="adhoc",
+        languages=["*"],
+        context=max_len,
+        size_params=0,
+        base_model=model_id,
+        adapter=adapter_dir,
     )
-    model = model.to(resolved)
-    model.eval()
-
-    def encode(texts: list[str]) -> list[list[float]]:
-        batch = tokenizer(
-            texts, padding=True, truncation=True, max_length=max_len, return_tensors="pt"
-        ).to(resolved)
-        with torch.no_grad():
-            hidden = model(**batch).last_hidden_state
-        mask = batch["attention_mask"].unsqueeze(-1).to(hidden.dtype)
-        pooled = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-6)
-        return pooled.cpu().tolist()
-
-    return encode
+    return load_encoder(info, models_dir=_DEFAULT_MODELS_DIR, device=device)
 
 
 def _load_temperatures(path: str | None) -> dict[str, float]:

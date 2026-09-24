@@ -11,8 +11,11 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import math
-from collections.abc import Callable
+import os
+from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from jeba.agent import Agent
@@ -111,9 +114,19 @@ def _criterion_texts(question: Question) -> list[str]:
 class EncoderModel:
     """Turns embeddings into typed answers with a similarity baseline."""
 
-    def __init__(self, encode: EncodeFn, *, temperature: float = 1.0) -> None:
+    def __init__(
+        self,
+        encode: EncodeFn,
+        *,
+        temperature: float = 1.0,
+        temperatures: Mapping[str, float] | None = None,
+    ) -> None:
         self._encode = encode
         self._temperature = temperature
+        self._temperatures = dict(temperatures or {})
+
+    def _temp(self, kind: str) -> float:
+        return self._temperatures.get(kind, self._temperature)
 
     def answer_state(self, state: State, questions: dict[str, Question]) -> dict[str, Answer]:
         state_embedding_text = state_text(state)
@@ -134,7 +147,7 @@ class EncoderModel:
         for question_id, question, question_index, criterion_indices in plan:
             question_embedding = embeddings[question_index]
             if isinstance(question, NoulQuestion):
-                score = _cosine(question_embedding, state_embedding) / self._temperature
+                score = _cosine(question_embedding, state_embedding) / self._temp("noul")
                 answers[question_id] = NoulAnswer(noul=min(1.0, max(0.0, _sigmoid(score))))
                 continue
             scores = [
@@ -142,8 +155,8 @@ class EncoderModel:
                 + _cosine(question_embedding, embeddings[index])
                 for index in criterion_indices
             ]
-            probabilities = _softmax(scores, self._temperature)
             if isinstance(question, ChoiceQuestion):
+                probabilities = _softmax(scores, self._temp("choice"))
                 options = list(question.criteria)
                 distribution = {
                     option: probabilities[position] for position, option in enumerate(options)
@@ -153,6 +166,7 @@ class EncoderModel:
                     choice=best, probabilities=distribution, confidence=confidence(distribution)
                 )
             else:
+                probabilities = _softmax(scores, self._temp("score"))
                 level_distribution = {
                     position: probabilities[position] for position in range(len(question.criteria))
                 }
@@ -171,9 +185,16 @@ class EncoderModel:
 class EncoderCheckpoint:
     """A loaded checkpoint: an :class:`EncoderModel` plus its metadata."""
 
-    def __init__(self, info: CheckpointInfo, encode: EncodeFn, *, temperature: float = 1.0) -> None:
+    def __init__(
+        self,
+        info: CheckpointInfo,
+        encode: EncodeFn,
+        *,
+        temperature: float = 1.0,
+        temperatures: Mapping[str, float] | None = None,
+    ) -> None:
         self.info = info
-        self.model = EncoderModel(encode, temperature=temperature)
+        self.model = EncoderModel(encode, temperature=temperature, temperatures=temperatures)
 
     def predict(
         self, states: list[State], questions: dict[str, Question]
@@ -187,9 +208,17 @@ def _resolve_device(torch: Any, device: str) -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_encoder(info: CheckpointInfo, *, models_dir: str, device: str = "auto") -> EncodeFn:
-    """Load a Hugging Face encoder and return a mean-pooled encoding function.
+def load_encoder(
+    info: CheckpointInfo,
+    *,
+    models_dir: str,
+    device: str = "auto",
+    offline: bool = False,
+) -> EncodeFn:
+    """Load a Hugging Face encoder (+ optional LoRA adapter) and return an encoding function.
 
+    The base trunk comes from ``info.base_model`` (falling back to :data:`MODEL_IDS`), and
+    ``info.adapter`` (a Hub repo id or local directory) is applied with PEFT when set.
     Torch/transformers are imported lazily; without the ``train`` extra this raises a
     :class:`RuntimeError` naming the extra.
     """
@@ -202,9 +231,19 @@ def load_encoder(info: CheckpointInfo, *, models_dir: str, device: str = "auto")
     except ImportError as exc:
         raise RuntimeError(_TRAIN_HINT) from exc
 
-    model_id = MODEL_IDS.get(info.id, info.id)
-    tokenizer = AutoTokenizer.from_pretrained(model_id, cache_dir=models_dir)
-    model = AutoModel.from_pretrained(model_id, cache_dir=models_dir)
+    model_id = info.base_model or MODEL_IDS.get(info.id, info.id)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_id, cache_dir=models_dir, local_files_only=offline
+    )
+    model = AutoModel.from_pretrained(model_id, cache_dir=models_dir, local_files_only=offline)
+    if info.adapter:
+        try:
+            from peft import PeftModel  # pyright: ignore[reportMissingImports]
+        except ImportError as exc:
+            raise RuntimeError(_TRAIN_HINT) from exc
+        model = PeftModel.from_pretrained(
+            model, info.adapter, cache_dir=models_dir, local_files_only=offline
+        )
     resolved = _resolve_device(torch, device)
     model = model.to(resolved)
     model.eval()
@@ -224,6 +263,63 @@ def load_encoder(info: CheckpointInfo, *, models_dir: str, device: str = "auto")
         return cast("list[list[float]]", pooled.cpu().tolist())
 
     return encode
+
+
+def load_temperatures(
+    info: CheckpointInfo, *, models_dir: str, offline: bool = False
+) -> dict[str, float]:
+    """Load per-primitive fitted temperatures from the adapter repo/dir, if present."""
+    if not info.adapter:
+        return {}
+    source: Path | None = None
+    local = Path(os.path.expanduser(info.adapter))
+    if local.is_dir():
+        source = local / "temperature_calibration.json"
+    else:
+        try:
+            from huggingface_hub import hf_hub_download  # pyright: ignore[reportMissingImports]
+
+            downloaded = hf_hub_download(
+                repo_id=info.adapter,
+                filename="temperature_calibration.json",
+                cache_dir=models_dir,
+                local_files_only=offline,
+            )
+            source = Path(downloaded)
+        except Exception:
+            return {}
+    if source is None or not source.exists():
+        return {}
+    try:
+        report = json.loads(source.read_text(encoding="utf-8"))
+        return {
+            kind: float(entry["temperature"])
+            for kind, entry in report.get("per_primitive", {}).items()
+        }
+    except (ValueError, KeyError, OSError):
+        return {}
+
+
+def apply_adapters(router: Router, adapters: Mapping[str, str | None]) -> Router:
+    """Override each checkpoint's adapter from a config mapping (empty value disables it)."""
+    for checkpoint_id, adapter in adapters.items():
+        info = router.checkpoints.get(checkpoint_id)
+        if info is not None:
+            router.checkpoints[checkpoint_id] = info.model_copy(update={"adapter": adapter})
+    return router
+
+
+def load_checkpoint(
+    info: CheckpointInfo,
+    *,
+    models_dir: str,
+    device: str = "auto",
+    offline: bool = False,
+) -> EncoderCheckpoint:
+    """Load a full checkpoint: encoder (+ adapter) and its fitted temperatures."""
+    encode = load_encoder(info, models_dir=models_dir, device=device, offline=offline)
+    temperatures = load_temperatures(info, models_dir=models_dir, offline=offline)
+    return EncoderCheckpoint(info, encode, temperatures=temperatures)
 
 
 def _usage(state: State, questions: dict[str, Question]) -> Usage:
@@ -260,12 +356,17 @@ class EncoderBackend:
         """Build from configuration; ``encode`` injects a fake encoder for tests."""
 
         def loader(info: CheckpointInfo) -> EncoderCheckpoint:
-            encoder = encode or load_encoder(
-                info, models_dir=config.models_dir, device=config.device
+            if encode is not None:
+                return EncoderCheckpoint(info, encode)
+            return load_checkpoint(
+                info,
+                models_dir=config.models_dir,
+                device=config.device,
+                offline=config.offline,
             )
-            return EncoderCheckpoint(info, encoder)
 
         router = Router(loader=loader, max_loaded=2, hooks=hooks)
+        apply_adapters(router, config.adapters)
         if config.preload:
             router.preload(list(config.preload))
         return cls(router, hooks=hooks)
@@ -305,5 +406,8 @@ __all__ = [
     "EncoderCheckpoint",
     "EncoderCheckpointLike",
     "EncoderModel",
+    "apply_adapters",
+    "load_checkpoint",
     "load_encoder",
+    "load_temperatures",
 ]

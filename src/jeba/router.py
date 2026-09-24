@@ -430,6 +430,8 @@ class CheckpointInfo(BaseModel):
     languages: list[str]
     context: int
     size_params: int
+    base_model: str | None = None
+    adapter: str | None = None
 
 
 class RouteDecision(BaseModel):
@@ -443,11 +445,24 @@ class RouteDecision(BaseModel):
     reason: str
 
 
-#: Default checkpoints: English (ModernBERT-large class) and multilingual (mmBERT-base class).
+#: Default checkpoints: English (ModernBERT-large) and multilingual (mmBERT-base), each with the
+#: published jeba LoRA adapter loaded on top (override with ``JEBA_ADAPTERS``).
 DEFAULT_CHECKPOINTS: dict[str, CheckpointInfo] = {
-    ENGLISH: CheckpointInfo(id=ENGLISH, languages=["en"], context=512, size_params=395_000_000),
+    ENGLISH: CheckpointInfo(
+        id=ENGLISH,
+        languages=["en"],
+        context=512,
+        size_params=395_000_000,
+        base_model="answerdotai/ModernBERT-large",
+        adapter="munod/jeba-en",
+    ),
     MULTILINGUAL: CheckpointInfo(
-        id=MULTILINGUAL, languages=["*"], context=1024, size_params=315_000_000
+        id=MULTILINGUAL,
+        languages=["*"],
+        context=1024,
+        size_params=315_000_000,
+        base_model="jhu-clsp/mmBERT-base",
+        adapter="munod/jeba-multi",
     ),
 }
 

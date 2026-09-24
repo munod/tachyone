@@ -87,3 +87,17 @@ def test_empty_strings_fall_back_to_defaults() -> None:
 def test_models_dir_defaults_and_override() -> None:
     assert Config.from_env({}).models_dir.endswith(".cache/jeba/models")
     assert Config.from_env({"JEBA_MODELS_DIR": "/models"}).models_dir == "/models"
+
+
+def test_adapters_and_offline_env() -> None:
+    config = Config.from_env(
+        {"JEBA_ADAPTERS": "jeba-en=munod/jeba-en,jeba-multi=,bogus", "JEBA_OFFLINE": "1"}
+    )
+    assert config.adapters == {
+        "jeba-en": "munod/jeba-en",
+        "jeba-multi": None,
+        "bogus": None,
+    }
+    assert config.offline is True
+    assert Config.from_env({}).adapters == {}
+    assert Config.from_env({}).offline is False
