@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jeba"
+version = "0.0.1"
+description = "Local-first, multilingual System One decision engine speaking the TypeSafe Jev /v1/systemone contract."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "The jeba Authors" }]
+keywords = [
+    "decision-engine",
+    "system-one",
+    "jev",
+    "calibration",
+    "multilingual",
+    "local-first",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["pydantic>=2.6,<3"]
+
+[project.optional-dependencies]
+serve = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "python-multipart>=0.0.9",
+]
+onnx = [
+    "onnx>=1.16",
+    "onnxruntime>=1.17",
+]
+langchain = [
+    "langchain-core>=0.2",
+    "langgraph>=0.1",
+]
+mcp = ["mcp>=1.0"]
+train = [
+    "torch>=2.2",
+    "transformers>=4.48",
+    "safetensors>=0.4",
+    "huggingface-hub>=0.20",
+    "numpy>=1.26",
+    "peft>=0.10",
+    "accelerate>=0.30",
+]
+fast = ["tilelang>=0.1.14"]
+
+[project.scripts]
+jeba = "jeba.cli:main"
+jeba-serve = "jeba.serve:main"
+jeba-mcp-server = "jeba.mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/munod/jeba"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jeba"]
