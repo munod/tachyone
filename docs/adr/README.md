@@ -16,6 +16,7 @@ not edited in place to change its decision — supersede it with a new ADR inste
 | [ADR-0007](ADR-0007-multilingual-mmbert.md) | Multilingual from Phase 3 via mmBERT-base | Accepted | 2026-09-24 |
 | [ADR-0008](ADR-0008-llm-provider-surface.md) | LLM backend: OpenAI-compatible surface with injectable transport | Accepted | 2026-09-24 |
 | [ADR-0009](ADR-0009-extension-endpoints.md) | Extension endpoints mirror the canonical wire response | Accepted | 2026-09-24 |
+| [ADR-0010](ADR-0010-weights-distribution.md) | Weights fetched from the Hugging Face Hub on demand and cached locally | Accepted | 2026-09-24 |
 
 ## Template
 
