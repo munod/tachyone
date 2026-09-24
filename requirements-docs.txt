@@ -1,0 +1,3 @@
+# Documentation site dependencies (M6-T2).
+mkdocs>=1.6
+mkdocs-material>=9.5

@@ -1,0 +1,48 @@
+site_name: jeba
+site_description: Local-first, multilingual System One decision engine (Jev /v1/systemone compatible)
+docs_dir: docs
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - Protocol: protocol.md
+  - Architecture: architecture.md
+  - Roadmap: roadmap.md
+  - Tasks: tasks.md
+  - Testing: testing.md
+  - Training: training.md
+  - Requirements:
+      - Functional: requirements/functional.md
+      - Non-functional: requirements/non-functional.md
+      - Traceability: requirements/traceability.md
+  - Decisions:
+      - Index: adr/README.md
+      - ADR-0001 Drop-in protocol: adr/ADR-0001-jev-drop-in-protocol.md
+      - ADR-0002 Pluggable backend: adr/ADR-0002-pluggable-backend-phasing.md
+      - ADR-0003 Python 3.12 + uv: adr/ADR-0003-python312-uv.md
+      - ADR-0004 Local-first: adr/ADR-0004-local-first.md
+      - ADR-0005 Encoder + RLCD: adr/ADR-0005-encoder-rlcd.md
+      - ADR-0006 License & telemetry: adr/ADR-0006-license-telemetry.md
+      - ADR-0007 Multilingual mmBERT: adr/ADR-0007-multilingual-mmbert.md
+      - ADR-0008 LLM provider surface: adr/ADR-0008-llm-provider-surface.md
+      - ADR-0009 Extension endpoints: adr/ADR-0009-extension-endpoints.md
+      - ADR-0010 Weights distribution: adr/ADR-0010-weights-distribution.md
+      - ADR-0011 No telemetry: adr/ADR-0011-no-telemetry.md
+      - ADR-0012 ONNX before fast path: adr/ADR-0012-onnx-before-fast-path.md

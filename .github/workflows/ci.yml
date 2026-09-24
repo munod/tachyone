@@ -57,4 +57,23 @@ jobs:
         run: uv sync --locked --no-dev
 
       - name: Import core offline (NFR-R01)
-        run: uv run python -c "import jeba, jeba.cli, jeba.client, jeba.config, jeba.primitives, jeba.presets, jeba.schemas, jeba.wire, jeba.backends, jeba.backends.fake, jeba.backends.llm; print('base install ok')"
+        run: uv run python -c "import jeba, jeba.cli, jeba.client, jeba.config, jeba.primitives, jeba.presets, jeba.schemas, jeba.wire, jeba.backends, jeba.backends.fake, jeba.backends.llm, jeba.telemetry; print('base install ok')"
+
+  docs:
+    name: build documentation site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Sync docs tooling
+        run: uv sync --locked --group docs
+
+      - name: Build (strict)
+        run: uv run mkdocs build --strict
