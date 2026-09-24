@@ -8,6 +8,23 @@ All notable changes to this project are documented here. The format is based on
 
 Nothing yet.
 
+## [0.1.1] - 2026-09-24
+
+### Added
+
+- Dedicated low-rank `choice` head, trained alongside the LoRA adapter with a near-identity
+  initialization (so training starts at the cosine baseline). English `choice` rises from
+  ~0.25 (chance) to 0.78 and multilingual to 0.40 (L-002).
+- Rich, localized option descriptions — including a genuinely learnable `other` class — and
+  distractor clauses in the synthetic data generator.
+- `choice_head.json` is trained, packaged, and loaded by the runtime (local directory or Hub).
+
+### Changed
+
+- Refreshed full-scale numbers: English overall 0.721 / ECE 0.052; multilingual 0.609 / ECE 0.086
+  (see [`benchmarks/report.md`](benchmarks/report.md)).
+- README rewritten for the released state; markdown files excluded from ruff.
+
 ## [0.1.0] - 2026-09-24
 
 First tagged release: a local-first, multilingual System One decision engine that speaks the
@@ -49,6 +66,7 @@ TypeSafe Jev `/v1/systemone` wire protocol as a drop-in.
 
 Specification baseline (documentation only, no code).
 
-[Unreleased]: https://github.com/munod/jeba/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/munod/jeba/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/munod/jeba/releases/tag/v0.1.1
 [0.1.0]: https://github.com/munod/jeba/releases/tag/v0.1.0
 [0.0.1]: https://github.com/munod/jeba/releases/tag/v0.0.1
