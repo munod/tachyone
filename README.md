@@ -1,28 +1,30 @@
 # jeba
 
-> **Local-first, multilingual decision engine that speaks the TypeSafe Jev `/v1/systemone` protocol.**
+> **Local-first, multilingual System One decision engine that speaks the TypeSafe Jev `/v1/systemone` protocol.**
 
-jeba answers atomic structured questions — `choice`, `score`, and `noul` — in a single forward
-pass, on your own hardware, with calibrated confidence. Point an existing Jev client at a jeba
-server and it just works.
+jeba answers atomic structured questions — `choice`, `score`, and `noul` — and returns typed
+values with probabilities and calibrated confidence. Point an existing Jev client at a jeba
+server and it works unchanged; run the local encoder backend for fully offline inference.
 
-**Status: pre-implementation.** This repository currently contains **documentation only** — no
-`src/` code, no `pyproject.toml`, no tests. Everything below describes the intended system.
-See [`.specs/project/STATE.md`](.specs/project/STATE.md) for the decision log.
+**Status: `v0.1.0` released.** All milestones M0–M6 are complete: the wire contract, an
+OpenAI-compatible LLM backend, a local encoder (ModernBERT/mmBERT + LoRA), an ONNX backend, an
+optional fast path, FastAPI serving, an SDK/CLI, MCP + LangChain integrations, a training
+pipeline, and a docs site. LoRA adapters are published on the Hugging Face Hub. See the
+[CHANGELOG](CHANGELOG.md) and [`.specs/project/STATE.md`](.specs/project/STATE.md).
 
 ---
 
 ## Why jeba
 
-Hosted decision APIs are fast but remote, closed, and metered. Autoregressive LLMs are
+Hosted decision APIs are fast but remote, closed, and metered; autoregressive LLMs are
 local-capable but slow and poorly calibrated for atomic judgments. jeba sits in between:
 
-- **Drop-in** — same request/response as Jev; repoint the client, keep the code.
+- **Drop-in** — same request/response as Jev; repoint the client and keep your code.
 - **Local-first** — the base install runs offline with no API key; the HTTP server is one mode, not the only one.
 - **Fast** — the local backend is non-autoregressive: one forward pass, no decoding loop.
 - **Calibrated** — probabilities trained with strictly proper scoring (RLCD) + temperature fitting.
 - **Multilingual** — mmBERT-based checkpoint covering 100+ languages via automatic script/language routing.
-- **Additive** — router control, hooks, and `predict_batch` extend the contract without breaking it.
+- **Additive** — router control, hooks, `predict_batch`, MCP, and LangChain extend the contract without breaking it.
 
 ## How it compares
 
@@ -30,54 +32,70 @@ local-capable but slow and poorly calibrated for atomic judgments. jeba sits in 
 | --- | --- | --- | --- | --- |
 | Wire contract | `/v1/systemone` (hosted) | `/v1/systemone` (self-hosted) | Own API | **Jev-exact, self-hosted** |
 | Hosted dependency | Required | None | None | **None in core** |
-| LLM backend | — | No | No | **Yes (Phase 2, optional)** |
-| Encoder backend | Own model | Yes | Yes (2-bit) | **Phase 3 (ModernBERT/mmBERT)** |
+| LLM backend | — | No | No | **Yes (optional)** |
+| Encoder backend | Own model | Yes | Yes (2-bit) | **Yes (ModernBERT/mmBERT + LoRA)** |
+| ONNX backend | No | Yes | Yes | **Yes (`onnx` extra)** |
+| MCP / LangChain | No | Yes | No | **Yes** |
 | Multilingual | Yes | Yes | Partial | **Yes (100+ languages)** |
 | License | Proprietary service | Apache-2.0 | Open | **Apache-2.0** |
 
-## Conceptual quickstart
-
-> These commands are **planned** and do not work yet. They describe the intended interface.
+## Install & quickstart
 
 ```bash
-# Install (planned)
-uv add jeba            # core: offline, no key
-uv add "jeba[serve]"   # + HTTP server
-uv add "jeba[train]"   # + training stack
+uv sync                 # core: offline, no key, no heavy deps
+uv sync --extra serve   # + FastAPI server (+ integration/e2e test deps)
 
-# Answer a question from the CLI (planned)
-jeba "This product is amazing!" --preset triage --predict
+# Answer a question from the CLI (offline, model-free):
+uv run jeba --predict --preset triage --backend fake "refund please"
 
-# Run the server (planned)
-jeba-serve
+# The local encoder (downloads base weights + LoRA adapters, needs the train extra):
+uv sync --extra train
+uv run jeba --predict --preset triage --backend encoder "Quero cancelar minha assinatura agora"
+
+# Run the HTTP server:
+uv run jeba-serve
 ```
 
 ```python
-# Python SDK (planned, illustrative)
-from jeba import Client
+# Python SDK
+from jeba import JebaClient
+from jeba.primitives import ScoreQuestion
 
-client = Client(base_url="http://127.0.0.1:8000")
-result = client.systemone(
-    state="This product is amazing!",
-    model="jeba-latest",
-    questions={
-        "sentiment": {
-            "type": "score",
-            "instructions": "Rate the sentiment.",
-            "criteria": ["very negative", "negative", "neutral", "positive", "very positive"],
-        }
-    },
+client = JebaClient("http://127.0.0.1:8000")
+result = client.system_one(
+    "This product is amazing!",
+    {"sentiment": ScoreQuestion(
+        instructions="Rate the sentiment.",
+        criteria=["very negative", "negative", "neutral", "positive", "very positive"],
+    )},
 )
-print(result.answers["sentiment"])
+print(result.answers["sentiment"].score)
 ```
 
 ```bash
-# Drop-in: point an existing Jev client at jeba (planned)
+# Drop-in: point an existing Jev client at jeba
 curl -s http://127.0.0.1:8000/v1/systemone \
-  -H "Authorization: Bearer $JEBA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"state":"hello","model":"jeba-latest","questions":{"q":{"type":"noul","instructions":"Is this a greeting?"}}}'
 ```
+
+## Local encoder & published models
+
+`JEBA_BACKEND=encoder` (default, offline once cached) loads `answerdotai/ModernBERT-large` or
+`jhu-clsp/mmBERT-base` and applies the published LoRA adapter. Override with
+`JEBA_ADAPTERS="jeba-en=acme/tuned-en,jeba-multi="`; force cache-only with `JEBA_OFFLINE=1`.
+
+- Adapters: [`munod/jeba-en`](https://huggingface.co/munod/jeba-en) ·
+  [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi)
+- Measured on a single RTX 3060 12GB (full tables: [`benchmarks/report.md`](benchmarks/report.md)):
+
+  | Checkpoint | Overall | `score` | `noul` | `choice` | ECE |
+  | --- | --- | --- | --- | --- | --- |
+  | English (ModernBERT-large + LoRA) | 0.613 | 0.890 | 0.700 | 0.250 | 0.059 |
+  | Multilingual (mmBERT-base + LoRA) | 0.493 | 0.494 | 0.730 | 0.256 | 0.034 |
+
+  `choice` is near chance over four teams; closing that gap needs a dedicated head (see
+  `L-002` in `STATE.md`).
 
 ## Architecture at a glance
 
@@ -86,26 +104,38 @@ graph LR
     C["Jev client / SDK / CLI"] --> S["serve.py<br/>/v1/systemone"]
     S --> W["wire.py<br/>frozen contract"]
     W --> B["backends/base.py"]
-    B --> E["encoder.py<br/>local, offline"]
+    B --> E["encoder.py<br/>local + LoRA"]
     B --> L["llm.py<br/>structured outputs"]
     B --> O["onnx.py<br/>portable"]
     E --> R["router.py<br/>language routing"]
-    E --> K["calibration.py<br/>confidence"]
+    E --> A["agent.py<br/>single-pass batching"]
+    E --> H["hooks.py<br/>observability"]
+    A --> K["calibration.py<br/>confidence"]
 ```
 
 Full detail: [`docs/architecture.md`](docs/architecture.md) · Contract: [`docs/protocol.md`](docs/protocol.md).
 
+## Quality gates
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run pyright
+uv run pytest                       # contract + unit + integration + e2e
+uv run mkdocs build --strict        # docs site (uv sync --group docs)
+```
+
 ## Roadmap
 
-| Phase | Milestone | Outcome |
+| Phase | Milestone | Status |
 | --- | --- | --- |
-| M0 | Bootstrap | Python 3.12 + uv project, ruff/pyright/pytest, CI, license |
-| M1 | Wire Contract | Frozen primitives + Jev-exact wire + golden contract tests |
-| M2 | LLM Backend + Serve | Working server, SDK, CLI; repointed Jev client |
-| M3 | Local Encoder | Offline single-pass backend, router, calibrated confidence |
-| M4 | Training & Calibration | Data generation, LoRA/QLoRA, RLCD, ECE fitting |
-| M5 | Ecosystem | ONNX/fast path, MCP, LangChain, Docker |
-| M6 | Proof & Release | Benchmarks, docs site, Hugging Face release |
+| M0 | Bootstrap | ✅ |
+| M1 | Wire Contract | ✅ |
+| M2 | LLM Backend + Serve | ✅ |
+| M3 | Local Encoder | ✅ |
+| M4 | Training & Calibration | ✅ |
+| M5 | Ecosystem & Acceleration | ✅ |
+| M6 | Proof & Release | ✅ (`v0.1.0`) |
 
 Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/tasks.md).
 
@@ -114,29 +144,18 @@ Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/t
 | Doc | Contents |
 | --- | --- |
 | [`docs/overview.md`](docs/overview.md) | Vision, personas, use cases, success metrics, non-goals |
-| [`docs/roadmap.md`](docs/roadmap.md) | Phases, milestones, exit criteria |
-| [`docs/requirements/functional.md`](docs/requirements/functional.md) | Functional requirements with IDs |
-| [`docs/requirements/non-functional.md`](docs/requirements/non-functional.md) | Non-functional requirements with IDs |
-| [`docs/requirements/traceability.md`](docs/requirements/traceability.md) | Requirement → design → task matrix |
 | [`docs/protocol.md`](docs/protocol.md) | The `/v1/systemone` contract |
 | [`docs/architecture.md`](docs/architecture.md) | Components, flows, backend strategy, hooks |
 | [`docs/adr/`](docs/adr/) | Architecture decision records |
-| [`docs/tasks.md`](docs/tasks.md) | Atomic task plan with verification |
+| [`docs/requirements/`](docs/requirements/) | Functional, non-functional, traceability |
 | [`docs/testing.md`](docs/testing.md) | Contract/parity tests, gates, benchmarks |
 | [`docs/training.md`](docs/training.md) | Data generation, LoRA/QLoRA, RLCD, calibration |
-| [`docs/release.md`](docs/release.md) | Release checklist (gates, training, benchmarks, publish) |
+| [`docs/huggingface.md`](docs/huggingface.md) | Publishing and loading adapters |
+| [`docs/release.md`](docs/release.md) | Release checklist |
 | [`docs/model-card.md`](docs/model-card.md) | Hugging Face model card |
 | [`benchmarks/report.md`](benchmarks/report.md) | Reproducible benchmark report |
 | [`CHANGELOG.md`](CHANGELOG.md) | Notable changes (Keep a Changelog) |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Conventions, gates, contract-test rule |
-
-## Documentation site
-
-```bash
-uv sync --group docs
-uv run mkdocs serve      # local preview
-uv run mkdocs build --strict
-```
 
 ## Contributing
 
