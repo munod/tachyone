@@ -1,0 +1,24 @@
+services:
+  jeba:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: jeba:local
+    ports:
+      - "8000:8000"
+    environment:
+      # Offline, model-free default. Point JEBA_BACKEND at llm/encoder for real answers.
+      JEBA_BACKEND: "fake"
+      JEBA_HOST: "0.0.0.0"
+      JEBA_PORT: "8000"
+      # Set JEBA_API_KEY to require Bearer auth.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status == 200 else sys.exit(1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped

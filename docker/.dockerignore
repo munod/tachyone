@@ -1,0 +1,15 @@
+.git
+.venv
+.opencode
+docs
+.specs
+tests
+benchmarks
+training
+data
+checkpoints
+__pycache__
+*.pyc
+*.safetensors
+*.onnx
+*.cact
