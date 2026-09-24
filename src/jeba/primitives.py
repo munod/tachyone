@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 #: JSON-shaped value accepted for ``state``, ``instructions`` and structured criteria.
 type JsonValue = str | dict[str, Any] | list[Any]
@@ -60,17 +60,57 @@ class NoulAnswer(_Base):
     noul: float = Field(ge=0.0, le=1.0)
 
 
+class ChoiceQuestion(_Base):
+    """Pick one option from a labeled set (1..255 options)."""
+
+    type: Literal["choice"] = "choice"
+    instructions: JsonValue
+    criteria: dict[str, JsonValue | None]
+
+    @field_validator("criteria")
+    @classmethod
+    def _validate_option_count(
+        cls, value: dict[str, JsonValue | None]
+    ) -> dict[str, JsonValue | None]:
+        if not value:
+            raise ValueError("choice requires at least one option")
+        if len(value) > MAX_CHOICE_OPTIONS:
+            raise ValueError(
+                f"choice accepts at most {MAX_CHOICE_OPTIONS} options, got {len(value)}"
+            )
+        return value
+
+
+class ChoiceAnswer(_Base):
+    """Answer to a :class:`ChoiceQuestion`: selected option + distribution."""
+
+    type: Literal["choice"] = "choice"
+    choice: str
+    probabilities: dict[str, Probability]
+    confidence: float = Field(ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _validate_selected_option(self) -> ChoiceAnswer:
+        if not self.probabilities:
+            raise ValueError("probabilities must not be empty")
+        if self.choice not in self.probabilities:
+            raise ValueError("choice must be one of the probabilities keys")
+        return self
+
+
 #: Discriminated union of every question type, keyed on ``type``.
-Question = Annotated[NoulQuestion, Field(discriminator="type")]
+Question = Annotated[NoulQuestion | ChoiceQuestion, Field(discriminator="type")]
 
 #: Discriminated union of every answer type, keyed on ``type``.
-Answer = Annotated[NoulAnswer, Field(discriminator="type")]
+Answer = Annotated[NoulAnswer | ChoiceAnswer, Field(discriminator="type")]
 
 __all__ = [
     "MAX_CHOICE_OPTIONS",
     "MAX_SCORE_LEVELS",
     "MIN_SCORE_LEVELS",
     "Answer",
+    "ChoiceAnswer",
+    "ChoiceQuestion",
     "JsonValue",
     "NoulAnswer",
     "NoulCriteria",
