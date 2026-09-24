@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M0 — Bootstrap
-**Status:** PLANNED (documentation only exists today; no code)
+**Current Milestone:** M1 — Wire Contract
+**Status:** M0 COMPLETE (uv skeleton, quality gates, CI); M1 next
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -18,12 +18,12 @@ all pass (even if tests are trivial), and CI runs the same on push/PR.
 
 ### Features
 
-**Project scaffolding** - PLANNED
+**Project scaffolding** - DONE
 - `pyproject.toml` with `requires-python = ">=3.12,<3.13"`, extras, entry points
 - `uv.lock`, `.python-version`, `src/jeba/` layout, `tests/`
 - ruff + pytest + pyright dev dependencies and config
 
-**Repo hygiene & CI** - PLANNED
+**Repo hygiene & CI** - DONE
 - Apache-2.0 LICENSE, README, CONTRIBUTING, AGENTS.md
 - `.github/workflows/ci.yml` (ruff, pyright, pytest)
 - `.gitignore`, `.editorconfig`

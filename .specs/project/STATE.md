@@ -1,7 +1,19 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** Documentation baseline (pre-implementation). No code exists yet.
+**Current Work:** Phase M0 (Bootstrap) complete. Next: M1 — Wire Contract (`docs/tasks.md`).
+
+## Milestone Status
+
+| Milestone | Status | Notes |
+| --- | --- | --- |
+| M0 Bootstrap | ✅ Complete | uv + py3.12, ruff/pyright/pytest, CI; 3 commits |
+| M1 Wire Contract | ⏳ Next | primitives + wire.py match Jev; golden fixtures |
+| M2 LLM Backend + Serve | ⬜ Not started | |
+| M3 Local Encoder | ⬜ Not started | |
+| M4 Training + Calibration | ⬜ Not started | |
+| M5 Ecosystem + Accel | ⬜ Not started | |
+| M6 Proof + Release | ⬜ Not started | |
 
 > This is the persistent memory for the jeba project across sessions. Decisions here are
 > authoritative. Anything marked **DECIDED** must not be reopened without a new ADR.
@@ -116,7 +128,10 @@ same contract tests.
 
 | #   | Description | Date | Commit | Status |
 | --- | ----------- | ---- | ------ | ------ |
-| —   | (none yet)  | —    | —      | —      |
+| M0-T1 | uv project skeleton (py3.12, extras, entry points, uv.lock) | 2026-09-24 | `build: bootstrap uv project (python 3.12)` | ✅ |
+| M0-T2 | ruff + pyright + pytest config and dev deps | 2026-09-24 | `chore: configure ruff, pyright, pytest` | ✅ |
+| M0-T3 | repo hygiene (.gitignore, .editorconfig, LICENSE, git init) | 2026-09-24 | `chore: initialize repository with project specifications` | ✅ |
+| M0-T4 | CI workflow (ruff + pyright + pytest on py3.12) | 2026-09-24 | `ci: add lint, type, and test gates` | ✅ |
 
 ---
 

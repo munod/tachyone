@@ -3,7 +3,7 @@
 > Canonical machine-facing roadmap lives in `.specs/project/ROADMAP.md`. This page is the
 > human-facing view with exit criteria and risk notes. Task-level detail: `docs/tasks.md`.
 
-**Current phase:** Fase 0 — Bootstrap (pre-implementation)
+**Current phase:** M0 Bootstrap ✅ complete — M1 Wire Contract next
 **Delivery model:** one shippable increment per milestone; no fixed dates.
 
 ```mermaid

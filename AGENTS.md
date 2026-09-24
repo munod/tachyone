@@ -4,10 +4,9 @@ Compact, high-signal guide for agents and contributors working in this repositor
 
 ## Status
 
-**Pre-implementation.** This repo contains **documentation only** — no `src/` code, no
-`pyproject.toml`, no tests, no git history yet. Do not assume any command, module, or
-dependency exists. When tooling lands (M0), replace the "planned" markers below with the
-exact, verified commands.
+**M0 (Bootstrap) complete.** The uv project, quality gates, and CI exist; `src/jeba/` holds
+only importable stubs (no engine logic yet). M1 (Wire Contract) is next. Commands below are
+verified. Current milestone and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
@@ -29,17 +28,22 @@ contract. Read first:
 - **pydantic v2** for the wire/primitives; FastAPI/uvicorn behind the `serve` extra.
 - License: **Apache-2.0**.
 
-## Commands (planned — not runnable yet)
-
-These become authoritative in M0-T2. Until then, treat them as the intended interface:
+## Commands (verified)
 
 ```bash
-uv sync                        # create env from uv.lock
+uv sync                        # create env from uv.lock (installs core + dev group)
 uv run ruff check .            # lint
 uv run ruff format --check .   # format check
 uv run pyright                 # types
-uv run pytest tests/           # tests (includes contract suite)
+uv run pytest                  # full suite (contract suite joins it in M1)
+
+# run one test / one file
+uv run pytest tests/test_package.py
+uv run pytest tests/test_package.py::test_version_is_exposed
 ```
+
+Ruff excludes `.opencode/`, `docs/`, `.specs/`, `docker/` (third-party skills and code
+fences are not linted). Optional extras are installed on demand: `uv sync --extra serve`.
 
 ## Directory boundaries (planned)
 
