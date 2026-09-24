@@ -1,0 +1,38 @@
+{
+  "model": "jeba-latest",
+  "answers": {
+    "is_urgent": {
+      "type": "noul",
+      "noul": 0.97
+    },
+    "department": {
+      "type": "choice",
+      "choice": "billing",
+      "probabilities": {
+        "billing": 0.88,
+        "technical": 0.09,
+        "sales": 0.03
+      },
+      "confidence": 0.88
+    },
+    "frustration": {
+      "type": "score",
+      "score": 1.4,
+      "legend": {
+        "0": "calm",
+        "1": "frustrated",
+        "2": "very angry"
+      },
+      "probabilities": {
+        "0": 0.05,
+        "1": 0.5,
+        "2": 0.45
+      },
+      "confidence": 0.5
+    }
+  },
+  "usage": {
+    "input_tokens": 318,
+    "output_tokens": 34
+  }
+}

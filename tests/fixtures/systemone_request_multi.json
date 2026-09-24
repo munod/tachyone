@@ -1,0 +1,24 @@
+{
+  "state": "Hi, we were billed twice for March. Please refund the duplicate today or we will cancel our plan.",
+  "model": "jeba-latest",
+  "questions": {
+    "is_urgent": {
+      "type": "noul",
+      "instructions": "Does this message express urgency?"
+    },
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": {
+        "billing": "invoices, payments, refunds",
+        "technical": "bugs, outages, system errors",
+        "sales": "pricing, new contracts"
+      }
+    },
+    "frustration": {
+      "type": "score",
+      "instructions": "How frustrated is the customer?",
+      "criteria": ["calm", "frustrated", "very angry"]
+    }
+  }
+}
