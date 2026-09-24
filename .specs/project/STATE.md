@@ -1,10 +1,10 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** All milestones M0–M6 complete. A full-scale training run was executed on the
-RTX 3060 (English + multilingual LoRA, 6k train / 1.5k eval) and measured into
-`benchmarks/report.md`. Remaining: publish the adapters + model card to the Hugging Face Hub
-(see `docs/huggingface.md`).
+**Current Work:** All milestones M0–M6 complete. v0.1.0 tagged and pushed; LoRA adapters
+published on the Hugging Face Hub (`munod/jeba-en`, `munod/jeba-multi`) and loaded by the runtime
+by default. Remaining: create the GitHub Release page for `v0.1.0` (needs authenticated `gh` or
+the web UI) and, optionally, a dedicated `choice` head (see L-002).
 
 ## Milestone Status
 
