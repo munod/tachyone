@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M6 — Proof & Release
-**Status:** M0–M5 COMPLETE; M6 (benchmarks, docs site, HF release) next
+**Current Milestone:** Complete (M0–M6)
+**Status:** M0–M6 COMPLETE; external step remaining: GPU training run + published numbers/weights
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -121,7 +121,7 @@ calibration within RTX 3060 12GB budget.
 
 ### Features
 
-**Benchmarks & release** - PLANNED
+**Benchmarks & release** - DONE
 - `benchmarks/` comparable to MASSIVE / XNLI / typed-decisions
 - Docs site, model card, GitHub release
 

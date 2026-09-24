@@ -124,7 +124,19 @@ Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/t
 | [`docs/tasks.md`](docs/tasks.md) | Atomic task plan with verification |
 | [`docs/testing.md`](docs/testing.md) | Contract/parity tests, gates, benchmarks |
 | [`docs/training.md`](docs/training.md) | Data generation, LoRA/QLoRA, RLCD, calibration |
+| [`docs/release.md`](docs/release.md) | Release checklist (gates, training, benchmarks, publish) |
+| [`docs/model-card.md`](docs/model-card.md) | Hugging Face model card |
+| [`benchmarks/report.md`](benchmarks/report.md) | Reproducible benchmark report |
+| [`CHANGELOG.md`](CHANGELOG.md) | Notable changes (Keep a Changelog) |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Conventions, gates, contract-test rule |
+
+## Documentation site
+
+```bash
+uv sync --group docs
+uv run mkdocs serve      # local preview
+uv run mkdocs build --strict
+```
 
 ## Contributing
 

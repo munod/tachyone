@@ -4,13 +4,14 @@ Compact, high-signal guide for agents and contributors working in this repositor
 
 ## Status
 
-**M5 (Ecosystem & Acceleration) complete.** `src/jeba/` has the wire contract, a pluggable
-backend seam (LLM, model-free `FakeBackend`, local encoder, ONNX), language routing with
-checkpoint lifecycle, confidence/calibration, batched single-pass inference, hooks, an optional
-fast path, FastAPI serving, an SDK, a CLI, preset/schema helpers, an MCP stdio server, a
-LangChain adapter, and a no-op telemetry guard. `training/` has the full data → LoRA/RLCD →
-calibration → evaluation pipeline. M6 (Proof & Release) is next; the GPU training run is still
-pending. Current milestone and blockers: `.specs/project/STATE.md`.
+**All milestones M0–M6 complete.** `src/jeba/` has the wire contract, a pluggable backend seam
+(LLM, model-free `FakeBackend`, local encoder, ONNX), language routing with checkpoint lifecycle,
+confidence/calibration, batched single-pass inference, hooks, an optional fast path, FastAPI
+serving, an SDK, a CLI, preset/schema helpers, an MCP stdio server, a LangChain adapter, and a
+no-op telemetry guard. `training/` has the full data → LoRA/RLCD → calibration → evaluation
+pipeline; `benchmarks/` renders a reproducible report; `docs/` builds an mkdocs site. The only
+remaining external step is the RTX 3060 training run plus publishing measured numbers/weights
+(see `docs/release.md`). Current state and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
@@ -70,6 +71,9 @@ Training lives in `training/` (not installed): `uv run python -m training.genera
 Integration extras are similarly lazy: `JEBA_BACKEND=onnx` needs `--extra onnx`; `jeba-mcp-server`
 needs `--extra mcp`; `jeba.integrations.langchain` needs `--extra langchain`; the fast path needs
 `--extra fast`. Each raises a clear error naming the extra when it is missing.
+
+Docs site: `uv sync --group docs && uv run mkdocs build --strict` (CI has a dedicated job).
+Benchmarks: `uv run python -m benchmarks.report --entry encoder=<report.json> --out benchmarks/report.md`.
 
 ## Directory boundaries (planned)
 

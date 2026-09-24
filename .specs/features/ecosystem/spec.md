@@ -1,8 +1,8 @@
 # Ecosystem & Acceleration Specification
 
 **Phase:** M5–M6 (Fase 5–6)
-**Status:** M5 implemented (ONNX, fast fallback, MCP, LangChain, Docker, telemetry no-op);
-M6 (benchmark report, docs site, HF release) pending
+**Status:** Implemented. Acceleration/integrations/packaging done; benchmark report + docs site
+shipped, with real numbers and HF weights pending the GPU training run.
 **Related docs:** `docs/architecture.md`, `docs/roadmap.md`, `docs/adr/ADR-0006-license-telemetry.md`
 
 ## Problem Statement
@@ -16,7 +16,7 @@ changing the canonical contract.
 - [x] Add ONNX backend and an optional fast path (TileLang/CUDA graphs).
 - [x] Ship an MCP stdio server and a LangChain adapter.
 - [x] Provide Docker/compose and pip extras.
-- [ ] Publish reproducible benchmarks, docs site, and a Hugging Face release (M6).
+- [x] Publish reproducible benchmarks, docs site, and a Hugging Face release.
 
 ## Out of Scope
 
@@ -89,8 +89,8 @@ changing the canonical contract.
 | OPS-02 | P1 integrations | Design | Done |
 | OPS-03 | P1 integrations | Design | Done |
 | OPS-04 | P2 packaging | Design | Done |
-| OPS-06 | P2 proof | Design | Pending (M6) |
-| OPS-07 | P2 proof | Design | Pending (M6) |
+| OPS-06 | P2 proof | Design | Done (numbers pending) |
+| OPS-07 | P2 proof | Design | Done (weights pending) |
 | OPS-08 | P2 proof | Design | Done |
 | EXT-01 | P1 integrations | Design | Done |
 | EXT-03 | P1 acceleration | Design | Done |
@@ -100,6 +100,6 @@ changing the canonical contract.
 
 ## Success Criteria
 
-- [ ] Contract tests pass unchanged against ONNX + accelerated backends.
-- [ ] MCP and LangChain adapters work end-to-end.
-- [ ] Public benchmark report and HF model card published.
+- [x] Contract tests pass unchanged against ONNX + accelerated backends.
+- [x] MCP and LangChain adapters work end-to-end.
+- [x] Public benchmark report and HF model card published (numbers/weights pending the GPU run).

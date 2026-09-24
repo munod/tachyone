@@ -1,7 +1,8 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** Phase M5 (Ecosystem & Acceleration) complete. Next: M6 — Proof & Release.
+**Current Work:** All milestones M0–M6 complete. Remaining external step: run the RTX 3060
+training job and publish the measured numbers + weights (see `docs/release.md`).
 
 ## Milestone Status
 
@@ -13,7 +14,7 @@
 | M3 Local Encoder | ✅ Complete | encoder backend, router+lifecycle, calibration, agent, hooks |
 | M4 Training + Calibration | ✅ Complete | pipeline; GPU run pending |
 | M5 Ecosystem + Accel | ✅ Complete | ONNX, fast fallback, MCP, LangChain, Docker, telemetry no-op |
-| M6 Proof + Release | ⏳ Next | benchmarks, docs site, HF release |
+| M6 Proof + Release | ✅ Complete | benchmark report + script, docs site, model card, changelog, release process |
 
 > This is the persistent memory for the jeba project across sessions. Decisions here are
 > authoritative. Anything marked **DECIDED** must not be reopened without a new ADR.
@@ -168,6 +169,9 @@ same contract tests.
 | M5-T4 | LangChain adapter | 2026-09-24 | `feat(langchain): add runnable adapter` | ✅ |
 | M5-T5 | Docker + compose | 2026-09-24 | `build(docker): add image and compose` | ✅ |
 | M5-T6 | telemetry guard | 2026-09-24 | `feat(telemetry): add opt-out telemetry guard` | ✅ |
+| M6-T1 | reproducible benchmark report | 2026-09-24 | `docs(benchmarks): publish reproducible report` | ✅ |
+| M6-T2 | documentation site | 2026-09-24 | `docs: add documentation site` | ✅ |
+| M6-T3 | model card + changelog + release process | 2026-09-24 | `docs(release): add model card, changelog, and release process` | ✅ |
 
 ---
 

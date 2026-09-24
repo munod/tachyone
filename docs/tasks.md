@@ -1,6 +1,6 @@
 # Task Plan
 
-**Status:** Phases M0–M5 complete (M4 GPU run pending). M6 not started.
+**Status:** All phases M0–M6 complete (M4 GPU run and published numbers/weights pending).
 **Design:** `docs/architecture.md` · **Requirements:** `docs/requirements/`
 **Gates:** `uv run ruff check .` (lint) · `uv run pyright` (types) · `uv run pytest` (tests), per `docs/testing.md`.
 
