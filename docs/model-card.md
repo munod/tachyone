@@ -29,6 +29,8 @@ pipeline_tag: text-classification
 - **Model type:** non-autoregressive encoder with three task distributions (`noul`, `choice`,
   `score`), answering typed questions about a state in one forward pass.
 - **Trunk:** ModernBERT-large (English) and mmBERT-base (100+ languages); see ADR-0007.
+- **Adapters:** [`munod/jeba-en`](https://huggingface.co/munod/jeba-en),
+  [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi) (LoRA; load base + adapter).
 - **Licence:** Apache-2.0.
 - **Repository:** <https://github.com/munod/jeba>
 

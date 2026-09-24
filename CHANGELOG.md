@@ -25,7 +25,9 @@ All notable changes to this project are documented here. The format is based on
 ### Notes
 
 - Weights are fetched from the Hugging Face Hub on demand and cached locally (ADR-0010).
-- The RTX 3060 training run and published benchmark numbers are still pending.
+- LoRA adapters published: [`munod/jeba-en`](https://huggingface.co/munod/jeba-en),
+  [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi) (full-scale run numbers in
+  `benchmarks/report.md`).
 
 ## [0.0.1] - 2026-09-24
 

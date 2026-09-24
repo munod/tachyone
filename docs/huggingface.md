@@ -5,10 +5,20 @@ jeba ships **PEFT LoRA adapters**, not full checkpoints. Each adapter's
 consumers load the base trunk plus the adapter. Weights are fetched/cached locally at runtime
 (ADR-0010); publishing is only about distribution.
 
+> **Published (verified):**
+> - <https://huggingface.co/munod/jeba-en> (ModernBERT-large adapter)
+> - <https://huggingface.co/munod/jeba-multi> (mmBERT-base adapter)
+>
+> Both load via `PeftModel.from_pretrained(base, "munod/jeba-en")` and predict.
+
 ## 0. Prerequisites
 
-- A Hugging Face account and (for pushing) a **write token** from
-  <https://huggingface.co/settings/tokens>, exported as `HF_TOKEN`.
+- A Hugging Face account. Two upload paths: a **write token** (`HF_TOKEN`) over HTTPS, or your
+  **SSH key** over git (`ssh -T git@hf.co` → `Hi <user>, welcome to Hugging Face.`).
+- **Git LFS** for the SSH/git path: `adapter_model.safetensors` is ~29 MB, above the Hub's
+  10 MiB git limit, so the repo's `.gitattributes` routes it through LFS. Install `git-lfs` and
+  run `git lfs install --local` in the clone before adding files. The `hf upload` (token) path
+  handles LFS itself and needs no git-lfs.
 - The `train` extra installed (provides the `hf` CLI and `huggingface_hub`):
 
   ```bash
@@ -18,9 +28,9 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 - Trained adapters under `checkpoints/en` and `checkpoints/multi` (see `docs/release.md`) and
   a fitted `temperature_calibration.json` in each.
 
-> **Network note:** pushing over SSH needs outbound access to `huggingface.co:22`. If port 22 is
-> blocked, use the token/HTTPS path below (it always works). Test with
-> `ssh -T git@huggingface.co`.
+> **Network note:** pushing over SSH needs outbound access to `hf.co:22` (not
+> `huggingface.co`, whose SSH port times out on some networks). If port 22 is blocked, use
+> `ssh -T -p 443 git@hf.co` or the token/HTTPS path below (it always works).
 
 ## 1. Create the model repos (once)
 
@@ -53,14 +63,17 @@ uv run hf upload <user>/jeba-multi dist/hf/multi --repo-type model
 
 ### Option B — git over SSH (your configured key)
 
-Requires SSH access to `huggingface.co:22`.
+Requires SSH access to `hf.co:22`. Verify with `ssh -T git@hf.co` (you should see
+`Hi <user>, welcome to Hugging Face.`). If port 22 is blocked, use port 443 instead:
+`ssh -T -p 443 git@hf.co` (SSH config `Hostname hf.co`, `Port 443`).
 
 ```bash
-git clone git@huggingface.co:<user>/jeba-en     hf-jeba-en
-cp -r dist/hf/en/.  hf-jeba-en/
-git -C hf-jeba-en add -A
-git -C hf-jeba-en commit -m "Add jeba-en adapter, temperature, and model card"
-git -C hf-jeba-en push
+git clone git@hf.co:<user>/jeba-en     hf-jeba-en
+cd hf-jeba-en && git lfs install --local   # required: safetensors > 10 MiB
+cp -r ../dist/hf/en/.  .
+git add -A
+git commit -m "Add jeba-en adapter, temperature, and model card"
+git push
 # repeat for jeba-multi
 ```
 
