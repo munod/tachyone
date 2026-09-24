@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** Phase M3 (Local Encoder) complete. Next: M4 — Training & Calibration.
+**Current Work:** Phase M4 (Training & Calibration) complete. Next: M5 — Ecosystem & Acceleration.
 
 ## Milestone Status
 
@@ -10,9 +10,9 @@
 | M0 Bootstrap | ✅ Complete | uv + py3.12, ruff/pyright/pytest, CI |
 | M1 Wire Contract | ✅ Complete | primitives + wire.py, contract suite |
 | M2 LLM Backend + Serve | ✅ Complete | llm/fake backends, FastAPI, SDK, CLI, presets, decide, e2e |
-| M3 Local Encoder | ✅ Complete | encoder backend, router+lifecycle, calibration, agent, hooks, offline multilingual |
-| M4 Training + Calibration | ⏳ Next | data gen, LoRA/QLoRA, RLCD, fit temperature |
-| M5 Ecosystem + Accel | ⬜ Not started | |
+| M3 Local Encoder | ✅ Complete | encoder backend, router+lifecycle, calibration, agent, hooks |
+| M4 Training + Calibration | ✅ Complete | data gen, LoRA/QLoRA, RLCD, temp fitting, eval, configs (GPU run pending) |
+| M5 Ecosystem + Accel | ⏳ Next | ONNX, fast path, MCP, LangChain, Docker |
 | M6 Proof + Release | ⬜ Not started | |
 
 > This is the persistent memory for the jeba project across sessions. Decisions here are
@@ -107,7 +107,8 @@ English checkpoint, selected automatically by a script/language router.
 **Discovered:** 2026-09-24
 **Impact:** Full fine-tuning of large encoders is infeasible; naive LoRA/QLoRA may OOM.
 **Workaround:** LoRA/QLoRA + gradient checkpointing + small effective batch + grad accumulation.
-**Resolution:** Validate with the Phase 4 training run; document VRAM ceilings in `docs/training.md`.
+**Resolution:** Pipeline implemented (M4-T2: LoRA/QLoRA + accumulation + checkpointing). The
+actual RTX 3060 run and documented VRAM ceilings are still pending (needs the `train` extra).
 
 ---
 
@@ -155,6 +156,12 @@ same contract tests.
 | M3-T6 | hooks registry | 2026-09-24 | `feat(hooks): add prediction and lifecycle hooks` | ✅ |
 | M3-T7 | batch prediction endpoint | 2026-09-24 | `feat(agent): expose batch prediction` | ✅ |
 | M3-T8 | offline multilingual smoke | 2026-09-24 | `test(integration): offline multilingual smoke` | ✅ |
+| M4-T1 | deterministic data generation | 2026-09-24 | `feat(training): add deterministic data generation` | ✅ |
+| M4-T3 | RLCD proper-scoring objective | 2026-09-24 | `feat(training): add RLCD proper-scoring objective` | ✅ |
+| M4-T2 | LoRA/QLoRA fine-tuning | 2026-09-24 | `feat(training): add LoRA fine-tuning` | ✅ |
+| M4-T4 | calibration temperature fitting | 2026-09-24 | `feat(training): fit calibration temperature` | ✅ |
+| M4-T5 | accuracy/ECE/latency harness | 2026-09-24 | `feat(benchmarks): add accuracy, ECE, latency harness` | ✅ |
+| M4-T6 | reproducible configs | 2026-09-24 | `chore(training): add reproducible configs` | ✅ |
 
 ---
 

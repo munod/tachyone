@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M4 — Training & Calibration
-**Status:** M0–M3 COMPLETE (offline encoder, routing, calibration, hooks); M4 next
+**Current Milestone:** M5 — Ecosystem & Acceleration
+**Status:** M0–M4 COMPLETE (pipeline implemented; GPU run pending); M5 next
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -91,11 +91,11 @@ calibration within RTX 3060 12GB budget.
 
 ### Features
 
-**Data & fine-tuning** - PLANNED
+**Data & fine-tuning** - DONE
 - `training/generate_data.py` synthetic JSONL; `training/finetune_rlcd.py`
 - `training/fit_calibration.py` temperature/ECE fitting
 
-**Evaluation** - PLANNED
+**Evaluation** - DONE
 - Accuracy/ECE/latency harness; MASSIVE / XNLI / typed-decisions probes
 
 ---

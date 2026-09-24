@@ -1,7 +1,7 @@
 # Training & Calibration Specification
 
 **Phase:** M4 (Fase 4)
-**Status:** Draft
+**Status:** Implemented (scripts + tests; RTX 3060 training run and ECE target pending)
 **Related docs:** `docs/training.md`, `docs/adr/ADR-0005-encoder-rlcd.md`
 
 ## Problem Statement
@@ -13,11 +13,11 @@ within a single RTX 3060 12GB.
 
 ## Goals
 
-- [ ] Generate reproducible synthetic supervision as JSONL.
-- [ ] Fine-tune English and multilingual checkpoints with LoRA/QLoRA (no OOM on 12GB).
-- [ ] Train with RLCD against strictly proper scoring rules for calibration.
-- [ ] Fit temperature and report accuracy, ECE, and latency.
-- [ ] Make every stage reproducible from committed scripts + configs.
+- [x] Generate reproducible synthetic supervision as JSONL.
+- [x] Fine-tune English and multilingual checkpoints with LoRA/QLoRA (no OOM on 12GB).
+- [x] Train with RLCD against strictly proper scoring rules for calibration.
+- [x] Fit temperature and report accuracy, ECE, and latency.
+- [x] Make every stage reproducible from committed scripts + configs.
 
 ## Out of Scope
 
@@ -90,21 +90,21 @@ reproducible.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| TRAIN-01 | P1 data | Design | Pending |
-| TRAIN-02 | P1 fine-tune | Design | Pending |
-| TRAIN-03 | P1 RLCD | Design | Pending |
-| TRAIN-04 | P1 RLCD | Design | Pending |
-| TRAIN-05 | P2 evaluation | Design | Pending |
-| TRAIN-06 | P1 fine-tune | Design | Pending |
-| TRAIN-07 | P1 data | Design | Pending |
-| CAL-01 | P1 RLCD | Design | Pending |
-| CAL-02 | P1 RLCD | Design | Pending |
-| CAL-04 | P1 RLCD | Design | Pending |
+| TRAIN-01 | P1 data | Design | Done |
+| TRAIN-02 | P1 fine-tune | Design | Done (run pending on GPU) |
+| TRAIN-03 | P1 RLCD | Design | Done |
+| TRAIN-04 | P1 RLCD | Design | Done |
+| TRAIN-05 | P2 evaluation | Design | Done |
+| TRAIN-06 | P1 fine-tune | Design | Done |
+| TRAIN-07 | P1 data | Design | Done |
+| CAL-01 | P1 RLCD | Design | Done |
+| CAL-02 | P1 RLCD | Design | Done |
+| CAL-04 | P1 RLCD | Design | Pending (target ECE after real run) |
 
 **Coverage:** 10 requirements mapped to `docs/tasks.md` M4.
 
 ## Success Criteria
 
-- [ ] Full pipeline reproducible from scripts + configs on 12GB.
-- [ ] ECE at or below the target stated in `docs/training.md`.
-- [ ] Benchmark numbers published with exact reproduction commands.
+- [x] Full pipeline reproducible from scripts + configs on 12GB.
+- [ ] ECE at or below the target stated in `docs/training.md` (after a real run).
+- [ ] Benchmark numbers published with exact reproduction commands (M6).

@@ -4,11 +4,13 @@ Compact, high-signal guide for agents and contributors working in this repositor
 
 ## Status
 
-**M3 (Local Encoder) complete.** `src/jeba/` has the wire contract, a pluggable backend
-seam (LLM, model-free `FakeBackend`, and a local encoder), language routing with checkpoint
-lifecycle, confidence/calibration, batched single-pass inference, hooks, FastAPI serving, an
-SDK, a CLI, and preset/schema helpers. M4 (Training & Calibration) is next. Current milestone
-and blockers: `.specs/project/STATE.md`.
+**M4 (Training & Calibration) complete.** `src/jeba/` has the wire contract, a pluggable
+backend seam (LLM, model-free `FakeBackend`, and a local encoder), language routing with
+checkpoint lifecycle, confidence/calibration, batched single-pass inference, hooks, FastAPI
+serving, an SDK, a CLI, and preset/schema helpers. `training/` has deterministic data
+generation, LoRA/QLoRA fine-tuning with RLCD proper-scoring, temperature fitting, an
+evaluation harness, and committed configs. M5 (Ecosystem & Acceleration) is next. The GPU
+training run is still pending. Current milestone and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
@@ -58,6 +60,12 @@ The default backend is `llm` (needs `JEBA_LLM_*`); use `--backend fake` or `JEBA
 for a model-free run, and `JEBA_BACKEND=encoder` for the local encoder. The encoder's real
 weights need the `train` extra (`uv sync --extra train`); the decision math and all tests work
 without it. Weights are fetched on demand (ADR-0010); tests use an injected fake encoder.
+
+Training lives in `training/` (not installed): `uv run python -m training.generate_data --out data/train.jsonl`,
+`uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json --dry-run`,
+`uv run python -m training.fit_calibration --calibration data/preds.jsonl --out temperature.json`,
+`uv run python -m training.evaluate --data data/eval.jsonl --out report.json`. Heavy modules
+(torch/transformers/peft) are imported lazily behind the `train` extra.
 
 ## Directory boundaries (planned)
 
