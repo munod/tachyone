@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# uv
+.uv/
+
+# Test / lint / type caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model weights and checkpoints (never commit large binaries)
+*.safetensors
+*.cact
+*.onnx
+*.bin
+models/
+checkpoints/
+jeba_models/
+
+# Local datasets / benchmark artifacts
+data/
+datasets/
+benchmarks/results/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# OS / editor metadata
+.DS_Store
+Thumbs.db

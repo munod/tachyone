@@ -1,0 +1,163 @@
+# Testing & Quality Strategy
+
+**Status:** Planned (no tests exist yet). Commands below are the **planned** gates; they become
+real in M0-T2 and are frozen in `docs/tasks.md` at that point.
+
+---
+
+## Principles
+
+1. **Contract-first.** The `/v1/systemone` contract test is the highest-priority suite. Any
+   public API change MUST update it in the same commit (Laya convention, adopted in ADR-0001).
+2. **Tests are co-located with code.** A task that creates a code layer writes its tests in the
+   same task — never deferred to a later task.
+3. **Backends are interchangeable.** Every backend passes the same contract suite; no backend
+   gets a private contract.
+4. **Optional deps are conditional.** Tests for extras (`serve`, `onnx`, `mcp`, `langchain`,
+   `train`) skip cleanly when the extra is not installed (Laya-style conditional tests).
+5. **No silent test deletion.** Gate checks record test counts; a decrease must be justified.
+
+---
+
+## Test types
+
+| Type | Purpose | Location pattern | Runs when |
+| --- | --- | --- | --- |
+| **Contract** | Jev wire parity, primitives, error shapes | `tests/test_contract_*.py` | Always |
+| **Unit** | One function/class in isolation | `tests/test_*.py` | Always |
+| **Integration** | Server + backend + wire together | `tests/integration/` | Always (offline) |
+| **E2E** | Repointed Jev client against a live server | `tests/e2e/` | Always |
+| **Conditional** | Extra-specific behavior | `tests/extras/` | Only if extra installed |
+| **Benchmark** | Latency/throughput/ECE | `benchmarks/` | On demand / M4+ |
+
+---
+
+## Test Coverage Matrix
+
+| Code Layer | Required Test Type | Location Pattern | Run Command (planned) |
+| --- | --- | --- | --- |
+| `primitives.py` | unit | `tests/test_primitives_*.py` | `uv run pytest tests/test_primitives_*.py` |
+| `wire.py` | unit + contract | `tests/test_wire.py`, `tests/test_contract_wire.py` | `uv run pytest tests/test_contract_wire.py` |
+| `backends/base.py` | unit | `tests/test_backends_base.py` | `uv run pytest tests/test_backends_base.py` |
+| `backends/llm.py` | unit + integration | `tests/test_backends_llm.py` | `uv run pytest tests/test_backends_llm.py` |
+| `backends/encoder.py` | contract + integration | `tests/test_contract_wire.py`, `tests/integration/` | `uv run pytest tests/` |
+| `backends/onnx.py` | contract + integration (conditional) | `tests/extras/test_onnx.py` | `uv run pytest tests/extras/test_onnx.py` |
+| `router.py` | unit | `tests/test_router.py` | `uv run pytest tests/test_router.py` |
+| `calibration.py` | unit | `tests/test_calibration.py` | `uv run pytest tests/test_calibration.py` |
+| `agent.py` | unit + benchmark | `tests/test_agent.py` | `uv run pytest tests/test_agent.py` |
+| `hooks.py` | unit + hook-contract | `tests/test_hooks_api.py` | `uv run pytest tests/test_hooks_api.py` |
+| `serve.py` | integration | `tests/integration/test_serve.py` | `uv run pytest tests/integration/` |
+| `client.py` | unit + integration | `tests/test_client.py` | `uv run pytest tests/test_client.py` |
+| `cli.py` | unit + smoke | `tests/test_cli.py` | `uv run pytest tests/test_cli.py` |
+| `schemas.py` | unit | `tests/test_schemas.py` | `uv run pytest tests/test_schemas.py` |
+| `training/*` | unit + evaluation | `tests/test_training_*.py` | `uv run pytest tests/test_training_*.py` |
+| `mcp/`, `integrations/` | integration (conditional) | `tests/extras/` | `uv run pytest tests/extras/` |
+
+---
+
+## Parallelism Assessment
+
+| Test Type | Parallel-Safe? | Isolation Model | Evidence |
+| --- | --- | --- | --- |
+| Contract | Yes | Pure functions + fixtures; no shared state | `tests/test_contract_wire.py` uses in-memory fixtures |
+| Unit | Yes | No I/O; deterministic | `FakeBackend` injected |
+| Integration (server) | Yes | Ephemeral port per test; no shared DB | `httpx` ASGI transport or per-test server |
+| E2E | No (serialize) | Live server + client; port binding | `tests/e2e/` binds a port |
+| Conditional extras | Yes | Skipped unless extra present | `pytest.importorskip` |
+| Benchmark | No (serialize) | GPU/CPU contention skews latency | `benchmarks/` runs alone |
+
+**Rule:** tasks whose required test type is **not** parallel-safe must run sequentially even if
+their code has no dependencies.
+
+---
+
+## Gate Check Commands (planned)
+
+| Gate Level | When to Use | Command |
+| --- | --- | --- |
+| **Quick** | After tasks with unit tests only | `uv run pytest tests/ -q -x` |
+| **Full** | After tasks with integration/e2e/contract tests | `uv run pytest tests/ && uv run ruff check . && uv run pyright` |
+| **Build** | After phase completion | `uv run ruff check . && uv run pyright && uv run pytest tests/` |
+
+> These commands are **planned**. They become authoritative in M0-T2 once `pyproject.toml`
+> exists. Until then, treat them as the intended interface, not as runnable commands.
+
+---
+
+## Contract test rules
+
+1. `tests/test_contract_wire.py` encodes `docs/protocol.md` exactly.
+2. Golden fixtures live in `tests/fixtures/` and are captured from the documented Jev shapes.
+3. Any change to a public field, type, or error status requires updating the contract test in
+   the **same commit**; CI fails otherwise.
+4. Every backend (LLM, encoder, ONNX) runs the same contract suite.
+5. Hooks must not alter the canonical shape — verified by running the contract suite with hooks
+   registered (`tests/test_hooks_api.py`).
+
+### What the contract suite covers
+
+- All three primitives: valid payloads, boundary limits (choice 255/256, score 2/10/1/11).
+- Multi-question requests: N in → N out, ids echoed.
+- Response invariants: probability keys, normalization, `usage` presence.
+- Error shapes: 401, 422, 429, 529.
+- Additive extensions do not change canonical fields.
+
+---
+
+## Conditional tests by extra
+
+Pattern (Laya-inspired):
+
+```python
+# Illustrative only.
+import pytest
+
+pytest.importorskip("onnxruntime")  # skip cleanly when the extra is absent
+
+def test_onnx_backend_contract():
+    ...
+```
+
+This keeps the base test run green without optional dependencies while still testing extras
+when installed.
+
+---
+
+## Benchmarks & reproduction
+
+| Benchmark | Measures | Command (planned) |
+| --- | --- | --- |
+| Latency | p50/p95 per backend, batch sizes | `uv run python benchmarks/latency.py` |
+| Throughput | requests/s vs batch size | `uv run python benchmarks/throughput.py` |
+| Calibration | ECE per primitive/language | `uv run python benchmarks/calibration.py` |
+| Public probes | MASSIVE / XNLI / typed-decisions | `uv run python benchmarks/public_probes.py` |
+
+Reproduction rules:
+
+- Every benchmark records hardware, versions, seed, and exact command in its output artifact.
+- Benchmark runs are serialized (no parallel test execution) to avoid contention.
+- Results are committed as artifacts under `benchmarks/results/` with a timestamp.
+
+---
+
+## CI
+
+`.github/workflows/ci.yml` (planned, M0-T4):
+
+1. Checkout, install uv, `uv sync --frozen`.
+2. `uv run ruff check .`
+3. `uv run pyright`
+4. `uv run pytest tests/`
+5. Contract test step is explicit and blocking.
+
+---
+
+## Quality gates summary
+
+| Gate | Blocks |
+| --- | --- |
+| ruff | Merge |
+| pyright | Merge |
+| pytest (incl. contract) | Merge |
+| Contract test updated with public API change | Merge |
+| Test count not decreased without justification | Merge |
