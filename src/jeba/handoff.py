@@ -64,10 +64,18 @@ def _check_threshold(threshold: float) -> float:
 def assess(probabilities: Mapping[Any, float], *, threshold: float) -> Uncertainty:
     """Assess a distribution against ``threshold`` and decide whether to hand off.
 
-    ``abstain`` is true when the selected mass is strictly below ``threshold``. Empty or
-    degenerate distributions score ``0.0`` and therefore abstain for any positive ``τ``.
+    ``abstain`` is true when the selected mass is strictly below ``threshold``. The input must
+    be a real distribution with at least two outcomes: a single-outcome mapping is rejected so a
+    scalar (for example a bare ``noul`` probability) is never silently read as ``confidence=1.0``
+    — use :func:`assess_response` for ``noul``. Empty or all-zero distributions score ``0.0`` and
+    therefore abstain for any positive ``τ``.
     """
     tau = _check_threshold(threshold)
+    if len(probabilities) == 1:
+        raise ValueError(
+            "assess expects a distribution of at least two outcomes; for noul pass "
+            "{'noul': p, 'not-noul': 1 - p} or use assess_response"
+        )
     selected = confidence(probabilities)
     return Uncertainty(
         confidence=selected,

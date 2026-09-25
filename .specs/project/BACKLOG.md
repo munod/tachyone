@@ -108,7 +108,8 @@ documented in `docs/cookbook-handoff.md`; `CAL-06` is traced. Spec/tasks:
 - [x] Usable from the CLI without an API key (`--backend fake`).
 
 **Risks / notes.** τ stays a required, configurable knob (no universal default).
-`noul` has no separate `confidence`, so the helper uses its probability directly.
+`noul` has no separate `confidence`, so the helper uses its binary certainty `max(p, 1-p)`, which
+keeps τ pointing the same way for every primitive.
 
 **Related.** `docs/protocol.md` (confidence semantics), `docs/cookbook-handoff.md`,
 `docs/adr/ADR-0005`, `NFR-C06`.

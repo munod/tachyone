@@ -98,6 +98,8 @@ mass.
 - WHEN a `score` answer is assessed THEN the helper SHALL use `confidence` and the level
   distribution, never the expected `score` position.
 - WHEN `threshold` is outside `[0, 1]` THEN the API SHALL reject it with `ValueError`.
+- WHEN `assess` receives a single-outcome mapping THEN it SHALL reject it with `ValueError` (a
+  scalar is not a distribution); use `assess_response` for `noul`.
 
 ---
 

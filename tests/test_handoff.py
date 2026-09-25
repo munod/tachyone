@@ -56,9 +56,15 @@ def test_assess_empty_abstains() -> None:
 
 def test_assess_rejects_threshold_out_of_range() -> None:
     with pytest.raises(ValueError):
-        assess({"a": 1.0}, threshold=1.5)
+        assess({"a": 0.5, "b": 0.5}, threshold=1.5)
     with pytest.raises(ValueError):
-        assess({"a": 1.0}, threshold=-0.1)
+        assess({"a": 0.5, "b": 0.5}, threshold=-0.1)
+
+
+def test_assess_rejects_single_outcome_distribution() -> None:
+    # A bare scalar (e.g. a noul probability) is not a distribution; never read it as 1.0.
+    with pytest.raises(ValueError, match="at least two outcomes"):
+        assess({"noul": 0.05}, threshold=0.5)
 
 
 # --- assess_response ----------------------------------------------------------------------

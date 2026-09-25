@@ -20,8 +20,8 @@ unnormalized inputs consistently.
 
 **What:** New module with frozen dataclasses (`Uncertainty`, `HandoffSignal`, `HandoffReport`),
 `assess(probabilities, *, threshold)` and `assess_response(response, *, threshold)`; `noul` uses its
-probability, `choice`/`score` use `confidence` plus their distribution; reject thresholds outside
-`[0,1]`.
+binary certainty `max(p, 1-p)`, `choice`/`score` use `confidence` plus their distribution; reject
+thresholds outside `[0,1]`.
 **Where:** `src/jeba/handoff.py`, `tests/test_handoff.py`.
 **Depends on:** B3-T1 · **Requirement:** CAL-03, EXT-02.
 **Done when:** the aggregate `abstain` is true when any question abstains and every signal carries

@@ -16,6 +16,10 @@ read the `confidence` that already ships in every `choice`/`score` answer (and t
 - `assess(probabilities, threshold=τ)` → `Uncertainty(confidence, entropy, margin, threshold, abstain)`.
 - `assess_response(response, threshold=τ)` → `HandoffReport(abstain, threshold, signals)`.
 
+`assess` takes a full probability distribution (at least two outcomes); a single-outcome mapping is
+rejected rather than silently read as `confidence=1.0`. For a `noul` answer use `assess_response`,
+which derives its binary certainty `max(p, 1-p)` for you.
+
 `abstain` is true when the selected mass is **strictly below** `τ`. Alongside `confidence` you get
 two extra meters:
 
