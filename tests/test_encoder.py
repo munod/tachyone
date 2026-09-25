@@ -186,6 +186,51 @@ def test_per_primitive_temperature_sharpens_noul() -> None:
     assert abs(tuned.noul - 0.5) >= abs(base.noul - 0.5)
 
 
+def test_load_temperatures_reads_per_language(tmp_path: Path) -> None:
+    (tmp_path / "temperature_calibration.json").write_text(
+        json.dumps(
+            {
+                "per_primitive": {
+                    "choice": {"temperature": 2.0, "by_language": {"pt": {"temperature": 3.0}}}
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=str(tmp_path))
+    assert load_temperatures(info, models_dir=str(tmp_path)) == {"choice": 2.0, "choice:pt": 3.0}
+
+
+def test_per_language_temperature_overrides_per_primitive() -> None:
+    question = NoulQuestion(instructions="Does this request urgency?")
+    temperatures = {"noul": 1.0, "noul:pt": 0.05}
+    tuned = EncoderModel(_encode, temperatures=temperatures).answer_state(
+        "please refund now", {"q": question}, lang="pt"
+    )["q"]
+    generic = EncoderModel(_encode, temperatures=temperatures).answer_state(
+        "please refund now", {"q": question}, lang="en"
+    )["q"]
+    assert isinstance(tuned, NoulAnswer) and isinstance(generic, NoulAnswer)
+    assert abs(tuned.noul - 0.5) >= abs(generic.noul - 0.5)
+
+
+def test_runtime_detects_language_for_temperature() -> None:
+    question = NoulQuestion(instructions="Does this request urgency?")
+    text = "Preciso de um reembolso hoje."
+    temperatures = {"noul": 1.0, "noul:pt": 0.05, "noul:es": 4.0}
+    auto = EncoderModel(_encode, temperatures=temperatures).answer_state(text, {"q": question})["q"]
+    forced_pt = EncoderModel(_encode, temperatures=temperatures).answer_state(
+        text, {"q": question}, lang="pt"
+    )["q"]
+    forced_es = EncoderModel(_encode, temperatures=temperatures).answer_state(
+        text, {"q": question}, lang="es"
+    )["q"]
+    assert isinstance(auto, NoulAnswer) and isinstance(forced_pt, NoulAnswer)
+    assert isinstance(forced_es, NoulAnswer)
+    assert auto.noul == pytest.approx(forced_pt.noul)  # auto-detection chose Portuguese
+    assert auto.noul != pytest.approx(forced_es.noul)
+
+
 def test_from_config_applies_adapter_overrides() -> None:
     from jeba.config import Config
 
@@ -256,3 +301,57 @@ def test_load_choice_head_from_local_dir(tmp_path: Path) -> None:
 def test_load_choice_head_without_adapter_is_none() -> None:
     info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=None)
     assert load_choice_head(info, models_dir="/tmp") is None
+
+
+def test_cuda_graph_encode_matches_eager_on_cuda() -> None:
+    torch = pytest.importorskip("torch")
+    if not torch.cuda.is_available():
+        pytest.skip("no CUDA device")
+    from jeba.backends.encoder import _cuda_graph_encode
+
+    class _Out:
+        def __init__(self, last_hidden_state: object) -> None:
+            self.last_hidden_state = last_hidden_state
+
+    class _Tiny(torch.nn.Module):
+        def __init__(self, dim: int = 16) -> None:
+            super().__init__()
+            self.emb = torch.nn.Embedding(64, dim)
+
+        def forward(self, input_ids, attention_mask):
+            return _Out(self.emb(input_ids))
+
+    torch.manual_seed(0)
+    model = _Tiny().cuda().eval()
+
+    def tokenize(texts: list[str]):
+        width = max(len(text) for text in texts)
+        ids = torch.zeros((len(texts), width), dtype=torch.long, device="cuda")
+        mask = torch.zeros_like(ids)
+        for row, text in enumerate(texts):
+            length = len(text)
+            ids[row, :length] = torch.arange(1, length + 1, device="cuda")
+            mask[row, :length] = 1
+        return ids, mask
+
+    def eager_pool(texts: list[str]) -> list[list[float]]:
+        ids, mask = tokenize(texts)
+        with torch.no_grad():
+            hidden = model(input_ids=ids, attention_mask=mask).last_hidden_state
+        weights = mask.unsqueeze(-1).to(hidden.dtype)
+        pooled = (hidden * weights).sum(1) / weights.sum(1).clamp(min=1e-6)
+        return pooled.cpu().tolist()
+
+    encode = _cuda_graph_encode(model, tokenize, device="cuda")
+    batch = ["aa", "bbb", "c"]
+    first = encode(batch)  # captures and replays
+    second = encode(batch)  # replays the captured graph
+    expected = eager_pool(batch)
+    for produced in (first, second):
+        assert len(produced) == len(batch)
+        for row, reference in zip(produced, expected, strict=True):
+            assert row == pytest.approx(reference, abs=1e-4)
+    # A different shape captures a second graph and still matches the eager forward.
+    other = eager_pool(["dddd", "ee"])
+    for row, reference in zip(encode(["dddd", "ee"]), other, strict=True):
+        assert row == pytest.approx(reference, abs=1e-4)

@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from jeba.agent import Agent
 from jeba.backends.base import PredictionResult
-from jeba.calibration import confidence
+from jeba.calibration import confidence, parse_temperature_report
 from jeba.primitives import (
     Answer,
     ChoiceAnswer,
@@ -32,7 +32,15 @@ from jeba.primitives import (
     ScoreQuestion,
     State,
 )
-from jeba.router import ENGLISH, MULTILINGUAL, CheckpointInfo, Router, state_text
+from jeba.router import (
+    ENGLISH,
+    MULTILINGUAL,
+    CheckpointInfo,
+    Router,
+    detect_language,
+    detect_script,
+    state_text,
+)
 from jeba.wire import Usage
 
 if TYPE_CHECKING:
@@ -169,11 +177,20 @@ class EncoderModel:
         self._temperatures = dict(temperatures or {})
         self._choice_scorer = choice_scorer
 
-    def _temp(self, kind: str) -> float:
+    def _temp(self, kind: str, lang: str | None = None) -> float:
+        """Temperature for ``kind``, preferring a per-language fit over the per-primitive one."""
+        if lang:
+            specific = self._temperatures.get(f"{kind}:{lang}")
+            if specific is not None:
+                return specific
         return self._temperatures.get(kind, self._temperature)
 
-    def answer_state(self, state: State, questions: dict[str, Question]) -> dict[str, Answer]:
+    def answer_state(
+        self, state: State, questions: dict[str, Question], *, lang: str | None = None
+    ) -> dict[str, Answer]:
         state_embedding_text = state_text(state)
+        if lang is None:
+            lang = detect_language(state_embedding_text, detect_script(state_embedding_text))
         texts = [state_embedding_text]
         plan: list[tuple[str, Question, int, list[int]]] = []
         for question_id, question in questions.items():
@@ -191,7 +208,7 @@ class EncoderModel:
         for question_id, question, question_index, criterion_indices in plan:
             question_embedding = embeddings[question_index]
             if isinstance(question, NoulQuestion):
-                score = _cosine(question_embedding, state_embedding) / self._temp("noul")
+                score = _cosine(question_embedding, state_embedding) / self._temp("noul", lang)
                 answers[question_id] = NoulAnswer(noul=min(1.0, max(0.0, _sigmoid(score))))
                 continue
             scores = [
@@ -207,7 +224,7 @@ class EncoderModel:
                         [embeddings[index] for index in criterion_indices],
                     )
                     scores = [base + extra for base, extra in zip(scores, residual, strict=True)]
-                probabilities = _softmax(scores, self._temp("choice"))
+                probabilities = _softmax(scores, self._temp("choice", lang))
                 options = list(question.criteria)
                 distribution = {
                     option: probabilities[position] for position, option in enumerate(options)
@@ -217,7 +234,7 @@ class EncoderModel:
                     choice=best, probabilities=distribution, confidence=confidence(distribution)
                 )
             else:
-                probabilities = _softmax(scores, self._temp("score"))
+                probabilities = _softmax(scores, self._temp("score", lang))
                 level_distribution = {
                     position: probabilities[position] for position in range(len(question.criteria))
                 }
@@ -265,19 +282,87 @@ def _resolve_device(torch: Any, device: str) -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
+#: Maximum number of captured CUDA graphs kept per checkpoint (one per input shape). High enough
+#: that a diverse batch of distinct lengths does not evict graphs and re-capture mid-run.
+_MAX_CUDA_GRAPHS = 128
+
+
+def _pool_hidden(hidden: Any, mask: Any) -> Any:
+    mask = mask.unsqueeze(-1).to(hidden.dtype)
+    return (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-6)
+
+
+def _cuda_graph_encode(model: Any, tokenize: Any, *, device: str) -> EncodeFn:
+    """Wrap a forward pass in per-shape CUDA graphs to cut launch overhead (B-2).
+
+    CUDA graphs require static shapes, so one graph is captured per ``(batch, length)`` bucket
+    and replayed by copying the fresh inputs into the captured static tensors. Shapes that fail
+    to capture fall back to eager execution, and the oldest graph is evicted past the cap.
+    """
+    import torch  # pyright: ignore[reportMissingImports]
+
+    graphs: dict[tuple[int, int], tuple[Any, Any, Any, Any]] = {}
+    eager_shapes: set[tuple[int, int]] = set()
+
+    def _eager(input_ids: Any, attention_mask: Any) -> Any:
+        with torch.no_grad():
+            hidden = model(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state
+        return _pool_hidden(hidden, attention_mask)
+
+    def _capture(input_ids: Any, attention_mask: Any) -> tuple[Any, Any, Any, Any]:
+        side = torch.cuda.Stream()
+        side.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(side), torch.no_grad():
+            for _ in range(3):
+                model(input_ids=input_ids, attention_mask=attention_mask)
+        torch.cuda.current_stream().wait_stream(side)
+        static_ids = input_ids.clone()
+        static_mask = attention_mask.clone()
+        graph = torch.cuda.CUDAGraph()
+        with torch.no_grad(), torch.cuda.graph(graph):
+            static_hidden = model(
+                input_ids=static_ids, attention_mask=static_mask
+            ).last_hidden_state
+        return graph, static_ids, static_mask, static_hidden
+
+    def encode(texts: list[str]) -> list[list[float]]:
+        input_ids, attention_mask = tokenize(texts)
+        key = (int(input_ids.shape[0]), int(input_ids.shape[1]))
+        entry = graphs.get(key)
+        if entry is None and key not in eager_shapes:
+            try:
+                entry = _capture(input_ids, attention_mask)
+                if len(graphs) >= _MAX_CUDA_GRAPHS:
+                    graphs.pop(next(iter(graphs)))
+                graphs[key] = entry
+            except Exception:  # pragma: no cover - device/driver dependent
+                eager_shapes.add(key)
+        if entry is None:
+            return cast("list[list[float]]", _eager(input_ids, attention_mask).cpu().tolist())
+        graph, static_ids, static_mask, static_hidden = entry
+        static_ids.copy_(input_ids)
+        static_mask.copy_(attention_mask)
+        graph.replay()
+        return cast("list[list[float]]", _pool_hidden(static_hidden, static_mask).cpu().tolist())
+
+    return encode
+
+
 def load_encoder(
     info: CheckpointInfo,
     *,
     models_dir: str,
     device: str = "auto",
     offline: bool = False,
+    fast: bool = False,
 ) -> EncodeFn:
     """Load a Hugging Face encoder (+ optional LoRA adapter) and return an encoding function.
 
     The base trunk comes from ``info.base_model`` (falling back to :data:`MODEL_IDS`), and
     ``info.adapter`` (a Hub repo id or local directory) is applied with PEFT when set.
     Torch/transformers are imported lazily; without the ``train`` extra this raises a
-    :class:`RuntimeError` naming the extra.
+    :class:`RuntimeError` naming the extra. With ``fast`` and a CUDA device, the forward is
+    wrapped in per-shape CUDA graphs (bf16 when supported) and otherwise falls back unchanged.
     """
     try:
         import torch  # pyright: ignore[reportMissingImports]
@@ -319,13 +404,38 @@ def load_encoder(
         pooled = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-6)
         return cast("list[list[float]]", pooled.cpu().tolist())
 
+    if fast:
+        from jeba.fast import maybe_accelerate
+
+        def tokenize(texts: list[str]) -> tuple[Any, Any]:
+            batch = tokenizer(
+                texts,
+                padding=True,
+                truncation=True,
+                max_length=info.context,
+                return_tensors="pt",
+            ).to(resolved)
+            return batch["input_ids"], batch["attention_mask"]
+
+        def builder() -> EncodeFn:
+            if resolved == "cuda" and torch.cuda.is_bf16_supported():
+                model.to(torch.bfloat16)
+            return _cuda_graph_encode(model, tokenize, device=resolved)
+
+        return cast("EncodeFn", maybe_accelerate(encode, device=resolved, builder=builder).target)
+
     return encode
 
 
 def load_temperatures(
     info: CheckpointInfo, *, models_dir: str, offline: bool = False
 ) -> dict[str, float]:
-    """Load per-primitive fitted temperatures from the adapter repo/dir, if present."""
+    """Load fitted temperatures from the adapter repo/dir, if present.
+
+    Keys are ``kind`` for the per-primitive fit and ``kind:lang`` for the per-language fit
+    (B-1); :meth:`EncoderModel._temp` prefers the latter. A legacy per-primitive-only file still
+    loads.
+    """
     if not info.adapter:
         return {}
     source: Path | None = None
@@ -349,12 +459,9 @@ def load_temperatures(
         return {}
     try:
         report = json.loads(source.read_text(encoding="utf-8"))
-        return {
-            kind: float(entry["temperature"])
-            for kind, entry in report.get("per_primitive", {}).items()
-        }
-    except (ValueError, KeyError, OSError):
+    except (ValueError, OSError):
         return {}
+    return parse_temperature_report(report)
 
 
 def load_choice_head(
@@ -406,9 +513,10 @@ def load_checkpoint(
     models_dir: str,
     device: str = "auto",
     offline: bool = False,
+    fast: bool = False,
 ) -> EncoderCheckpoint:
     """Load a full checkpoint: encoder (+ adapter), fitted temperatures, and choice scorer."""
-    encode = load_encoder(info, models_dir=models_dir, device=device, offline=offline)
+    encode = load_encoder(info, models_dir=models_dir, device=device, offline=offline, fast=fast)
     temperatures = load_temperatures(info, models_dir=models_dir, offline=offline)
     choice_scorer = load_choice_head(info, models_dir=models_dir, offline=offline)
     return EncoderCheckpoint(info, encode, temperatures=temperatures, choice_scorer=choice_scorer)
@@ -455,6 +563,7 @@ class EncoderBackend:
                 models_dir=config.models_dir,
                 device=config.device,
                 offline=config.offline,
+                fast=config.fast,
             )
 
         router = Router(loader=loader, max_loaded=2, hooks=hooks)

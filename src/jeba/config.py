@@ -94,6 +94,7 @@ class Config:
     adapters: dict[str, str | None] = field(default_factory=dict)
     offline: bool = False
     preload: tuple[str, ...] = ()
+    fast: bool = False
     threads: int = 0  # 0 = let the runtime decide
     api_key: str | None = field(default=None, repr=False)
     llm_base_url: str = "https://api.openai.com/v1"
@@ -116,6 +117,7 @@ class Config:
             adapters=_pairs(source, "JEBA_ADAPTERS"),
             offline=_bool(source, "JEBA_OFFLINE", False),
             preload=_csv(source, "JEBA_PRELOAD"),
+            fast=_bool(source, "JEBA_FAST", False),
             threads=_int(source, "JEBA_THREADS", 0, 0, 4096),
             api_key=_text(source, "JEBA_API_KEY", "") or None,
             llm_base_url=_text(source, "JEBA_LLM_BASE_URL", "https://api.openai.com/v1"),

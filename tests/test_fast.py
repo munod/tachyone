@@ -33,6 +33,30 @@ def test_maybe_accelerate_rejects_non_cuda_devices() -> None:
     assert result.accelerated is False
 
 
+def test_maybe_accelerate_uses_builder_on_cuda() -> None:
+    if not cuda_available():
+        pytest.skip("no CUDA device")
+    accelerated = object()
+    result = maybe_accelerate(object(), device="cuda", builder=lambda: accelerated)
+    assert result.target is accelerated
+    assert result.accelerated is True
+    assert result.reason
+
+
+def test_maybe_accelerate_falls_back_on_builder_failure() -> None:
+    if not cuda_available():
+        pytest.skip("no CUDA device")
+    sentinel = object()
+
+    def boom() -> object:
+        raise RuntimeError("capture failed")
+
+    result = maybe_accelerate(sentinel, device="cuda", builder=boom)
+    assert result.target is sentinel
+    assert result.accelerated is False
+    assert "capture failed" in result.reason
+
+
 def test_cuda_available_is_boolean() -> None:
     assert cuda_available() in (True, False)
 

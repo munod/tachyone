@@ -17,6 +17,7 @@ def test_defaults_are_local_first() -> None:
     assert config.llm_api_key is None
     assert config.models == ()
     assert config.preload == ()
+    assert config.fast is False
 
 
 def test_env_overrides() -> None:
@@ -28,6 +29,7 @@ def test_env_overrides() -> None:
             "JEBA_BACKEND": "fake",
             "JEBA_MODELS": "jeba-en, jeba-multi",
             "JEBA_PRELOAD": "jeba-en",
+            "JEBA_FAST": "1",
             "JEBA_THREADS": "8",
             "JEBA_API_KEY": "secret-server",
             "JEBA_LLM_BASE_URL": "http://localhost:11434/v1",
@@ -42,6 +44,7 @@ def test_env_overrides() -> None:
     assert config.models == ("jeba-en", "jeba-multi")
     assert config.preload == ("jeba-en",)
     assert config.threads == 8
+    assert config.fast is True
     assert config.llm_base_url == "http://localhost:11434/v1"
     assert config.llm_model == "llama3"
     assert config.llm_retries == 4

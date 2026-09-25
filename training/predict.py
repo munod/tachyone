@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from jeba.backends.encoder import MODEL_IDS, EncoderModel, load_choice_head, load_encoder
-from jeba.calibration import apply_temperature, confidence
+from jeba.calibration import apply_temperature, confidence, parse_temperature_report
 from jeba.primitives import (
     Answer,
     ChoiceAnswer,
@@ -25,7 +25,7 @@ from jeba.primitives import (
     ScoreAnswer,
     State,
 )
-from jeba.router import CheckpointInfo
+from jeba.router import CheckpointInfo, detect_language, detect_script, state_text
 from training.evaluate import EvalExample, evaluate, load_examples, save_report
 
 _DEFAULT_MODELS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "jeba", "models")
@@ -52,9 +52,7 @@ def _load_temperatures(path: str | None) -> dict[str, float]:
     if not path:
         return {}
     report = json.loads(Path(path).read_text(encoding="utf-8"))
-    return {
-        kind: float(entry["temperature"]) for kind, entry in report.get("per_primitive", {}).items()
-    }
+    return parse_temperature_report(report)
 
 
 def _apply_temperature(kind: str, answer: Answer, temperature: float) -> Answer:
@@ -113,8 +111,12 @@ def _prediction_row(example: EvalExample, answer: Answer) -> dict[str, Any]:
 
 def build_predictor(model: EncoderModel, temperatures: dict[str, float]):
     def predict(state: State, question: Question) -> Answer:
-        answer = model.answer_state(state, {"q": question})["q"]
-        temperature = temperatures.get(question.type, 1.0)
+        text = state_text(state)
+        lang = detect_language(text, detect_script(text))
+        answer = model.answer_state(state, {"q": question}, lang=lang)["q"]
+        temperature = temperatures.get(
+            f"{question.type}:{lang}", temperatures.get(question.type, 1.0)
+        )
         return _apply_temperature(question.type, answer, temperature)
 
     return predict

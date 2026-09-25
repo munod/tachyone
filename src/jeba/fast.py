@@ -8,6 +8,7 @@ router override is additive and never changes the canonical response (EXT-03).
 from __future__ import annotations
 
 import importlib.util
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -50,20 +51,34 @@ class Acceleration:
     reason: str
 
 
-def maybe_accelerate(target: object, *, device: str = "auto") -> Acceleration:
-    """Return ``target`` accelerated when possible, otherwise unchanged with a reason."""
+#: Builds an accelerated object from the stock one (only called when acceleration is possible).
+type AccelBuilder = Callable[[], Any]
+
+
+def maybe_accelerate(
+    target: object, *, device: str = "auto", builder: AccelBuilder | None = None
+) -> Acceleration:
+    """Return ``target`` accelerated when possible, otherwise unchanged with a reason.
+
+    Acceleration is opt-in and CUDA-only. When ``builder`` is provided and a CUDA device is
+    usable, it is called to construct the accelerated object (e.g. a CUDA-graph-captured
+    forward); any failure falls back to the stock ``target`` with the reason recorded.
+    """
     if device not in {"auto", "cuda"}:
         return Acceleration(
             target=target, accelerated=False, reason=f"device {device!r} has no fast path"
         )
-    if not _module_available("tilelang"):
-        return Acceleration(target=target, accelerated=False, reason="tilelang not installed")
     if not cuda_available():
         return Acceleration(target=target, accelerated=False, reason="no CUDA device")
-    # The TileLang kernels plug in here; until then the stock target is already optimal.
-    return Acceleration(
-        target=target, accelerated=False, reason="no accelerated kernels registered"
-    )
+    if builder is None:
+        return Acceleration(
+            target=target, accelerated=False, reason="no accelerated kernels registered"
+        )
+    try:
+        accelerated = builder()
+    except Exception as exc:  # pragma: no cover - device/driver dependent
+        return Acceleration(target=target, accelerated=False, reason=f"acceleration failed: {exc}")
+    return Acceleration(target=accelerated, accelerated=True, reason="accelerated forward attached")
 
 
 def router_override(
@@ -90,6 +105,7 @@ def router_override(
 
 
 __all__ = [
+    "AccelBuilder",
     "Acceleration",
     "cuda_available",
     "maybe_accelerate",
