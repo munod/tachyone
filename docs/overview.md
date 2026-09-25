@@ -88,6 +88,26 @@ encoder backend next.
 - A GUI/web console.
 - Training a foundation model from scratch.
 
+## When to hand off to System-2
+
+jeba is deliberately a **System One**: it answers atomic questions fast and returns calibrated
+`confidence`. It does not reason, so the intended pattern for hard inputs is to **abstain** and
+let a slower System Two (a frontier LLM, a human, or a longer pipeline) decide. This is a
+client-side, additive layer over the existing `confidence`; the `/v1/systemone` shape is
+unchanged (ADR-0001).
+
+```python
+from jeba import assess_response
+
+report = assess_response(response, threshold=0.6)  # τ is task-dependent; see the cookbook
+if report.abstain:
+    answer = system_two(state, questions)  # hand off
+```
+
+`jeba.handoff` also exposes normalized `entropy` and `margin` beside `confidence`, and the CLI
+adds a sibling `handoff` object when you pass `--threshold`. The full pattern, suggested τ per
+decision shape, and CLI examples live in [`cookbook-handoff.md`](cookbook-handoff.md).
+
 ## Status & documentation map
 
 | Doc | Purpose |
@@ -98,6 +118,7 @@ encoder backend next.
 | `docs/requirements/traceability.md` | Requirement → design → task matrix |
 | `docs/protocol.md` | The `/v1/systemone` contract in detail |
 | `docs/architecture.md` | Components, boundaries, flows, backend strategy |
+| `docs/cookbook-handoff.md` | Abstain / System-2 handoff pattern |
 | `docs/adr/` | Architecture decision records |
 | `docs/tasks.md` | Atomic task breakdown with verification |
 | `docs/testing.md` | Contract/parity tests, gates, benchmarks |

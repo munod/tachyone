@@ -86,6 +86,7 @@ nav:
   - Overview: overview.md
   - Protocol: protocol.md
   - Architecture: architecture.md
+  - Cookbook: cookbook-handoff.md
   - Benchmarks: benchmarks.md
   - Roadmap: roadmap.md
   - Tasks: tasks.md
