@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo-wordmark.svg" alt="jeba — System 1 inference engine" width="440">
+</p>
+
 # jeba
 
 > **Local-first, multilingual System One decision engine that speaks the TypeSafe Jev `/v1/systemone` protocol.**

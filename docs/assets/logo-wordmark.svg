@@ -10,6 +10,9 @@
     </filter>
   </defs>
 
+  <!-- Plate so the wordmark reads on both light and dark backgrounds -->
+  <rect x="0.75" y="0.75" width="448.5" height="118.5" rx="20" fill="#0B1020" stroke="#1E293B" stroke-width="1.5" />
+
   <!-- Logo mark (icon) -->
   <g transform="translate(10, 10)">
     <rect x="0" y="0" width="100" height="100" rx="24" fill="#0F172A" stroke="#1E293B" stroke-width="2" />
