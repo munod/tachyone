@@ -60,10 +60,10 @@ mass.
 2. WHEN `assess_response(response, threshold=τ)` is called THEN it SHALL return a `HandoffReport`
    with a per-question `HandoffSignal`; the aggregate `abstain` SHALL be true when any question
    abstains.
-3. WHEN the answer is `noul` THEN the signal SHALL use the `noul` probability directly (no
-   separate `confidence`).
-4. WHEN the answer is `choice`/`score` THEN the signal SHALL use the answer `confidence` and that
-   answer's probability distribution.
+3. WHEN the answer is `noul` THEN the signal SHALL use its binary certainty `max(p, 1-p)` (no
+   separate `confidence`), so `τ` points the same way for every primitive.
+4. WHEN the answer is `choice`/`score` THEN the signal SHALL read the answer `confidence` field
+   and use that answer's probability distribution for entropy/margin.
 5. WHEN τ is omitted by a caller THEN the API SHALL require it (no silent universal default).
 
 ### P1: CLI/SDK surface ⭐ MVP

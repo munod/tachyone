@@ -57,12 +57,21 @@ def test_threshold_appends_sibling_handoff(capsys: pytest.CaptureFixture[str]) -
     assert isinstance(result["handoff"]["abstain"], bool)
     assert result["handoff"]["threshold"] == pytest.approx(0.9)
     assert set(result["handoff"]["signals"]) == set(result["answers"])
+    signal = result["handoff"]["signals"]["department"]
+    assert set(signal) == {"type", "confidence", "entropy", "margin", "abstain"}
 
 
 def test_threshold_default_output_unchanged(capsys: pytest.CaptureFixture[str]) -> None:
-    main(["--predict", "--preset", "triage", "--backend", "fake", "refund please"])
-    without = json.loads(capsys.readouterr().out)
-    assert "handoff" not in without
+    args = ["--predict", "--preset", "triage", "--backend", "fake", "refund please"]
+    main(args)
+    without = capsys.readouterr().out
+    main([*args, "--threshold", "0.9"])
+    with_threshold = capsys.readouterr().out
+    # Adding --threshold only appends a sibling: every canonical key/value is identical.
+    assert "handoff" not in json.loads(without)
+    assert json.loads(without) == {
+        key: value for key, value in json.loads(with_threshold).items() if key != "handoff"
+    }
 
 
 def test_threshold_requires_predict() -> None:

@@ -88,17 +88,20 @@ def _answer_probabilities(answer: Answer) -> Mapping[Any, float]:
 
 
 def _answer_confidence(answer: Answer, probabilities: Mapping[Any, float]) -> float:
-    if isinstance(answer, NoulAnswer):
-        return min(1.0, max(0.0, answer.noul))
+    if isinstance(answer, (ChoiceAnswer, ScoreAnswer)):
+        return min(1.0, max(0.0, answer.confidence))
+    # `noul` has no separate confidence: for a binary outcome, certainty is the mass on the
+    # more likely side, `max(p, 1-p)`. Using `p` directly would flag a confident "no" (p≈0) as
+    # uncertain (review #1). Entropy/margin already reflect this same distribution.
     return confidence(probabilities)
 
 
 def assess_response(response: SystemOneResponse, *, threshold: float) -> HandoffReport:
     """Assess every answer in ``response`` and return an aggregate :class:`HandoffReport`.
 
-    ``choice``/``score`` use their answer ``confidence``; ``noul`` uses its probability
-    directly (it has no separate ``confidence``). The aggregate ``abstain`` is true when any
-    question abstains.
+    ``choice``/``score`` use their answer ``confidence``; ``noul`` has no separate confidence,
+    so its certainty is ``max(p, 1-p)``. The aggregate ``abstain`` is true when any question
+    abstains.
     """
     tau = _check_threshold(threshold)
     signals: dict[str, HandoffSignal] = {}

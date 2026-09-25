@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import dataclasses
 import json
 import os
 import sys
@@ -91,6 +90,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     questions = _resolve_questions(args, parser)
     if args.threshold is not None and not args.predict:
         parser.error("--threshold requires --predict")
+    if args.threshold is not None and not 0.0 <= args.threshold <= 1.0:
+        parser.error("--threshold must be within [0, 1]")
     if not args.predict:
         print(
             json.dumps(
@@ -119,14 +120,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     payload = response.model_dump(mode="json")
     if args.threshold is not None:
-        try:
-            report = assess_response(response, threshold=args.threshold)
-        except ValueError as exc:
-            parser.error(str(exc))
+        report = assess_response(response, threshold=args.threshold)
         payload["handoff"] = {
             "abstain": report.abstain,
             "threshold": report.threshold,
-            "signals": {qid: dataclasses.asdict(signal) for qid, signal in report.signals.items()},
+            "signals": {
+                qid: {
+                    "type": signal.type,
+                    "confidence": signal.confidence,
+                    "entropy": signal.entropy,
+                    "margin": signal.margin,
+                    "abstain": signal.abstain,
+                }
+                for qid, signal in report.signals.items()
+            },
         }
     json.dump(payload, sys.stdout, indent=2)
     sys.stdout.write("\n")

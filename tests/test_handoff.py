@@ -64,22 +64,24 @@ def test_assess_rejects_threshold_out_of_range() -> None:
 # --- assess_response ----------------------------------------------------------------------
 
 
-def test_assess_response_choice_uses_confidence() -> None:
+def test_assess_response_choice_uses_answer_confidence_field() -> None:
+    # The distribution's selected mass (0.5) differs from the answer's `confidence` (0.9): the
+    # helper must read the field, not recompute it (review #2).
     response = _response(
         {
             "dept": ChoiceAnswer(
-                choice="billing", probabilities={"billing": 0.5, "tech": 0.5}, confidence=0.5
+                choice="billing", probabilities={"billing": 0.5, "tech": 0.5}, confidence=0.9
             )
         }
     )
     report = assess_response(response, threshold=0.6)
     assert isinstance(report, HandoffReport)
-    assert report.abstain is True
+    assert report.abstain is False
     signal = report.signals["dept"]
     assert isinstance(signal, HandoffSignal)
     assert signal.type == "choice"
-    assert signal.confidence == pytest.approx(0.5)
-    assert signal.abstain is True
+    assert signal.confidence == pytest.approx(0.9)
+    assert signal.abstain is False
 
 
 def test_assess_response_score_uses_confidence_and_distribution() -> None:
@@ -98,23 +100,31 @@ def test_assess_response_score_uses_confidence_and_distribution() -> None:
     assert report.signals["urgency"].margin == pytest.approx(0.5)
 
 
-def test_assess_response_noul_uses_probability_directly() -> None:
-    response = _response({"jailbreak": NoulAnswer(noul=0.85)})
-    report = assess_response(response, threshold=0.9)
-    signal = report.signals["jailbreak"]
+def test_assess_response_noul_confidence_is_binary_certainty() -> None:
+    # A confident "no" (noul≈0) is certain, so confidence = max(p, 1-p) (review #1).
+    response = _response({"threat": NoulAnswer(noul=0.05)})
+    report = assess_response(response, threshold=0.5)
+    signal = report.signals["threat"]
     assert signal.type == "noul"
-    assert signal.confidence == pytest.approx(0.85)
-    assert signal.abstain is True
+    assert signal.confidence == pytest.approx(0.95)
+    assert signal.abstain is False
+
+
+def test_assess_response_noul_uncertain_when_balanced() -> None:
+    report = assess_response(_response({"threat": NoulAnswer(noul=0.4)}), threshold=0.5)
+    signal = report.signals["threat"]
+    assert signal.confidence == pytest.approx(0.6)
+    assert signal.abstain is False
 
 
 def test_assess_response_aggregates_any_abstention() -> None:
     response = _response(
         {
             "a": NoulAnswer(noul=0.95),
-            "b": NoulAnswer(noul=0.4),
+            "b": NoulAnswer(noul=0.5),
         }
     )
-    report = assess_response(response, threshold=0.5)
+    report = assess_response(response, threshold=0.75)
     assert report.abstain is True
     assert report.signals["a"].abstain is False
     assert report.signals["b"].abstain is True

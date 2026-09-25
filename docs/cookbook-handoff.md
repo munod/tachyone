@@ -29,12 +29,14 @@ versus a handoff. Rough starting points:
 
 | Shape of the decision | Suggested τ | Rationale |
 | --- | --- | --- |
-| Safety gate (`jailbreak`, `threat`) | low (≈ 0.3) | Prefer acting; a miss is costly, but so is over-escalation |
+| Safety gate (`jailbreak`, `threat`) | low (≈ 0.3) | Prefer acting; a clear call is common, so only escalate near-ties |
 | Routing / triage | medium (≈ 0.5) | Balanced: hand off ambiguous tickets |
 | Automation that acts on the result | high (≈ 0.8) | Only auto-act when clearly sure |
 
-Tune on your own labelled data: plot accuracy versus confidence and pick the point where the
-accuracy above the threshold is good enough for the downstream action.
+This holds for every primitive: `noul` reports its binary certainty `max(p, 1-p)`, so `τ` always
+points the same way (lower confidence → hand off). Tune on your own labelled data: plot accuracy
+versus confidence and pick the point where the accuracy above the threshold is good enough for
+the downstream action.
 
 ## Python
 
@@ -90,7 +92,9 @@ Without `--threshold`, the output is byte-identical to a normal prediction.
 
 ## Notes
 
-- `noul` has no separate `confidence`, so the helper uses its `probability` directly.
+- `noul` has no separate `confidence`, so the helper uses its **binary certainty**,
+  `max(p, 1-p)`: a confident "no" (`p ≈ 0`) is as certain as a confident "yes". This keeps `τ` in
+  the same direction for every primitive.
 - `score` uses the answer `confidence` and the level distribution, never the expected
   `score` position.
 - This does not change accuracy or ECE; it is purely a decision layer over the existing,
