@@ -33,6 +33,17 @@ def _fmt(value: float) -> str:
     return f"{value:.3f}"
 
 
+def _worst_language(report: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
+    """The language with the lowest accuracy (tie-break: highest ECE), or ``None``."""
+    per_language = report.get("per_language") or {}
+    if not per_language:
+        return None
+    return min(
+        per_language.items(),
+        key=lambda item: (item[1].get("accuracy", 0.0), -item[1].get("ece", 0.0)),
+    )
+
+
 def _table(entry: ReportEntry) -> list[str]:
     lines = [
         f"### {entry.name}",
@@ -42,6 +53,10 @@ def _table(entry: ReportEntry) -> list[str]:
     ]
     scopes: list[tuple[str, dict[str, Any]]] = [("overall", entry.report["overall"])]
     scopes += sorted(entry.report.get("per_primitive", {}).items())
+    scopes += [
+        (f"lang:{lang}", metrics)
+        for lang, metrics in sorted(entry.report.get("per_language", {}).items())
+    ]
     for scope, metrics in scopes:
         latency = metrics.get("latency_ms", {})
         lines.append(
@@ -49,6 +64,14 @@ def _table(entry: ReportEntry) -> list[str]:
             f"{_fmt(metrics.get('ece', 0.0))} | {_fmt(latency.get('p50', 0.0))} | "
             f"{_fmt(latency.get('p95', 0.0))} |"
         )
+    worst = _worst_language(entry.report)
+    if worst is not None:
+        lang, metrics = worst
+        lines += [
+            "",
+            f"Worst language (accuracy): `{lang}` — accuracy {_fmt(metrics.get('accuracy', 0.0))}, "
+            f"ECE {_fmt(metrics.get('ece', 0.0))}.",
+        ]
     lines.append("")
     return lines
 

@@ -63,6 +63,8 @@ def test_render_report_contains_tables_and_sections(tmp_path: Path) -> None:
     assert "### encoder" in markdown
     assert "| overall |" in markdown
     assert "| noul |" in markdown
+    assert "| lang:en |" in markdown
+    assert "Worst language" in markdown
 
 
 def test_report_entry_from_files_and_write(tmp_path: Path) -> None:

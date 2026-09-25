@@ -13,6 +13,16 @@ record hardware, versions, seed, and the exact command.
   uv run python -m training.evaluate --data data/eval.jsonl --out benchmarks/results/eval.json --backend fake
   ```
 
+- **Fast path (CUDA graphs)** — `benchmarks/fast_path.py` compares the stock encoder forward with
+  the `JEBA_FAST` CUDA-graph path (latency p50/p95, throughput, embedding parity). Requires the
+  `train` extra and a CUDA device:
+
+  ```bash
+  uv run python -m benchmarks.fast_path --data data/eval_multi.jsonl \
+    --model-id jhu-clsp/mmBERT-base --adapter checkpoints/multi \
+    --out benchmarks/results/fast_path.json
+  ```
+
 ## Planned (M6)
 
 - `public_probes.py` — MASSIVE / XNLI / typed-decisions, evaluation only.
