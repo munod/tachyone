@@ -99,6 +99,7 @@ Conventions: `WIRE` protocol · `PRIM` primitives · `BACK` backends · `ROUTE` 
 | TRAIN-05 | Evaluation harness reporting accuracy, ECE, latency per primitive/language. | P1 | M4 | Artifacts saved and reproducible. |
 | TRAIN-06 | Reproducible scripts + configs (seed, hyperparams) for every stage. | P1 | M4 | Re-run within documented tolerance. |
 | TRAIN-07 | Stream large datasets to disk during generation. | P1 | M4 | Memory bounded. |
+| TRAIN-08 | Seeded, opt-in input-noise augmentation (typos/accents/casing) with a clean vs noisy evaluation split. | P2 | Post-M6 | Same seed → identical bytes; noisy view reported separately. |
 
 ## Ecosystem & ops (OPS)
 

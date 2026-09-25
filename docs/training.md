@@ -40,6 +40,12 @@ Every stage is a committed script with a committed config and a fixed seed.
   `noul`/`score` entities are all authored per language (`training/data/lexicon.json`,
   `phrases.json`, `team_descriptions.json`), so the multilingual checkpoint does not learn an
   English template.
+- **Input-noise augmentation (B-4):** `--noise-rate r` (config field `noise_rate`) applies one
+  deterministic surface edit — char swap/delete, accent strip, casing flip, or terminal-punctuation
+  drop — to `r` of records' `state` only (labels/questions untouched). `r=0` reproduces the clean
+  dataset byte-for-byte; each record draws from its own RNG (`(seed, kind, index, language, noise)`)
+  so noise stays independent of the cyclic label (L-003). Evaluate the noisy view separately: the
+  harness reports it under `report["noisy"]` when `--noise-rate` is passed.
 
 ### JSONL record format (planned)
 
