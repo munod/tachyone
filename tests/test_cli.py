@@ -46,6 +46,46 @@ def test_predict_with_fake_backend(capsys: pytest.CaptureFixture[str]) -> None:
     assert set(result["answers"]) == {"department", "urgency", "frustration", "churn_risk"}
 
 
+def test_threshold_appends_sibling_handoff(capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(
+        ["--predict", "--preset", "triage", "--backend", "fake", "--threshold", "0.9", "refund"]
+    )
+    assert code == 0
+    result = json.loads(capsys.readouterr().out)
+    # Canonical keys are untouched; `handoff` is an additive sibling.
+    assert set(result) == {"model", "answers", "usage", "handoff"}
+    assert isinstance(result["handoff"]["abstain"], bool)
+    assert result["handoff"]["threshold"] == pytest.approx(0.9)
+    assert set(result["handoff"]["signals"]) == set(result["answers"])
+    signal = result["handoff"]["signals"]["department"]
+    assert set(signal) == {"type", "confidence", "entropy", "margin", "abstain"}
+
+
+def test_threshold_default_output_unchanged(capsys: pytest.CaptureFixture[str]) -> None:
+    args = ["--predict", "--preset", "triage", "--backend", "fake", "refund please"]
+    main(args)
+    without = capsys.readouterr().out
+    main([*args, "--threshold", "0.9"])
+    with_threshold = capsys.readouterr().out
+    # Adding --threshold only appends a sibling: every canonical key/value is identical.
+    assert "handoff" not in json.loads(without)
+    assert json.loads(without) == {
+        key: value for key, value in json.loads(with_threshold).items() if key != "handoff"
+    }
+
+
+def test_threshold_requires_predict() -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--preset", "triage", "--threshold", "0.5", "text"])
+    assert excinfo.value.code == 2
+
+
+def test_threshold_out_of_range_exits_nonzero() -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--predict", "--preset", "triage", "--backend", "fake", "--threshold", "1.5", "x"])
+    assert excinfo.value.code == 2
+
+
 def test_unknown_preset_exits_nonzero() -> None:
     with pytest.raises(SystemExit) as excinfo:
         main(["--preset", "nope", "text"])

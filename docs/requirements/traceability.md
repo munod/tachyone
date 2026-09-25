@@ -44,6 +44,7 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 | CAL-03 | `calibration.py` | M3-T3 | Implemented |
 | CAL-04 | `fit_calibration.py` | M4-T4 | Implemented |
 | CAL-05 | `calibration.py` + `schemas.py` | M2-T7, M3-T3 | Implemented |
+| CAL-06 | `calibration.py` + `handoff.py` | B-3 (B3-T1..T4) | Implemented |
 | EXT-01 | `hooks.py` | M3-T6 | Implemented |
 | EXT-02 | `hooks.py` + contract | M3-T6 | Implemented |
 | EXT-03 | `router.py` + `serve.py` | M5-T2 (override plumbing) | Implemented |
@@ -128,9 +129,9 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 
 | Category | Count | Mapped | Unmapped |
 | --- | --- | --- | --- |
-| Functional (WIRE/PRIM/BACK/ROUTE/CAL/EXT/SERVE/TRAIN/OPS) | 51 | 51 | 0 |
+| Functional (WIRE/PRIM/BACK/ROUTE/CAL/EXT/SERVE/TRAIN/OPS) | 52 | 52 | 0 |
 | Non-functional | 39 | 38 | 1 (NFR-A, N/A) |
-| **Total** | **90** | **89** | **0 actionable** |
+| **Total** | **91** | **90** | **0 actionable** |
 
 > When a task is completed, update the matching rows to `Implemented`, and after validation
 > to `Verified` (see `docs/testing.md` and the TLC validate flow in `.specs/project/STATE.md`).

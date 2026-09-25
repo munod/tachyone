@@ -81,7 +81,7 @@ behind the extra and fall back cleanly. Effort ~2–3 days.
 
 ---
 
-## B-3 — Confidence thresholding & System-2 handoff · Ready
+## B-3 — Confidence thresholding & System-2 handoff · Done
 
 **Why.** Every `choice`/`score` answer already carries `confidence` (selected mass,
 `calibration.py`) and `noul` returns a probability, but there is no first-class helper or
@@ -89,24 +89,30 @@ documented pattern for "abstain / hand off to a System-2 LLM when confidence < �
 currently reimplement the threshold by hand, and the project has no entropy/uncertainty metric
 beyond the selected mass.
 
+**Status (done, 2026-09-25).** `calibration.py` gains `normalized_entropy` and `margin` beside
+`confidence`; `handoff.py` exposes `assess`/`assess_response` returning typed `Uncertainty`/
+`HandoffSignal`/`HandoffReport`; the SDK re-exports them and the CLI appends a sibling `handoff`
+object via `--threshold` (canonical output unchanged when the flag is absent). The pattern is
+documented in `docs/cookbook-handoff.md`; `CAL-06` is traced. Spec/tasks:
+`.specs/features/system2-handoff/`.
+
 **Plan.**
-1. Add an uncertainty helper in `calibration.py` (e.g. normalized entropy or margin) alongside
-   `confidence`, plus tests.
-2. Add an SDK/CLI helper and a preset (`abstain`/`handoff`) that returns a typed "not confident"
-   signal the caller can route on. Wire-shape must stay unchanged: this is client-side/additive.
-3. Document the pattern (when to hand off, suggested τ, how to compose with an LLM) in
-   `docs/overview.md` / a small cookbook section.
+1. [x] Uncertainty helpers (`normalized_entropy`, `margin`) in `calibration.py` + tests.
+2. [x] `handoff.py` with `assess`/`assess_response`; SDK export and CLI `--threshold`; client-side,
+   wire-shape unchanged.
+3. [x] Documented pattern (when to hand off, suggested τ, composing with an LLM).
 
 **Acceptance.**
-- `confidence`/entropy helpers covered by unit tests; no change to `/v1/systemone` shape.
-- A documented, tested example of `if confidence < τ: handoff()`.
-- Preset usable from the CLI without an API key.
+- [x] Helpers covered by unit tests; no change to `/v1/systemone` shape (contract suite unchanged).
+- [x] A documented, tested example of `if confidence < τ: handoff()`.
+- [x] Usable from the CLI without an API key (`--backend fake`).
 
-**Risks / notes.** τ is task-dependent and must not be hard-coded as a universal default; ship it
-as a configurable knob. `noul` has no separate `confidence` (single probability), so the helper
-operates on the probability directly. Effort ~0.5 day.
+**Risks / notes.** τ stays a required, configurable knob (no universal default).
+`noul` has no separate `confidence`, so the helper uses its binary certainty `max(p, 1-p)`, which
+keeps τ pointing the same way for every primitive.
 
-**Related.** `docs/protocol.md` (confidence semantics), `docs/adr/ADR-0005`, `NFR-C06`.
+**Related.** `docs/protocol.md` (confidence semantics), `docs/cookbook-handoff.md`,
+`docs/adr/ADR-0005`, `NFR-C06`.
 
 ---
 

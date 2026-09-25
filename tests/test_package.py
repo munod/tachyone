@@ -14,9 +14,11 @@ import jeba
 
 _CORE_MODULES = [
     "jeba",
+    "jeba.calibration",
     "jeba.cli",
     "jeba.config",
     "jeba.fast",
+    "jeba.handoff",
     "jeba.primitives",
     "jeba.telemetry",
     "jeba.wire",
@@ -34,6 +36,11 @@ _CORE_MODULES = [
 
 def test_version_is_exposed() -> None:
     assert jeba.__version__ == "0.2.0"
+
+
+def test_handoff_helpers_are_public() -> None:
+    for name in ("assess", "assess_response", "HandoffReport", "HandoffSignal", "Uncertainty"):
+        assert callable(getattr(jeba, name)), name
 
 
 @pytest.mark.parametrize("module_name", _CORE_MODULES)

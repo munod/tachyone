@@ -63,6 +63,7 @@ Conventions: `WIRE` protocol · `PRIM` primitives · `BACK` backends · `ROUTE` 
 | CAL-03 | Report `confidence` for `choice`/`score` derived from probabilities. | P1 | M3 | Value in [0,1], monotone with concentration. |
 | CAL-04 | Probabilities are calibrated to the documented ECE target. | P1 | M4 | ECE ≤ target on held-out set. |
 | CAL-05 | `return_details=True` exposes full distributions (additive extension). | P2 | M3 | Details returned without changing canonical fields. |
+| CAL-06 | Expose client-side uncertainty (entropy, margin) and a thresholded abstain/handoff signal over the returned probabilities. | P2 | Post-M6 | Helpers in `handoff.py`; no wire change; covered by unit tests. |
 
 ## Extensions (EXT)
 

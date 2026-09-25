@@ -20,6 +20,7 @@ from jeba import __version__
 from jeba.backends import build_backend
 from jeba.client import JebaClient
 from jeba.config import BACKENDS, Config
+from jeba.handoff import assess_response
 from jeba.presets import PRESETS, get_preset
 from jeba.primitives import Question
 from jeba.wire import SystemOneRequest, answer
@@ -39,6 +40,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--questions", help="questions as a JSON object (alternative to --preset)")
     parser.add_argument("--predict", action="store_true", help="run inference and print answers")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="confidence below which to flag a System-2 handoff (requires --predict)",
+    )
     parser.add_argument("--url", help="answer against a running jeba server instead of locally")
     parser.add_argument("--backend", choices=BACKENDS, help="override JEBA_BACKEND for local runs")
     parser.add_argument("--model", default=_DEFAULT_MODEL, help="model id sent in the request")
@@ -82,6 +88,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return serve.main()
 
     questions = _resolve_questions(args, parser)
+    if args.threshold is not None and not args.predict:
+        parser.error("--threshold requires --predict")
+    if args.threshold is not None and not 0.0 <= args.threshold <= 1.0:
+        parser.error("--threshold must be within [0, 1]")
     if not args.predict:
         print(
             json.dumps(
@@ -108,7 +118,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         request = SystemOneRequest(state=args.text, model=args.model, questions=questions)
         response = asyncio.run(answer(request, backend))
 
-    json.dump(response.model_dump(mode="json"), sys.stdout, indent=2)
+    payload = response.model_dump(mode="json")
+    if args.threshold is not None:
+        report = assess_response(response, threshold=args.threshold)
+        payload["handoff"] = {
+            "abstain": report.abstain,
+            "threshold": report.threshold,
+            "signals": {
+                qid: {
+                    "type": signal.type,
+                    "confidence": signal.confidence,
+                    "entropy": signal.entropy,
+                    "margin": signal.margin,
+                    "abstain": signal.abstain,
+                }
+                for qid, signal in report.signals.items()
+            },
+        }
+    json.dump(payload, sys.stdout, indent=2)
     sys.stdout.write("\n")
     return 0
 
