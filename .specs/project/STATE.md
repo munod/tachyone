@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-09-24
+**Last Updated:** 2026-09-25
 **Current Work:** Post-M6 backlog. **B-2 (fast path) done**: `JEBA_FAST` wires
 `maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
 `benchmarks/fast_path.py` measures 2.68× p50 (10.27 → 3.83 ms) and 0 top-label flips, meeting
@@ -157,6 +157,25 @@ accuracy separately when diagnosing `choice`.
 
 ---
 
+### L-004: The frozen wire and the similarity engine bound what a "new primitive" can be
+
+**Context:** A v0.3 proposal suggested additive primitives (`route` multi-label, `extract_span`
+for entities, `threshold`/OOD handoff) plus MoE-of-LoRA adapters.
+**Problem:** The canonical `/v1/systemone` contract is frozen to three primitives (ADR-0001), and
+the runtime engine is a cosine-similarity baseline (`EncoderModel.answer_state`), not trained
+per-task heads. `wire._check_normalized` requires each distribution to sum to 1.0 — incompatible
+with independent sigmoids — and `load_encoder` mean-pools to a single vector per text, so there
+are no token-level outputs to point spans at.
+**Solution:** Treat new capabilities as **additive extensions** (extension endpoints or composed
+atomic questions), never as canonical `questions` types. `threshold`/handoff is largely a client-
+side helper over the existing `confidence`; `route` is N independent `noul`; `extract_span` would
+be a new backend/endpoint. MoE adapters were deferred as premature: the measured bottleneck is
+calibration, not capacity.
+**Prevents:** Redesigning the wire or adding adapter machinery to chase use cases the atomic,
+composable contract already covers.
+
+---
+
 ## Quick Tasks Completed
 
 | #   | Description | Date | Commit | Status |
@@ -215,6 +234,12 @@ NFR-P01 met). **B-1** multilingual `choice`/`score` quality has its code (locali
 per-language temperature, per-language reporting) landed; the GPU retrain/publish step remains.
 Carried-over ideas (provider registry, extra checkpoints, streaming, web console, process items)
 are listed there too. Promote an item into `docs/tasks.md` when it is scheduled.
+
+**New backlog entries (2026-09-25):** **B-3** confidence thresholding / System-2 handoff (Ready),
+**B-4** input-noise robustness (Ready), **B-5** multi-domain coverage (Idea), **B-6** contrastive
+pre-fine-tuning (Idea). `BACKLOG.md` also records an **"Evaluated and not pursued (for now)"**
+section for `route`/`extract_span`/MoE adapters with the rationale; revisit only with a new ADR
+and measured evidence (see L-004).
 
 ---
 

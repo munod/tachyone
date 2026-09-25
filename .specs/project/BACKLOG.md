@@ -79,6 +79,137 @@ behind the extra and fall back cleanly. Effort ~2–3 days.
 
 ---
 
+## B-3 — Confidence thresholding & System-2 handoff · Ready
+
+**Why.** Every `choice`/`score` answer already carries `confidence` (selected mass,
+`calibration.py`) and `noul` returns a probability, but there is no first-class helper or
+documented pattern for "abstain / hand off to a System-2 LLM when confidence < τ". Users
+currently reimplement the threshold by hand, and the project has no entropy/uncertainty metric
+beyond the selected mass.
+
+**Plan.**
+1. Add an uncertainty helper in `calibration.py` (e.g. normalized entropy or margin) alongside
+   `confidence`, plus tests.
+2. Add an SDK/CLI helper and a preset (`abstain`/`handoff`) that returns a typed "not confident"
+   signal the caller can route on. Wire-shape must stay unchanged: this is client-side/additive.
+3. Document the pattern (when to hand off, suggested τ, how to compose with an LLM) in
+   `docs/overview.md` / a small cookbook section.
+
+**Acceptance.**
+- `confidence`/entropy helpers covered by unit tests; no change to `/v1/systemone` shape.
+- A documented, tested example of `if confidence < τ: handoff()`.
+- Preset usable from the CLI without an API key.
+
+**Risks / notes.** τ is task-dependent and must not be hard-coded as a universal default; ship it
+as a configurable knob. `noul` has no separate `confidence` (single probability), so the helper
+operates on the probability directly. Effort ~0.5 day.
+
+**Related.** `docs/protocol.md` (confidence semantics), `docs/adr/ADR-0005`, `NFR-C06`.
+
+---
+
+## B-4 — Input-noise robustness (typos / accents / slang) · Ready
+
+**Why.** Synthetic states are clean templates. Real chat/user input has typos, missing accents,
+absent punctuation and regional slang, so accuracy outside controlled templates degrades. L-003
+shows data-template artifacts are a real failure mode.
+
+**Plan.**
+1. Add a seeded, deterministic noise-injection option to `training/generate_data.py` (character
+   swaps/deletions, accent stripping, casing/punctuation drops) applied to ~15% of training
+   records. Determinism (same seed → byte-identical) must be preserved.
+2. Keep a clean vs noisy evaluation split and report both, so robustness gains are not confused
+   with clean-set regressions.
+3. Retrain and compare accuracy/ECE on both splits (and on the public probes).
+
+**Acceptance.**
+- Noise is seeded, reproducible, and opt-in via a config flag.
+- Noisy-split accuracy improves vs baseline with no clean-split regression beyond tolerance.
+- Both splits reported in `benchmarks/report.md`.
+
+**Risks / notes.** Over-noising can teach noise invariance at the cost of clean accuracy; tune
+the rate. Keep probe evaluation on unmodified public inputs for comparability. Effort ~1 day +
+retrain.
+
+**Related.** `STATE.md` L-003, `docs/training.md` (§1), `TRAIN-01`.
+
+---
+
+## B-5 — Multi-domain coverage (5 domains) · Idea
+
+**Why.** Today the generator's `choice` criteria are hard-coded to four support teams
+(`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
+domains (support, e-commerce/logistics, voice/smart-home commands, agent tool/function
+selection, document/media classification) would make the model valuable across more agent flows.
+
+**Plan.**
+1. Generalize the data model so `choice` criteria per domain come from committed data, rather
+   than a single hard-coded team set.
+2. Author domain lexicons/phrases across the existing 7 languages (or a reduced set first).
+3. Report per-domain accuracy/ECE and gate on the worst domain.
+
+**Acceptance.**
+- Per-domain accuracy/ECE published; no regression on the existing support domain.
+- Domain data is deterministic and localized like the current lexicon.
+
+**Risks / notes.** Cost multiplies by language count; tool/function selection largely overlaps
+the existing `choice` case, so it may not add a new capability, only vocabulary. Effort ~2–3 days
+per language cohort.
+
+**Related.** `training/generate_data.py`, `training/data/`, `docs/training.md` (§1), `B-1`.
+
+---
+
+## B-6 — Contrastive pre-fine-tuning (InfoNCE / Triplet) · Idea
+
+**Why.** The local engine decides by **cosine similarity** (`EncoderModel.answer_state`), so the
+geometry of the embedding space directly determines accuracy. A short contrastive stage that pulls
+semantically equivalent intents together (across languages) and pushes opposite-sense near-misses
+apart should give the choice scorer and `noul`/`score` heads cleaner vectors — the highest-upside
+quality idea on the table, and complementary to RLCD/proper-scoring.
+
+**Plan.**
+1. Build triplets/pairs from generated records: `(state, its criterion/question)` as positives,
+   cross-intent near-misses as negatives.
+2. Add a short contrastive pre-stage (InfoNCE or triplet) before the LoRA/proper-scoring run,
+   behind a config in `training/`.
+3. Ablate: baseline vs contrastive-pretrained, measuring top-1 accuracy **and** ECE (contrastive
+   must not degrade calibration).
+
+**Acceptance.**
+- Contrastive stage is deterministic, config-driven, and runs within the 12GB budget.
+- Top-1 improves on the multilingual held-out set with ECE not worse than baseline.
+- Results (with/without) recorded in `benchmarks/report.md`.
+
+**Risks / notes.** Extra GPU stage and data preparation; risk of representation collapse without
+careful negative sampling. Treat as an experiment with a strict ablation gate. Effort ~2–4 days.
+
+**Related.** `backends/encoder.py` (cosine decision), `training/finetune_rlcd.py`, `STATE.md` L-002.
+
+---
+
+## Evaluated and not pursued (for now)
+
+These proposals were assessed against the frozen wire (ADR-0001) and the actual similarity-based
+engine; they are deliberately **not** scheduled. Revisit only with a new ADR and measured
+evidence.
+
+- **`route` (multi-label) as a canonical primitive · rejected.** `wire._check_normalized` requires
+  `sum(probabilities) == 1.0`, so independent sigmoids across categories are incompatible with the
+  contract. The use case is already expressible as N independent `noul` questions composed by the
+  client, which is the protocol's intended model. At most an additive extension endpoint.
+- **`extract_span` (extractive QA / entity spans) · rejected for the current engine.** Requires
+  token-level outputs and `start/end` fields; `load_encoder` mean-pools and exposes only pooled
+  vectors, and the response has no span shape. Would be a new backend/endpoint, not an evolution
+  of the similarity engine, and sits next to the "atomic structured decisions only" non-goal.
+- **MoE of LoRA adapters / per-task adapter switching · deferred as premature.** One adapter is
+  trained per checkpoint; there are no real per-task neural heads. The measured bottleneck is
+  calibration (per-language ECE), not trunk capacity. Adapter routing complicates ONNX export and
+  the CUDA-graph fast path with no demonstrated gain and overfit risk on the synthetic set. A real
+  per-primitive head would be the more impactful change, and only after evidence of underfit.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
