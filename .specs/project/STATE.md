@@ -8,7 +8,10 @@ NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed, retrained on the RTX 306
 adapters were republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`); the `v0.2.0` GitHub
 Release exists. Multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**; English
 overall 0.721 → **0.781**; per-language ECE still above 0.05 for `es`/`nl`/`de` (calibration
-remains partial — NFR-C06 open). Next ready: B-3 (confidence thresholding / System-2 handoff).
+remains partial — NFR-C06 open). **B-3 (confidence thresholding / System-2 handoff) done**:
+`calibration.py` gains normalized `entropy`/`margin`, `handoff.py` exposes `assess`/
+`assess_response`, and the CLI appends a sibling `handoff` object via `--threshold` without
+changing the canonical response. Next ready: B-4 (input-noise robustness, needs GPU).
 
 ## Milestone Status
 
@@ -225,6 +228,7 @@ composable contract already covers.
 | M6-T3 | model card + changelog + release process | 2026-09-24 | `docs(release): add model card, changelog, and release process` | ✅ |
 | B-1 | multilingual quality: localized data + per-language temperature + reporting + retrain | 2026-09-24 | `feat(training): localize and deepen multilingual data` | ✅ |
 | B-2 | fast path: CUDA-graph encode + micro-benchmark (NFR-P01/P07) | 2026-09-24 | `perf(fast): wire acceleration seam and CUDA-graph encode` | ✅ |
+| B-3 | confidence thresholding / System-2 handoff (entropy/margin, `handoff.py`, CLI `--threshold`) | 2026-09-25 | `feat(handoff): add confidence threshold and handoff signal` | ✅ |
 
 ---
 
