@@ -8,12 +8,19 @@ Legend: **Ready** (can start now) · **Blocked** (needs a prerequisite) · **Ide
 
 ---
 
-## B-1 — Multilingual `choice`/`score` quality  · Ready
+## B-1 — Multilingual `choice`/`score` quality  · Done (accuracy) / partial (calibration)
 
 **Why.** After v3 (dedicated `choice` head, rich option descriptions), English `choice` reached
 0.78 but multilingual `choice` is 0.40 and multilingual `score` ECE is 0.18 (see
 `benchmarks/report.md`). The multilingual checkpoint carries six training languages with imbalanced
 support, and calibration is fitted **per primitive**, not per language.
+
+**Status (retrained).** Data is fully localized with per-record RNG and a low distractor rate;
+calibration is per `(primitive, language)`; the runtime applies `kind:lang` → `kind` → global.
+Measured: multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**; English overall
+0.721 → **0.781**; the CUDA-graph fast path adds 2.7× p50. Per-language ECE still misses 0.05 for
+`es`/`nl`/`de` and multilingual `score` (0.09–0.16), so calibration remains **partial**. See
+`STATE.md` L-003 (shared-RNG shortcut). Spec/tasks: `.specs/features/multilingual-quality/`.
 
 **Plan.**
 1. Data: stratify generation per language (equal support per language for `choice`/`score`); add
@@ -37,11 +44,18 @@ retrain.
 
 ---
 
-## B-2 — Fast path kernels (TileLang / CUDA graphs) · Ready
+## B-2 — Fast path kernels (TileLang / CUDA graphs) · Done
 
 **Why.** M5 shipped the fast-path **seam and graceful fallback** only
 (`src/jeba/fast.py`: `maybe_accelerate` returns the stock target with reason "no accelerated kernels
 registered"). There is no measured latency improvement yet, and `NFR-P01` is still `[open]`.
+
+**Status (done).** `maybe_accelerate` now takes an injected accelerator builder and is wired by
+`JEBA_FAST` in `load_encoder` to a per-shape CUDA-graph forward with bf16-resident weights (graceful
+fallback on CPU/MPS/absent extras). `benchmarks/fast_path.py` measures stock vs fast: **p50 9.13 →
+3.70 ms, p95 10.75 → 4.09 ms (2.47× p50)**, answer parity max abs **0.0037**, **0 top-label flips**.
+NFR-P01 and NFR-P07 met; results in `benchmarks/report.md`. TileLang fused kernels remain optional
+(no measured benefit yet). Spec/tasks: `.specs/features/fast-path/`.
 
 **Plan.**
 1. Implement fused kernels for the encoder forward (GEMM+activation epilogues, GEMM+GEGLU,

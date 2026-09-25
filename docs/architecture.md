@@ -385,6 +385,7 @@ All configuration via environment variables (prefix `JEBA_`), documented in `con
 | `JEBA_ADAPTERS` | built-in adapters | `id=repo|path` overrides; empty value disables the adapter |
 | `JEBA_OFFLINE` | unset | `1` = cache-only, no network (honors `HF_HUB_OFFLINE`) |
 | `JEBA_PRELOAD` | empty | Checkpoints to load at startup |
+| `JEBA_FAST` | unset | `1` = opt into the CUDA-graph fast path when a CUDA device is present |
 | `JEBA_THREADS` | auto | CPU thread budget |
 | `JEBA_API_KEY` | unset | Enables Bearer auth; unset = auth disabled (dev only) |
 

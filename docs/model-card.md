@@ -62,19 +62,22 @@ split (`training/fit_calibration.py`). Configs and seed live under `training/con
 Reported by `training/evaluate.py` and rendered by `benchmarks/report.py` (accuracy, ECE, p50/p95
 latency per primitive and language).
 
-**Full-scale run (single RTX 3060 12GB):** 6,000 train / 1,500 eval deterministic synthetic
-records (localized cue terms per language, a learnable `other` team with rich descriptions, and
-distractor clauses), LoRA (r=16) plus a dedicated low-rank `choice` head (near-identity init),
-3 epochs, batch 16, bf16 + gradient checkpointing.
+**Full-scale run (single RTX 3060 12GB):** 9,000 English / 18,000 multilingual train / 1,500 eval
+deterministic synthetic records (fully localized per language, a learnable `other` team with rich
+descriptions, per-record RNG, one-in-six distractor clauses), LoRA (r=16) plus a dedicated
+low-rank `choice` head (r=32, near-identity init), 4 epochs, batch 16, bf16 + gradient
+checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA + choice head) | 0.721 | 0.052 | 18.4 |
-| Multilingual (mmBERT-base + LoRA + choice head) | 0.609 | 0.086 | 12.6 |
+| English (ModernBERT-large + LoRA + choice head) | 0.781 | 0.077 | 22.9 |
+| Multilingual (mmBERT-base + LoRA + choice head) | 0.711 | 0.073 | 12.4 |
 
-Per primitive (English): `choice` 0.782, `noul` 0.718, `score` 0.664; (multilingual): `noul`
-0.728, `score` 0.700, `choice` 0.398. The dedicated `choice` head lifted English `choice` from
-~0.25 (chance) to 0.78; multilingual `choice` and `score` calibration remain the next targets.
+Per primitive (English): `choice` 0.708, `noul` 0.744, `score` 0.892; (multilingual): `choice`
+0.734, `noul` 0.716, `score` 0.682. The localized, per-record-RNG data (B-1) lifted multilingual
+`choice` from 0.40 to 0.73 and English overall from 0.72 to 0.78. Per-language calibration for a
+few multilingual languages (`es`, `nl`, `de`) and multilingual `score` remain the next targets.
+The CUDA-graph fast path (`JEBA_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
 Full tables and environment are in
 [`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
 

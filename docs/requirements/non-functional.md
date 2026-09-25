@@ -9,13 +9,13 @@ those marked **[open]** need confirmation after benchmarks.
 
 | ID | Requirement | Target | Phase | How verified |
 | --- | --- | --- | --- | --- |
-| NFR-P01 | Encoder backend latency, GPU (RTX 3060, batch=1) | p50 ≤ 20 ms, p95 ≤ 50 ms **[open]** | M3 | `benchmarks/` latency harness |
+| NFR-P01 | Encoder backend latency, GPU (RTX 3060, batch=1) | p50 ≤ 20 ms, p95 ≤ 50 ms (met: stock 9.1/10.8 ms; fast 3.7/4.1 ms) | M3 | `benchmarks/` latency harness |
 | NFR-P02 | Encoder backend latency, CPU (12 cores) | p50 ≤ 200 ms **[open]** | M3 | latency harness |
 | NFR-P03 | Router decision overhead | < 0.5 ms | M3 | micro-benchmark |
 | NFR-P04 | LLM backend overhead beyond provider call | < 50 ms | M2 | timing measurement |
 | NFR-P05 | Batch throughput | near-linear scaling up to memory limit | M3 | batch sweep |
 | NFR-P06 | Server cold start (encoder preloaded) | ≤ 30 s **[open]** | M3 | timed startup |
-| NFR-P07 | Fast-path (TileLang/CUDA graphs) latency on supported CUDA | p50 improves vs stock forward; no shape change | Backlog B-2 | micro-benchmark |
+| NFR-P07 | Fast-path (TileLang/CUDA graphs) latency on supported CUDA | p50 improves vs stock forward; no shape change (met: 2.47× p50, 0 top-label flips) | Backlog B-2 | micro-benchmark |
 
 ## Resource footprint (NFR-R)
 

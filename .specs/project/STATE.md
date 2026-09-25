@@ -1,10 +1,13 @@
 # State
 
 **Last Updated:** 2026-09-24
-**Current Work:** All milestones M0–M6 complete. v0.1.0 tagged and pushed; LoRA adapters
-published on the Hugging Face Hub (`munod/jeba-en`, `munod/jeba-multi`) and loaded by the runtime
-by default. Remaining: create the GitHub Release page for `v0.1.0` (needs authenticated `gh` or
-the web UI) and, optionally, a dedicated `choice` head (see L-002).
+**Current Work:** Post-M6 backlog. **B-2 (fast path) done**: `JEBA_FAST` wires
+`maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
+`benchmarks/fast_path.py` measures 2.68× p50 (10.27 → 3.83 ms) and 0 top-label flips, meeting
+NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed and retrained on the RTX 3060:
+multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**; English overall
+0.721 → **0.781**; per-language ECE still above 0.05 for `es`/`nl`/`de`. Remaining: republish the
+updated adapters to the Hub and create the GitHub Release page for `v0.1.0`.
 
 ## Milestone Status
 
@@ -139,6 +142,21 @@ similarity head.
 
 ---
 
+### L-003: A shared RNG in data generation teaches shortcuts
+
+**Context:** B-1 multilingual quality. The generator used one `random.Random(seed)` for every
+record, so phrase/term draws correlated with the cyclic team label across records.
+**Problem:** `choice` learned phrase→team shortcuts that did not transfer to a fresh-seed eval
+(clean-example accuracy ~0.40, near chance, while distractor cases looked high). Raising the
+hard-negative rate to 1/3 added label ambiguity (the target is the *first* team) and compounded
+the collapse.
+**Solution:** Seed an RNG per record from `(seed, kind, index, language)` (independent draws,
+still byte-deterministic) and keep the distractor rate low (1/6). Measure clean vs hard-negative
+accuracy separately when diagnosing `choice`.
+**Prevents:** Mistaking a generator artifact for model capability or for a hard task.
+
+---
+
 ## Quick Tasks Completed
 
 | #   | Description | Date | Commit | Status |
@@ -185,16 +203,18 @@ similarity head.
 | M6-T1 | reproducible benchmark report | 2026-09-24 | `docs(benchmarks): publish reproducible report` | ✅ |
 | M6-T2 | documentation site | 2026-09-24 | `docs: add documentation site` | ✅ |
 | M6-T3 | model card + changelog + release process | 2026-09-24 | `docs(release): add model card, changelog, and release process` | ✅ |
+| B-1 | multilingual quality: localized data + per-language temperature + reporting + retrain | 2026-09-24 | `feat(training): localize and deepen multilingual data` | ✅ |
+| B-2 | fast path: CUDA-graph encode + micro-benchmark (NFR-P01/P07) | 2026-09-24 | `perf(fast): wire acceleration seam and CUDA-graph encode` | ✅ |
 
 ---
 
 ## Deferred Ideas
 
-Canonical backlog: [`BACKLOG.md`](BACKLOG.md). Active next steps: **B-1** multilingual
-`choice`/`score` quality (per-language data + per-language/per-primitive temperature) and **B-2**
-fast-path kernels (TileLang/CUDA graphs). Carried-over ideas (provider registry, extra
-checkpoints, streaming, web console, process items) are listed there too. Promote an item into
-`docs/tasks.md` when it is scheduled.
+Canonical backlog: [`BACKLOG.md`](BACKLOG.md). **B-2** fast-path kernels are **done** (measured,
+NFR-P01 met). **B-1** multilingual `choice`/`score` quality has its code (localized data,
+per-language temperature, per-language reporting) landed; the GPU retrain/publish step remains.
+Carried-over ideas (provider registry, extra checkpoints, streaming, web console, process items)
+are listed there too. Promote an item into `docs/tasks.md` when it is scheduled.
 
 ---
 

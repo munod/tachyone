@@ -376,9 +376,9 @@ M5 → M6-T1 → M6-T2 → M6-T3
 **Depends on:** M3-T5 · **Requirement:** NFR-P01, NFR-C05, OPS-01, EXT-03.
 **Done when:** latency improves on supported CUDA; falls back otherwise; router override (force checkpoint/language) honored additively.
 **Tests:** benchmark (conditional-by-extra) · **Gate:** full · **Commit:** `perf: add optional fast path`.
-**Status:** ⚠️ Partially delivered in M5 — the seam + graceful fallback and the router override
-ship (`src/jeba/fast.py`), but the accelerated kernels and the latency measurement are **not** done;
-tracked as **B-2** in `.specs/project/BACKLOG.md`.
+**Status:** ✅ Delivered. The seam + graceful fallback and router override ship in M5; the B-2
+follow-up (`JEBA_FAST`) wires the seam to a per-shape CUDA-graph forward with bf16-resident
+weights, measured in `benchmarks/fast_path.py` (2.47× p50, 0 top-label flips). NFR-P01 met.
 
 #### M5-T3: MCP stdio server [P]
 

@@ -36,6 +36,10 @@ Every stage is a committed script with a committed config and a fixed seed.
 - **Streaming:** write JSONL incrementally; never hold the full dataset in memory.
 - **Coverage:** per primitive, per language group, with hard negatives and boundary cases
   (near-ties, ambiguous labels, empty/very long inputs).
+- **Localization (B-1):** the `state`, `instructions`, `criteria`, `score` levels, and
+  `noul`/`score` entities are all authored per language (`training/data/lexicon.json`,
+  `phrases.json`, `team_descriptions.json`), so the multilingual checkpoint does not learn an
+  English template.
 
 ### JSONL record format (planned)
 
@@ -116,8 +120,10 @@ distributions. Proper scoring directly optimizes the quantity users consume (`co
 **Goal:** minimize ECE on a held-out calibration split.
 
 - Fit a single temperature (or per-primitive temperatures) on a **calibration split**.
-- **Planned (B-1, `BACKLOG.md`):** per-**(primitive, language)** temperatures, so a weakly served
-  language is calibrated on its own data instead of borrowing the global fit.
+- **Per-(primitive, language) temperatures (B-1, implemented):** `fit_calibration.py` keeps the
+  per-primitive fit and adds a per-language fit under `by_language`; the runtime selects
+  `kind:lang` → `kind` → global, detecting the language from the state text. A language below
+  `min_samples` warns and falls back to the per-primitive value.
 - **Never** fit on the test split.
 - Report ECE before/after; target is provisional (NFR-C06, `ECE ≤ 0.05` **[open]**).
 - Persist the fitted temperature with the checkpoint.

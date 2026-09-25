@@ -76,13 +76,13 @@ All rows are **Pending** at baseline (pre-implementation).
 
 | Req ID | Design component | Task(s) | Status |
 | --- | --- | --- | --- |
-| NFR-P01 | `backends/encoder.py` / `fast.py` | M3-T5, M5-T2 | Pending |
+| NFR-P01 | `backends/encoder.py` / `fast.py` | M3-T5, M5-T2, B-2 | Done (stock 9.1/10.8 ms; fast 3.7/4.1 ms) |
 | NFR-P02 | `backends/encoder.py` | M3-T5, M3-T8 | Pending |
 | NFR-P03 | `router.py` | M3-T1 | Pending |
 | NFR-P04 | `backends/llm.py` | M2-T2 | Pending |
 | NFR-P05 | `agent.py` | M3-T4 | Pending |
 | NFR-P06 | `serve.py` + `router.py` | M3-T2 | Pending |
-| NFR-P07 | `fast.py` | Backlog B-2 | Pending |
+| NFR-P07 | `fast.py` | Backlog B-2 | Done (2.47× p50, 0 top-label flips) |
 | NFR-R01 | packaging | M0-T1 | Pending |
 | NFR-R02 | `backends/encoder.py` | M3-T5 | Pending |
 | NFR-R03 | `backends/encoder.py` | M3-T5 | Pending |
@@ -92,7 +92,7 @@ All rows are **Pending** at baseline (pre-implementation).
 | NFR-C02 | `backends/*` + validators | M1-T2, M1-T3, M2-T2 | Pending |
 | NFR-C03 | `backends/encoder.py` | M3-T5 | Pending |
 | NFR-C04 | `training/configs/` | M4-T6 | Pending |
-| NFR-C05 | `fast.py` / extras guards | M5-T2 | Pending |
+| NFR-C05 | `fast.py` / extras guards | M5-T2, B-2 | Done |
 | NFR-C06 | `fit_calibration.py` | M4-T4 | Pending |
 | NFR-C07 | `fit_calibration.py` | Backlog B-1 | Pending |
 | NFR-X01 | `serve.py` + e2e | M2-T8 | Pending |
