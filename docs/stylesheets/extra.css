@@ -1,0 +1,152 @@
+/* jeba project site — landing page styling (no external dependencies). */
+
+:root {
+  --jeba-accent: #6366f1;
+  --jeba-accent-2: #22d3ee;
+}
+
+/* Hero -------------------------------------------------------------------- */
+.jeba-hero {
+  margin: 1.5rem 0 2.5rem;
+  padding: 3rem 2rem;
+  border-radius: 1rem;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(99, 102, 241, 0.28) 0%, rgba(34, 211, 238, 0.12) 45%, transparent 75%),
+    linear-gradient(160deg, #0b1020 0%, #111a35 100%);
+  color: #e2e8f0;
+  text-align: center;
+}
+
+.jeba-hero__eyebrow {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+}
+
+.jeba-hero__title {
+  margin: 0 auto 0.75rem;
+  max-width: 46rem;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  line-height: 1.15;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.jeba-hero__sub {
+  margin: 0 auto 1.75rem;
+  max-width: 40rem;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  color: #cbd5e1;
+}
+
+.jeba-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.jeba-btn {
+  display: inline-block;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.jeba-btn:hover {
+  transform: translateY(-1px);
+}
+
+.jeba-btn--primary {
+  background: linear-gradient(120deg, var(--jeba-accent), var(--jeba-accent-2));
+  color: #0b1020 !important;
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25);
+}
+
+.jeba-btn--ghost {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #e2e8f0 !important;
+}
+
+/* Metrics bar ------------------------------------------------------------- */
+.jeba-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.jeba-metric {
+  padding: 1.1rem 1rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.75rem;
+  text-align: center;
+  background: var(--md-code-bg-color);
+}
+
+.jeba-metric__value {
+  display: block;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--jeba-accent);
+}
+
+.jeba-metric__label {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Dependency-free bar charts --------------------------------------------- */
+.jeba-chart {
+  margin: 1rem 0 2rem;
+}
+
+.jeba-bar {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr 3.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0;
+  font-size: 0.82rem;
+}
+
+.jeba-bar__track {
+  height: 0.85rem;
+  border-radius: 999px;
+  background: var(--md-default-fg-color--lightest);
+  overflow: hidden;
+}
+
+.jeba-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--jeba-accent), var(--jeba-accent-2));
+}
+
+.jeba-bar__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-default-fg-color--light);
+}
+
+.jeba-bar__fill--muted {
+  background: linear-gradient(90deg, #64748b, #94a3b8);
+}
+
+.jeba-chart__caption {
+  margin-top: 0.6rem;
+  font-size: 0.74rem;
+  color: var(--md-default-fg-color--light);
+}

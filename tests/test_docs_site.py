@@ -38,6 +38,8 @@ def test_docs_index_and_requirements() -> None:
 
 def test_site_builds(tmp_path: Path) -> None:
     pytest.importorskip("mkdocs")
+    pytest.importorskip("material")
+    pytest.importorskip("cairosvg")  # social cards need the mkdocs-material[imaging] extra
     from mkdocs.commands.build import build  # pyright: ignore[reportMissingImports]
     from mkdocs.config import load_config  # pyright: ignore[reportMissingImports]
 
@@ -45,3 +47,9 @@ def test_site_builds(tmp_path: Path) -> None:
     config["site_dir"] = str(tmp_path / "site")
     build(config)
     assert (tmp_path / "site" / "index.html").exists()
+
+
+def test_brand_assets_exist() -> None:
+    assert (_ROOT / "docs" / "assets" / "logo.svg").exists()
+    assert (_ROOT / "docs" / "assets" / "favicon.svg").exists()
+    assert (_ROOT / "docs" / "stylesheets" / "extra.css").exists()

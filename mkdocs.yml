@@ -1,29 +1,95 @@
 site_name: jeba
-site_description: Local-first, multilingual System One decision engine (Jev /v1/systemone compatible)
+site_description: Local-first, multilingual System One decision engine — ultra-fast, non-autoregressive, calibrated. Speaks the Jev /v1/systemone protocol.
+site_url: https://munod.github.io/jeba/
+repo_url: https://github.com/munod/jeba
+repo_name: munod/jeba
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 The jeba Authors · Apache-2.0
 docs_dir: docs
+
 theme:
   name: material
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
   features:
+    - navigation.instant
+    - navigation.tracking
     - navigation.sections
     - navigation.top
+    - navigation.footer
+    - toc.follow
     - content.code.copy
+    - content.tabs.link
     - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/munod/jeba
+      name: jeba on GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/jeba/
+      name: jeba on PyPI
+    - icon: fontawesome/solid/robot
+      link: https://huggingface.co/munod
+      name: jeba models on Hugging Face
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - social:
+      cards_layout_options:
+        background_color: "#0b1020"
+        color: "#e2e8f0"
+
 markdown_extensions:
   - admonition
   - attr_list
+  - md_in_html
+  - def_list
   - tables
   - toc:
       permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
 nav:
   - Home: index.md
   - Overview: overview.md
   - Protocol: protocol.md
   - Architecture: architecture.md
+  - Benchmarks: benchmarks.md
   - Roadmap: roadmap.md
   - Tasks: tasks.md
   - Testing: testing.md
