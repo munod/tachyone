@@ -11,7 +11,10 @@ overall 0.721 → **0.781**; per-language ECE still above 0.05 for `es`/`nl`/`de
 remains partial — NFR-C06 open). **B-3 (confidence thresholding / System-2 handoff) done**:
 `calibration.py` gains normalized `entropy`/`margin`, `handoff.py` exposes `assess`/
 `assess_response`, and the CLI appends a sibling `handoff` object via `--threshold` without
-changing the canonical response. Next ready: B-4 (input-noise robustness, needs GPU).
+changing the canonical response. **B-4 (input-noise robustness) code done**: seeded opt-in
+`noise_rate` in `generate_data.py` plus a clean/noisy split in `evaluate.py` (`report["noisy"]`);
+the RTX 3060 retrain and measured comparison remain. Next ready: B-5 (multi-domain coverage,
+Idea).
 
 ## Milestone Status
 
@@ -229,6 +232,7 @@ composable contract already covers.
 | B-1 | multilingual quality: localized data + per-language temperature + reporting + retrain | 2026-09-24 | `feat(training): localize and deepen multilingual data` | ✅ |
 | B-2 | fast path: CUDA-graph encode + micro-benchmark (NFR-P01/P07) | 2026-09-24 | `perf(fast): wire acceleration seam and CUDA-graph encode` | ✅ |
 | B-3 | confidence thresholding / System-2 handoff (entropy/margin, `handoff.py`, CLI `--threshold`) | 2026-09-25 | `feat(handoff): add confidence threshold and handoff signal` | ✅ |
+| B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrain pending GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
 
 ---
 

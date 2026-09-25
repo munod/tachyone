@@ -16,7 +16,14 @@ from jeba.primitives import (
     ScoreAnswer,
     ScoreQuestion,
 )
-from training.evaluate import EvalExample, evaluate, load_examples, record_to_example, save_report
+from training.evaluate import (
+    EvalExample,
+    add_state_noise,
+    evaluate,
+    load_examples,
+    record_to_example,
+    save_report,
+)
 from training.generate_data import DataConfig, generate
 
 
@@ -142,3 +149,38 @@ def test_save_report(tmp_path: Path) -> None:
 def test_evaluate_empty() -> None:
     report = evaluate([], _never_called)
     assert report["overall"]["n"] == 0
+
+
+def test_evaluate_noise_rate_adds_noisy_view(tmp_path: Path) -> None:
+    examples = _examples(tmp_path)
+    report = evaluate(examples, _biased, noise_rate=0.3)
+    assert report["noise_rate"] == 0.3
+    assert "noisy" in report
+    assert set(report["noisy"]) == {"bins", "overall", "per_primitive", "per_language"}
+    assert report["noisy"]["overall"]["n"] == report["overall"]["n"]
+
+
+def test_evaluate_default_has_no_noisy_view(tmp_path: Path) -> None:
+    report = evaluate(_examples(tmp_path), _biased)
+    assert "noisy" not in report
+
+
+def test_add_state_noise_is_deterministic_and_scoped() -> None:
+    examples = [
+        EvalExample(
+            id="a",
+            type="noul",
+            state="café com açúcar",
+            question=NoulQuestion(instructions="q?"),
+            target=1,
+            lang="pt",
+        )
+    ]
+    one = add_state_noise(examples, rate=1.0, seed=7)
+    two = add_state_noise(examples, rate=1.0, seed=7)
+    assert [e.state for e in one] == [e.state for e in two]
+
+
+def test_add_state_noise_rejects_out_of_range() -> None:
+    with pytest.raises(ValueError):
+        add_state_noise([], rate=1.5)

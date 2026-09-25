@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -71,6 +71,17 @@ def _table(entry: ReportEntry) -> list[str]:
             "",
             f"Worst language (accuracy): `{lang}` — accuracy {_fmt(metrics.get('accuracy', 0.0))}, "
             f"ECE {_fmt(metrics.get('ece', 0.0))}.",
+        ]
+    noisy = entry.report.get("noisy")
+    if isinstance(noisy, Mapping):
+        noisy_overall = noisy.get("overall", {})
+        latency = noisy_overall.get("latency_ms", {})
+        lines += [
+            "",
+            f"Noisy view (noise_rate {entry.report.get('noise_rate', '?')}) — overall: "
+            f"accuracy {_fmt(noisy_overall.get('accuracy', 0.0))}, "
+            f"ECE {_fmt(noisy_overall.get('ece', 0.0))}, "
+            f"p50 {_fmt(latency.get('p50', 0.0))} ms.",
         ]
     lines.append("")
     return lines

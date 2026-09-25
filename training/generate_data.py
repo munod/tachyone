@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import unicodedata
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -91,6 +92,42 @@ class DataConfig:
     per_type: int = 200
     languages: tuple[str, ...] = DEFAULT_LANGUAGES
     source: str = "synthetic"
+    #: Fraction of records whose ``state`` gets one surface-noise edit (typos/accents/casing).
+    #: ``0.0`` (default) reproduces the clean dataset byte-for-byte (B-4).
+    noise_rate: float = 0.0
+
+
+def _strip_accents(text: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
+
+
+def _perturb_state(text: str, rng: random.Random) -> str:
+    """Apply one deterministic surface-noise edit to ``text``.
+
+    Realistic user input carries typos, missing accents, dropped punctuation and casing noise.
+    Exactly one cheap edit is applied per call so the label stays recoverable; empty text passes
+    through unchanged. The caller's ``rng`` guarantees the same seed → the same edit.
+    """
+    if not text:
+        return text
+    edit = rng.choice(("delete", "swap", "accent", "case", "punct"))
+    if edit == "delete" and len(text) > 1:
+        index = rng.randrange(len(text))
+        return text[:index] + text[index + 1 :]
+    if edit == "swap" and len(text) > 1:
+        index = rng.randrange(len(text) - 1)
+        return text[:index] + text[index + 1] + text[index] + text[index + 2 :]
+    if edit == "accent":
+        return _strip_accents(text)
+    if edit == "case":
+        index = rng.randrange(len(text))
+        char = text[index]
+        replacement = char.lower() if char.isupper() else char.upper()
+        return text[:index] + replacement + text[index + 1 :]
+    if text[-1] in ".,!?;:":
+        return text[:-1]
+    return text
 
 
 def _phrases(lang: str) -> dict[str, list[str]]:
@@ -191,6 +228,12 @@ def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
             rng = random.Random(f"{config.seed}:{kind}:{index}:{language}")
             record = generator(index, language, rng)
             record["source"] = config.source
+            if config.noise_rate > 0.0:
+                # A dedicated RNG keeps the apply-or-not draw and the edit independent of the
+                # content draws (L-003), while remaining byte-for-byte deterministic.
+                noise_rng = random.Random(f"{config.seed}:{kind}:{index}:{language}:noise")
+                if noise_rng.random() < config.noise_rate:
+                    record["state"] = _perturb_state(record["state"], noise_rng)
             yield record
 
 
@@ -219,17 +262,26 @@ def build_parser() -> argparse.ArgumentParser:
         "--languages", default=",".join(DEFAULT_LANGUAGES), help="comma-separated language tags"
     )
     parser.add_argument("--source", default="synthetic")
+    parser.add_argument(
+        "--noise-rate",
+        type=float,
+        default=0.0,
+        help="fraction of records whose state gets one surface-noise edit (0.0 disables)",
+    )
     parser.add_argument("--out", required=True, help="output JSONL path")
     return parser
 
 
 def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(list(argv) if argv is not None else None)
+    if not 0.0 <= args.noise_rate <= 1.0:
+        raise SystemExit("--noise-rate must be within [0, 1]")
     config = DataConfig(
         seed=args.seed,
         per_type=args.per_type,
         languages=tuple(item for item in args.languages.split(",") if item),
         source=args.source,
+        noise_rate=args.noise_rate,
     )
     written = generate(config, args.out)
     print(f"wrote {written} records to {args.out}")

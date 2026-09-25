@@ -65,6 +65,7 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 | TRAIN-05 | `benchmarks/evaluate.py` | M4-T5 | Implemented |
 | TRAIN-06 | `training/configs/` | M4-T2, M4-T6 | Implemented |
 | TRAIN-07 | `generate_data.py` | M4-T1 | Implemented |
+| TRAIN-08 | `generate_data.py` + `evaluate.py` | B-4 (B4-T1..T3) | Implemented |
 | OPS-01 | `pyproject.toml` extras | M0-T1, M5-T1, M5-T2 | Implemented |
 | OPS-02 | `mcp/` | M5-T3 | Implemented |
 | OPS-03 | `integrations/langchain.py` | M5-T4 | Implemented |
@@ -129,9 +130,9 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 
 | Category | Count | Mapped | Unmapped |
 | --- | --- | --- | --- |
-| Functional (WIRE/PRIM/BACK/ROUTE/CAL/EXT/SERVE/TRAIN/OPS) | 52 | 52 | 0 |
+| Functional (WIRE/PRIM/BACK/ROUTE/CAL/EXT/SERVE/TRAIN/OPS) | 53 | 53 | 0 |
 | Non-functional | 39 | 38 | 1 (NFR-A, N/A) |
-| **Total** | **91** | **90** | **0 actionable** |
+| **Total** | **92** | **91** | **0 actionable** |
 
 > When a task is completed, update the matching rows to `Implemented`, and after validation
 > to `Verified` (see `docs/testing.md` and the TLC validate flow in `.specs/project/STATE.md`).

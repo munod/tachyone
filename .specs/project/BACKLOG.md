@@ -116,30 +116,39 @@ keeps τ pointing the same way for every primitive.
 
 ---
 
-## B-4 — Input-noise robustness (typos / accents / slang) · Ready
+## B-4 — Input-noise robustness (typos / accents / slang) · Done (code) / partial (retrain)
 
 **Why.** Synthetic states are clean templates. Real chat/user input has typos, missing accents,
 absent punctuation and regional slang, so accuracy outside controlled templates degrades. L-003
 shows data-template artifacts are a real failure mode.
 
+**Status (code landed, 2026-09-25).** `training/generate_data.py` gains a seeded, opt-in
+`noise_rate` that applies one surface edit (char swap/delete, accent strip, casing flip,
+terminal-punctuation drop) to the `state` only, drawing from a per-record RNG so it stays
+independent of the cyclic label (L-003). `training/evaluate.py` adds `--noise-rate` and reports
+the noisy view under `report["noisy"]`; `benchmarks/report.py` renders it. `TRAIN-08` is traced.
+Remaining: retrain on the RTX 3060 and measure clean vs noisy accuracy/ECE. Spec/tasks:
+`.specs/features/input-noise/`.
+
 **Plan.**
-1. Add a seeded, deterministic noise-injection option to `training/generate_data.py` (character
-   swaps/deletions, accent stripping, casing/punctuation drops) applied to ~15% of training
-   records. Determinism (same seed → byte-identical) must be preserved.
-2. Keep a clean vs noisy evaluation split and report both, so robustness gains are not confused
-   with clean-set regressions.
-3. Retrain and compare accuracy/ECE on both splits (and on the public probes).
+1. [x] Seeded, deterministic noise-injection in `training/generate_data.py` (config field
+   `noise_rate`, CLI `--noise-rate`); determinism preserved (same seed → byte-identical).
+2. [x] Clean vs noisy evaluation split: `evaluate.py --noise-rate` returns `report["noisy"]`;
+   `benchmarks/report.py` renders it.
+3. [ ] Retrain with `training/configs/data_noisy.json` and compare accuracy/ECE on both splits
+      (and the public probes).
 
 **Acceptance.**
-- Noise is seeded, reproducible, and opt-in via a config flag.
-- Noisy-split accuracy improves vs baseline with no clean-split regression beyond tolerance.
-- Both splits reported in `benchmarks/report.md`.
+- [x] Noise is seeded, reproducible, and opt-in via a config flag.
+- [ ] Noisy-split accuracy improves vs baseline with no clean-split regression beyond tolerance
+      (GPU run pending).
+- [ ] Both splits reported in `benchmarks/report.md`.
 
 **Risks / notes.** Over-noising can teach noise invariance at the cost of clean accuracy; tune
 the rate. Keep probe evaluation on unmodified public inputs for comparability. Effort ~1 day +
 retrain.
 
-**Related.** `STATE.md` L-003, `docs/training.md` (§1), `TRAIN-01`.
+**Related.** `STATE.md` L-003, `docs/training.md` (§1), `TRAIN-01`, `TRAIN-08`.
 
 ---
 
