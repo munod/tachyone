@@ -1,7 +1,9 @@
 # Overview
 
-**Status:** Pre-implementation. This document describes the intended product; no code exists
-yet. See `.specs/project/STATE.md` for the authoritative decision log.
+**Status:** Implemented and released (`v0.2.0`). All milestones M0–M6 are complete, plus the
+post-M6 multilingual-quality (B-1) and CUDA-graph fast-path (B-2) work. See
+[`benchmarks.md`](benchmarks.md) for measured results and `.specs/project/STATE.md` for the
+authoritative decision log.
 
 ## What jeba is
 

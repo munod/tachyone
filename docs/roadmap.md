@@ -3,7 +3,8 @@
 > Canonical machine-facing roadmap lives in `.specs/project/ROADMAP.md`. This page is the
 > human-facing view with exit criteria and risk notes. Task-level detail: `docs/tasks.md`.
 
-**Current phase:** M6 Proof & Release ✅ complete — GPU training run + published numbers/weights pending
+**Current phase:** M6 Proof & Release ✅ complete and released (`v0.2.0`), including the post-M6
+B-1 (multilingual quality + per-language calibration) and B-2 (CUDA-graph fast path) work.
 **Delivery model:** one shippable increment per milestone; no fixed dates.
 
 ```mermaid
@@ -109,16 +110,17 @@ graph LR
 | M4 | `.specs/features/training-calibration/` |
 | M5, M6 | `.specs/features/ecosystem/` |
 
-## Future considerations
+## Post-M6 — Backlog (delivered)
 
-Active next steps (canonical list: `.specs/project/BACKLOG.md`):
+Both active backlog items shipped in `v0.2.0`:
 
-- **B-1 Multilingual `choice`/`score` quality** — stratified per-language data and per-language
-  (primitive, language) temperature fitting; publish per-language ECE.
-- **B-2 Fast-path kernels (TileLang/CUDA graphs)** — implement the accelerated encoder forward
-  behind the `fast` extra (the seam + fallback exist) and measure `NFR-P01` latency.
+- **B-1 Multilingual `choice`/`score` quality** ✅ — localized per-language data, per-record RNG,
+  per-`(primitive, language)` temperature fitting, runtime language detection, and per-language
+  ECE reporting. Multilingual `choice` 0.40 → 0.734; English overall 0.721 → 0.781.
+- **B-2 Fast-path (TileLang/CUDA graphs)** ✅ — `JEBA_FAST=1` wires per-shape CUDA graphs with
+  bf16 weights and graceful fallback; measured 2.68× p50 (NFR-P01/P07 met).
 
-Carried-over ideas:
+Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).
 - Additional checkpoints (typed-decisions variant, larger multilingual).

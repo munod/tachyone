@@ -1,3 +1,3 @@
-# Documentation site dependencies (M6-T2).
+# Documentation site dependencies (M6-T2). Kept in sync with pyproject [dependency-groups].docs.
 mkdocs>=1.6
-mkdocs-material>=9.5
+mkdocs-material[imaging]>=9.5   # social cards need pillow + cairosvg
