@@ -1,7 +1,8 @@
 # Training & Calibration Specification
 
 **Phase:** M4 (Fase 4)
-**Status:** Implemented (scripts + tests; RTX 3060 training run and ECE target pending)
+**Status:** Implemented (scripts + tests; full RTX 3060 training run done and numbers published;
+per-language ECE target still open, see `.specs/features/multilingual-quality/`)
 **Related docs:** `docs/training.md`, `docs/adr/ADR-0005-encoder-rlcd.md`
 
 ## Problem Statement
@@ -91,7 +92,7 @@ reproducible.
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | TRAIN-01 | P1 data | Design | Done |
-| TRAIN-02 | P1 fine-tune | Design | Done (run pending on GPU) |
+| TRAIN-02 | P1 fine-tune | Design | Done (run done on GPU) |
 | TRAIN-03 | P1 RLCD | Design | Done |
 | TRAIN-04 | P1 RLCD | Design | Done |
 | TRAIN-05 | P2 evaluation | Design | Done |

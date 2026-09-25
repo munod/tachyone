@@ -15,21 +15,23 @@ Legend: **Ready** (can start now) · **Blocked** (needs a prerequisite) · **Ide
 `benchmarks/report.md`). The multilingual checkpoint carries six training languages with imbalanced
 support, and calibration is fitted **per primitive**, not per language.
 
-**Status (retrained).** Data is fully localized with per-record RNG and a low distractor rate;
-calibration is per `(primitive, language)`; the runtime applies `kind:lang` → `kind` → global.
-Measured: multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**; English overall
-0.721 → **0.781**; the CUDA-graph fast path adds 2.7× p50. Per-language ECE still misses 0.05 for
-`es`/`nl`/`de` and multilingual `score` (0.09–0.16), so calibration remains **partial**. See
-`STATE.md` L-003 (shared-RNG shortcut). Spec/tasks: `.specs/features/multilingual-quality/`.
+**Status (retrained and published).** Data is fully localized with per-record RNG and a low
+distractor rate; calibration is per `(primitive, language)`; the runtime applies `kind:lang` →
+`kind` → global. Measured: multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**;
+English overall 0.721 → **0.781**; the CUDA-graph fast path adds 2.7× p50. The adapters are
+republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`). Per-language ECE still misses 0.05
+for `es`/`nl`/`de` and multilingual `score` (0.09–0.16), so calibration remains **partial** and
+NFR-C06 is still open. See `STATE.md` L-003 (shared-RNG shortcut).
+Spec/tasks: `.specs/features/multilingual-quality/`.
 
-**Plan.**
-1. Data: stratify generation per language (equal support per language for `choice`/`score`); add
-   language-specific hard negatives and more cue vocabulary; consider adding 2–3 more languages.
-2. Calibration: fit temperature per **(primitive, language)** — extend `training/fit_calibration.py`
-   to key `per_primitive` by language and apply it in `EncoderModel` (`temperatures` already keys
-   by primitive; widen to `"choice:pt"`-style keys or a nested map).
-3. Report per-language accuracy/ECE in `benchmarks/report.md` (the harness already aggregates by
-   language) and gate on the worst language, not just the average.
+**Remaining plan (calibration).**
+1. The per-`(primitive, language)` temperature fit is **already implemented and applied**; the
+   residual gap is that a single scalar temperature cannot fix per-language miscalibration when
+   it hits the grid boundary (temp=0.1/10.0). Move to a richer mapping, e.g. power/vector scaling
+   fitted per language, or more per-language calibration examples, rather than widening the grid.
+2. Increase per-language calibration data so each fit has enough support (avoid small-sample
+   noise; keep the `min_samples` warning).
+3. Keep per-language accuracy/ECE reporting and gate on the worst language, not the average.
 
 **Acceptance.**
 - Multilingual `choice` accuracy ≥ 0.60 on the held-out synthetic set.

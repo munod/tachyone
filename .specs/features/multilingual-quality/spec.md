@@ -1,9 +1,10 @@
 # Multilingual `choice`/`score` Quality & Per-Language Calibration Specification
 
 **Phase:** Post-M6 (B-1, `.specs/project/BACKLOG.md`)
-**Status:** Code landed and retrained on the RTX 3060. Multilingual `choice` 0.40 → 0.73 and
-English overall 0.72 → 0.78 (accuracy targets met); per-language ECE for `es`/`nl`/`de` and
-multilingual `score` remain above the 0.05 target. Adapter republish pending.
+**Status:** Code landed, retrained on the RTX 3060, and adapters published. Multilingual
+`choice` 0.40 → 0.73 and English overall 0.72 → 0.78 (accuracy targets met); per-language ECE
+for `es`/`nl`/`de` and multilingual `score` remain above the 0.05 target (calibration partial;
+NFR-C06 open).
 **Related docs:** `docs/training.md` (§3–4, limitations), `.specs/features/training-calibration/spec.md`,
 `STATE.md` L-002/L-003, `docs/requirements/non-functional.md` (NFR-C06), `docs/requirements/functional.md`
 (CAL-02, CAL-04).

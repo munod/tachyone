@@ -1,7 +1,8 @@
 # Multilingual `choice`/`score` Quality — Tasks
 
 **Spec:** `.specs/features/multilingual-quality/spec.md`
-**Status:** A1–A4 done; A5 (GPU retrain/publish) pending.
+**Status:** A1–A5 done (retrained on the RTX 3060 and adapters published); per-language ECE
+target remains open (NFR-C06), tracked in `BACKLOG.md` B-1.
 
 ---
 
@@ -50,6 +51,8 @@ ground-truth `lang`.
 
 ## A5: GPU retrain and publish
 
+**Status:** Done. Retrained on the RTX 3060 and adapters republished to the Hub
+(`munod/jeba-en`, `munod/jeba-multi`); per-language ECE target not fully met (see spec).
 **What:** Run data → LoRA → calibration → eval → report on the RTX 3060; update model card, changelog,
 and STATE/BACKLOG; publish adapters.
 **Where:** `benchmarks/report.md`, `docs/model-card.md`, `CHANGELOG.md`,

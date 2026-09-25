@@ -104,6 +104,6 @@ JEBA_OFFLINE=1 uv run jeba --predict --backend encoder "..."   # cache-only, no 
 
 ## 5. After a full-scale run
 
-- Replace the placeholder metrics in `docs/model-card.md` and `benchmarks/report.md`.
+- Refresh the metrics in `docs/model-card.md` and `benchmarks/report.md` from the new report.
 - Re-package and re-upload (step 2–3); HF keeps history.
 - Tag the GitHub release from `CHANGELOG.md` (see `docs/release.md`).

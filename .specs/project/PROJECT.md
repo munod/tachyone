@@ -14,8 +14,10 @@ for atomic decisions. jeba gives you the Jev contract you already build against,
 on your own box, with an optional LLM backend today and a trained encoder backend next.
 
 > Status: **implemented and released (`v0.2.0`)**. All milestones M0–M6 are complete, plus the
-> post-M6 multilingual-quality (B-1) and CUDA-graph fast-path (B-2) work. Remaining: republish
-> the updated adapters to the Hub and create the GitHub Release page. See `.specs/project/STATE.md`.
+> post-M6 multilingual-quality (B-1) and CUDA-graph fast-path (B-2) work. The trained adapters
+> are published (`munod/jeba-en`, `munod/jeba-multi`) and the `v0.2.0` GitHub Release exists;
+> per-language calibration for a few languages remains the next quality target. See
+> `.specs/project/STATE.md` and `.specs/project/BACKLOG.md`.
 
 ## Goals
 

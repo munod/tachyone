@@ -19,9 +19,10 @@ pipeline_tag: text-classification
 
 # jeba (System One decision engine)
 
-> **Status: pre-release.** This card describes the intended release. **Weights and measured
-> metrics are pending** the RTX 3060 training run (`uv sync --extra train`); numbers below are
-> placeholders to be replaced by `benchmarks/report.md`.
+> **Status: released (`v0.2.0`).** Trained on a single RTX 3060 12GB and published as LoRA
+> adapters ([`munod/jeba-en`](https://huggingface.co/munod/jeba-en),
+> [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi)); measured numbers below come
+> from `benchmarks/report.md`.
 
 ## Model details
 

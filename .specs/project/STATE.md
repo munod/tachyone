@@ -4,10 +4,11 @@
 **Current Work:** Post-M6 backlog. **B-2 (fast path) done**: `JEBA_FAST` wires
 `maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
 `benchmarks/fast_path.py` measures 2.68× p50 (10.27 → 3.83 ms) and 0 top-label flips, meeting
-NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed and retrained on the RTX 3060:
-multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**; English overall
-0.721 → **0.781**; per-language ECE still above 0.05 for `es`/`nl`/`de`. Remaining: republish the
-updated adapters to the Hub and create the GitHub Release page for `v0.1.0`.
+NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed, retrained on the RTX 3060, and the
+adapters were republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`); the `v0.2.0` GitHub
+Release exists. Multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**; English
+overall 0.721 → **0.781**; per-language ECE still above 0.05 for `es`/`nl`/`de` (calibration
+remains partial — NFR-C06 open). Next ready: B-3 (confidence thresholding / System-2 handoff).
 
 ## Milestone Status
 
@@ -17,7 +18,7 @@ updated adapters to the Hub and create the GitHub Release page for `v0.1.0`.
 | M1 Wire Contract | ✅ Complete | primitives + wire.py, contract suite |
 | M2 LLM Backend + Serve | ✅ Complete | llm/fake backends, FastAPI, SDK, CLI, presets, decide, e2e |
 | M3 Local Encoder | ✅ Complete | encoder backend, router+lifecycle, calibration, agent, hooks |
-| M4 Training + Calibration | ✅ Complete | pipeline; GPU run pending |
+| M4 Training + Calibration | ✅ Complete | pipeline; full RTX 3060 run done, numbers published |
 | M5 Ecosystem + Accel | ✅ Complete | ONNX, fast fallback, MCP, LangChain, Docker, telemetry no-op |
 | M6 Proof + Release | ✅ Complete | benchmark report + script, docs site, model card, changelog, release process |
 
@@ -115,7 +116,7 @@ English checkpoint, selected automatically by a script/language router.
 **Workaround:** LoRA/QLoRA + gradient checkpointing + small effective batch + grad accumulation.
 **Resolution:** Pipeline implemented (M4-T2) and executed full-scale on the RTX 3060 12GB
 (English + multilingual LoRA, 6k train / 1.5k eval, calibration). Numbers are in
-`benchmarks/report.md`. Remaining: publish adapters to the HF Hub.
+`benchmarks/report.md` and the adapters are published (`munod/jeba-en`, `munod/jeba-multi`).
 
 ---
 
