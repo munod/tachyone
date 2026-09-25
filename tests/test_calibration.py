@@ -9,6 +9,7 @@ from jeba.calibration import (
     confidence,
     expected_calibration_error,
     fit_temperature,
+    parse_temperature_report,
 )
 
 
@@ -81,3 +82,23 @@ def test_fit_temperature_reduces_ece_on_overconfident_set() -> None:
     fitted = fit_temperature(samples, correct)
     assert fitted.value != 1.0
     assert fitted.ece < baseline
+
+
+def test_parse_temperature_report_flattens_legacy_and_per_language() -> None:
+    report = {
+        "per_primitive": {
+            "choice": {"temperature": 2.0, "by_language": {"pt": {"temperature": 3.0}}},
+            "score": {"temperature": 0.5},
+        }
+    }
+    parsed = parse_temperature_report(report)
+    assert parsed["choice"] == 2.0
+    assert parsed["choice:pt"] == 3.0
+    assert parsed["score"] == 0.5
+    assert "score:pt" not in parsed
+
+
+def test_parse_temperature_report_tolerates_bad_shapes() -> None:
+    assert parse_temperature_report({"per_primitive": []}) == {}
+    assert parse_temperature_report(["nope"]) == {}  # type: ignore[arg-type]
+    assert parse_temperature_report({"per_primitive": {"choice": []}}) == {}

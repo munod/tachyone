@@ -16,8 +16,26 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-#: Default temperature grid searched by :func:`fit_temperature`.
-DEFAULT_GRID: tuple[float, ...] = (0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0)
+#: Default temperature grid searched by :func:`fit_temperature`. Wide enough that a weakly
+#: served language's sharpening/softening optimum is not truncated at an endpoint (B-1).
+DEFAULT_GRID: tuple[float, ...] = (
+    0.05,
+    0.1,
+    0.15,
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.25,
+    1.5,
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    6.0,
+    8.0,
+    10.0,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +113,32 @@ def fit_temperature(
     return best
 
 
+def parse_temperature_report(report: Mapping[str, Any]) -> dict[str, float]:
+    """Flatten a fitted-temperature report into ``{kind, kind:lang}`` keys.
+
+    Accepts both the legacy per-primitive shape (``per_primitive[kind]["temperature"]``) and
+    the per-language extension (``per_primitive[kind]["by_language"][lang]["temperature"]``),
+    so old and new calibration files both load (B-1).
+    """
+    temperatures: dict[str, float] = {}
+    if not isinstance(report, Mapping):
+        return temperatures
+    per_primitive = report.get("per_primitive", {})
+    if not isinstance(per_primitive, Mapping):
+        return temperatures
+    for kind, entry in per_primitive.items():
+        if not isinstance(entry, Mapping):
+            continue
+        if "temperature" in entry:
+            temperatures[str(kind)] = float(entry["temperature"])
+        by_language = entry.get("by_language")
+        if isinstance(by_language, Mapping):
+            for lang, lang_entry in by_language.items():
+                if isinstance(lang_entry, Mapping) and "temperature" in lang_entry:
+                    temperatures[f"{kind}:{lang}"] = float(lang_entry["temperature"])
+    return temperatures
+
+
 __all__ = [
     "DEFAULT_GRID",
     "Temperature",
@@ -102,4 +146,5 @@ __all__ = [
     "confidence",
     "expected_calibration_error",
     "fit_temperature",
+    "parse_temperature_report",
 ]

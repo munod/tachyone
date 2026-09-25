@@ -51,6 +51,36 @@ def test_small_split_warns() -> None:
     assert any("choice" in warning for warning in report["warnings"])
 
 
+def test_lang_aware_fit_emits_by_language() -> None:
+    examples: list[CalibrationExample] = []
+    for lang in ("pt", "es"):
+        for index in range(60):
+            target = "billing" if index < 40 else "technical"
+            examples.append(
+                CalibrationExample("choice", {"billing": 0.9, "technical": 0.1}, target, lang)
+            )
+    report = fit_temperature_report(examples)
+    choice = report["per_primitive"]["choice"]
+    assert set(choice["by_language"]) == {"pt", "es"}
+    assert choice["by_language"]["pt"]["n"] == 60
+    assert choice["by_language"]["pt"]["temperature"] > 1.0
+
+
+def test_per_language_small_sample_warns() -> None:
+    examples = [CalibrationExample("choice", {"a": 0.9, "b": 0.1}, "a", "pt")]
+    report = fit_temperature_report(examples, min_samples=30)
+    assert any("choice:pt" in warning for warning in report["warnings"])
+
+
+def test_load_examples_carries_language(tmp_path: Path) -> None:
+    path = tmp_path / "preds.jsonl"
+    path.write_text(
+        json.dumps({"type": "choice", "lang": "pt", "probabilities": {"a": 1.0}, "target": "a"}),
+        encoding="utf-8",
+    )
+    assert load_examples(path)[0].lang == "pt"
+
+
 def test_load_examples_roundtrip(tmp_path: Path) -> None:
     path = tmp_path / "preds.jsonl"
     path.write_text(
