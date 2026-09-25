@@ -10,12 +10,18 @@ heavy backends and transports live behind optional extras. See ``docs/architectu
 from __future__ import annotations
 
 from jeba.client import JebaAPIError, JebaClient, JebaConnectionError, JebaError
+from jeba.handoff import HandoffReport, HandoffSignal, Uncertainty, assess, assess_response
 
 __version__ = "0.2.0"
 __all__ = [
+    "HandoffReport",
+    "HandoffSignal",
     "JebaAPIError",
     "JebaClient",
     "JebaConnectionError",
     "JebaError",
+    "Uncertainty",
     "__version__",
+    "assess",
+    "assess_response",
 ]
