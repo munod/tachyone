@@ -51,5 +51,5 @@ def test_site_builds(tmp_path: Path) -> None:
 
 def test_brand_assets_exist() -> None:
     assert (_ROOT / "docs" / "assets" / "logo.svg").exists()
-    assert (_ROOT / "docs" / "assets" / "favicon.svg").exists()
+    assert (_ROOT / "docs" / "assets" / "logo-wordmark.svg").exists()
     assert (_ROOT / "docs" / "stylesheets" / "extra.css").exists()
