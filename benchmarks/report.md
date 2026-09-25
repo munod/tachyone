@@ -13,7 +13,7 @@
 ```json
 {
   "git_commit": "e5e9864300294d38ddfe1ad8b9a09514435d2d92",
-  "jeba": "0.1.1",
+  "jeba": "0.2.0",
   "peft": "0.21.0",
   "platform": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44",
   "pydantic": "2.13.5",

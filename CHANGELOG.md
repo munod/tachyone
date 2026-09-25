@@ -8,6 +8,26 @@ All notable changes to this project are documented here. The format is based on
 
 Nothing yet.
 
+## [0.2.0] - 2026-09-24
+
+### Added
+
+- **Multilingual quality (B-1):** fully localized synthetic data (`training/data/lexicon.json`),
+  per-`(primitive, language)` temperature fitting with a widened grid, runtime `kind:lang` →
+  `kind` → global temperature selection with heuristic language detection, and per-language
+  accuracy/ECE reporting (worst-language gate). Retrained on the RTX 3060: multilingual `choice`
+  0.40 → 0.734 and overall 0.609 → 0.711; English overall 0.721 → 0.781.
+- **Fast path (B-2):** `JEBA_FAST` wires the encoder to a per-shape CUDA-graph forward with
+  bf16-resident weights and graceful fallback; `benchmarks/fast_path.py` measures 2.68× p50
+  (10.27 → 3.83 ms) with 0 top-label flips, meeting NFR-P01/NFR-P07.
+
+### Changed
+
+- `maybe_accelerate` now takes an injected accelerator builder; TileLang fused kernels remain
+  optional.
+- `training/generate_data.py` seeds an RNG per record (independent draws) and lowers the
+  hard-negative rate to 1/6 (see L-003).
+
 ## [0.1.1] - 2026-09-24
 
 ### Added
@@ -66,7 +86,8 @@ TypeSafe Jev `/v1/systemone` wire protocol as a drop-in.
 
 Specification baseline (documentation only, no code).
 
-[Unreleased]: https://github.com/munod/jeba/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/munod/jeba/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/munod/jeba/releases/tag/v0.2.0
 [0.1.1]: https://github.com/munod/jeba/releases/tag/v0.1.1
 [0.1.0]: https://github.com/munod/jeba/releases/tag/v0.1.0
 [0.0.1]: https://github.com/munod/jeba/releases/tag/v0.0.1
