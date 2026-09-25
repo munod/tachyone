@@ -6,10 +6,12 @@ jeba answers atomic structured questions — `choice`, `score`, and `noul` — a
 values with probabilities and calibrated confidence. Point an existing Jev client at a jeba
 server and it works unchanged; run the local encoder backend for fully offline inference.
 
-**Status: `v0.1.0` released.** All milestones M0–M6 are complete: the wire contract, an
-OpenAI-compatible LLM backend, a local encoder (ModernBERT/mmBERT + LoRA), an ONNX backend, an
-optional fast path, FastAPI serving, an SDK/CLI, MCP + LangChain integrations, a training
-pipeline, and a docs site. LoRA adapters are published on the Hugging Face Hub. See the
+**Status: `v0.2.0` released.** All milestones M0–M6 are complete, plus the post-M6
+**B-1 multilingual quality** work (localized data, per-`(primitive, language)` temperature) and
+**B-2 fast path** (per-shape CUDA graphs with bf16 weights). The wire contract, an
+OpenAI-compatible LLM backend, a local encoder (ModernBERT/mmBERT + LoRA), an ONNX backend,
+FastAPI serving, an SDK/CLI, MCP + LangChain integrations, a training pipeline, and a docs site
+all ship. LoRA adapters are published on the Hugging Face Hub. See the
 [CHANGELOG](CHANGELOG.md) for releases, next steps in
 [`.specs/project/BACKLOG.md`](.specs/project/BACKLOG.md), and
 [`.specs/project/STATE.md`](.specs/project/STATE.md) for decisions and blockers.
@@ -23,8 +25,8 @@ local-capable but slow and poorly calibrated for atomic judgments. jeba sits in 
 
 - **Drop-in** — same request/response as Jev; repoint the client and keep your code.
 - **Local-first** — the base install runs offline with no API key; the HTTP server is one mode, not the only one.
-- **Fast** — the local backend is non-autoregressive: one forward pass, no decoding loop.
-- **Calibrated** — probabilities trained with strictly proper scoring (RLCD) + temperature fitting.
+- **Fast** — the local backend is non-autoregressive: one forward pass, no decoding loop; `JEBA_FAST=1` adds a CUDA-graph path (2.7× p50 on an RTX 3060).
+- **Calibrated** — probabilities trained with strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature fitting.
 - **Multilingual** — mmBERT-based checkpoint covering 100+ languages via automatic script/language routing.
 - **Additive** — router control, hooks, `predict_batch`, MCP, and LangChain extend the contract without breaking it.
 
@@ -86,18 +88,22 @@ curl -s http://127.0.0.1:8000/v1/systemone \
 `JEBA_BACKEND=encoder` (default, offline once cached) loads `answerdotai/ModernBERT-large` or
 `jhu-clsp/mmBERT-base` and applies the published LoRA adapter. Override with
 `JEBA_ADAPTERS="jeba-en=acme/tuned-en,jeba-multi="`; force cache-only with `JEBA_OFFLINE=1`.
+On a CUDA device, `JEBA_FAST=1` opts into the per-shape CUDA-graph forward (bf16 weights) with
+graceful fallback.
 
 - Adapters: [`munod/jeba-en`](https://huggingface.co/munod/jeba-en) ·
   [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi)
 - Measured on a single RTX 3060 12GB (full tables: [`benchmarks/report.md`](benchmarks/report.md)):
 
-  | Checkpoint | Overall | `score` | `noul` | `choice` | ECE |
+  | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + LoRA) | 0.613 | 0.890 | 0.700 | 0.250 | 0.059 |
-  | Multilingual (mmBERT-base + LoRA) | 0.493 | 0.494 | 0.730 | 0.256 | 0.034 |
+  | English (ModernBERT-large + LoRA + choice head) | 0.781 | 0.708 | 0.744 | 0.892 | 0.077 |
+  | Multilingual (mmBERT-base + LoRA + choice head) | 0.711 | 0.734 | 0.716 | 0.682 | 0.073 |
 
-  `choice` is near chance over four teams; closing that gap needs a dedicated head (see
-  `L-002` in `STATE.md`).
+  The dedicated `choice` head (L-002) and localized per-record-RNG data (B-1) lifted multilingual
+  `choice` from ~0.25 (chance) to 0.73. Per-language calibration for `es`/`nl`/`de` and
+  multilingual `score` remain the next targets. The CUDA-graph fast path (`JEBA_FAST=1`) improves
+  p50 10.3 → 3.8 ms with no top-label changes.
 
 ## Architecture at a glance
 
@@ -138,6 +144,8 @@ uv run mkdocs build --strict        # docs site (uv sync --group docs)
 | M4 | Training & Calibration | ✅ |
 | M5 | Ecosystem & Acceleration | ✅ |
 | M6 | Proof & Release | ✅ (`v0.1.0`) |
+| B-1 | Multilingual quality + per-language temperature | ✅ (`v0.2.0`) |
+| B-2 | Fast path (CUDA graphs) | ✅ (`v0.2.0`) |
 
 Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/tasks.md).
 
