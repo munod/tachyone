@@ -45,9 +45,6 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/munod/jeba
       name: jeba on GitHub
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/jeba/
-      name: jeba on PyPI
     - icon: fontawesome/solid/robot
       link: https://huggingface.co/munod
       name: jeba models on Hugging Face

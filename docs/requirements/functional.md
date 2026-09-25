@@ -1,6 +1,6 @@
 # Functional Requirements
 
-**Status:** Baseline (pre-implementation). IDs are stable and traceable.
+**Status:** Baseline. IDs are stable and traceable.
 **Priority:** P1 = MVP, P2 = should-have, P3 = nice-to-have.
 **Traceability:** See `docs/requirements/traceability.md`. Task IDs refer to `docs/tasks.md`.
 

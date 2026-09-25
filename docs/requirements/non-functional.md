@@ -1,7 +1,6 @@
 # Non-Functional Requirements
 
-**Status:** Baseline (pre-implementation). Targets are provisional until M3/M4 measurements;
-those marked **[open]** need confirmation after benchmarks.
+**Status:** Baseline. Targets marked **[open]** still need confirmation after benchmarks.
 
 ---
 

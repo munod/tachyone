@@ -45,7 +45,7 @@ encoder backend next.
 
 | Persona | Pain | jeba use case |
 | --- | --- | --- |
-| **Python app developer** | Wants structured decisions without training models | `pip install jeba`, call `decide()` / SDK, get primitives |
+| **Python app developer** | Wants structured decisions without training models | Clone the repo, `uv sync`, call `decide()` / SDK, get primitives |
 | **Agent builder** | Needs a fast, cheap guard/triage/moderation classifier | MCP tool / LangChain runnable; presets `guard`, `triage`, `moderation` |
 | **Edge / on-prem / air-gapped team** | Cannot send data to a hosted API | Local encoder backend, no network, no key |
 | **Migrating Jev user** | Locked to a hosted contract | Repoint base URL to `jeba-serve` unchanged |

@@ -13,8 +13,9 @@ call. Autoregressive LLMs are local-capable but slow, expensive, and poorly cali
 for atomic decisions. jeba gives you the Jev contract you already build against, running
 on your own box, with an optional LLM backend today and a trained encoder backend next.
 
-> Status: **pre-implementation**. This repository currently contains documentation only.
-> No `src/` code, `pyproject.toml`, or tests exist yet. See `.specs/project/STATE.md`.
+> Status: **implemented and released (`v0.2.0`)**. All milestones M0–M6 are complete, plus the
+> post-M6 multilingual-quality (B-1) and CUDA-graph fast-path (B-2) work. Remaining: republish
+> the updated adapters to the Hub and create the GitHub Release page. See `.specs/project/STATE.md`.
 
 ## Goals
 
@@ -29,8 +30,9 @@ on your own box, with an optional LLM backend today and a trained encoder backen
   (ECE) reported on a public benchmark set.
 - **G4 — Multilingual (measurable):** correct primitive output for inputs across 100+
   languages via script/language routing, verified on a held-out multilingual suite.
-- **G5 — Zero hosted dependency in core (measurable):** `pip install jeba` (base extra)
-  must import, answer offline, and never require a network call or API key.
+- **G5 — Zero hosted dependency in core (measurable):** installing from source
+  (`git clone … && uv sync`, base extra) must import, answer offline, and never require a
+  network call or API key.
 - **G6 — Extensions without breakage (measurable):** router control, hooks, and
   `predict_batch` are additive and never alter the canonical `/v1/systemone` shape.
 

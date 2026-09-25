@@ -78,23 +78,32 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 
 ## Quickstart
 
+!!! note "Not yet on PyPI"
+    jeba is distributed from source for now. Install directly from GitHub (requires `git` and
+    Python 3.12).
+
 === "uv"
 
     ```bash
-    uv add jeba
+    git clone https://github.com/munod/jeba
+    cd jeba
+    uv sync
     uv run jeba --predict --preset triage --backend fake "refund please"
     ```
 
 === "pip"
 
     ```bash
-    pip install jeba
+    git clone https://github.com/munod/jeba
+    cd jeba
+    pip install .
     jeba --predict --preset triage --backend fake "refund please"
     ```
 
 === "Python SDK"
 
     ```python
+    # Requires jeba installed (see the uv / pip tabs)
     from jeba import JebaClient
     from jeba.primitives import ChoiceQuestion
 
@@ -114,6 +123,8 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 === "Serve (drop-in Jev)"
 
     ```bash
+    git clone https://github.com/munod/jeba
+    cd jeba
     uv sync --extra serve
     uv run jeba-serve
 

@@ -1,8 +1,7 @@
 # Contributing to jeba
 
-Thanks for your interest. jeba is **pre-implementation** — the repository currently contains
-documentation only. This guide defines the conventions that will govern code contributions
-once implementation starts (M0).
+Thanks for your interest. jeba is implemented and released (`v0.2.0`); see `README.md` and
+`.specs/project/STATE.md`. This guide defines the conventions that govern code contributions.
 
 ---
 
@@ -21,10 +20,9 @@ once implementation starts (M0).
 
 ---
 
-## Development setup (planned)
+## Development setup
 
-> These commands are the intended interface. They become real in M0-T2 when `pyproject.toml`
-> and the tooling config land. Until then they are **not runnable**.
+> Requires Python 3.12 and `uv` (see ADR-0003).
 
 ```bash
 # Install uv (https://docs.astral.sh/uv/)
@@ -103,7 +101,7 @@ Rules:
 
 ## Quality gates
 
-| Gate | Command (planned) | Blocks merge |
+| Gate | Command | Blocks merge |
 | --- | --- | --- |
 | Lint | `uv run ruff check .` | Yes |
 | Format | `uv run ruff format --check .` | Yes |
