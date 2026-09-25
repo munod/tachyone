@@ -67,6 +67,15 @@ def test_render_report_contains_tables_and_sections(tmp_path: Path) -> None:
     assert "Worst language" in markdown
 
 
+def test_render_report_renders_noisy_view(tmp_path: Path) -> None:
+    report = _evaluation_report(tmp_path)
+    report["noise_rate"] = 0.3
+    report["noisy"] = evaluate(load_examples(tmp_path / "eval.jsonl"), _predictor)
+    markdown = render_report([ReportEntry(name="encoder", report=report)])
+    assert "Noisy view (noise_rate 0.3)" in markdown
+    assert "accuracy" in markdown
+
+
 def test_report_entry_from_files_and_write(tmp_path: Path) -> None:
     json_path = tmp_path / "encoder.json"
     save_report(_evaluation_report(tmp_path), json_path)

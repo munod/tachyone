@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import time
 from collections.abc import Callable, Iterable, Iterator, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,7 @@ from jeba.primitives import (
     ScoreQuestion,
     State,
 )
+from training.generate_data import _perturb_state
 
 #: A predictor answers a single (state, question) pair.
 type Predictor = Callable[[State, Question], Answer]
@@ -130,10 +132,7 @@ def _metrics(rows: list[tuple[bool, float, float]], bins: int) -> dict[str, Any]
     }
 
 
-def evaluate(
-    examples: Sequence[EvalExample], predictor: Predictor, *, bins: int = 10
-) -> dict[str, Any]:
-    """Run ``predictor`` over ``examples`` and aggregate per-primitive/language metrics."""
+def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> dict[str, Any]:
     per_primitive: dict[str, list[tuple[bool, float, float]]] = {}
     per_language: dict[str, list[tuple[bool, float, float]]] = {}
     overall: list[tuple[bool, float, float]] = []
@@ -152,6 +151,49 @@ def evaluate(
         "per_primitive": {kind: _metrics(rows, bins) for kind, rows in per_primitive.items()},
         "per_language": {lang: _metrics(rows, bins) for lang, rows in per_language.items()},
     }
+
+
+def add_state_noise(
+    examples: Sequence[EvalExample], rate: float, *, seed: int = 42
+) -> list[EvalExample]:
+    """Return ``examples`` with one deterministic surface-noise edit applied to ``rate`` of them.
+
+    Used to evaluate robustness on a *noisy* view of the same labelled set without changing the
+    labels or questions (B-4). The draw is seeded per ``(seed, example.id)`` so the noisy split
+    is reproducible and independent of the clean split.
+    """
+    if not 0.0 <= rate <= 1.0:
+        raise ValueError("noise rate must be within [0, 1]")
+    noisy: list[EvalExample] = []
+    for example in examples:
+        rng = random.Random(f"{seed}:{example.id}:noise")
+        if rate > 0.0 and rng.random() < rate and isinstance(example.state, str):
+            noisy.append(replace(example, state=_perturb_state(example.state, rng)))
+        else:
+            noisy.append(example)
+    return noisy
+
+
+def evaluate(
+    examples: Sequence[EvalExample],
+    predictor: Predictor,
+    *,
+    bins: int = 10,
+    noise_rate: float = 0.0,
+    noise_seed: int = 42,
+) -> dict[str, Any]:
+    """Run ``predictor`` over ``examples`` and aggregate per-primitive/language metrics.
+
+    When ``noise_rate > 0`` a second, noisy view of the same examples is evaluated and returned
+    under the ``"noisy"`` key, so clean accuracy and robustness are never conflated (B-4).
+    """
+    report = _run(examples, predictor, bins)
+    if noise_rate > 0.0:
+        report["noise_rate"] = noise_rate
+        report["noisy"] = _run(
+            add_state_noise(examples, noise_rate, seed=noise_seed), predictor, bins
+        )
+    return report
 
 
 def save_report(report: dict[str, Any], out_path: str | Path) -> None:
@@ -190,13 +232,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--models-dir", default=".cache/jeba/models")
     parser.add_argument("--bins", type=int, default=10)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--noise-rate",
+        type=float,
+        default=0.0,
+        help="if > 0, also evaluate a noisy view of the same data under report['noisy']",
+    )
     return parser
 
 
 def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(list(argv) if argv is not None else None)
     examples = load_examples(args.data, limit=args.limit)
-    report = evaluate(examples, _backend_predictor(args.backend, args.models_dir), bins=args.bins)
+    report = evaluate(
+        examples,
+        _backend_predictor(args.backend, args.models_dir),
+        bins=args.bins,
+        noise_rate=args.noise_rate,
+    )
     save_report(report, args.out)
     print(json.dumps(report["overall"], indent=2, sort_keys=True))
     return 0
