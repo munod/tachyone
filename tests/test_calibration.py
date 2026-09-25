@@ -9,6 +9,8 @@ from jeba.calibration import (
     confidence,
     expected_calibration_error,
     fit_temperature,
+    margin,
+    normalized_entropy,
     parse_temperature_report,
 )
 
@@ -82,6 +84,60 @@ def test_fit_temperature_reduces_ece_on_overconfident_set() -> None:
     fitted = fit_temperature(samples, correct)
     assert fitted.value != 1.0
     assert fitted.ece < baseline
+
+
+def test_normalized_entropy_uniform_is_one() -> None:
+    assert normalized_entropy({"a": 0.25, "b": 0.25, "c": 0.25, "d": 0.25}) == pytest.approx(1.0)
+
+
+def test_normalized_entropy_one_hot_is_zero() -> None:
+    assert normalized_entropy({"a": 1.0, "b": 0.0, "c": 0.0}) == pytest.approx(0.0)
+
+
+def test_normalized_entropy_empty_or_single() -> None:
+    assert normalized_entropy({}) == 0.0
+    assert normalized_entropy({"only": 1.0}) == 0.0
+    assert normalized_entropy({"a": 0.0, "b": 0.0}) == 0.0
+
+
+def test_normalized_entropy_normalizes_unnormalized_input() -> None:
+    assert normalized_entropy({"a": 3.0, "b": 1.0}) == pytest.approx(
+        normalized_entropy({"a": 0.75, "b": 0.25})
+    )
+
+
+def test_normalized_entropy_between_zero_and_one() -> None:
+    value = normalized_entropy({"a": 0.7, "b": 0.2, "c": 0.1})
+    assert 0.0 < value < 1.0
+
+
+def test_margin_is_top_two_gap() -> None:
+    assert margin({"a": 0.7, "b": 0.2, "c": 0.1}) == pytest.approx(0.5)
+
+
+def test_margin_tie_is_zero() -> None:
+    assert margin({"a": 0.5, "b": 0.5}) == 0.0
+
+
+def test_margin_dominant_is_high() -> None:
+    assert margin({"a": 0.95, "b": 0.05}) == pytest.approx(0.9)
+
+
+def test_margin_empty_or_single() -> None:
+    assert margin({}) == 0.0
+    assert margin({"only": 1.0}) == 0.0
+    assert margin({"a": 0.0, "b": 0.0}) == 0.0
+
+
+def test_margin_normalizes_unnormalized_input() -> None:
+    assert margin({"a": 3.0, "b": 1.0}) == pytest.approx(0.5)
+
+
+def test_uncertainty_helpers_agree_on_monotonicity() -> None:
+    flat = {"a": 0.5, "b": 0.5}
+    sharp = {"a": 0.9, "b": 0.1}
+    assert normalized_entropy(flat) > normalized_entropy(sharp)
+    assert margin(flat) < margin(sharp)
 
 
 def test_parse_temperature_report_flattens_legacy_and_per_language() -> None:

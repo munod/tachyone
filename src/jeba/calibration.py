@@ -12,6 +12,7 @@ calibration error (ECE) on a held-out set; M4 reuses it for real calibration.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -57,6 +58,41 @@ def confidence(probabilities: Mapping[Any, float]) -> float:
     if total <= 0.0 or not values:
         return 0.0
     return min(1.0, max(values) / total)
+
+
+def _normalized_values(probabilities: Mapping[Any, float]) -> list[float]:
+    """Return non-negative weights renormalized to sum to 1, or an empty list if degenerate."""
+    values = [max(0.0, float(value)) for value in probabilities.values()]
+    total = sum(values)
+    if total <= 0.0 or not values:
+        return []
+    return [value / total for value in values]
+
+
+def normalized_entropy(probabilities: Mapping[Any, float]) -> float:
+    """Return Shannon entropy normalized to ``[0, 1]`` (``0`` certain, ``1`` uniform).
+
+    The input need not be normalized; negative weights are treated as zero. An empty,
+    all-zero, or single-key distribution yields ``0.0`` (no uncertainty is expressible).
+    """
+    values = _normalized_values(probabilities)
+    if len(values) <= 1:
+        return 0.0
+    entropy = -sum(value * math.log(value) for value in values if value > 0.0)
+    return min(1.0, max(0.0, entropy / math.log(len(values))))
+
+
+def margin(probabilities: Mapping[Any, float]) -> float:
+    """Return the gap between the top two probabilities, in ``[0, 1]``.
+
+    A larger value means a more dominant top option. The input need not be normalized;
+    negative weights are treated as zero. An empty, all-zero, or single-key distribution
+    yields ``0.0``.
+    """
+    values = sorted(_normalized_values(probabilities), reverse=True)
+    if len(values) < 2:
+        return 0.0
+    return min(1.0, max(0.0, values[0] - values[1]))
 
 
 def apply_temperature(probabilities: Mapping[Any, float], temperature: float) -> dict[Any, float]:
@@ -146,5 +182,7 @@ __all__ = [
     "confidence",
     "expected_calibration_error",
     "fit_temperature",
+    "margin",
+    "normalized_entropy",
     "parse_temperature_report",
 ]
