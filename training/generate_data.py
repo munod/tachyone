@@ -3,6 +3,10 @@
 Same seed + config produces byte-identical JSONL. Records stream to disk one line at a time,
 so generation never holds the dataset in memory (TRAIN-01, TRAIN-07). The output format is
 documented in ``docs/training.md``; it is training data, not the wire contract.
+
+Records are fully localized: the ``state``, the ``instructions``, the ``criteria`` and the
+``noul``/``score`` entities all come from committed per-language data, so the multilingual
+checkpoint learns language-specific cues instead of an English template (B-1).
 """
 
 from __future__ import annotations
@@ -18,187 +22,55 @@ from typing import Any
 #: Default language set; states are authored here, other tags fall back to English text.
 DEFAULT_LANGUAGES: tuple[str, ...] = ("en", "pt", "es", "fr", "de", "it", "nl")
 
-_ENTITIES: tuple[str, ...] = (
-    "refund",
-    "invoice",
-    "password reset",
-    "outage",
-    "upgrade",
-    "duplicate charge",
-    "login code",
-    "cancellation",
-    "chargeback",
-    "late fee",
-    "webhook",
-    "latency",
-    "sso",
-    "api error",
-    "demo request",
-    "renewal",
-    "quote",
-    "plan change",
+_DATA_DIR = Path(__file__).parent / "data"
+
+#: Per-language phrasing loaded from committed data. ``{entity}``/``{distractor}`` substituted.
+_PHRASES: dict[str, dict[str, list[str]]] = json.loads(
+    (_DATA_DIR / "phrases.json").read_text(encoding="utf-8")
 )
 
-#: Per-language phrasing loaded from committed data. ``{entity}`` is substituted.
-_PHRASES: dict[str, dict[str, list[str]]] = json.loads(
-    (Path(__file__).parent / "data" / "phrases.json").read_text(encoding="utf-8")
+#: Per-language lexicon (entities, team cues, instructions, levels) from committed data.
+_LEXICON: dict[str, dict[str, Any]] = json.loads(
+    (_DATA_DIR / "lexicon.json").read_text(encoding="utf-8")
 )
 
 _TEAMS: tuple[str, ...] = ("billing", "technical", "sales", "other")
 
-#: Localized cue terms per team and language, so choice learns the mapping for each language
-#: (including a learnable ``other`` class) rather than a single English template.
-_TEAM_TERMS: dict[str, dict[str, tuple[str, ...]]] = {
-    "en": {
-        "billing": (
-            "refund",
-            "invoice",
-            "duplicate charge",
-            "payment",
-            "late fee",
-            "chargeback",
-            "subscription",
-        ),
-        "technical": (
-            "outage",
-            "password reset",
-            "login code",
-            "webhook",
-            "latency",
-            "api error",
-            "sso",
-        ),
-        "sales": (
-            "upgrade",
-            "pricing",
-            "plan change",
-            "demo request",
-            "new contract",
-            "renewal",
-            "quote",
-        ),
-        "other": ("general question", "partnership", "feedback", "careers", "press"),
-    },
-    "pt": {
-        "billing": (
-            "reembolso",
-            "fatura",
-            "cobrança duplicada",
-            "pagamento",
-            "assinatura",
-            "estorno",
-            "taxa",
-        ),
-        "technical": (
-            "instabilidade",
-            "redefinição de senha",
-            "código de acesso",
-            "erro na integração",
-            "lentidão",
-            "falha no sistema",
-        ),
-        "sales": ("upgrade", "preço", "troca de plano", "orçamento", "renovação", "demonstração"),
-        "other": ("dúvida geral", "parceria", "feedback", "carreiras", "imprensa"),
-    },
-    "es": {
-        "billing": ("reembolso", "factura", "cargo duplicado", "pago", "suscripción", "devolución"),
-        "technical": (
-            "caída",
-            "restablecer contraseña",
-            "código de acceso",
-            "error de integración",
-            "lentitud",
-        ),
-        "sales": (
-            "mejora",
-            "precio",
-            "cambio de plan",
-            "presupuesto",
-            "renovación",
-            "demostración",
-        ),
-        "other": ("pregunta general", "alianza", "comentarios", "empleo", "prensa"),
-    },
-    "fr": {
-        "billing": ("remboursement", "facture", "double prélèvement", "paiement", "abonnement"),
-        "technical": (
-            "panne",
-            "réinitialisation du mot de passe",
-            "code de connexion",
-            "erreur d'intégration",
-            "lenteur",
-        ),
-        "sales": (
-            "mise à niveau",
-            "tarif",
-            "changement de forfait",
-            "devis",
-            "renouvellement",
-            "démonstration",
-        ),
-        "other": ("question générale", "partenariat", "retour", "carrières", "presse"),
-    },
-    "de": {
-        "billing": (
-            "Rückerstattung",
-            "Rechnung",
-            "Doppelabbuchung",
-            "Zahlung",
-            "Abonnement",
-            "Lastschrift",
-        ),
-        "technical": (
-            "Ausfall",
-            "Passwort zurücksetzen",
-            "Anmeldecode",
-            "Integrationsfehler",
-            "Latenz",
-        ),
-        "sales": ("Upgrade", "Preis", "Tarifwechsel", "Angebot", "Verlängerung", "Demo"),
-        "other": ("allgemeine Frage", "Partnerschaft", "Feedback", "Karriere", "Presse"),
-    },
-    "it": {
-        "billing": (
-            "rimborso",
-            "fattura",
-            "addebito duplicato",
-            "pagamento",
-            "abbonamento",
-            "storno",
-        ),
-        "technical": (
-            "disservizio",
-            "reimpostazione password",
-            "codice di accesso",
-            "errore di integrazione",
-            "latenza",
-        ),
-        "sales": ("upgrade", "prezzo", "cambio piano", "preventivo", "rinnovo", "demo"),
-        "other": ("domanda generale", "partnership", "feedback", "carriere", "stampa"),
-    },
-    "nl": {
-        "billing": (
-            "terugbetaling",
-            "factuur",
-            "dubbele afschrijving",
-            "betaling",
-            "abonnement",
-            "incasso",
-        ),
-        "technical": ("storing", "wachtwoord reset", "inlogcode", "integratiefout", "traagheid"),
-        "sales": ("upgrade", "prijs", "planwijziging", "offerte", "verlenging", "demo"),
-        "other": ("algemene vraag", "partnerschap", "feedback", "carriere", "pers"),
-    },
-}
-
-_LEVELS: tuple[str, ...] = ("none", "low", "medium", "high")
 _LEVEL_BY_TONE: dict[str, int] = {"calm": 0, "neutral": 1, "request": 2, "urgent": 3}
+
+#: One in this many ``choice`` records appends a hard-negative distractor from another team.
+#: Kept low: appended distractors make the label ambiguous (the target is the *first* team), so a
+#: high rate corrupts the term→team signal the head needs.
+_HARD_NEGATIVE_RATE = 6
 
 #: Rich option descriptions (esp. ``other``) so the option embedding c_k is informative; loaded
 #: from committed data. ``other`` must be a genuinely learnable class, not a bare label.
 _TEAM_DESCRIPTIONS: dict[str, dict[str, str]] = json.loads(
-    (Path(__file__).parent / "data" / "team_descriptions.json").read_text(encoding="utf-8")
+    (_DATA_DIR / "team_descriptions.json").read_text(encoding="utf-8")
 )
+
+
+def _lexicon(lang: str) -> dict[str, Any]:
+    return _LEXICON.get(lang, _LEXICON["en"])
+
+
+def _entities(lang: str) -> list[str]:
+    return list(_lexicon(lang)["entities"])
+
+
+def _instructions(lang: str, kind: str) -> str:
+    table = _lexicon(lang)["instructions"]
+    return table.get(kind, _LEXICON["en"]["instructions"][kind])
+
+
+def _noul_criteria(lang: str) -> dict[str, str]:
+    table = _lexicon(lang)["noul_criteria"]
+    fallback = _LEXICON["en"]["noul_criteria"]
+    return {key: table.get(key, fallback[key]) for key in ("true", "false")}
+
+
+def _levels(lang: str) -> list[str]:
+    return list(_lexicon(lang)["levels"])
 
 
 def _team_description(lang: str, team: str) -> str:
@@ -207,8 +79,8 @@ def _team_description(lang: str, team: str) -> str:
 
 
 def _team_terms(lang: str, team: str) -> tuple[str, ...]:
-    table = _TEAM_TERMS.get(lang, _TEAM_TERMS["en"])
-    return table.get(team, _TEAM_TERMS["en"][team])
+    table = _lexicon(lang)["team_terms"]
+    return tuple(table.get(team, _LEXICON["en"]["team_terms"][team]))
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,20 +106,21 @@ def _boundary_state(index: int, base: str) -> str:
 
 
 def _noul_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
-    entity = rng.choice(_ENTITIES)
+    entity = rng.choice(_entities(lang))
     positive = (index % 2 == 0) if index else True
     tone = rng.choice(("request", "neutral"))
     state = _boundary_state(index, rng.choice(_phrases(lang)[tone]).format(entity=entity))
     if positive and tone == "neutral":
         positive = False
     target = 1 if positive else 0
-    instructions = f"Does this message request a {entity}?"
+    instructions = _instructions(lang, "noul").format(entity=entity)
+    criteria = {key: value.format(entity=entity) for key, value in _noul_criteria(lang).items()}
     return {
         "id": f"noul-{index:06d}",
         "type": "noul",
         "state": state,
         "instructions": instructions,
-        "criteria": {"true": f"asks for a {entity}", "false": "does not ask"},
+        "criteria": criteria,
         "target": target,
         "lang": lang,
     }
@@ -255,12 +128,12 @@ def _noul_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
 
 def _choice_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
     # Cycle teams deterministically (so every team, including "other", is well represented)
-    # and occasionally pick a distractor clause from a different team as a hard negative.
+    # and regularly pick a distractor clause from a different team as a hard negative.
     team = _TEAMS[index % len(_TEAMS)]
     term = rng.choice(_team_terms(lang, team))
     request_phrase = rng.choice(_phrases(lang)["request"])
     state = request_phrase.format(entity=term)
-    if index % 5 == 0:
+    if index % _HARD_NEGATIVE_RATE == 0:
         other_team = rng.choice([candidate for candidate in _TEAMS if candidate != team])
         distractor = rng.choice(_team_terms(lang, other_team))
         distractor_phrase = rng.choice(_phrases(lang)["distractor"])
@@ -270,15 +143,15 @@ def _choice_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
         "id": f"choice-{index:06d}",
         "type": "choice",
         "state": state,
-        "instructions": "Which team should handle this request?",
-        "criteria": {team: _team_description(lang, team) for team in _TEAMS},
+        "instructions": _instructions(lang, "choice"),
+        "criteria": {option: _team_description(lang, option) for option in _TEAMS},
         "target": team,
         "lang": lang,
     }
 
 
 def _score_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
-    entity = rng.choice(_ENTITIES)
+    entity = rng.choice(_entities(lang))
     tone = rng.choice(("calm", "neutral", "request", "urgent"))
     state = _boundary_state(index, rng.choice(_phrases(lang)[tone]).format(entity=entity))
     target = _LEVEL_BY_TONE[tone]
@@ -288,8 +161,8 @@ def _score_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
         "id": f"score-{index:06d}",
         "type": "score",
         "state": state,
-        "instructions": "How urgent is this request?",
-        "criteria": list(_LEVELS),
+        "instructions": _instructions(lang, "score"),
+        "criteria": _levels(lang),
         "target": target,
         "lang": lang,
     }
@@ -303,13 +176,19 @@ _GENERATORS = {
 
 
 def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
-    """Yield deterministic records: ``per_type`` of each primitive, languages interleaved."""
-    rng = random.Random(config.seed)
+    """Yield deterministic records: ``per_type`` of each primitive, languages interleaved.
+
+    Each record draws from its own RNG seeded by ``(seed, kind, index, language)``. A single
+    shared RNG makes feature choices correlate with the cyclic label (team/tone) across records,
+    which the model then exploits as a shortcut that does not generalize; per-record seeding
+    keeps choices independent while staying byte-for-byte deterministic.
+    """
     languages = config.languages or DEFAULT_LANGUAGES
     for kind in ("noul", "choice", "score"):
         generator = _GENERATORS[kind]
         for index in range(config.per_type):
             language = languages[index % len(languages)]
+            rng = random.Random(f"{config.seed}:{kind}:{index}:{language}")
             record = generator(index, language, rng)
             record["source"] = config.source
             yield record

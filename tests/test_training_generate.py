@@ -79,7 +79,8 @@ def test_choice_uses_localized_terms_and_distractors() -> None:
     records = list(iter_records(DataConfig(seed=3, per_type=40, languages=("pt",))))
     states = " ".join(r["state"] for r in records if r["type"] == "choice").lower()
     assert any(word in states for word in ("reembolso", "fatura", "cobrança", "pagamento"))
-    assert any(word in states for word in ("também mencionei", "também há"))
+    # Every pt distractor clause contains "também"; ensure hard negatives are present.
+    assert "também" in states
 
 
 def test_choice_criteria_have_rich_descriptions_including_other() -> None:
@@ -90,6 +91,43 @@ def test_choice_criteria_have_rich_descriptions_including_other() -> None:
     # "other" must be a semantically rich, learnable option (not a bare label).
     assert len(criteria["other"]) > 60
     assert "outside" in criteria["other"]
+
+
+def test_instructions_are_localized() -> None:
+    records = list(iter_records(DataConfig(seed=5, per_type=12, languages=("pt",))))
+    choice = next(r for r in records if r["type"] == "choice")
+    score = next(r for r in records if r["type"] == "score")
+    noul = next(r for r in records if r["type"] == "noul")
+    assert "equipe" in choice["instructions"].lower()
+    assert "urgência" in score["instructions"].lower()
+    assert "solicita" in noul["instructions"].lower()
+
+
+def test_score_levels_are_localized() -> None:
+    records = list(iter_records(DataConfig(seed=5, per_type=12, languages=("pt",))))
+    score = next(r for r in records if r["type"] == "score")
+    assert score["criteria"] == ["nenhuma", "baixa", "média", "alta"]
+
+
+def test_noul_entities_are_localized() -> None:
+    records = list(iter_records(DataConfig(seed=5, per_type=12, languages=("pt",))))
+    noul = next(r for r in records if r["type"] == "noul")
+    assert isinstance(noul["criteria"], dict)
+    # The true-criterion uses the localized template, not the English one.
+    assert noul["criteria"]["true"].startswith("solicita um ")
+    assert "asks for" not in noul["criteria"]["true"]
+
+
+def test_every_language_gets_equal_support() -> None:
+    langs = ("en", "pt", "es", "fr", "de", "it", "nl")
+    records = list(iter_records(DataConfig(seed=5, per_type=len(langs) * 4, languages=langs)))
+    for kind in ("noul", "choice", "score"):
+        counts: dict[str, int] = {}
+        for record in records:
+            if record["type"] == kind:
+                counts[record["lang"]] = counts.get(record["lang"], 0) + 1
+        assert set(counts) == set(langs)
+        assert len(set(counts.values())) == 1
 
 
 def test_boundary_cases_present() -> None:

@@ -21,9 +21,13 @@ _COMMITTED = sorted(path.name for path in CONFIG_DIR.glob("*.json"))
 
 
 def test_committed_configs_exist() -> None:
-    assert {"data.json", "finetune_en.json", "finetune_multi.json", "calibration.json"} <= set(
-        _COMMITTED
-    )
+    assert {
+        "data.json",
+        "data_multi.json",
+        "finetune_en.json",
+        "finetune_multi.json",
+        "calibration.json",
+    } <= set(_COMMITTED)
 
 
 def test_load_committed_configs() -> None:

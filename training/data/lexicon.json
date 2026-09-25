@@ -1,0 +1,114 @@
+{
+  "en": {
+    "entities": ["refund", "invoice", "password reset", "outage", "upgrade", "duplicate charge", "login code", "cancellation", "chargeback", "late fee", "webhook", "latency", "sso", "api error", "demo request", "renewal", "quote", "plan change", "payment", "subscription"],
+    "team_terms": {
+      "billing": ["refund", "invoice", "duplicate charge", "payment", "late fee", "chargeback", "subscription", "receipt", "tax", "billing"],
+      "technical": ["outage", "password reset", "login code", "webhook", "latency", "api error", "sso", "integration error", "server error", "timeout"],
+      "sales": ["upgrade", "pricing", "plan change", "demo request", "new contract", "renewal", "quote", "trial", "discount", "onboarding"],
+      "other": ["general question", "partnership", "feedback", "careers", "press", "security report", "compliance", "marketing"]
+    },
+    "instructions": {
+      "noul": "Does this message request a {entity}?",
+      "choice": "Which team should handle this request?",
+      "score": "How urgent is this request?"
+    },
+    "noul_criteria": {"true": "asks for a {entity}", "false": "does not ask"},
+    "levels": ["none", "low", "medium", "high"]
+  },
+  "pt": {
+    "entities": ["reembolso", "fatura", "redefinição de senha", "instabilidade", "upgrade", "cobrança duplicada", "código de acesso", "cancelamento", "estorno", "taxa de atraso", "webhook", "lentidão", "sso", "erro de api", "pedido de demonstração", "renovação", "orçamento", "troca de plano", "pagamento", "assinatura"],
+    "team_terms": {
+      "billing": ["reembolso", "fatura", "cobrança duplicada", "pagamento", "assinatura", "estorno", "taxa de atraso", "recibo", "imposto", "cobrança"],
+      "technical": ["instabilidade", "redefinição de senha", "código de acesso", "erro na integração", "lentidão", "falha no sistema", "sso", "erro de servidor", "tempo esgotado", "erro de api"],
+      "sales": ["upgrade", "preço", "troca de plano", "orçamento", "renovação", "demonstração", "teste grátis", "desconto", "novo contrato", "integração inicial"],
+      "other": ["dúvida geral", "parceria", "feedback", "carreiras", "imprensa", "relatório de segurança", "conformidade", "marketing"]
+    },
+    "instructions": {
+      "noul": "Esta mensagem solicita um {entity}?",
+      "choice": "Qual equipe deve tratar este pedido?",
+      "score": "Qual é a urgência deste pedido?"
+    },
+    "noul_criteria": {"true": "solicita um {entity}", "false": "não solicita"},
+    "levels": ["nenhuma", "baixa", "média", "alta"]
+  },
+  "es": {
+    "entities": ["reembolso", "factura", "restablecimiento de contraseña", "caída", "mejora", "cargo duplicado", "código de acceso", "cancelación", "contracargo", "recargo por mora", "webhook", "latencia", "sso", "error de api", "solicitud de demostración", "renovación", "presupuesto", "cambio de plan", "pago", "suscripción"],
+    "team_terms": {
+      "billing": ["reembolso", "factura", "cargo duplicado", "pago", "suscripción", "devolución", "recargo por mora", "recibo", "impuesto", "cobro"],
+      "technical": ["caída", "restablecer contraseña", "código de acceso", "error de integración", "lentitud", "error del servidor", "sso", "tiempo de espera", "error de api", "webhook"],
+      "sales": ["mejora", "precio", "cambio de plan", "presupuesto", "renovación", "demostración", "prueba gratuita", "descuento", "nuevo contrato", "incorporación"],
+      "other": ["pregunta general", "alianza", "comentarios", "empleo", "prensa", "informe de seguridad", "cumplimiento", "marketing"]
+    },
+    "instructions": {
+      "noul": "¿Este mensaje solicita un {entity}?",
+      "choice": "¿Qué equipo debería gestionar esta solicitud?",
+      "score": "¿Qué urgencia tiene esta solicitud?"
+    },
+    "noul_criteria": {"true": "solicita un {entity}", "false": "no lo solicita"},
+    "levels": ["ninguna", "baja", "media", "alta"]
+  },
+  "fr": {
+    "entities": ["remboursement", "facture", "réinitialisation du mot de passe", "panne", "mise à niveau", "double prélèvement", "code de connexion", "annulation", "contrefacturation", "frais de retard", "webhook", "latence", "sso", "erreur d'api", "demande de démonstration", "renouvellement", "devis", "changement de forfait", "paiement", "abonnement"],
+    "team_terms": {
+      "billing": ["remboursement", "facture", "double prélèvement", "paiement", "abonnement", "contrefacturation", "frais de retard", "reçu", "taxe", "facturation"],
+      "technical": ["panne", "réinitialisation du mot de passe", "code de connexion", "erreur d'intégration", "lenteur", "erreur serveur", "sso", "délai dépassé", "erreur d'api", "webhook"],
+      "sales": ["mise à niveau", "tarif", "changement de forfait", "devis", "renouvellement", "démonstration", "essai gratuit", "remise", "nouveau contrat", "intégration"],
+      "other": ["question générale", "partenariat", "retour", "carrières", "presse", "rapport de sécurité", "conformité", "marketing"]
+    },
+    "instructions": {
+      "noul": "Ce message demande-t-il un {entity} ?",
+      "choice": "Quelle équipe doit traiter cette demande ?",
+      "score": "Quelle est l'urgence de cette demande ?"
+    },
+    "noul_criteria": {"true": "demande un {entity}", "false": "ne le demande pas"},
+    "levels": ["aucune", "faible", "moyenne", "élevée"]
+  },
+  "de": {
+    "entities": ["Rückerstattung", "Rechnung", "Passwort zurücksetzen", "Ausfall", "Upgrade", "Doppelabbuchung", "Anmeldecode", "Stornierung", "Rückbuchung", "Mahngebühr", "Webhook", "Latenz", "SSO", "API-Fehler", "Demo-Anfrage", "Verlängerung", "Angebot", "Tarifwechsel", "Zahlung", "Abonnement"],
+    "team_terms": {
+      "billing": ["Rückerstattung", "Rechnung", "Doppelabbuchung", "Zahlung", "Abonnement", "Lastschrift", "Mahngebühr", "Beleg", "Steuer", "Abrechnung"],
+      "technical": ["Ausfall", "Passwort zurücksetzen", "Anmeldecode", "Integrationsfehler", "Latenz", "Serverfehler", "SSO", "Zeitüberschreitung", "API-Fehler", "Webhook"],
+      "sales": ["Upgrade", "Preis", "Tarifwechsel", "Angebot", "Verlängerung", "Demo", "Testphase", "Rabatt", "Neuvertrag", "Onboarding"],
+      "other": ["allgemeine Frage", "Partnerschaft", "Feedback", "Karriere", "Presse", "Sicherheitsbericht", "Compliance", "Marketing"]
+    },
+    "instructions": {
+      "noul": "Fordert diese Nachricht eine {entity} an?",
+      "choice": "Welches Team sollte diese Anfrage bearbeiten?",
+      "score": "Wie dringend ist diese Anfrage?"
+    },
+    "noul_criteria": {"true": "fordert eine {entity} an", "false": "fordert keine an"},
+    "levels": ["keine", "niedrig", "mittel", "hoch"]
+  },
+  "it": {
+    "entities": ["rimborso", "fattura", "reimpostazione password", "disservizio", "upgrade", "addebito duplicato", "codice di accesso", "annullamento", "storno", "penale di ritardo", "webhook", "latenza", "sso", "errore api", "richiesta demo", "rinnovo", "preventivo", "cambio piano", "pagamento", "abbonamento"],
+    "team_terms": {
+      "billing": ["rimborso", "fattura", "addebito duplicato", "pagamento", "abbonamento", "storno", "penale di ritardo", "ricevuta", "imposta", "fatturazione"],
+      "technical": ["disservizio", "reimpostazione password", "codice di accesso", "errore di integrazione", "latenza", "errore del server", "sso", "timeout", "errore api", "webhook"],
+      "sales": ["upgrade", "prezzo", "cambio piano", "preventivo", "rinnovo", "demo", "prova gratuita", "sconto", "nuovo contratto", "onboarding"],
+      "other": ["domanda generale", "partnership", "feedback", "carriere", "stampa", "rapporto di sicurezza", "conformità", "marketing"]
+    },
+    "instructions": {
+      "noul": "Questa richiesta riguarda un {entity}?",
+      "choice": "Quale team dovrebbe gestire questa richiesta?",
+      "score": "Quanto è urgente questa richiesta?"
+    },
+    "noul_criteria": {"true": "richiede un {entity}", "false": "non lo richiede"},
+    "levels": ["nessuna", "bassa", "media", "alta"]
+  },
+  "nl": {
+    "entities": ["terugbetaling", "factuur", "wachtwoord reset", "storing", "upgrade", "dubbele afschrijving", "inlogcode", "annulering", "terugboeking", "late vergoeding", "webhook", "latentie", "sso", "api-fout", "demo-aanvraag", "verlenging", "offerte", "planwijziging", "betaling", "abonnement"],
+    "team_terms": {
+      "billing": ["terugbetaling", "factuur", "dubbele afschrijving", "betaling", "abonnement", "incasso", "late vergoeding", "bon", "belasting", "facturatie"],
+      "technical": ["storing", "wachtwoord reset", "inlogcode", "integratiefout", "traagheid", "serverfout", "sso", "time-out", "api-fout", "webhook"],
+      "sales": ["upgrade", "prijs", "planwijziging", "offerte", "verlenging", "demo", "gratis proef", "korting", "nieuw contract", "onboarding"],
+      "other": ["algemene vraag", "partnerschap", "feedback", "carriere", "pers", "beveiligingsrapport", "naleving", "marketing"]
+    },
+    "instructions": {
+      "noul": "Vraagt dit bericht om een {entity}?",
+      "choice": "Welk team moet deze aanvraag behandelen?",
+      "score": "Hoe urgent is deze aanvraag?"
+    },
+    "noul_criteria": {"true": "vraagt om een {entity}", "false": "vraagt er niet om"},
+    "levels": ["geen", "laag", "gemiddeld", "hoog"]
+  }
+}
