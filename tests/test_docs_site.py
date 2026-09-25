@@ -7,6 +7,8 @@ installed (CI docs job).
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -40,13 +42,29 @@ def test_site_builds(tmp_path: Path) -> None:
     pytest.importorskip("mkdocs")
     pytest.importorskip("material")
     pytest.importorskip("cairosvg")  # social cards need the mkdocs-material[imaging] extra
-    from mkdocs.commands.build import build  # pyright: ignore[reportMissingImports]
-    from mkdocs.config import load_config  # pyright: ignore[reportMissingImports]
 
-    config = load_config(config_file=str(_MKDOCS))
-    config["site_dir"] = str(tmp_path / "site")
-    build(config)
-    assert (tmp_path / "site" / "index.html").exists()
+    site_dir = tmp_path / "site"
+    # Use the same CLI entry point as CI (`mkdocs build`); it materializes plugins and runs the
+    # `config`/`pre_build` hooks that the social plugin needs (load_config alone leaves the
+    # plugin collection unresolved and trips "'SocialPlugin' object has no attribute 'card_pool'").
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "mkdocs",
+            "build",
+            "--strict",
+            "-f",
+            str(_MKDOCS),
+            "-d",
+            str(site_dir),
+        ],
+        cwd=_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert (site_dir / "index.html").exists()
 
 
 def test_brand_assets_exist() -> None:
