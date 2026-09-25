@@ -1,0 +1,7 @@
+{
+  "seed": 42,
+  "per_type": 6000,
+  "languages": ["pt", "es", "fr", "de", "it", "nl"],
+  "source": "synthetic",
+  "noise_rate": 0.15
+}
