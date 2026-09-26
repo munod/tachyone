@@ -5,9 +5,10 @@ reproduction commands live in
 [`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
 
 **Setup:** single RTX 3060 12GB · 9,000 English / 18,000 multilingual deterministic synthetic
-train records (fully localized per language, per-record RNG) · 1,500 held-out eval · LoRA (r=16)
-plus a low-rank `choice` head (r=32) · 4 epochs · bf16 + gradient checkpointing. Calibrated ECE is
-after per-`(primitive, language)` temperature fitting on the held-out split (in-sample).
+train records (fully localized per language, per-record RNG) · 1,500 held-out eval · LoRA (r=16
+English, **r=64 multilingual**) plus a low-rank `choice` head (r=32) · 4 epochs · bf16 + gradient
+checkpointing. Calibrated ECE is after per-`(primitive, language)` temperature fitting on the
+held-out split (in-sample).
 
 ## English (ModernBERT-large + LoRA + choice head)
 

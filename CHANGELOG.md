@@ -31,6 +31,8 @@ All notable changes to this project are documented here. The format is based on
   0.061; multilingual r=64 0.853 / ECE 0.038) and the model card. The released adapters are already
   robust to the injected noise (EN 0.763→0.760, multi 0.853→0.847); a noise-augmented adapter
   (r=16) scored 0.719/0.719 but calibrated worse and is not released.
+- Republished the multilingual adapter at LoRA r=64 to the Hugging Face Hub
+  (`munod/jeba-multi`, commit `599df58`). The English adapter (`munod/jeba-en`) is unchanged.
 
 ## [0.2.0] - 2026-09-24
 

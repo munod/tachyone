@@ -29,7 +29,7 @@ six languages now meet ECE ≤ 0.05; `nl` (ECE 0.104, accuracy 0.663) remains. E
 1. `nl` is the only language above 0.05 ECE (0.104) and the lowest accuracy (0.663). Investigate
    whether it needs more per-language support, a language-specific learning rate, or a richer
    calibration mapping; the scalar per-language temperature already exists.
-2. Republish the r=64 multilingual adapter to the Hub (`munod/jeba-multi`) — pending decision.
+2. [x] Republished the r=64 multilingual adapter to the Hub (`munod/jeba-multi`, commit `599df58`).
 3. Keep per-language accuracy/ECE reporting and gate on the worst language, not the average.
 
 **Acceptance.**

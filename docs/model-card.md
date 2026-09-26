@@ -65,9 +65,9 @@ latency per primitive and language).
 
 **Full-scale run (single RTX 3060 12GB):** 9,000 English / 18,000 multilingual train / 1,500 eval
 deterministic synthetic records (fully localized per language, a learnable `other` team with rich
-descriptions, per-record RNG, one-in-six distractor clauses), LoRA (r=16) plus a dedicated
-low-rank `choice` head (r=32, near-identity init), 4 epochs, batch 16, bf16 + gradient
-checkpointing.
+descriptions, per-record RNG, one-in-six distractor clauses), LoRA (r=16 English, r=64 multilingual)
+plus a dedicated low-rank `choice` head (r=32, near-identity init), 4 epochs, batch 16, bf16 +
+gradient checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |

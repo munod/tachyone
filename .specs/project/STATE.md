@@ -18,7 +18,8 @@ and the noise-augmented adapter did not beat them (ECE 0.090 vs 0.033), so it is
 **Multilingual LoRA rank (NFR-C06 follow-up) done and adopted**: `lora_rank` 16 → **64**
 (`lora_alpha` 128) in `finetune_multi.json`; measured multilingual overall accuracy 0.702 → **0.853**,
 `es` ECE 0.170 → **0.038** (accuracy 0.472 → 0.956). Five of six languages now meet ECE ≤ 0.05;
-`nl` (ECE 0.104, accuracy 0.663) remains open. Adapters **not** republished to the Hub yet.
+`nl` (ECE 0.104, accuracy 0.663) remains open. The r=64 multilingual adapter is republished to the
+Hub (`munod/jeba-multi`, commit `599df58`); the English adapter is unchanged.
 Next ready: B-5 (multi-domain coverage, Idea).
 
 ## Milestone Status

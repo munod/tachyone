@@ -6,10 +6,14 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 (ADR-0010); publishing is only about distribution.
 
 > **Published (verified):**
-> - <https://huggingface.co/munod/jeba-en> (ModernBERT-large adapter)
-> - <https://huggingface.co/munod/jeba-multi> (mmBERT-base adapter)
+> - <https://huggingface.co/munod/jeba-en> (ModernBERT-large adapter, LoRA r=16)
+> - <https://huggingface.co/munod/jeba-multi> (mmBERT-base adapter, LoRA r=64)
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/jeba-en")` and predict.
+>
+> The multilingual adapter was republished at **LoRA rank 64** (commit `599df58`), lifting
+> multilingual overall accuracy 0.702 → 0.853 and `es` ECE 0.170 → 0.038; see
+> `benchmarks/report.md`.
 
 ## 0. Prerequisites
 

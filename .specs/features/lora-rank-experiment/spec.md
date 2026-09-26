@@ -66,4 +66,4 @@ NFR-C06 for `choice`/`de`/`es`/`fr`/`it`/`pt`; `nl` remains the outlier (ECE 0.1
 - [x] r=64 improves overall accuracy and per-language ECE over r=16 without a clean-accuracy
       regression.
 - [~] Per-language ECE <= 0.05: 5/6 languages pass at r=64; `nl` (0.104) does not.
-- [ ] Republish the r=64 multilingual adapter to the Hub (pending decision).
+- [x] Republish the r=64 multilingual adapter to the Hub (`munod/jeba-multi`, commit `599df58`).
