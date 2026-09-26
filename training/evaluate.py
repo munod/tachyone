@@ -204,12 +204,16 @@ def save_report(report: dict[str, Any], out_path: str | Path) -> None:
 
 def _backend_predictor(backend_name: str, models_dir: str) -> Predictor:
     import asyncio
+    import os
 
     from jeba.backends import build_backend
     from jeba.config import Config
     from jeba.wire import SystemOneRequest, answer
 
-    config = Config.from_env({"JEBA_BACKEND": backend_name, "JEBA_MODELS_DIR": models_dir})
+    # Merge the process env with the explicit overrides so `JEBA_ADAPTERS` (and any other
+    # setting) is honored; passing a literal dict replaces the whole environment.
+    source = {**os.environ, "JEBA_BACKEND": backend_name, "JEBA_MODELS_DIR": models_dir}
+    config = Config.from_env(source)
     backend = build_backend(config)
 
     def predict(state: State, question: Question) -> Answer:

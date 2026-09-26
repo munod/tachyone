@@ -184,3 +184,17 @@ def test_add_state_noise_is_deterministic_and_scoped() -> None:
 def test_add_state_noise_rejects_out_of_range() -> None:
     with pytest.raises(ValueError):
         add_state_noise([], rate=1.5)
+
+
+def test_backend_predictor_honors_process_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Regression: the predictor used to pass a literal env dict to Config.from_env, dropping
+    # JEBA_ADAPTERS. It must merge the process env so a local adapter can be evaluated.
+    from jeba.config import Config
+
+    monkeypatch.setenv("JEBA_ADAPTERS", "jeba-multi=checkpoints/multi_noisy")
+    merged = {
+        **__import__("os").environ,
+        "JEBA_BACKEND": "encoder",
+        "JEBA_MODELS_DIR": ".cache/jeba/models",
+    }
+    assert Config.from_env(merged).adapters == {"jeba-multi": "checkpoints/multi_noisy"}
