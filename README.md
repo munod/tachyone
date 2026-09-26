@@ -173,6 +173,7 @@ Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/t
 | [`docs/overview.md`](docs/overview.md) | Vision, personas, use cases, success metrics, non-goals |
 | [`docs/compare.md`](docs/compare.md) | **Why not a small LLM / Jev / another scorer?** — numbers and method |
 | [`docs/use-cases.md`](docs/use-cases.md) | **Five recipes with tested JSON in/out** (classification, routing, priority, risk, triage) |
+| [`docs/integrations.md`](docs/integrations.md) | **FastAPI · MCP · LangChain/LangGraph · n8n · Power Automate · Azure Functions · Docker** |
 | [`docs/protocol.md`](docs/protocol.md) | The `/v1/systemone` contract |
 | [`docs/architecture.md`](docs/architecture.md) | Components, flows, backend strategy, hooks |
 | [`docs/cli.md`](docs/cli.md) | CLI flags, presets, modes, exit codes |

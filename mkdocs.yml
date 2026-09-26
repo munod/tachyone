@@ -94,8 +94,14 @@ nav:
   - Cookbook: cookbook-handoff.md
   - CLI reference: cli.md
   - Integrations:
+      - Overview: integrations.md
+      - FastAPI: integrations/fastapi.md
       - MCP server: mcp.md
       - LangChain: langchain.md
+      - LangGraph: integrations/langgraph.md
+      - n8n: integrations/n8n.md
+      - Power Automate: integrations/power-automate.md
+      - Azure Functions: integrations/azure-functions.md
       - Docker: docker.md
   - Benchmarks: benchmarks.md
   - Roadmap: roadmap.md

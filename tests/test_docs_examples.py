@@ -12,6 +12,9 @@ These tests intentionally do **not** touch the frozen golden suite in
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -106,3 +109,33 @@ async def test_requests_answer_through_the_wire() -> None:
         response = await answer(request, FakeBackend())
         assert set(response.answers) == set(request.questions), f"{slug}: ids not echoed"
         assert response.model == request.model, f"{slug}: model not echoed"
+
+
+def test_langgraph_flow_is_embedded_in_the_doc() -> None:
+    doc = (_ROOT / "docs" / "integrations" / "langgraph.md").read_text(encoding="utf-8")
+    assert "langgraph_flow.py" in doc, "the executed flow must be the one the docs embed"
+
+
+def test_langgraph_example_runs() -> None:
+    """The documented LangGraph script executes end to end, branch and all.
+
+    With the model-free backend the distribution is flat, so the confidence lands below τ and
+    the graph must take the *escalate* edge — the branch cannot silently rot.
+    """
+    pytest.importorskip("langchain_core")
+    pytest.importorskip("langgraph")
+
+    script = _EXAMPLES / "langgraph_flow.py"
+    assert script.exists()
+    env = {**os.environ, "TACHYONE_BACKEND": "fake"}
+    result = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "handoff -> human-review" in result.stdout, result.stdout

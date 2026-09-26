@@ -194,7 +194,10 @@ Mirrors the canonical table in [`overview.md`](overview.md#how-tachyone-compares
 - [Architecture](architecture.md) — components, flows, backend strategy.
 - [CLI reference](cli.md) — every `tachyone` flag with copy-paste examples.
 - [Cookbook](cookbook-handoff.md) — uncertainty thresholding and System-2 handoff.
-- [MCP server](mcp.md) · [LangChain](langchain.md) · [Docker](docker.md) — integrations.
+- [MCP server](mcp.md) · [LangChain](langchain.md) · [LangGraph](integrations/langgraph.md) ·
+  [n8n](integrations/n8n.md) · [Power Automate](integrations/power-automate.md) ·
+  [Azure Functions](integrations/azure-functions.md) · [FastAPI](integrations/fastapi.md) ·
+  [Docker](docker.md) — [all integrations](integrations.md).
 - [Training](training.md) — data → LoRA/RLCD → calibration → evaluation.
 - [Benchmarks](benchmarks.md) — accuracy, ECE, and latency.
 - [Testing](testing.md) · [Release](release.md) · [Hugging Face](huggingface.md) ·

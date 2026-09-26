@@ -151,7 +151,7 @@ The examples are only as good as the criteria you write:
 - **Scales are ordered and short.** `score` takes 2–10 levels; incident and risk scales work best
   at 3–4.
 - **Set τ per decision shape.** `0.6` above is illustrative, not a default — see
-  [Choosing τ](cookbook-handoff.md#choosing-t).
+  [Choosing τ](cookbook-handoff.md#choosing).
 
 ## Reproducing these responses
 
