@@ -112,13 +112,18 @@ graph LR
 
 ## Post-M6 — Backlog (delivered)
 
-Both active backlog items shipped in `v0.2.0`:
+The active backlog items shipped across `v0.2.0` and `v0.3.0`:
 
-- **B-1 Multilingual `choice`/`score` quality** ✅ — localized per-language data, per-record RNG,
-  per-`(primitive, language)` temperature fitting, runtime language detection, and per-language
-  ECE reporting. Multilingual `choice` 0.40 → 0.734; English overall 0.721 → 0.781.
-- **B-2 Fast-path (TileLang/CUDA graphs)** ✅ — `JEBA_FAST=1` wires per-shape CUDA graphs with
-  bf16 weights and graceful fallback; measured 2.68× p50 (NFR-P01/P07 met).
+- **B-1 Multilingual `choice`/`score` quality** ✅ (`v0.2.0`) — localized per-language data,
+  per-record RNG, per-`(primitive, language)` temperature fitting, runtime language detection, and
+  per-language ECE reporting. Follow-up raised the multilingual LoRA rank to 64: overall accuracy
+  0.702 → 0.853 and `es` ECE 0.170 → 0.038 (5/6 languages ≤ 0.05; `nl` open).
+- **B-2 Fast-path (TileLang/CUDA graphs)** ✅ (`v0.2.0`) — `JEBA_FAST=1` wires per-shape CUDA graphs
+  with bf16 weights and graceful fallback; measured 2.68× p50 (NFR-P01/P07 met).
+- **B-3 Confidence thresholding / System-2 handoff** ✅ (`v0.3.0`) — `normalized_entropy`/`margin`
+  and `assess`/`assess_response`; CLI `--threshold` appends a sibling `handoff` object (`CAL-06`).
+- **B-4 Input-noise robustness** ✅ (`v0.3.0`) — seeded `noise_rate` augmentation and a clean/noisy
+  evaluation split; the released adapters are already robust to the injected noise (`TRAIN-08`).
 
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 

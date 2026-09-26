@@ -35,7 +35,7 @@ _CORE_MODULES = [
 
 
 def test_version_is_exposed() -> None:
-    assert jeba.__version__ == "0.2.0"
+    assert jeba.__version__ == "0.3.0"
 
 
 def test_handoff_helpers_are_public() -> None:

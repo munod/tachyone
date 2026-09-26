@@ -6,7 +6,7 @@ hide:
 
 <div class="jeba-hero">
 <img class="jeba-hero__logo" src="assets/logo-wordmark.svg" alt="jeba — System 1 inference engine">
-<span class="jeba-hero__eyebrow">v0.2.0 · Apache-2.0 · local-first</span>
+<span class="jeba-hero__eyebrow">v0.3.0 · Apache-2.0 · local-first</span>
 <h1 class="jeba-hero__title">Ultra-fast, non-autoregressive encoder engine for structured intent and choice classification.</h1>
 <p class="jeba-hero__sub">3.83&nbsp;ms p50 latency · non-generative (no hallucinated labels) · calibrated confidence · local-first on consumer GPUs.</p>
 <p class="jeba-hero__cta">

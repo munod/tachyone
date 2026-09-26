@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.3.0] - 2026-09-26
+
 ### Added
 
 - **Input-noise robustness (B-4):** `training/generate_data.py` gains a seeded, opt-in
@@ -112,7 +116,8 @@ TypeSafe Jev `/v1/systemone` wire protocol as a drop-in.
 
 Specification baseline (documentation only, no code).
 
-[Unreleased]: https://github.com/munod/jeba/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/munod/jeba/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/munod/jeba/releases/tag/v0.3.0
 [0.2.0]: https://github.com/munod/jeba/releases/tag/v0.2.0
 [0.1.1]: https://github.com/munod/jeba/releases/tag/v0.1.1
 [0.1.0]: https://github.com/munod/jeba/releases/tag/v0.1.0

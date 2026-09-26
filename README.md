@@ -10,12 +10,14 @@ jeba answers atomic structured questions — `choice`, `score`, and `noul` — a
 values with probabilities and calibrated confidence. Point an existing Jev client at a jeba
 server and it works unchanged; run the local encoder backend for fully offline inference.
 
-**Status: `v0.2.0` released.** All milestones M0–M6 are complete, plus the post-M6
-**B-1 multilingual quality** work (localized data, per-`(primitive, language)` temperature) and
-**B-2 fast path** (per-shape CUDA graphs with bf16 weights). The wire contract, an
-OpenAI-compatible LLM backend, a local encoder (ModernBERT/mmBERT + LoRA), an ONNX backend,
-FastAPI serving, an SDK/CLI, MCP + LangChain integrations, a training pipeline, and a docs site
-all ship. LoRA adapters are published on the Hugging Face Hub. See the
+**Status: `v0.3.0` released.** All milestones M0–M6 are complete, plus the post-M6
+**B-1 multilingual quality** work (localized data, per-`(primitive, language)` temperature, and a
+multilingual LoRA raised to rank 64 — accuracy 0.702 → 0.853), **B-2 fast path** (per-shape CUDA
+graphs with bf16 weights), **B-3 confidence thresholding / System-2 handoff**, and **B-4
+input-noise robustness**. The wire contract, an OpenAI-compatible LLM backend, a local encoder
+(ModernBERT/mmBERT + LoRA), an ONNX backend, FastAPI serving, an SDK/CLI, MCP + LangChain
+integrations, a training pipeline, and a docs site all ship. LoRA adapters are published on the
+Hugging Face Hub. See the
 [CHANGELOG](CHANGELOG.md) for releases, next steps in
 [`.specs/project/BACKLOG.md`](.specs/project/BACKLOG.md), and
 [`.specs/project/STATE.md`](.specs/project/STATE.md) for decisions and blockers.
@@ -150,6 +152,9 @@ uv run mkdocs build --strict        # docs site (uv sync --group docs)
 | M6 | Proof & Release | ✅ (`v0.1.0`) |
 | B-1 | Multilingual quality + per-language temperature | ✅ (`v0.2.0`) |
 | B-2 | Fast path (CUDA graphs) | ✅ (`v0.2.0`) |
+| B-3 | Confidence thresholding / System-2 handoff | ✅ (`v0.3.0`) |
+| B-4 | Input-noise robustness + clean/noisy split | ✅ (`v0.3.0`) |
+| — | Multilingual LoRA rank 16 → 64 | ✅ (`v0.3.0`) |
 
 Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/tasks.md).
 
