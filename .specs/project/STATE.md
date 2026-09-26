@@ -5,10 +5,11 @@
 `maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
 `benchmarks/fast_path.py` measures 2.68× p50 (10.27 → 3.83 ms) and 0 top-label flips, meeting
 NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed, retrained on the RTX 3060, and the
-adapters were republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`); the `v0.2.0` GitHub
-Release exists. Multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**; English
-overall 0.721 → **0.781**; per-language ECE still above 0.05 for `es`/`nl`/`de` (calibration
-remains partial — NFR-C06 open). **B-3 (confidence thresholding / System-2 handoff) done**:
+adapters were republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`); the `v0.2.0` and
+`v0.3.0` GitHub Releases exist. Multilingual `choice` 0.40 → **0.684**, overall 0.609 → **0.853**;
+English overall 0.721 → **0.763**; with the multilingual LoRA at r=64, per-language ECE is now
+≤ 0.05 for 5/6 languages (`nl` 0.104 remains — NFR-C06 nearly closed).
+**B-3 (confidence thresholding / System-2 handoff) done**:
 `calibration.py` gains normalized `entropy`/`margin`, `handoff.py` exposes `assess`/
 `assess_response`, and the CLI appends a sibling `handoff` object via `--threshold` without
 changing the canonical response. **B-4 (input-noise robustness) done and measured on the RTX

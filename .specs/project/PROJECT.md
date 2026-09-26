@@ -13,10 +13,11 @@ call. Autoregressive LLMs are local-capable but slow, expensive, and poorly cali
 for atomic decisions. jeba gives you the Jev contract you already build against, running
 on your own box, with an optional LLM backend today and a trained encoder backend next.
 
-> Status: **implemented and released (`v0.2.0`)**. All milestones M0–M6 are complete, plus the
-> post-M6 multilingual-quality (B-1) and CUDA-graph fast-path (B-2) work. The trained adapters
-> are published (`munod/jeba-en`, `munod/jeba-multi`) and the `v0.2.0` GitHub Release exists;
-> per-language calibration for a few languages remains the next quality target. See
+> Status: **implemented and released (`v0.3.0`)**. All milestones M0–M6 are complete, plus the
+> post-M6 work: multilingual quality (B-1, LoRA rank 16 → 64), CUDA-graph fast path (B-2),
+> confidence thresholding / System-2 handoff (B-3), and input-noise robustness (B-4). The trained
+> adapters are published (`munod/jeba-en`, `munod/jeba-multi`) and the `v0.3.0` GitHub Release
+> exists; `nl` per-language calibration remains the open quality target. See
 > `.specs/project/STATE.md` and `.specs/project/BACKLOG.md`.
 
 ## Goals
