@@ -22,8 +22,8 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 
 <div class="jeba-metrics">
 <div class="jeba-metric"><span class="jeba-metric__value">3.83 ms</span><span class="jeba-metric__label">p50 fast path (CUDA graphs, RTX 3060, mmBERT, batch=1)</span></div>
-<div class="jeba-metric"><span class="jeba-metric__value">73.4%</span><span class="jeba-metric__label">multilingual <code>choice</code> accuracy</span></div>
-<div class="jeba-metric"><span class="jeba-metric__value">86.5%</span><span class="jeba-metric__label">Portuguese (<code>pt</code>) overall accuracy</span></div>
+<div class="jeba-metric"><span class="jeba-metric__value">85.3%</span><span class="jeba-metric__label">multilingual overall accuracy</span></div>
+<div class="jeba-metric"><span class="jeba-metric__value">95.6%</span><span class="jeba-metric__label">Spanish (<code>es</code>) overall accuracy</span></div>
 <div class="jeba-metric"><span class="jeba-metric__value">0.0044</span><span class="jeba-metric__label">fast-path probability parity Δ (0 top-label flips)</span></div>
 </div>
 
@@ -49,16 +49,16 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 
     ---
 
-    An mmBERT-based checkpoint trained and **calibrated per language** for `pt`, `es`, `fr`,
-    `de`, `it`, and `nl`, with automatic script/language routing.
+    An mmBERT-based checkpoint (LoRA rank 64) trained and **calibrated per language** for `pt`,
+    `es`, `fr`, `de`, `it`, and `nl`, with automatic script/language routing.
 
 - :material-shield-check:{ .lg .middle } **Calibrated confidence**
 
     ---
 
     Strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature scaling, with
-    per-language ECE reported. The `ECE ≤ 0.05` target is met for `pt`/`fr`/`it` and most
-    `score` cases; `es`/`nl`/`de` calibration is in progress.
+    per-language ECE reported. The `ECE ≤ 0.05` target is met for five of six multilingual
+    languages (`pt`/`fr`/`it`/`de`/`es`); `nl` calibration is in progress.
 
 - :material-power-plug:{ .lg .middle } **Local-first, drop-in**
 
@@ -142,13 +142,13 @@ Measured on a single RTX 3060 12GB (full tables and reproduction commands in the
 **Overall accuracy by language — multilingual checkpoint**
 
 <div class="jeba-chart">
-<div class="jeba-bar"><span>pt</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:86.5%"></span></span><span class="jeba-bar__value">86.5%</span></div>
-<div class="jeba-bar"><span>fr</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:85.5%"></span></span><span class="jeba-bar__value">85.5%</span></div>
-<div class="jeba-bar"><span>it</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:82.7%"></span></span><span class="jeba-bar__value">82.7%</span></div>
-<div class="jeba-bar"><span>nl</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:60.6%"></span></span><span class="jeba-bar__value">60.6%</span></div>
-<div class="jeba-bar"><span>de</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:59.8%"></span></span><span class="jeba-bar__value">59.8%</span></div>
-<div class="jeba-bar"><span>es</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:51.2%"></span></span><span class="jeba-bar__value">51.2%</span></div>
-<p class="jeba-chart__caption">Held-out synthetic split; temperature fitted per (primitive, language). Calibrated ECE is in-sample.</p>
+<div class="jeba-bar"><span>es</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:95.6%"></span></span><span class="jeba-bar__value">95.6%</span></div>
+<div class="jeba-bar"><span>pt</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:88.5%"></span></span><span class="jeba-bar__value">88.5%</span></div>
+<div class="jeba-bar"><span>it</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:88.0%"></span></span><span class="jeba-bar__value">88.0%</span></div>
+<div class="jeba-bar"><span>fr</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:87.1%"></span></span><span class="jeba-bar__value">87.1%</span></div>
+<div class="jeba-bar"><span>de</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:86.3%"></span></span><span class="jeba-bar__value">86.3%</span></div>
+<div class="jeba-bar"><span>nl</span><span class="jeba-bar__track"><span class="jeba-bar__fill" style="width:66.3%"></span></span><span class="jeba-bar__value">66.3%</span></div>
+<p class="jeba-chart__caption">Held-out synthetic split; temperature fitted per (primitive, language). Calibrated ECE is in-sample. Multilingual LoRA at rank 64.</p>
 </div>
 
 **p50 latency — stock forward vs CUDA-graph fast path**

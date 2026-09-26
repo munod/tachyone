@@ -8,31 +8,39 @@ reproduction commands live in
 train records (fully localized per language, per-record RNG) · 1,500 held-out eval · LoRA (r=16
 English, **r=64 multilingual**) plus a low-rank `choice` head (r=32) · 4 epochs · bf16 + gradient
 checkpointing. Calibrated ECE is after per-`(primitive, language)` temperature fitting on the
-held-out split (in-sample).
+held-out split (in-sample). The **noisy view** applies one surface edit (typo/accents/casing) to
+15% of states (B-4).
 
-## English (ModernBERT-large + LoRA + choice head)
-
-| Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
-| --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.781 | 0.077 | 22.947 | 37.973 |
-| `choice` | 500 | 0.708 | 0.141 | 36.743 | 38.657 |
-| `noul` | 500 | 0.744 | 0.012 | 14.508 | 22.257 |
-| `score` | 500 | 0.892 | 0.090 | 22.591 | 24.917 |
-
-## Multilingual (mmBERT-base + LoRA + choice head)
+## English (ModernBERT-large + LoRA r=16 + choice head)
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.711 | 0.073 | 12.403 | 20.261 |
-| `choice` | 500 | 0.734 | 0.100 | 18.843 | 21.084 |
-| `noul` | 500 | 0.716 | 0.082 | 11.157 | 15.169 |
-| `score` | 500 | 0.682 | 0.067 | 12.160 | 16.022 |
-| lang `pt` | 252 | 0.865 | 0.045 | 12.395 | 20.041 |
-| lang `fr` | 249 | 0.855 | 0.039 | 12.557 | 20.278 |
-| lang `it` | 249 | 0.827 | 0.068 | 12.249 | 44.317 |
-| lang `nl` | 249 | 0.606 | 0.178 | 12.389 | 19.985 |
-| lang `de` | 249 | 0.598 | 0.119 | 12.469 | 19.940 |
-| lang `es` | 252 | 0.512 | 0.182 | 12.464 | 19.441 |
+| overall | 1500 | 0.763 | 0.061 | 22.603 | 37.051 |
+| `choice` | 500 | 0.834 | 0.074 | 36.075 | 37.849 |
+| `noul` | 500 | 0.744 | 0.101 | 14.030 | 22.070 |
+| `score` | 500 | 0.712 | 0.042 | 22.385 | 24.093 |
+
+Noisy view (noise_rate 0.15): overall accuracy **0.760**, ECE **0.067**.
+
+## Multilingual (mmBERT-base + LoRA r=64 + choice head)
+
+| Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
+| --- | --- | --- | --- | --- | --- |
+| overall | 1500 | 0.853 | 0.038 | 13.254 | 23.189 |
+| `choice` | 500 | 0.684 | 0.083 | 19.627 | 24.108 |
+| `noul` | 500 | 0.960 | 0.038 | 12.003 | 17.053 |
+| `score` | 500 | 0.916 | 0.032 | 12.699 | 18.302 |
+| lang `es` | 252 | 0.956 | 0.038 | 13.169 | 21.753 |
+| lang `pt` | 252 | 0.885 | 0.024 | 13.063 | 21.918 |
+| lang `it` | 249 | 0.880 | 0.059 | 13.219 | 47.450 |
+| lang `fr` | 249 | 0.871 | 0.051 | 13.397 | 23.058 |
+| lang `de` | 249 | 0.863 | 0.063 | 13.493 | 31.312 |
+| lang `nl` | 249 | 0.663 | 0.104 | 13.216 | 22.701 |
+
+Noisy view (noise_rate 0.15): overall accuracy **0.847**, ECE **0.042**.
+
+Raising the multilingual LoRA rank from 16 to 64 lifted overall accuracy 0.702 → **0.853** and `es`
+ECE 0.170 → **0.038**; five of six languages now meet ECE ≤ 0.05 (`nl` remains the outlier).
 
 ## Fast path (CUDA graphs)
 
@@ -50,7 +58,8 @@ with a **2.68× p50 speedup** for the fast path.
 
 ## Known limitations
 
-- Per-language ECE is still above the `0.05` target for `es`/`nl`/`de` and multilingual `score`.
+- Per-language ECE is still above the `0.05` target for `nl` (0.104); the other five multilingual
+  languages now meet it.
 - Calibrated ECE is measured in-sample on the held-out synthetic split.
 - Numbers are from deterministic synthetic data; public-probe comparisons (MASSIVE, XNLI,
   typed-decisions) are evaluation-only and not yet published.

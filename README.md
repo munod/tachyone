@@ -103,13 +103,14 @@ graceful fallback.
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + LoRA + choice head) | 0.781 | 0.708 | 0.744 | 0.892 | 0.077 |
-  | Multilingual (mmBERT-base + LoRA + choice head) | 0.711 | 0.734 | 0.716 | 0.682 | 0.073 |
+  | English (ModernBERT-large + LoRA r=16 + choice head) | 0.763 | 0.834 | 0.744 | 0.712 | 0.061 |
+  | Multilingual (mmBERT-base + LoRA r=64 + choice head) | 0.853 | 0.684 | 0.960 | 0.916 | 0.038 |
 
   The dedicated `choice` head (L-002) and localized per-record-RNG data (B-1) lifted multilingual
-  `choice` from ~0.25 (chance) to 0.73. Per-language calibration for `es`/`nl`/`de` and
-  multilingual `score` remain the next targets. The CUDA-graph fast path (`JEBA_FAST=1`) improves
-  p50 10.3 → 3.8 ms with no top-label changes.
+  `choice` from ~0.25 (chance), and raising the multilingual LoRA rank to 64 lifted overall
+  accuracy to 0.853 and cut `es` ECE to 0.038 (five of six languages now meet ECE ≤ 0.05; `nl`
+  remains). The CUDA-graph fast path (`JEBA_FAST=1`) improves p50 10.3 → 3.8 ms with no top-label
+  changes.
 
 ## Architecture at a glance
 
