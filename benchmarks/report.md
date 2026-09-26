@@ -6,8 +6,8 @@
 
 ```json
 {
-  "git_commit": "c43de7cc43a2a90be9493ec15e18df5ebd90718b",
-  "jeba": "0.2.0",
+  "git_commit": "2b4e77d1f917e891d08f6b11e9bf3742f63a9af4",
+  "jeba": "0.3.0",
   "peft": "0.21.0",
   "platform": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44",
   "pydantic": "2.13.5",
@@ -24,10 +24,15 @@ uv run python -m training.generate_data --seed 1 --per-type 3000 --languages en 
 uv run python -m training.generate_data --seed 1 --per-type 6000 --languages pt,es,fr,de,it,nl --out data/train_multi.jsonl
 uv run python -m training.generate_data --seed 2 --per-type 500 --languages en --out data/eval_en.jsonl
 uv run python -m training.generate_data --seed 2 --per-type 500 --languages pt,es,fr,de,it,nl --out data/eval_multi.jsonl
-uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json   # LoRA r=16 + choice head r=32
-uv run python -m training.finetune_rlcd --config training/configs/finetune_multi.json # LoRA r=64 + choice head r=32
+uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json
+uv run python -m training.finetune_rlcd --config training/configs/finetune_multi.json
+uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en --out-predictions data/preds_en.jsonl
+uv run python -m training.fit_calibration --calibration data/preds_en.jsonl --out checkpoints/en/temperature_calibration.json
 uv run python -m training.predict --data data/eval_multi.jsonl --adapter checkpoints/multi --max-len 1024 --out-predictions data/preds_multi.jsonl
 uv run python -m training.fit_calibration --calibration data/preds_multi.jsonl --out checkpoints/multi/temperature_calibration.json
+uv run python -m training.evaluate --data data/eval_en.jsonl --out benchmarks/results/en_split.json --backend encoder
+uv run python -m training.evaluate --data data/eval_multi.jsonl --out benchmarks/results/multi_split.json --backend encoder
+uv run python -m benchmarks.report --entry encoder=benchmarks/results/en_split.json --out benchmarks/report.md
 ```
 
 ## Results
@@ -36,15 +41,15 @@ uv run python -m training.fit_calibration --calibration data/preds_multi.jsonl -
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.763 | 0.061 | 22.603 | 37.051 |
-| choice | 500 | 0.834 | 0.074 | 36.075 | 37.849 |
-| noul | 500 | 0.744 | 0.101 | 14.030 | 22.070 |
-| score | 500 | 0.712 | 0.042 | 22.385 | 24.093 |
-| lang:en | 1500 | 0.763 | 0.061 | 22.603 | 37.051 |
+| overall | 1500 | 0.859 | 0.023 | 23.307 | 39.010 |
+| choice | 500 | 0.948 | 0.020 | 36.849 | 40.910 |
+| noul | 500 | 0.718 | 0.020 | 14.841 | 22.032 |
+| score | 500 | 0.910 | 0.039 | 22.956 | 25.211 |
+| lang:en | 1500 | 0.859 | 0.023 | 23.307 | 39.010 |
 
-Worst language (accuracy): `en` — accuracy 0.763, ECE 0.061.
+Worst language (accuracy): `en` — accuracy 0.859, ECE 0.023.
 
-Noisy view (noise_rate 0.15) — overall: accuracy 0.760, ECE 0.067, p50 22.628 ms.
+Noisy view (noise_rate 0.15) — overall: accuracy 0.854, ECE 0.026, p50 23.454 ms.
 
 ### multilingual (mmBERT-base + LoRA r=64 + choice head)
 

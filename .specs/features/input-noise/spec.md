@@ -89,7 +89,7 @@ the model stops relying on clean templates.
 
 - [x] Noise is seeded, reproducible, and opt-in via a config flag (existing determinism tests pass).
 - [~] Noisy-split accuracy improves vs baseline: **not met / neutral-negative.** The
-      clean-trained adapters are already robust (English 0.763→0.760, multilingual 0.702→0.701 at
+      clean-trained adapters are already robust (English 0.859→0.854, multilingual 0.702→0.701 at
       the r=16 baseline and 0.853→0.847 for the released r=64 adapter on the noisy view). The
       noise-augmented multilingual adapter scored 0.719 on both views but
       calibrated worse (ECE 0.090 vs 0.033) and regressed on `de`/`nl`, so it is not released.

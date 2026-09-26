@@ -107,7 +107,7 @@ graceful fallback.
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + LoRA r=16 + choice head) | 0.763 | 0.834 | 0.744 | 0.712 | 0.061 |
+  | English (ModernBERT-large + LoRA r=16 + choice head) | 0.859 | 0.948 | 0.718 | 0.910 | 0.023 |
   | Multilingual (mmBERT-base + LoRA r=64 + choice head) | 0.853 | 0.684 | 0.960 | 0.916 | 0.038 |
 
   The dedicated `choice` head (L-002) and localized per-record-RNG data (B-1) lifted multilingual

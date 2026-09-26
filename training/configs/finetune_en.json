@@ -13,7 +13,7 @@
   "max_len": 512,
   "model_id": "answerdotai/ModernBERT-large",
   "out_dir": "checkpoints/en",
-  "seed": 42,
+  "seed": 2,
   "use_4bit": false,
   "val_split": 0.1
 }

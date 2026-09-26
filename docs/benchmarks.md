@@ -15,12 +15,12 @@ held-out split (in-sample). The **noisy view** applies one surface edit (typo/ac
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.763 | 0.061 | 22.603 | 37.051 |
-| `choice` | 500 | 0.834 | 0.074 | 36.075 | 37.849 |
-| `noul` | 500 | 0.744 | 0.101 | 14.030 | 22.070 |
-| `score` | 500 | 0.712 | 0.042 | 22.385 | 24.093 |
+| overall | 1500 | 0.859 | 0.023 | 23.307 | 39.010 |
+| `choice` | 500 | 0.948 | 0.020 | 36.849 | 40.910 |
+| `noul` | 500 | 0.718 | 0.020 | 14.841 | 22.032 |
+| `score` | 500 | 0.910 | 0.039 | 22.956 | 25.211 |
 
-Noisy view (noise_rate 0.15): overall accuracy **0.760**, ECE **0.067**.
+Noisy view (noise_rate 0.15): overall accuracy **0.854**, ECE **0.026**.
 
 ## Multilingual (mmBERT-base + LoRA r=64 + choice head)
 

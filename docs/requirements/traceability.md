@@ -79,7 +79,7 @@ All requirements are implemented as of `v0.3.0`; `NFR-C06`/`NFR-C07` (per-langua
 
 | Req ID | Design component | Task(s) | Status |
 | --- | --- | --- | --- |
-| NFR-P01 | `backends/encoder.py` / `fast.py` | M3-T5, M5-T2, B-2 | Done (stock 9.1/10.8 ms; fast 3.7/4.1 ms) |
+| NFR-P01 | `backends/encoder.py` / `fast.py` | M3-T5, M5-T2, B-2 | Done (stock 10.3/11.0 ms; fast 3.8/4.1 ms) |
 | NFR-P02 | `backends/encoder.py` | M3-T5, M3-T8 | Implemented |
 | NFR-P03 | `router.py` | M3-T1 | Implemented |
 | NFR-P04 | `backends/llm.py` | M2-T2 | Implemented |

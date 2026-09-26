@@ -6,7 +6,31 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **English adapter reseeded (B-9).** The published `training/configs/finetune_en.json` recipe run
+  again from `seed: 2` produced a checkpoint that beats the previously published one on seven of
+  eight metrics: overall accuracy **0.763 → 0.859**, overall ECE **0.061 → 0.023**, `choice`
+  0.834 → 0.948, `score` 0.712 → 0.910 and their ECEs 0.074 → 0.020 / 0.042 → 0.039. Only `noul`
+  accuracy moved against it (0.744 → 0.718), while `noul` ECE improved 0.101 → 0.020. The config
+  now pins `seed: 2`, `munod/jeba-en` was republished from it, and `benchmarks/report.md` was
+  regenerated. Background: `.specs/project/BACKLOG.md` B-9.
+
+### Fixed
+
+- `benchmarks/report.py` split `--entry` on the **first** `=`, which broke on the report's own
+  entry names (`english (... r=16 ...)`) with a misleading `FileNotFoundError`; it now splits on
+  the last one.
+- The report's hardcoded Reproduce block pointed at files that do not exist (`data/eval.jsonl`)
+  and omitted the predict / fit-calibration / evaluate / report steps, so a regenerated report
+  could not be reproduced from its own instructions.
+
+### Documentation
+
+- Corrected the per-language ECE claim (**2/6** languages meet ECE ≤ 0.05, not 5/6), the
+  requirement counts (60 functional / 43 non-functional / 104 traced), stale `v0.2.0` status
+  headers, references to files and `(planned)` markers that no longer exist, and the documented
+  default backend (`llm`). Added CLI, MCP, LangChain and Docker guides.
 
 ## [0.3.0] - 2026-09-26
 

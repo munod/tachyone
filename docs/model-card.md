@@ -71,12 +71,12 @@ gradient checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA r=16 + choice head) | 0.763 | 0.061 | 22.6 |
+| English (ModernBERT-large + LoRA r=16 + choice head) | 0.859 | 0.023 | 23.3 |
 | Multilingual (mmBERT-base + LoRA r=64 + choice head) | 0.853 | 0.038 | 13.3 |
 
-Per primitive (English): `choice` 0.834, `noul` 0.744, `score` 0.712; (multilingual): `choice`
+Per primitive (English): `choice` 0.948, `noul` 0.718, `score` 0.910; (multilingual): `choice`
 0.684, `noul` 0.960, `score` 0.916. The localized, per-record-RNG data (B-1) lifted multilingual
-`choice` from 0.40 to 0.68 and English overall from 0.72 to 0.76. **Raising the multilingual LoRA
+`choice` from 0.40 to 0.68 and English overall from 0.72 to 0.86. **Raising the multilingual LoRA
 rank from 16 to 64** (alpha 128) removed the cross-language capacity bottleneck: overall accuracy
 0.702 → 0.853 and `es` ECE 0.170 → 0.038 (`es` accuracy 0.472 → 0.956). Two of six languages now
 meet ECE ≤ 0.05 (`es` 0.038 and `pt` 0.024); `de` (0.063), `fr` (0.051), `it` (0.059) and `nl`
@@ -84,7 +84,7 @@ meet ECE ≤ 0.05 (`es` 0.038 and `pt` 0.024); `de` (0.063), `fr` (0.051), `it` 
 The CUDA-graph fast path (`JEBA_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
-states) English drops only 0.763 → 0.760 and multilingual (r=64) 0.853 → 0.847, so the released
+states) English drops only 0.859 → 0.854 and multilingual (r=64) 0.853 → 0.847, so the released
 adapters are already robust to this noise model.
 
 Full tables and environment are in
