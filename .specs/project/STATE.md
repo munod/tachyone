@@ -114,6 +114,21 @@ English checkpoint, selected automatically by a script/language router.
 **Trade-off:** Two checkpoints to load/manage; router adds a small amount of complexity.
 **Impact:** `router.py`; benchmark suite must include multilingual probes.
 
+### AD-008: Keep `checkpoints/en` as the published English adapter (2026-09-26)
+
+**Decision:** `munod/jeba-en` carries the local `checkpoints/en` — accuracy 0.763 / ECE 0.061 /
+`choice` 0.834, the source of every number in `benchmarks/report.md` — instead of the older
+Hub checkpoint `bac4de41` (accuracy 0.781 / ECE 0.077 / `choice` 0.708 / `score` 0.892), which
+remains downloadable at `revision=bac4de4`.
+**Reason:** The whole published surface (report, README, model card, docs) describes the local
+checkpoint, and `choice` — the primitive behind the `triage`/`router`/`guard` presets — gains
+12.6 points with it.
+**Trade-off:** The Hub's English adapter loses 1.8 points of overall accuracy and 18 points of
+`score` accuracy; the old checkpoint is also far better calibrated on `noul` (ECE 0.012 vs 0.101).
+**Impact:** both measured on `data/eval_en.jsonl` (1500 records, RTX 3060); the old run is saved
+as `benchmarks/results/en_legacy_bac4de4.json` (gitignored) and the open choice is tracked in
+`BACKLOG.md` B-9.
+
 ---
 
 ## Active Blockers
@@ -190,6 +205,22 @@ be a new backend/endpoint. MoE adapters were deferred as premature: the measured
 calibration, not capacity.
 **Prevents:** Redesigning the wire or adding adapter machinery to chase use cases the atomic,
 composable contract already covers.
+
+### L-005: A model card's disclaimer is not evidence about its weights
+
+**Context:** The 2026-09-26 documentation review found `munod/jeba-en` carrying a "pre-release /
+weights and metrics pending" banner beside a `temperature_calibration.json` whose
+`ece_after 0.1406` matched nothing in the repository.
+**Problem:** From that stale banner I inferred the published artifacts were out of date and
+republished the local checkpoint **without measuring the old one first**. The banner was the only
+stale part: the card's numbers (0.781 / 0.077, `choice` 0.708, `score` 0.892) were real
+measurements of the uploaded weights, and those weights beat the new ones on overall accuracy
+(0.781 vs 0.763), on `score` (0.892 vs 0.712) and on `noul` calibration (0.012 vs 0.101).
+**Solution:** Before replacing anything published, fetch both revisions and evaluate each:
+`JEBA_ADAPTERS="jeba-en=<path>" uv run python -m training.evaluate --data data/eval_en.jsonl
+--out <out>.json --backend encoder`. The measured comparison lives in `BACKLOG.md` B-9.
+**Prevents:** Swapping a published artifact for a different one that is better on some metrics
+and worse on others, on the strength of a document rather than a number.
 
 ---
 

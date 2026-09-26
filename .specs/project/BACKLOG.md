@@ -273,6 +273,51 @@ intentionally run without calibration. Effort ~0.5 day.
 
 ---
 
+## B-9 · Which English checkpoint is canonical? · Ready (measured; needs a decision)
+
+**Why.** `munod/jeba-en` holds two different English checkpoints and the trade-off is real, not
+theoretical. On 2026-09-26 both were evaluated on the same split (`data/eval_en.jsonl`,
+1500 records, RTX 3060, `--backend encoder`):
+
+| Metric | `bac4de41` (previous Hub) | `checkpoints/en` (published now) | Better |
+| --- | ---: | ---: | --- |
+| overall accuracy | **0.7813** | 0.7633 | `bac4de41` |
+| overall ECE | 0.0767 | **0.0609** | current |
+| `choice` accuracy | 0.7080 | **0.8340** | current |
+| `choice` ECE | 0.1406 | **0.0739** | current |
+| `noul` accuracy | 0.7440 | 0.7440 | tie |
+| `noul` ECE | **0.0119** | 0.1011 | `bac4de41` |
+| `score` accuracy | **0.8920** | 0.7120 | `bac4de41` |
+| `score` ECE | 0.0897 | **0.0416** | current |
+
+**Status.** Published as `checkpoints/en` per AD-008 (consistency with `benchmarks/report.md`,
+README and the model card; `choice` is the primitive behind `triage`/`router`/`guard`). The
+previous checkpoint is **not lost**: `hf_hub_download("munod/jeba-en", ..., revision="bac4de4")`.
+Raw run: `benchmarks/results/en_legacy_bac4de4.json` (gitignored).
+
+**Plan.**
+1. Decide whether headline accuracy (`bac4de41`) or `choice` quality + calibration (current)
+   matters more for the first release; the two should not both be called "the" English adapter.
+2. Reproduce both runs before deciding:
+   `JEBA_ADAPTERS="jeba-en=<path>" uv run python -m training.evaluate --data data/eval_en.jsonl --out <out>.json --backend encoder`.
+3. If `bac4de41` wins, restore it and re-run `benchmarks/report.md` + model card together —
+   never update the Hub and the report in separate steps (L-005).
+
+**Acceptance.**
+- One checkpoint is declared canonical in `benchmarks/report.md` and `docs/model-card.md`.
+- The losing variant is either dropped or published under a clearly named revision/repo.
+- The `noul` calibration gap (0.012 vs 0.101) is understood before it is accepted.
+
+**Risks / notes.** Accuracy and ECE pull in opposite directions here, so "better" depends on the
+product call: temperature scaling fixes calibration without retraining, but the `choice`/`score`
+accuracy split comes from the adapter + choice head themselves. Effort ~0.5 day (no retrain) if
+only relabelling; a retrain makes it a full training cycle.
+
+**Related.** `.specs/project/STATE.md` AD-008, L-005; `docs/model-card.md`,
+`benchmarks/report.md`, `NFR-C06`, `NFR-C07`.
+
+---
+
 ## Evaluated and not pursued (for now)
 
 These proposals were assessed against the frozen wire (ADR-0001) and the actual similarity-based
