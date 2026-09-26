@@ -8,7 +8,8 @@ hide:
 <img class="tachyone-hero__logo" src="assets/logo-wordmark.svg" alt="Tachyone — System 1 inference engine">
 <span class="tachyone-hero__eyebrow">v0.3.0 · Apache-2.0 · local-first</span>
 <h1 class="tachyone-hero__title">Ultra-fast, non-autoregressive encoder engine for structured intent and choice classification.</h1>
-<p class="tachyone-hero__sub">3.83&nbsp;ms p50 latency · non-generative (no hallucinated labels) · calibrated confidence · local-first on consumer GPUs.</p>
+<p class="tachyone-hero__sub"><strong>LLMs generate text. Tachyone produces calibrated decisions.</strong><br>
+3.83&nbsp;ms p50 latency · non-generative (no hallucinated labels) · calibrated confidence · local-first on consumer GPUs.</p>
 <p class="tachyone-hero__cta">
 <a class="tachyone-btn tachyone-btn--primary" href="#quickstart">Get started</a>
 <a class="tachyone-btn tachyone-btn--ghost" href="https://github.com/munod/tachyone">View on GitHub</a>
@@ -59,6 +60,14 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
     Strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature scaling, with
     per-language ECE reported. The `ECE ≤ 0.05` target is met for two of the six multilingual
     languages (`pt` 0.024 and `es` 0.038); `de`/`fr`/`it`/`nl` remain above it (worst `nl` 0.104).
+
+- :material-compare:{ .lg .middle } **Decisions, not text**
+
+    ---
+
+    **LLMs generate text. Tachyone produces calibrated decisions.** Head-to-head against a small
+    local model, against Jev, and against open System One scorers — with the numbers and the
+    method notes: [Compare](compare.md).
 
 - :material-power-plug:{ .lg .middle } **Local-first, drop-in**
 
@@ -179,6 +188,7 @@ Mirrors the canonical table in [`overview.md`](overview.md#how-tachyone-compares
 ## Start here
 
 - [Overview](overview.md) — vision, personas, non-goals.
+- [Compare](compare.md) — **why not a small LLM, why not Jev, why not another scorer.**
 - [Protocol](protocol.md) — the frozen `POST /v1/systemone` contract.
 - [Architecture](architecture.md) — components, flows, backend strategy.
 - [CLI reference](cli.md) — every `tachyone` flag with copy-paste examples.

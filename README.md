@@ -5,6 +5,8 @@
 # Tachyone
 
 > **Local-first, multilingual System One decision engine that speaks the TypeSafe Jev `/v1/systemone` protocol.**
+>
+> **LLMs generate text. Tachyone produces calibrated decisions. Don't ask a model to decide — ask Tachyone.**
 
 Tachyone answers atomic structured questions — `choice`, `score`, and `noul` — and returns typed
 values with probabilities and calibrated confidence. Point an existing Jev client at a Tachyone
@@ -169,6 +171,7 @@ Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/t
 | Doc | Contents |
 | --- | --- |
 | [`docs/overview.md`](docs/overview.md) | Vision, personas, use cases, success metrics, non-goals |
+| [`docs/compare.md`](docs/compare.md) | **Why not a small LLM / Jev / another scorer?** — numbers and method |
 | [`docs/protocol.md`](docs/protocol.md) | The `/v1/systemone` contract |
 | [`docs/architecture.md`](docs/architecture.md) | Components, flows, backend strategy, hooks |
 | [`docs/cli.md`](docs/cli.md) | CLI flags, presets, modes, exit codes |

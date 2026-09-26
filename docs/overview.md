@@ -33,6 +33,10 @@ encoder backend next.
 
 ## Value proposition
 
+- **Decides, does not generate.** **LLMs generate text; Tachyone produces typed, calibrated
+  decisions** — no token stream, no schema to parse, no confidence made up on the spot. Full
+  head-to-head against a small local model, against Jev and against open System One scorers:
+  [`compare.md`](compare.md).
 - **Drop-in:** same request/response as Jev — repoint the client, keep the code.
 - **Local-first:** base install runs offline with no API key; server mode is optional.
 - **Fast:** non-autoregressive single forward pass for the local backend (target: single-digit

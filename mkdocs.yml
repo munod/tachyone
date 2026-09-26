@@ -1,5 +1,5 @@
 site_name: Tachyone
-site_description: Local-first, multilingual System One decision engine — ultra-fast, non-autoregressive, calibrated. Speaks the Jev /v1/systemone protocol.
+site_description: LLMs generate text. Tachyone produces calibrated decisions — a local-first, multilingual System One engine. Ultra-fast, non-autoregressive, calibrated. Speaks the Jev /v1/systemone protocol.
 site_url: https://munod.github.io/tachyone/
 repo_url: https://github.com/munod/tachyone
 repo_name: munod/tachyone
@@ -84,6 +84,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Overview: overview.md
+  - Compare: compare.md
   - Protocol: protocol.md
   - Architecture: architecture.md
   - Cookbook: cookbook-handoff.md
