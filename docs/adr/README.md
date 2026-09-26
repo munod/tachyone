@@ -37,6 +37,13 @@ drifted, the divergence is recorded here.
   warm-up prediction (`uv run jeba --predict --backend encoder "<any text>"`), after which
   `JEBA_OFFLINE=1` serves from cache.
 - **ADR-0002 — OD-1.** The "still open (OD-1)" note predates ADR-0008, which resolved it.
+- **ADR-0010 — `HF_HUB_OFFLINE`.** The ADR describes offline mode as "honoring `HF_HUB_OFFLINE`".
+  jeba itself never reads or sets it — `grep -r HF_HUB_OFFLINE src/` is empty. What
+  `JEBA_OFFLINE=1` actually does is pass `local_files_only=True` to every `huggingface_hub` call.
+  Exporting `HF_HUB_OFFLINE=1` still works, because the *library* reads that variable on its own
+  (`huggingface_hub/constants.py`), but it is not a jeba-controlled switch. For a documented,
+  jeba-level guarantee use `JEBA_OFFLINE=1`; see
+  [`docs/huggingface.md`](../huggingface.md) for the prefetch step offline installs need first.
 
 ## Template
 
