@@ -1,0 +1,24 @@
+{
+  "state": "Document received: \"ACME GmbH — Rechnung Nr. 4711 — Bruttobetrag 12.400,00 EUR — Kundennummer 88213 — IBAN DE89370400440532013000\". Attached to an unpaid-invoice reminder.",
+  "model": "tachyone-latest",
+  "questions": {
+    "document_type": {
+      "type": "choice",
+      "instructions": "What kind of document was received?",
+      "criteria": {
+        "invoice": "bill or invoice with amounts due",
+        "contract": "agreement or signed terms",
+        "identity": "identity or company registration proof",
+        "other": "anything else"
+      }
+    },
+    "needs_human_review": {
+      "type": "noul",
+      "instructions": "Does this document need a human before it is processed?",
+      "criteria": {
+        "true": "amounts, identity or banking details must be confirmed by a person",
+        "false": "machine processing is safe"
+      }
+    }
+  }
+}

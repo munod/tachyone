@@ -58,6 +58,9 @@ encoder backend next.
 
 ### Concrete scenarios
 
+Runnable JSON for each of these — request, captured response and what to do with the
+confidence — lives in [`use-cases.md`](use-cases.md).
+
 - **Content triage:** classify incoming text into a fixed set of categories with calibrated confidence.
 - **Guardrail:** `noul` "is this request disallowed?" gate in front of a chat model.
 - **Scoring:** rate a response on a 1–5 ordered scale with a legend.

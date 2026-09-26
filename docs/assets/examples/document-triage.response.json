@@ -1,0 +1,24 @@
+{
+  "model": "tachyone-latest",
+  "answers": {
+    "document_type": {
+      "type": "choice",
+      "choice": "invoice",
+      "probabilities": {
+        "invoice": 0.7106,
+        "contract": 0.0593,
+        "identity": 0.2298,
+        "other": 0.0003
+      },
+      "confidence": 0.7106
+    },
+    "needs_human_review": {
+      "type": "noul",
+      "noul": 1.0
+    }
+  },
+  "usage": {
+    "input_tokens": 42,
+    "output_tokens": 2
+  }
+}

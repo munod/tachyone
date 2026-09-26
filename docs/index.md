@@ -189,6 +189,7 @@ Mirrors the canonical table in [`overview.md`](overview.md#how-tachyone-compares
 
 - [Overview](overview.md) — vision, personas, non-goals.
 - [Compare](compare.md) — **why not a small LLM, why not Jev, why not another scorer.**
+- [Use cases](use-cases.md) — **five recipes with real JSON in and JSON out.**
 - [Protocol](protocol.md) — the frozen `POST /v1/systemone` contract.
 - [Architecture](architecture.md) — components, flows, backend strategy.
 - [CLI reference](cli.md) — every `tachyone` flag with copy-paste examples.

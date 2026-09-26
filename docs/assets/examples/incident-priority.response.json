@@ -1,0 +1,26 @@
+{
+  "model": "tachyone-latest",
+  "answers": {
+    "priority": {
+      "type": "score",
+      "score": 1.607,
+      "legend": {
+        "0": "P4 low",
+        "1": "P3 moderate",
+        "2": "P2 major",
+        "3": "P1 critical"
+      },
+      "probabilities": {
+        "0": 0.1266,
+        "1": 0.2508,
+        "2": 0.5113,
+        "3": 0.1113
+      },
+      "confidence": 0.5113
+    }
+  },
+  "usage": {
+    "input_tokens": 31,
+    "output_tokens": 1
+  }
+}

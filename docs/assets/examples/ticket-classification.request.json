@@ -1,0 +1,16 @@
+{
+  "state": "Since this morning the checkout page returns a 502 error for every card payment.",
+  "model": "tachyone-latest",
+  "questions": {
+    "category": {
+      "type": "choice",
+      "instructions": "Which category best describes this support ticket?",
+      "criteria": {
+        "technical": "bugs, outages, system errors",
+        "billing": "invoices, payments, refunds",
+        "sales": "pricing, new contracts",
+        "other": "everything else"
+      }
+    }
+  }
+}

@@ -74,6 +74,9 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets:
+      base_path: ["docs"]
+      check_paths: true
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.details
@@ -85,6 +88,7 @@ nav:
   - Home: index.md
   - Overview: overview.md
   - Compare: compare.md
+  - Use cases: use-cases.md
   - Protocol: protocol.md
   - Architecture: architecture.md
   - Cookbook: cookbook-handoff.md

@@ -1,0 +1,22 @@
+{
+  "state": {
+    "service": "payments-api",
+    "symptom": "HTTP 502 on /charge since 14:05 UTC",
+    "blast_radius": "all card payments in EU region",
+    "detected_by": "synthetic monitor",
+    "workaround": "PayPal checkout still works"
+  },
+  "model": "tachyone-latest",
+  "questions": {
+    "priority": {
+      "type": "score",
+      "instructions": "Assign the incident priority.",
+      "criteria": [
+        "P4 low",
+        "P3 moderate",
+        "P2 major",
+        "P1 critical"
+      ]
+    }
+  }
+}

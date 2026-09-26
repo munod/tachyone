@@ -1,0 +1,16 @@
+{
+  "state": "Hi, we were charged twice for the March invoice and finance needs the duplicate reversed before the end of the quarter. Invoice number INV-2291.",
+  "model": "tachyone-latest",
+  "questions": {
+    "queue": {
+      "type": "choice",
+      "instructions": "Which queue should receive this ticket first?",
+      "criteria": {
+        "billing-queue": "invoices, payments, refunds",
+        "technical-queue": "bugs, outages, system errors",
+        "sales-queue": "pricing, new contracts",
+        "general-queue": "everything else"
+      }
+    }
+  }
+}

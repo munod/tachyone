@@ -1,0 +1,20 @@
+{
+  "model": "tachyone-latest",
+  "answers": {
+    "queue": {
+      "type": "choice",
+      "choice": "billing-queue",
+      "probabilities": {
+        "billing-queue": 1.0,
+        "technical-queue": 0.0,
+        "sales-queue": 0.0,
+        "general-queue": 0.0
+      },
+      "confidence": 1.0
+    }
+  },
+  "usage": {
+    "input_tokens": 36,
+    "output_tokens": 1
+  }
+}

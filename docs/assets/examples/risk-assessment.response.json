@@ -1,0 +1,28 @@
+{
+  "model": "tachyone-latest",
+  "answers": {
+    "risk_level": {
+      "type": "score",
+      "score": 1.718,
+      "legend": {
+        "0": "low",
+        "1": "medium",
+        "2": "high"
+      },
+      "probabilities": {
+        "0": 0.0142,
+        "1": 0.2539,
+        "2": 0.7319
+      },
+      "confidence": 0.7319
+    },
+    "needs_compliance_review": {
+      "type": "noul",
+      "noul": 0.7266
+    }
+  },
+  "usage": {
+    "input_tokens": 53,
+    "output_tokens": 2
+  }
+}

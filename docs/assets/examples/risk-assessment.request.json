@@ -1,0 +1,23 @@
+{
+  "state": "A partner asked us to move the settlement account to a new IBAN they sent by email, claiming their bank changed overnight. They want it done before the weekend and asked us not to involve the usual approval flow.",
+  "model": "tachyone-latest",
+  "questions": {
+    "risk_level": {
+      "type": "score",
+      "instructions": "How risky is this request?",
+      "criteria": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "needs_compliance_review": {
+      "type": "noul",
+      "instructions": "Does this request require a compliance review?",
+      "criteria": {
+        "true": "payment redirection, social engineering or policy bypass",
+        "false": "routine operation inside the normal approval flow"
+      }
+    }
+  }
+}
