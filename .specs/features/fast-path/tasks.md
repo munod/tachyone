@@ -1,7 +1,7 @@
 # Fast Path (TileLang / CUDA graphs) — Tasks
 
 **Spec:** `.specs/features/fast-path/spec.md`
-**Status:** In progress
+**Status:** Done (implemented, measured, released in `v0.2.0`)
 
 ---
 

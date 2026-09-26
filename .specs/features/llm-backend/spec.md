@@ -1,6 +1,6 @@
 # LLM Backend & Serving Specification
 
-**Phase:** M2 (Fase 2)
+**Phase:** M2 (Phase 2)
 **Status:** Implemented (M2 complete)
 **Related docs:** `docs/architecture.md`, `docs/protocol.md`, `docs/testing.md`
 

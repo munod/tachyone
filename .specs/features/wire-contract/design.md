@@ -1,7 +1,7 @@
 # Wire Contract & Primitives Design
 
 **Spec:** `.specs/features/wire-contract/spec.md`
-**Status:** Draft
+**Status:** Implemented
 
 ---
 
@@ -30,7 +30,7 @@ graph TD
 ### primitives.py
 
 - **Purpose:** Define the three question primitives and their answer types with pydantic v2.
-- **Location:** `src/jeba/primitives.py` (planned)
+- **Location:** `src/jeba/primitives.py`
 - **Interfaces:**
   - `Question = NoulQuestion | ChoiceQuestion | ScoreQuestion` (discriminated union on `type`)
   - `ChoiceAnswer(type, choice, probabilities: dict[str, float], confidence: float)`
@@ -44,7 +44,7 @@ graph TD
 ### wire.py
 
 - **Purpose:** Model and validate the Jev request/response envelope and map it to backends.
-- **Location:** `src/jeba/wire.py` (planned)
+- **Location:** `src/jeba/wire.py`
 - **Interfaces:**
   - `SystemOneRequest(state: str | dict | list, model: str, questions: dict[str, Question])`
   - `SystemOneResponse(model: str, answers: dict[str, Answer], usage: Usage)`
@@ -56,7 +56,7 @@ graph TD
 ### backends/base.py (seam)
 
 - **Purpose:** Stable interface so `wire.py` never knows which engine answers.
-- **Location:** `src/jeba/backends/base.py` (planned)
+- **Location:** `src/jeba/backends/base.py`
 - **Interfaces:**
   - `class Backend(Protocol): async def predict(self, questions, *, state, model, return_details=False) -> PredictionResult`
   - `PredictionResult(answers: dict[str, Answer], usage: Usage)`

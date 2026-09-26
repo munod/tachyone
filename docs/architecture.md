@@ -76,14 +76,14 @@ graph TB
 
 ---
 
-## Planned repository structure
+## Repository structure
 
 ```text
 projeto_jeba/
 ├── pyproject.toml            # uv project, py>=3.12,<3.13, extras, entry points
 ├── uv.lock                   # committed lockfile
 ├── .python-version           # 3.12
-├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE (Apache-2.0)
+├── AGENTS.md  README.md  CONTRIBUTING.md  CHANGELOG.md  LICENSE (Apache-2.0)
 ├── src/jeba/
 │   ├── __init__.py           # public SDK surface
 │   ├── primitives.py         # Choice / Score / Noul + Answer models (pydantic v2)
@@ -91,12 +91,19 @@ projeto_jeba/
 │   ├── agent.py              # single forward pass, batching, sort_by_length
 │   ├── router.py             # script/language → checkpoint selection + lifecycle
 │   ├── calibration.py        # confidence derivation + temperature fitting
+│   ├── handoff.py            # assess()/assess_response() System-2 thresholding
+│   ├── hooks.py              # additive lifecycle hooks (never change the wire shape)
+│   ├── presets.py            # named question presets + schema helpers
 │   ├── schemas.py            # JSON Schema / pydantic → questions (decide())
+│   ├── client.py             # SDK client for /v1/systemone
 │   ├── cli.py                # `jeba` entry point + presets
 │   ├── serve.py              # FastAPI: /v1/systemone, /predict, /predict/batch, /health
 │   ├── config.py             # env-var configuration + validation
+│   ├── fast.py               # optional CUDA-graph fast path (JEBA_FAST)
+│   ├── telemetry.py          # no-op opt-out guard (ADR-0011)
 │   ├── backends/
 │   │   ├── base.py           # Backend Protocol + PredictionResult
+│   │   ├── fake.py           # model-free backend for tests/CI
 │   │   ├── encoder.py        # local ModernBERT/mmBERT + 3 heads
 │   │   ├── llm.py            # structured outputs of existing LLMs
 │   │   └── onnx.py           # onnxruntime backend
@@ -106,12 +113,14 @@ projeto_jeba/
 ├── training/
 │   ├── generate_data.py      # synthetic JSONL generation
 │   ├── finetune_rlcd.py      # LoRA/QLoRA + RLCD proper scoring
-│   └── fit_calibration.py    # temperature / ECE fitting
-├── tests/                    # contract, unit, integration, conditional-by-extra
-├── benchmarks/               # MASSIVE / XNLI / typed-decisions harness
-├── examples/                 # runnable examples (added at implementation time)
-├── docker/                   # Dockerfile + compose
-└── .github/workflows/ci.yml  # ruff + pyright + pytest
+│   ├── fit_calibration.py    # temperature / ECE fitting
+│   ├── predict.py            # batch predictions for calibration
+│   ├── evaluate.py           # accuracy / ECE / latency report
+│   └── package_hf.py         # Hub packaging (README, config, weights)
+├── tests/                    # contract, unit, integration, e2e, conditional-by-extra
+├── benchmarks/               # fast-path + report harness (public probes pending)
+├── docker/                   # Dockerfile + compose.yaml
+└── .github/workflows/ci.yml  # ruff + pyright + pytest + offline import + docs
 ```
 
 **pip extras:** `serve`, `fast`, `onnx`, `langchain`, `mcp`, `train`.
@@ -160,7 +169,7 @@ projeto_jeba/
 - **Interfaces:** implements `Backend`; provider selection via config.
 - **Dependencies:** optional extra (provider SDK/HTTP client).
 - **Boundary:** Never required by core; no key/network needed unless selected.
-- **Open:** OD-1 provider abstraction surface.
+- **Resolved:** OD-1 provider abstraction surface (ADR-0008).
 
 ### `backends/encoder.py` + `agent.py` (Phase 3)
 
@@ -220,14 +229,17 @@ projeto_jeba/
 ### `cli.py`
 
 - **Purpose:** `jeba "text" --preset triage --predict` and `--serve`.
-- **Interfaces:** presets `router`, `guard`, `moderation`, `triage`, `email`.
-- **Dependencies:** argparse/typer (decided at M0); core.
+- **Interfaces:** presets `router`, `guard`, `moderation`, `triage`, `email`; flags `--predict`,
+  `--serve`, `--preset`, `--backend`, `--model`, `--threshold`, `--list-presets`.
+- **Dependencies:** argparse (stdlib); core.
 
 ### `config.py`
 
 - **Purpose:** Env-var configuration, single source of truth.
 - **Interface (env vars):** `JEBA_HOST`, `JEBA_PORT`, `JEBA_DEVICE`, `JEBA_PRELOAD`,
-  `JEBA_MODELS`, `JEBA_THREADS`, `JEBA_API_KEY`, `JEBA_BACKEND`.
+  `JEBA_MODELS`, `JEBA_MODELS_DIR`, `JEBA_ADAPTERS`, `JEBA_OFFLINE`, `JEBA_FAST`, `JEBA_THREADS`,
+  `JEBA_API_KEY`, `JEBA_BACKEND`, `JEBA_LLM_BASE_URL`, `JEBA_LLM_API_KEY`, `JEBA_LLM_MODEL`,
+  `JEBA_LLM_TIMEOUT`, `JEBA_LLM_RETRIES` (full table under [Configuration](#configuration)).
 - **Boundary:** Never logs secrets; validates at startup.
 
 ---
@@ -266,15 +278,19 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     Req["Request arrives"] --> Cfg{"JEBA_BACKEND?"}
-    Cfg -->|"encoder (default, offline)"| Enc["EncoderBackend"]
-    Cfg -->|"llm"| LLM["LLMBackend"]
+    Cfg -->|"llm (default; needs JEBA_LLM_*)"| LLM["LLMBackend"]
+    Cfg -->|"encoder (local, offline once cached)"| Enc["EncoderBackend"]
     Cfg -->|"onnx"| ONNX["OnnxBackend"]
+    Cfg -->|"fake (model-free, tests/CI)"| Fake["FakeBackend"]
     Enc --> Wire["wire.answer -> SystemOneResponse"]
     LLM --> Wire
     ONNX --> Wire
+    Fake --> Wire
 ```
 
-All three paths must pass the same contract tests. The wire output is identical in shape.
+All four paths must pass the same contract tests. The wire output is identical in shape.
+ADR-0004 intended the local encoder to become the default from M3; that switch was never made —
+`DEFAULT_BACKEND` is still `llm` (see `docs/adr/README.md` → Implementation notes).
 
 ---
 
@@ -331,7 +347,8 @@ See `docs/adr/ADR-0002-pluggable-backend-phasing.md`.
 - `confidence` for `choice`/`score` is a monotone function of the distribution (typically the
   selected mass). `noul` returns a single probability with no separate confidence.
 - Temperature fitting minimizes ECE on a held-out calibration split.
-- `return_details=True` exposes full probabilities as an additive extension.
+- Distributions are always part of the canonical answer; `return_details=True` is accepted for
+  API stability and is currently a no-op (no request flag or SDK argument exposes it).
 - ECE target and method: `docs/training.md`.
 
 ---
@@ -362,9 +379,9 @@ contract (`tests/test_hooks_api.py` in Laya is the inspiration for jeba's hook c
 | Invalid key | auth dependency | 401 |
 | Malformed body | pydantic validation | 422 |
 | Too many options / bad levels | primitive validators | 422 |
-| Rate limit | server returns 429; SDK backs off | 429 |
-| Overload | server returns 529; SDK backs off | 529 |
-| Backend/internal failure | log + non-contract 500 body | 500 (open shape, OD-5) |
+| Rate limit | upstream provider pass-through (`llm` backend); SDK backs off | 429 |
+| Overload | upstream provider pass-through (`llm` backend); SDK backs off | 529 |
+| Backend/internal failure | `wire.BackendError` (code `internal_error`) | 500 |
 | Hook raises | `on_error`, continue | none |
 | Extra missing | import-guard with actionable message | runtime error naming extra |
 
@@ -378,16 +395,23 @@ All configuration via environment variables (prefix `JEBA_`), documented in `con
 | --- | --- | --- |
 | `JEBA_HOST` | `127.0.0.1` | Server bind host |
 | `JEBA_PORT` | `8000` | Server port |
-| `JEBA_DEVICE` | `auto` | `cpu` / `cuda` / `auto` |
-| `JEBA_BACKEND` | `encoder` | `encoder` / `llm` / `onnx` |
+| `JEBA_DEVICE` | `auto` | `auto` / `cpu` / `cuda` / `mps` |
+| `JEBA_BACKEND` | `llm` | `llm` / `encoder` / `onnx` / `fake` (ADR-0004 intended `encoder` from M3; never switched — see `docs/adr/README.md`) |
 | `JEBA_MODELS` | built-in ids | Available checkpoints |
 | `JEBA_MODELS_DIR` | `~/.cache/jeba/models` | Local weights cache (see ADR-0010) |
 | `JEBA_ADAPTERS` | built-in adapters | `id=repo|path` overrides; empty value disables the adapter |
-| `JEBA_OFFLINE` | unset | `1` = cache-only, no network (honors `HF_HUB_OFFLINE`) |
+| `JEBA_OFFLINE` | unset | `1` = cache-only, no network (`local_files_only` on every Hub call) |
 | `JEBA_PRELOAD` | empty | Checkpoints to load at startup |
 | `JEBA_FAST` | unset | `1` = opt into the CUDA-graph fast path when a CUDA device is present |
-| `JEBA_THREADS` | auto | CPU thread budget |
+| `JEBA_THREADS` | `0` (runtime decides) | CPU thread budget |
 | `JEBA_API_KEY` | unset | Enables Bearer auth; unset = auth disabled (dev only) |
+| `JEBA_LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible endpoint for the `llm` backend |
+| `JEBA_LLM_API_KEY` | unset (falls back to `OPENAI_API_KEY`) | Provider key for the `llm` backend |
+| `JEBA_LLM_MODEL` | `gpt-4o-mini` | Model id for the `llm` backend |
+| `JEBA_LLM_TIMEOUT` | `30.0` | Per-request timeout (s) |
+| `JEBA_LLM_RETRIES` | `2` | Retry count (0–10) |
+| `JEBA_TELEMETRY` | reserved | No telemetry exists (ADR-0011); the variable is a reserved no-op |
+| `DO_NOT_TRACK` | unset | Honored unconditionally; `telemetry_enabled()` is always `False` |
 
 No secrets are committed to the repository.
 
@@ -398,5 +422,6 @@ No secrets are committed to the repository.
 **Decided (locked):** Jev drop-in; pluggable backend + phase order; multilingual mmBERT from M3;
 local-first/offline core; Apache-2.0 + opt-out telemetry; Python 3.12 + uv.
 
-**Open:** OD-1 LLM provider surface · OD-2 telemetry default · OD-3 weights distribution ·
-OD-4 ONNX vs TileLang sequencing · OD-5 non-contract extension/500 schema.
+**Resolved (all five):** OD-1 LLM provider surface (ADR-0008) · OD-2 telemetry default (ADR-0011) ·
+OD-3 weights distribution (ADR-0010) · OD-4 ONNX vs TileLang sequencing (ADR-0012) ·
+OD-5 non-contract extension/500 schema (ADR-0009). See `.specs/project/STATE.md`.

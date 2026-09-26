@@ -1,6 +1,6 @@
 # Training & Calibration Specification
 
-**Phase:** M4 (Fase 4)
+**Phase:** M4 (Phase 4)
 **Status:** Implemented (scripts + tests; full RTX 3060 training run done and numbers published;
 per-language ECE target still open, see `.specs/features/multilingual-quality/`)
 **Related docs:** `docs/training.md`, `docs/adr/ADR-0005-encoder-rlcd.md`

@@ -1,6 +1,6 @@
 # Local Encoder Backend Specification
 
-**Phase:** M3 (Fase 3)
+**Phase:** M3 (Phase 3)
 **Status:** Implemented (M3 complete; trained/calibrated heads land in M4)
 **Related docs:** `docs/architecture.md`, `docs/training.md`, `docs/adr/ADR-0005-encoder-rlcd.md`
 

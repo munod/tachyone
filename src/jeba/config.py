@@ -14,7 +14,9 @@ from dataclasses import dataclass, field
 BACKENDS = ("llm", "encoder", "onnx", "fake")
 DEVICES = ("auto", "cpu", "cuda", "mps")
 
-#: Default backend for M2. It flips to ``encoder`` in M3 once the local engine lands.
+#: Default backend for M2. ADR-0004 intended the flip to ``encoder`` once the local engine landed
+#: in M3; the switch was never made, so the default path still needs ``JEBA_LLM_*`` credentials.
+#: Changing this is a behaviour change, not a typo — see ``docs/adr/README.md`` (notes).
 DEFAULT_BACKEND = "llm"
 
 

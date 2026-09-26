@@ -1,7 +1,8 @@
 # Roadmap
 
 **Current Milestone:** Complete (M0–M6)
-**Status:** M0–M6 COMPLETE; external step remaining: GPU training run + published numbers/weights
+**Status:** M0–M6 COMPLETE; GPU training run done, numbers + adapters published (`v0.3.0`).
+Open items live in `BACKLOG.md` (B-1 `nl`/`de`/`fr`/`it` ECE, B-7 public probes).
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -9,7 +10,7 @@ an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features liv
 
 ---
 
-## M0 — Bootstrap (Fase 0)
+## M0 — Bootstrap (Phase 0)
 
 **Goal:** A reproducible Python 3.12 + uv project skeleton with quality gates and license,
 so every later change can be linted, typed, and tested.
@@ -30,7 +31,7 @@ all pass (even if tests are trivial), and CI runs the same on push/PR.
 
 ---
 
-## M1 — Wire Contract (Fase 1)
+## M1 — Wire Contract (Phase 1)
 
 **Goal:** Freeze the Jev-compatible data contract before any backend exists.
 **Exit:** golden contract tests pass for all primitive types and error shapes; a fake
@@ -41,11 +42,11 @@ deterministic backend lets us validate the full request/response cycle offline.
 **Primitives & wire** - DONE
 - `primitives.py`: `Choice` / `Score` / `Noul` pydantic models + `Answer` types
 - `wire.py`: request/response models with exact Jev field names, limits, and errors
-- Contract tests: offsets, 255-option cap, 2–10 score levels, 401/422/429/529
+- Contract tests: envelope shape and field names, 255-option cap, 2–10 score levels, 401/422/429/529
 
 ---
 
-## M2 — LLM Backend + Serving (Fase 2)
+## M2 — LLM Backend + Serving (Phase 2)
 
 **Goal:** End-to-end system: a real HTTP server answering `/v1/systemone` via structured
 outputs from existing LLMs, usable by existing Jev clients.
@@ -64,7 +65,7 @@ backend is swappable behind a stable interface.
 
 ---
 
-## M3 — Local Encoder Backend (Fase 3)
+## M3 — Local Encoder Backend (Phase 3)
 
 **Goal:** Offline encoder backend (ModernBERT/mmBERT + 3 heads) with single forward pass,
 language routing, and calibrated confidence.
@@ -83,7 +84,7 @@ script/language; confidence reflects probability distribution.
 
 ---
 
-## M4 — Training & Calibration (Fase 4)
+## M4 — Training & Calibration (Phase 4)
 
 **Goal:** Reproducible data generation, LoRA/QLoRA fine-tuning, and RLCD proper-scoring
 calibration within RTX 3060 12GB budget.
@@ -95,12 +96,13 @@ calibration within RTX 3060 12GB budget.
 - `training/generate_data.py` synthetic JSONL; `training/finetune_rlcd.py`
 - `training/fit_calibration.py` temperature/ECE fitting
 
-**Evaluation** - DONE
-- Accuracy/ECE/latency harness; MASSIVE / XNLI / typed-decisions probes
+**Evaluation** - DONE (harness) / OPEN (public probes)
+- Accuracy/ECE/latency harness shipped (`training/evaluate.py`, `benchmarks/`)
+- MASSIVE / XNLI / typed-decisions probes **not yet run or published**
 
 ---
 
-## M5 — Ecosystem & Acceleration (Fase 5)
+## M5 — Ecosystem & Acceleration (Phase 5)
 
 **Goal:** Practical integrations and speed paths without touching the core contract.
 **Exit:** ONNX backend, MCP stdio server, LangChain adapter, Docker image all work.
@@ -114,15 +116,16 @@ calibration within RTX 3060 12GB budget.
 
 ---
 
-## M6 — Proof & Release (Fase 6)
+## M6 — Proof & Release (Phase 6)
 
 **Goal:** Public credibility: benchmarks, documentation site, and a Hugging Face release.
 **Exit:** reproducible benchmark report, docs site published, weights + model card released.
 
 ### Features
 
-**Benchmarks & release** - DONE
-- `benchmarks/` comparable to MASSIVE / XNLI / typed-decisions
+**Benchmarks & release** - DONE (synthetic report) / OPEN (public probes)
+- `benchmarks/` publishes a reproducible synthetic report; MASSIVE / XNLI / typed-decisions
+  comparisons not yet published
 - Docs site, model card, GitHub release
 
 ---

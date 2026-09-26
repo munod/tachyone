@@ -11,7 +11,7 @@ calibrated structured decisions without sending data to a hosted LLM API.
 **Solves:** Hosted "System One" decision APIs are fast but remote, closed, and paid per
 call. Autoregressive LLMs are local-capable but slow, expensive, and poorly calibrated
 for atomic decisions. jeba gives you the Jev contract you already build against, running
-on your own box, with an optional LLM backend today and a trained encoder backend next.
+on your own box, with an optional LLM backend and a trained encoder backend.
 
 > Status: **implemented and released (`v0.3.0`)**. All milestones M0–M6 are complete, plus the
 > post-M6 work: multilingual quality (B-1, LoRA rank 16 → 64), CUDA-graph fast path (B-2),
@@ -92,7 +92,8 @@ onnxruntime (`onnx`), model-context-protocol (`mcp`), langchain-core (`langchain
 - **Decided (locked, do not reopen):** phased strategy (LLM now, encoder later);
   Jev drop-in with additive extensions; multilingual from early (mmBERT-base); local-first;
   Python 3.12 + uv + ruff/pytest/pyright + GitHub Actions; Apache-2.0.
-- **Open (see STATE.md):** exact LLM provider abstraction surface, telemetry default,
-  packaging of model weights, ONNX/TileLang sequencing.
+**Resolved (see STATE.md):** LLM provider abstraction (ADR-0008), telemetry default (ADR-0011),
+weights distribution (ADR-0010), ONNX/TileLang sequencing (ADR-0012), extension/500 schema
+(ADR-0009).
 
 See `docs/overview.md` for the full vision and `docs/roadmap.md` for milestones.

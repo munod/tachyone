@@ -1,6 +1,6 @@
 # Wire Contract & Primitives Specification
 
-**Phase:** M0–M1 (Fase 0–1)
+**Phase:** M0–M1 (Phase 0–1)
 **Status:** Implemented (M1 complete; contract frozen)
 **Related docs:** `docs/protocol.md`, `docs/architecture.md`, `docs/adr/ADR-0001-jev-drop-in-protocol.md`
 

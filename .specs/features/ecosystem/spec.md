@@ -1,7 +1,7 @@
 # Ecosystem & Acceleration Specification
 
-**Phase:** M5–M6 (Fase 5–6)
-**Status:** Implemented and released (`v0.2.0`). Acceleration/integrations/packaging done;
+**Phase:** M5–M6 (Phase 5–6)
+**Status:** Implemented and released (`v0.3.0`). Acceleration/integrations/packaging done;
 benchmark report + docs site shipped with real numbers; HF adapters published
 (`munod/jeba-en`, `munod/jeba-multi`).
 **Related docs:** `docs/architecture.md`, `docs/roadmap.md`, `docs/adr/ADR-0006-license-telemetry.md`

@@ -9,9 +9,11 @@ Compact, high-signal guide for agents and contributors working in this repositor
 confidence/calibration, batched single-pass inference, hooks, an optional fast path, FastAPI
 serving, an SDK, a CLI, preset/schema helpers, an MCP stdio server, a LangChain adapter, and a
 no-op telemetry guard. `training/` has the full data → LoRA/RLCD → calibration → evaluation
-pipeline; `benchmarks/` renders a reproducible report; `docs/` builds an mkdocs site. The only
-remaining external step is the RTX 3060 training run plus publishing measured numbers/weights
-(see `docs/release.md`). Current state and blockers: `.specs/project/STATE.md`.
+pipeline; `benchmarks/` renders a reproducible report; `docs/` builds an mkdocs site. The RTX 3060
+training run is done and the adapters plus measured numbers are published (Releases `v0.2.0` and
+`v0.3.0`, Hub `munod/jeba-en` / `munod/jeba-multi`). Open quality work is tracked in
+`.specs/project/BACKLOG.md` (worst: `nl` per-language ECE, and the public probes in **B-7**).
+Current state and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
@@ -62,10 +64,11 @@ for a model-free run, and `JEBA_BACKEND=encoder` for the local encoder. The enco
 weights need the `train` extra (`uv sync --extra train`); the decision math and all tests work
 without it. Weights are fetched on demand (ADR-0010); tests use an injected fake encoder.
 
-Training lives in `training/` (not installed): `uv run python -m training.generate_data --out data/train.jsonl`,
+Training lives in `training/` (not installed):
+`uv run python -m training.generate_data --languages en --per-type 3000 --out data/train_en.jsonl`,
 `uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json --dry-run`,
-`uv run python -m training.fit_calibration --calibration data/preds.jsonl --out temperature.json`,
-`uv run python -m training.evaluate --data data/eval.jsonl --out report.json`. Heavy modules
+`uv run python -m training.fit_calibration --calibration data/preds_en.jsonl --out temperature.json`,
+`uv run python -m training.evaluate --data data/eval_en.jsonl --out report.json`. Heavy modules
 (torch/transformers/peft) are imported lazily behind the `train` extra.
 
 Integration extras are similarly lazy: `JEBA_BACKEND=onnx` needs `--extra onnx`; `jeba-mcp-server`
@@ -75,7 +78,7 @@ needs `--extra mcp`; `jeba.integrations.langchain` needs `--extra langchain`; th
 Docs site: `uv sync --group docs && uv run mkdocs build --strict` (CI has a dedicated job).
 Benchmarks: `uv run python -m benchmarks.report --entry encoder=<report.json> --out benchmarks/report.md`.
 
-## Directory boundaries (planned)
+## Directory boundaries
 
 | Path | Belongs here | Does NOT belong here |
 | --- | --- | --- |
@@ -110,8 +113,8 @@ Benchmarks: `uv run python -m benchmarks.report --entry encoder=<report.json> --
   for Jev compatibility (ADR-0001).
 - **Do not add a required network call** to the default path (ADR-0004).
 - **RTX 3060 12GB** is the training envelope: LoRA/QLoRA only, no full fine-tuning (ADR-0005).
-- **Open decisions** (OD-1..OD-5) are listed in `.specs/project/STATE.md`; do not silently
-  resolve them in code — raise them.
+- **Decisions OD-1..OD-5** are all **resolved** — see `.specs/project/STATE.md` for each one
+  and the ADR that records it. Do not silently reopen them in code; raise them first.
 
 ## Workflow
 
