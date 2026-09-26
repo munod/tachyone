@@ -1,7 +1,8 @@
 # Input-Noise Robustness — Tasks
 
 **Spec:** `.specs/features/input-noise/spec.md`
-**Status:** B4-T1–T3 done; B4-T4 (GPU retrain) pending the RTX 3060 run.
+**Status:** B4-T1–T4 done and measured on the RTX 3060. Result is neutral-negative: the released
+adapters are already noise-robust and the augmented adapter did not beat them (see spec).
 
 ---
 
@@ -38,8 +39,11 @@ confused with clean accuracy; keep public-probe evaluation unmodified.
 **Tests:** `tests/test_docs_site.py` · **Gate:** full.
 **Commit:** `docs: document input-noise augmentation and splits`.
 
-## B4-T4: GPU retrain and publish (blocked on GPU)
+## B4-T4: GPU retrain and publish
 
+**Status:** Done. Retrained with `noise_rate=0.15` on the RTX 3060 and measured clean vs noisy for
+the released and noise-augmented adapters. Result neutral-negative (released adapters already
+robust); recorded honestly in `benchmarks/report.md` and the model card.
 **What:** Retrain with noise, evaluate clean vs noisy, and record the numbers.
 **Where:** `benchmarks/report.md`, `training/configs/*`, `CHANGELOG.md`.
 **Depends on:** B4-T3 · **Requirement:** TRAIN-05, TRAIN-08.

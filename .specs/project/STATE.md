@@ -11,10 +11,11 @@ overall 0.721 → **0.781**; per-language ECE still above 0.05 for `es`/`nl`/`de
 remains partial — NFR-C06 open). **B-3 (confidence thresholding / System-2 handoff) done**:
 `calibration.py` gains normalized `entropy`/`margin`, `handoff.py` exposes `assess`/
 `assess_response`, and the CLI appends a sibling `handoff` object via `--threshold` without
-changing the canonical response. **B-4 (input-noise robustness) code done**: seeded opt-in
-`noise_rate` in `generate_data.py` plus a clean/noisy split in `evaluate.py` (`report["noisy"]`);
-the RTX 3060 retrain and measured comparison remain. Next ready: B-5 (multi-domain coverage,
-Idea).
+changing the canonical response. **B-4 (input-noise robustness) done and measured on the RTX
+3060**: seeded opt-in `noise_rate` in `generate_data.py` plus a clean/noisy split in `evaluate.py`
+(`report["noisy"]`); the released adapters are already robust (EN 0.763→0.760, multi 0.702→0.701)
+and the noise-augmented adapter did not beat them (ECE 0.090 vs 0.033), so it is not released.
+Next ready: B-5 (multi-domain coverage, Idea).
 
 ## Milestone Status
 

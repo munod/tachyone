@@ -6,7 +6,27 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Input-noise robustness (B-4):** `training/generate_data.py` gains a seeded, opt-in
+  `noise_rate` (char swap/delete, accent strip, casing flip, terminal-punctuation drop) applied to
+  the `state` only; `training/evaluate.py --noise-rate` reports a clean vs noisy split
+  (`report["noisy"]`); `benchmarks/report.py` renders it. `TRAIN-08`.
+- **Confidence thresholding / System-2 handoff (B-3):** `normalized_entropy` and `margin` in
+  `calibration.py`; `handoff.py` with `assess`/`assess_response`; CLI `--threshold` appends a
+  sibling `handoff` object. `CAL-06`.
+
+### Fixed
+
+- `training/evaluate.py` now honors `JEBA_ADAPTERS` (and other env settings) when building the
+  encoder backend, so a local adapter can be evaluated.
+
+### Changed
+
+- Retrained end-to-end on the RTX 3060; refreshed `benchmarks/report.md` (English 0.763 / ECE
+  0.061; multilingual 0.702 / ECE 0.033) and the model card. The released adapters are already
+  robust to the injected noise (EN 0.763→0.760, multi 0.702→0.701); a noise-augmented adapter
+  scored 0.719/0.719 but calibrated worse (ECE 0.090) and is not released.
 
 ## [0.2.0] - 2026-09-24
 

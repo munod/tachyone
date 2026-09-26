@@ -1,7 +1,8 @@
 # Input-Noise Robustness Specification
 
 **Phase:** Post-M6 (B-4, `.specs/project/BACKLOG.md`)
-**Status:** Implemented (code + tests landed; GPU retrain/publish pending).
+**Status:** Implemented and measured on the RTX 3060. The released adapters are already robust to
+the injected noise; the noise-augmented adapter did not beat them (see Success Criteria).
 **Related docs:** `docs/training.md` (§1), `STATE.md` L-003, `docs/requirements/functional.md`
 (TRAIN-01, TRAIN-08), `.specs/features/multilingual-quality/spec.md`.
 
@@ -20,7 +21,7 @@ confusing it with clean-set regressions.
       accent stripping, casing/punctuation drops) applied to a configurable fraction of records.
 - [x] Preserve byte-for-byte determinism: same seed + config → identical JSONL.
 - [x] Keep clean and noisy evaluation separate and report both.
-- [ ] Retrain and compare accuracy/ECE on both splits (GPU step; reported honestly).
+- [x] Retrain and compare accuracy/ECE on both splits (GPU step; reported honestly).
 
 ## Out of Scope
 
@@ -87,7 +88,8 @@ the model stops relying on clean templates.
 ## Success Criteria
 
 - [x] Noise is seeded, reproducible, and opt-in via a config flag (existing determinism tests pass).
-- [ ] Noisy-split accuracy improves vs baseline with no clean-split regression beyond tolerance
-      (GPU run pending).
-- [ ] Both splits reported in `benchmarks/report.md` (or honestly reported if the GPU run is
-      pending).
+- [~] Noisy-split accuracy improves vs baseline: **not met / neutral-negative.** The released
+      clean-trained adapters are already robust (English 0.763→0.760, multilingual 0.702→0.701 on
+      the noisy view). The noise-augmented multilingual adapter scored 0.719 on both views but
+      calibrated worse (ECE 0.090 vs 0.033) and regressed on `de`/`nl`, so it is not released.
+- [x] Both splits reported in `benchmarks/report.md`.

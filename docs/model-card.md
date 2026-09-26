@@ -71,14 +71,22 @@ checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA + choice head) | 0.781 | 0.077 | 22.9 |
-| Multilingual (mmBERT-base + LoRA + choice head) | 0.711 | 0.073 | 12.4 |
+| English (ModernBERT-large + LoRA + choice head) | 0.763 | 0.061 | 22.6 |
+| Multilingual (mmBERT-base + LoRA + choice head) | 0.702 | 0.033 | 13.3 |
 
-Per primitive (English): `choice` 0.708, `noul` 0.744, `score` 0.892; (multilingual): `choice`
-0.734, `noul` 0.716, `score` 0.682. The localized, per-record-RNG data (B-1) lifted multilingual
+Per primitive (English): `choice` 0.834, `noul` 0.744, `score` 0.712; (multilingual): `choice`
+0.454, `noul` 0.738, `score` 0.914. The localized, per-record-RNG data (B-1) lifted multilingual
 `choice` from 0.40 to 0.73 and English overall from 0.72 to 0.78. Per-language calibration for a
-few multilingual languages (`es`, `nl`, `de`) and multilingual `score` remain the next targets.
+few multilingual languages (`es` 0.170, `de` 0.077, `nl` 0.045) and multilingual `choice` remain
+the next targets (NFR-C06 open).
 The CUDA-graph fast path (`JEBA_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
+
+**Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
+states) English drops only 0.763 → 0.760 and multilingual 0.702 → 0.701, so the released adapters
+are already robust to this noise model. A noise-augmented multilingual adapter (trained on the same
+data with `noise_rate=0.15`) reached 0.719 on both views but calibrated worse (ECE 0.090 vs 0.033)
+and regressed on `de`/`nl`, so it is **not** the released adapter; see `benchmarks/report.md`.
+
 Full tables and environment are in
 [`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
 
