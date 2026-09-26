@@ -172,20 +172,54 @@ scores 0.705 there. Domain coverage, not architecture, is the binding constraint
 `docs/compare.md` §3.
 
 **Plan.**
-1. Generalize the data model so `choice` criteria per domain come from committed data, rather
-   than a single hard-coded team set.
-2. Author domain lexicons/phrases across the existing 7 languages (or a reduced set first).
-3. Report per-domain accuracy/ECE and gate on the worst domain.
+
+1. **Refactor the generator without changing what already exists.** `DataConfig` gains
+   `domains: tuple[str, ...] = ("support",)` — the default keeps today's behaviour. Per-domain
+   content moves to committed data (`training/data/domains/<domain>.json`: option labels +
+   descriptions, entities, phrase banks, score levels, `noul` criteria), reusing the current
+   lexicon structure. Records gain a `domain` field.
+   **Hard guarantee:** existing configs (`data.json`, `data_multi.json`, `data_noisy.json`, the
+   B-9/B-4 runs) must produce **byte-identical** output — a hash regression test, because L-003 and
+   B-4 already cost days to a determinism assumption that did not hold.
+2. **Five domains**, chosen to line up with the five recipes in `docs/use-cases.md`:
+
+   | Domain | `choice` | `score` | `noul` |
+   | --- | --- | --- | --- |
+   | `support` (exists) | team | urgency, frustration | churn risk |
+   | `ecommerce` | order status / queue | priority | refund due? |
+   | `agent_tools` | tool or model tier | complexity | needs tools? |
+   | `documents` | document type | confidence | needs human review? |
+   | `voice` | device / action | confidence | is it a command? |
+3. **Scope: English first (`B-5a`), multilingual second (`B-5b`).** Localizing four new domain
+   lexicons is the human cost; 7 languages at once multiplies it. `B-5b` follows only once the
+   refactor and the gates are proven in `en`.
+4. **Measure per domain.** `training/evaluate.py` aggregates per-primitive and per-language only —
+   add `per_domain`, and render it in `benchmarks/report.py`.
+5. **Training cost must be estimated before running.** 5× records ≈ 5× steps: at today's settings
+   (9k records, 4 epochs) that is roughly 8–12 h on the RTX 3060. Mitigations: `per_type` ≈ 1,000
+   per domain, or fewer epochs. New config keeps the pinned `seed: 2` (AD-009).
+6. **Gates on the worst domain, never the average** (project convention): no regression on
+   `support` (English overall stays ≥ 0.85); worst new domain ≥ 0.70; per-domain ECE published
+   against the 0.05 target with the exceptions declared.
+7. **Publish and re-measure.** Republish `munod/tachyone-en` as a new revision (the AD-009
+   pattern), regenerate `benchmarks/report.md`, `docs/model-card.md`, README and CHANGELOG, then
+   **re-run the `B-7` probes** — the harness takes minutes and the before/after table on public
+   data is the real payoff of this item.
 
 **Acceptance.**
-- Per-domain accuracy/ECE published; no regression on the existing support domain.
-- Domain data is deterministic and localized like the current lexicon.
+- Existing configs regenerate byte-identically (hash test in `tests/`).
+- Five domains with deterministic, localized, committed data; `B-5a` English first.
+- Per-domain accuracy/ECE published and gated on the worst domain; no regression on `support`.
+- Adapter republished; `benchmarks/report.md`, model card, README and CHANGELOG updated.
+- Probe before/after table published (`B-7` harness).
 
-**Risks / notes.** Cost multiplies by language count; tool/function selection largely overlaps
-the existing `choice` case, so it may not add a new capability, only vocabulary. Effort ~2–3 days
-per language cohort.
+**Risks / notes.** Five domains in one LoRA of fixed capacity may dilute per-domain accuracy —
+that is what the worst-domain gate is for. Training time vs the 12 GB budget (ADR-0005). Tool/
+function selection largely overlaps the existing `choice` case, so it may add vocabulary rather
+than capability. `presets.py`, `docs/use-cases.md` and `docs/training.md` must follow the data.
+Effort: `B-5a` ~2–3 days (refactor + data + train + evaluate), `B-5b` ~2 days more.
 
-**Related.** `training/generate_data.py`, `training/data/`, `docs/training.md` (§1), `B-1`.
+**Related.** `training/generate_data.py`, `training/data/`, `docs/training.md` (§1), `B-1`, `B-7`.
 
 ---
 
@@ -238,21 +272,51 @@ Findings worth carrying forward:
   comparison usable as external evidence.
 
 **Remaining plan.**
-1. Evaluation-only loaders for MASSIVE (intent), XNLI (entailment) and typed-decisions mapped to
-   Tachyone's `choice`/`score`/`noul` primitives; no training data changes.
-2. Run the released adapters (`munod/tachyone-en`, `munod/tachyone-multi`) on the probe sets and
-   report accuracy/ECE per language under `benchmarks/results/`.
-3. Render the comparison in `benchmarks/report.md` with the exact reproduction commands
-   (`benchmarks/public_probes.py` is still undelivered — see `benchmarks/README.md`).
+
+1. **New loader module `benchmarks/probes.py`** (keep `compare.py` focused on metrics): one
+   function per dataset converting it to the harness's standard row shape
+   (`state / task / question / options / answer_index`), so every engine, metric, temperature fit
+   and the renderer are reused untouched. `compare.py` gains `--format probe --probe <name>
+   --data <dir>` next to the existing `probe`/`jsonl` formats.
+
+   | Probe | HF repo | License | Size | Row mapping |
+   | --- | --- | --- | --- | --- |
+   | typed-decisions | `LocalLLaMA/typed-decisions` | **Apache-2.0** | 4 configs (`agent_trace_observability`, `customer_service`, `invoice_processing`, `security_incidents`) + `all`, n<1K each, **3.15 MB** total | already `noul`/`choice`/`score`; flatten multi-question rows to **one row per question** (deliberately conservative — it ignores the `choice` head's batching; say so) |
+   | MASSIVE | `AmazonScience/massive` | **CC-BY-4.0** | 60 intents, 51 languages, `en` config tens of MB | `choice` over the 60 intent labels (max is 255 ✓), fixed `instructions` |
+   | XNLI | `facebook/xnli` | ⚠️ **verify `LICENSE` before publishing** (paper says CC BY-SA 4.0; the HF card has no license tag) | `en`: 5,010 test / 2,490 val, ~50 MB | `choice` over {entailment, neutral, contradiction}, `state` = premise + hypothesis; document the alternative `noul` formulation as a design decision |
+
+   Bigger volume option after the three named probes: `tasksource/procedural-typed-decisions`
+   (Apache-2.0, 100K–1M rows, answers **computed by rule** from the state rather than labeled by a
+   model). Several other `typed-decisions` repos exist (tasksource 2.5M, pngwn CC-BY-SA) — the
+   LocalLLaMA one is the default because it is independent, Apache-2.0 and already in the wire's
+   shape.
+
+2. **What to run.** Phase 1 (required by `OPS-06`): `tachyone` with both released adapters
+   (`munod/tachyone-en`, `munod/tachyone-multi`) on all three probes. Phase 2 (optional): the peer
+   scorer and the LLMs on **typed-decisions only** — MASSIVE's 60-option prompts are the case we
+   already measured as impractical for autoregressive models (46 s per 52-option attempt).
+
+   MASSIVE across our six trained languages is deliberately in scope: it is the first **public**
+   per-language accuracy/ECE, which is exactly what `B-1` needs to stop quoting synthetic
+   per-language numbers.
+
+3. **Where results land.** Artifacts under `benchmarks/results/probe_*.json` (gitignored, each
+   recording the exact command), rendered table committed to **`benchmarks/probes.md`** (separate
+   from `report.md`, which `benchmarks/report.py` regenerates wholesale), plus a "Public probes"
+   section in `docs/benchmarks.md` with hardware, seed, and the citation/license of each dataset.
 
 **Acceptance.**
-- Probe results published in `benchmarks/report.md` with seed, hardware and exact commands.
-- No regression claim is made on the synthetic numbers; both sets are labeled.
-- `OPS-06` moves to `Implemented` and the M6 exit criterion is met.
+- All three named probes published with the exact reproduction command, hardware and dataset
+  citations; both synthetic and probe numbers labeled side by side (no regression claim made on
+  either).
+- `OPS-06` moves to `Implemented`; the M6 exit criterion "benchmark report comparable to
+  MASSIVE/XNLI/typed-decisions" is met.
+- MASSIVE covers all six trained languages, with per-language accuracy/ECE published.
 
-**Risks / notes.** Probe licenses and download size; label/option spaces do not always map to a
-Tachyone `choice` criterion, so some probes may need a `noul`/`score` formulation. Evaluation-only —
-must not leak into training data (keeps comparability). Effort ~2–3 days (no GPU retrain).
+**Risks / notes.** XNLI license to confirm before publishing derived tables; a 60-way `choice`
+may land near chance (1/60 = 0.017) — publish it anyway, that is the number; label mapping needs a
+test per probe. Evaluation-only: probe rows must never reach `training/` (that is what keeps the
+comparison comparable). Effort ~2–3 days, no GPU retrain, ~100 MB of downloads.
 
 **Related.** `docs/benchmarks.md` (Known limitations), `docs/compare.md` §3,
 `benchmarks/README.md`, `OPS-06`, `docs/training.md` (§5), `NFR-D04`.
@@ -357,16 +421,24 @@ frontier models infer the wrapper; small ones do not, and every failure costs
 `TACHYONE_LLM_RETRIES + 1` autoregressive attempts (a 52-option question took 46 s per attempt).
 
 **Plan.**
-1. Spell out the wrapper once for all three primitives and show one complete example per type.
-2. Keep `build_answers`/`_answer_from_raw` unchanged (the wire does not move); add a unit test
-   asserting a model that answers with the inner object is *still* accepted, or fails with an
-   actionable message naming the missing `answers` key.
-3. Re-run the LLM rows of `benchmarks/compare.py` and record the before/after compliance.
+1. Spell out the wrapper **once** for all three primitives, with one complete example per type and
+   an explicit rule: the outer object MUST contain an `answers` key mapping question id → answer.
+2. **Decision (2026-09-26): stay strict — do not accept the inner shape as a fallback.**
+   `build_answers` / `_answer_from_raw` do not change. Reason: tolerating the inner object would
+   push measured compliance to ~100% by construction and destroy the `JSON ok` column in
+   `benchmarks/compare.py`, which exists precisely to catch this. Improve the error instead — name
+   the missing `answers` key and echo the top-level keys actually observed. If compliance is still
+   poor after the prompt fix, revisit tolerance as its own decision, with the harness counting
+   "model emitted the contract shape" separately from "backend answered".
+3. Re-run the LLM rows of `benchmarks/compare.py` (probe n=36, home n=48) and publish the
+   before/after compliance.
 
 **Acceptance.**
 - A small local model's contract compliance on the probe rises well above the measured 8.3%
   without changing `POST /v1/systemone` (contract suite untouched).
-- `tests/test_backends_llm.py` covers both the wrapper and the inner-object failure path.
+- `tests/test_backends_llm.py` covers the wrapper being documented for `choice`/`score`, and the
+  inner-object failure path producing the actionable message.
+- Before/after numbers published in `docs/compare.md` §3.
 
 **Risks / notes.** Prompt changes move answer distributions, so accuracy/ECE for LLM backends
 are not comparable before vs after; record both. Effort ~0.5 day.

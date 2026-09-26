@@ -88,8 +88,10 @@ This is the canonical comparison table; `README.md` and `docs/index.md` mirror i
 
 - **Contract:** golden Jev parity suite green for all primitives and error shapes.
 - **Adoption proof:** a real Jev client answers via Tachyone in Phase 2.
-- **Quality:** documented accuracy and ECE on the held-out synthetic set (delivered); on public
-  probes (MASSIVE, XNLI, typed-decisions) — **not yet delivered**.
+- **Quality:** documented accuracy and ECE on the held-out synthetic set (delivered); an external
+  public probe — the peer scorer's nine families — measured with method and caveats in
+  [`compare.md`](compare.md) §3 (delivered 2026-09-26); the three named probes (MASSIVE, XNLI,
+  typed-decisions) — **not yet delivered** (backlog `B-7`).
 - **Performance:** published p50/p95 latency and memory for encoder/ONNX/fast paths.
 - **Portability:** base install works offline on CPU and GPU; no hosted dependency.
 

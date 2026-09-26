@@ -70,6 +70,16 @@ All notable changes to this project are documented here. The format is based on
 
 ### Documentation
 
+- **Continuity record for the open backlog**, so the work resumes from the repository rather than
+  from a conversation: `BACKLOG.md` carries full execution detail for `B-7` (probe inventory with
+  HF ids, licenses and sizes plus the `benchmarks/probes.py` loader design), `B-5` (generator
+  refactor with a byte-identical guarantee for existing configs, the five-domain table,
+  English-first scope, worst-domain gates and the 8–12 h training estimate) and `B-10` (decision:
+  stay strict, no inner-shape fallback, so the compliance metric keeps meaning something).
+  `STATE.md` opens **OD-6 / OD-7 / OD-8** for the three scope questions still unanswered.
+  `benchmarks/README.md` warns that the peer scorer's default `--option-batch 16` OOMs a 12 GB
+  card (use `4`) and records the exact eight commands behind the published tables. Roadmap,
+  overview, testing and training pages now read *partially delivered* where a public probe exists.
 - Corrected the per-language ECE claim (**2/6** languages meet ECE ≤ 0.05, not 5/6), the
   requirement counts (60 functional / 43 non-functional / 104 traced), stale `v0.2.0` status
   headers, references to files and `(planned)` markers that no longer exist, and the documented

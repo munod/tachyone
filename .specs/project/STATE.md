@@ -375,16 +375,20 @@ calibration metric without the confidence it was bought with.
 Canonical backlog: [`BACKLOG.md`](BACKLOG.md). **B-2** fast-path kernels are **done** (measured,
 NFR-P01 met). **B-1** multilingual `choice`/`score` quality is **done**: localized data,
 per-language temperature, per-language reporting, the GPU retrain/publish step and the r=64 rank
-bump are all shipped and published. **B-3** and **B-4** are done and measured; **B-7** (public
-probes) is Ready and not started. Carried-over ideas (provider registry, extra checkpoints,
-streaming, web console, process items) are listed there too. Promote an item into `docs/tasks.md`
-when it is scheduled.
+bump are all shipped and published. **B-3** and **B-4** are done and measured. **B-7** (public
+probes) is **partially delivered** (2026-09-26): the head-to-head harness answers a public
+nine-family probe and the results, method and limitations are published in `docs/compare.md` §3;
+MASSIVE / XNLI / typed-decisions remain (see OD-8). **B-5** is now **Ready** with measured
+evidence, and **B-10** (LLM prompt wrapper) opened 2026-09-26 from a compliance failure the
+benchmark exposed. Carried-over ideas (provider registry, extra checkpoints, streaming, web
+console, process items) are listed in the backlog too. Promote an item into `docs/tasks.md` when
+it is scheduled.
 
 **New backlog entries (2026-09-25):** **B-3** confidence thresholding / System-2 handoff (Ready),
-**B-4** input-noise robustness (Ready), **B-5** multi-domain coverage (Idea), **B-6** contrastive
-pre-fine-tuning (Idea). `BACKLOG.md` also records an **"Evaluated and not pursued (for now)"**
-section for `route`/`extract_span`/MoE adapters with the rationale; revisit only with a new ADR
-and measured evidence (see L-004).
+**B-4** input-noise robustness (Ready), **B-5** multi-domain coverage (Idea → Ready 2026-09-26),
+**B-6** contrastive pre-fine-tuning (Idea). **B-10** was added 2026-09-26. `BACKLOG.md` also
+records an **"Evaluated and not pursued (for now)"** section for `route`/`extract_span`/MoE
+adapters with the rationale; revisit only with a new ADR and measured evidence (see L-004).
 
 ---
 
@@ -404,6 +408,20 @@ and measured evidence (see L-004).
       afterwards behind the `fast` extra with graceful fallback. See ADR-0012.
 - [x] **OD-5:** RESOLVED (2026-09-24, M2) — ``/predict`` and ``/predict/batch`` mirror the
       canonical response shape and are additive; ``/v1/systemone`` is untouched. See `docs/adr/ADR-0009`.
+- [ ] **OD-6:** OPEN (raised 2026-09-26) — **`B-5` scope: English first or all 7 languages at
+      once?** Recommendation: `B-5a` English only (four new domain lexicons localized once),
+      `B-5b` multilingual afterwards — localization is the human cost and it multiplies by ~7.
+      Also confirm the five domains tabled in `BACKLOG.md` B-5. Blocks the start of `B-5`.
+- [ ] **OD-7:** OPEN (raised 2026-09-26) — **`B-5` data volume vs training budget.** 5× records
+      ≈ 5× steps ≈ **8–12 h** on the RTX 3060 at current settings. Options: full 5× (one long
+      run), `per_type` ≈ 1,000/domain (~2–3 h, less data), or fewer epochs. Decide **before**
+      launching; the budget is blocker B-002 / ADR-0005.
+- [ ] **OD-8:** OPEN (raised 2026-09-26) — **`B-7` probe scope.** All three probes named by
+      `OPS-06` (MASSIVE, XNLI, typed-decisions; ~2–3 days) or typed-decisions alone first
+      (3.15 MB, already in the wire shape; ~½ day)? Recommendation: all three, plus MASSIVE
+      across our six trained languages to give `B-1` public per-language numbers. Verify XNLI's
+      license before publishing derived tables. `B-10`'s strict-vs-tolerant question is
+      **resolved** (stay strict) — recorded in `BACKLOG.md` B-10.
 
 ---
 

@@ -148,9 +148,10 @@ Report per primitive and per language group:
 | Throughput | requests/s vs batch size |
 | Coverage | Languages/scripts exercised |
 
-Public probes: **MASSIVE**, **XNLI**, **typed-decisions** — evaluation only. They are **not yet
-run or published**; the committed reproduction commands cover the synthetic evaluation only
-(see `benchmarks/report.md` → Known limitations).
+Public probes: **MASSIVE**, **XNLI**, **typed-decisions** — evaluation only and **not yet run**;
+what is published today is the external nine-family `pngwn/system-one-decisions` head-to-head
+(`docs/compare.md` §3, 2026-09-26). Committed reproduction commands cover the synthetic
+evaluation only (see `docs/benchmarks.md` → Known limitations).
 
 ---
 

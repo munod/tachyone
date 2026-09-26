@@ -95,8 +95,11 @@ graph LR
 **Goal:** Public credibility.
 **Depends on:** M5.
 **Exit criteria:**
-- Benchmark report comparable to MASSIVE / XNLI / typed-decisions — **not yet met** (synthetic
-  report shipped; public probes are evaluation-only and unpublished, see `benchmarks.md`).
+- Benchmark report comparable to MASSIVE / XNLI / typed-decisions — **partially met
+  (2026-09-26)**: an external, public nine-family probe is now measured and published with the
+  method and its limitations in [`compare.md`](compare.md) §3 (it reproduces the peer model's own
+  card to three decimals); the three **named** probes are still open — `benchmarks.md` → Known
+  limitations, backlog `B-7`.
 - Docs site published.
 - Hugging Face weights + model card and a GitHub release.
 

@@ -2,7 +2,10 @@
 
 **Current Milestone:** Complete (M0–M6)
 **Status:** M0–M6 COMPLETE; GPU training run done, numbers + adapters published (`v0.3.0`).
-Open items live in `BACKLOG.md` (B-1 `nl`/`de`/`fr`/`it` ECE, B-7 public probes).
+The public **head-to-head** (peer scorer + local LLMs, two evaluation sets) is published in
+`docs/compare.md` §3 since 2026-09-26 (AD-011).
+Open items live in `BACKLOG.md` (B-1 `nl`/`de`/`fr`/`it` ECE, B-5 multi-domain, B-7 named probes,
+B-10 LLM prompt wrapper) and the three open scope questions in `STATE.md` (OD-6, OD-7, OD-8).
 
 Milestones follow the approved phase plan. Each milestone is a shippable increment with
 an explicit exit criterion. Detailed tasks live in `docs/tasks.md`; features live in
@@ -96,9 +99,11 @@ calibration within RTX 3060 12GB budget.
 - `training/generate_data.py` synthetic JSONL; `training/finetune_rlcd.py`
 - `training/fit_calibration.py` temperature/ECE fitting
 
-**Evaluation** - DONE (harness) / OPEN (public probes)
+**Evaluation** - DONE (harness) / PARTIAL (public probes)
 - Accuracy/ECE/latency harness shipped (`training/evaluate.py`, `benchmarks/`)
-- MASSIVE / XNLI / typed-decisions probes **not yet run or published**
+- Published 2026-09-26: external **head-to-head** on the public nine-family
+  `pngwn/system-one-decisions` probe, both evaluation sets, `docs/compare.md` §3 (AD-011)
+- MASSIVE / XNLI / typed-decisions **still open** (`BACKLOG.md` B-7 · `STATE.md` OD-8)
 
 ---
 
@@ -123,9 +128,10 @@ calibration within RTX 3060 12GB budget.
 
 ### Features
 
-**Benchmarks & release** - DONE (synthetic report) / OPEN (public probes)
-- `benchmarks/` publishes a reproducible synthetic report; MASSIVE / XNLI / typed-decisions
-  comparisons not yet published
+**Benchmarks & release** - DONE (synthetic report + head-to-head) / PARTIAL (named probes)
+- `benchmarks/` publishes a reproducible synthetic report and, since 2026-09-26, the
+  multi-engine comparison (`benchmarks/compare.py`); MASSIVE / XNLI / typed-decisions remain
+  (`BACKLOG.md` B-7)
 - Docs site, model card, GitHub release
 
 ---

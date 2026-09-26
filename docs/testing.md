@@ -130,7 +130,7 @@ when installed.
 | Evaluation (accuracy / ECE) | per-primitive and per-language accuracy + ECE | `uv run python -m training.evaluate --data data/eval_multi.jsonl --out benchmarks/results/eval.json` |
 | Fast path | p50/p95 and answer parity, stock vs `TACHYONE_FAST` | `uv run python -m benchmarks.fast_path --data data/eval_multi.jsonl --model-id jhu-clsp/mmBERT-base --adapter checkpoints/multi --out benchmarks/results/fast_path.json` |
 | Report renderer | Markdown report from evaluation JSON artifacts | `uv run python -m benchmarks.report --entry encoder=<report.json> --out benchmarks/report.md` |
-| Public probes | MASSIVE / XNLI / typed-decisions | **not yet delivered** (see `docs/benchmarks.md` → Known limitations) |
+| Public probes | MASSIVE / XNLI / typed-decisions | **partial** — an external nine-family probe is measured and published (`docs/compare.md` §3, 2026-09-26); the three named probes are still open (backlog `B-7`) |
 
 Reproduction rules:
 
