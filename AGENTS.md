@@ -77,6 +77,10 @@ needs `--extra mcp`; `tachyone.integrations.langchain` needs `--extra langchain`
 
 Docs site: `uv sync --group docs && uv run mkdocs build --strict` (CI has a dedicated job).
 Benchmarks: `uv run python -m benchmarks.report --entry encoder=<report.json> --out benchmarks/report.md`.
+Head-to-head against the open System One scorer and local LLMs (serialized runs, one process per
+engine): `uv run python -m benchmarks.compare run --engine {tachyone,systemone,llm} ...` then
+`render` — see `benchmarks/README.md`; the probe reader needs `uv pip install pyarrow`, and
+results are published in `docs/compare.md` §3.
 
 ## Directory boundaries
 

@@ -37,6 +37,13 @@ Footprint figures are the files actually on disk (ModernBERT-large trunk 1.58 GB
 mmBERT-base trunk 1.23 GB + 54 MB adapter). Accuracy, ECE and latency come from the
 [benchmark report](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
+!!! note "Latency depends on the question, not just on the engine"
+    The 3.83 / 10.27 ms figures are p50 on short, four-option benchmark states. Measured
+    end-to-end on real corpora, the same stock path runs **22.2 ms p50** on Tachyone's own support
+    records and **72.6 ms** on a nine-family public probe where option counts reach 77 — against
+    112.9 / 350.2 ms for the open peer scorer and 3.4–7.2 **seconds** for the small LLMs. The
+    full method and both tables are in [§3](#3-why-not-another-open-system-one-scorer).
+
 The memory and latency columns are the ones people underestimate. An encoder answer costs one
 forward pass regardless of how many options you present; an autoregressive answer costs you one
 decoding step per token, on a model several times larger, before you have even parsed the result.
@@ -106,25 +113,126 @@ temperature. As published on its own model card (held-out test split, n=576):
 | Trunk | Qwen3.5-4B (4.66 B params) — 8.8 GB trunk + 136 MB adapter ≈ **8.9 GB** on disk |
 | License | **CC-BY-NC-4.0** (non-commercial, inherited from the ticket data) |
 
-What separates it from Tachyone for production use is not the idea — the idea is right and shared —
-but three engineering facts:
+### Head-to-head: same rows, same metric code, same GPU
 
-- **Footprint:** 9.4 GB of trunk + adapter against 1.28–1.61 GB, on a 12 GB consumer GPU that also
-  has to hold the activations.
-- **Latency:** 112.3 ms at 4 options versus a single-digit-millisecond forward pass; and Tachyone's
-  latency does not grow with the option count the same way (the `choice` head scores 1–255 options
-  in one pass).
-- **License:** CC-BY-NC-4.0 rules out commercial deployment of that checkpoint; Tachyone and its
-  adapters are Apache-2.0, and the evaluation data stays in your hands.
+`benchmarks/compare.py` answers **the same rows** with every engine through one implementation of
+accuracy, 10-bin ECE and Brier on a single RTX 3060 12GB. It runs on **two** evaluation sets,
+because a benchmark run on someone else's training data measures domain coverage as much as it
+measures the engine — quoting only one of these tables would mislead in either direction.
 
-A head-to-head run of Tachyone on **that model's own public test rows** — same GPU, same rows, same
-metric code — is what makes this section more than a table of claims. It is produced by the
-comparison harness under `benchmarks/` and recorded in the committed
-[benchmark report](https://github.com/munod/tachyone/blob/main/benchmarks/report.md), alongside the
-method notes (hardware, seed, temperature-fitting procedure, exact command).
+#### A. Their distribution — `pngwn/system-one-decisions` test split, 64 rows per task family
 
-!!! note "Numbers on this page"
-    Accuracy and ECE for Tachyone come from the held-out **synthetic** split and are labeled as
-    such in [`benchmarks.md`](benchmarks.md#known-limitations); public-probe evaluation is tracked
-    as `B-7` in the project backlog. Figures attributed to other models are quoted from their own
-    model cards, not re-measured here, and are labeled accordingly.
+They trained on this data; Tachyone and both LLMs are zero-shot here.
+
+| Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| llm (ling-tiny) | 36 | 3 | 0.028 | 0.533 | 0.533 | 1.200 | 0.467 |
+| llm (ornith-9b) | 36 | 32 | 0.556 | 0.280 | 0.200 | 0.524 | 0.542 |
+| systemone-qwen3.5-4b | 576 | 576 | 0.705 | 0.134 | 0.046 | 0.373 | 0.746 |
+| **tachyone (encoder)** | 576 | 576 | 0.229 | 0.311 | 0.040 | 0.767 | 0.263 |
+
+| Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| llm (ling-tiny) | 7161.44 | 98056.82 | 0.0 | 0.083 | 5763 | 4836 |
+| llm (ornith-9b) | 6541.17 | 19186.75 | 0.1 | 0.889 | 9484 | 5512 |
+| systemone-qwen3.5-4b | 350.23 | 4660.68 | 0.9 | 1.000 | 9147 | 8921 |
+| **tachyone (encoder)** | 72.61 | 542.45 | 6.6 | 1.000 | 2939 | 3626 |
+
+Accuracy by task family (calibrated):
+
+| Task family | ling-tiny | ornith-9b | systemone | **tachyone** |
+| --- | ---: | ---: | ---: | ---: |
+| ag_news | 0.000 | 1.000 | 0.922 | 0.250 |
+| banking77 | 0.000 | 0.750 | 0.891 | 0.031 |
+| go_emotions | 0.000 | 0.500 | 0.859 | 0.359 |
+| mmlu | 0.000 | 0.750 | 0.688 | 0.266 |
+| tickets_language | 0.000 | 1.000 | 0.891 | 0.500 |
+| tickets_priority | 0.000 | 0.000 | 0.469 | 0.203 |
+| tickets_queue | 0.000 | 0.000 | 0.234 | 0.031 |
+| tickets_type | 0.000 | 0.750 | 0.750 | 0.219 |
+| yelp_score | 0.250 | 0.250 | 0.641 | 0.203 |
+
+#### B. Tachyone's distribution — our English support records, 64 rows per primitive
+
+We trained on this data; the peer scorer and both LLMs are zero-shot here. 192 test rows, 192
+validation rows for the temperature fit.
+
+| Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| llm (ling-tiny) | 48 | 20 | 0.125 | 0.325 | 0.225 | 0.774 | 0.525 |
+| llm (ornith-9b) | 48 | 40 | 0.583 | 0.132 | 0.139 | 0.435 | 0.576 |
+| systemone-qwen3.5-4b | 192 | 192 | 0.562 | 0.182 | 0.161 | 0.589 | 0.534 |
+| **tachyone (encoder)** | 192 | 192 | 0.854 | 0.036 | 0.083 | 0.209 | 0.857 |
+
+| Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| llm (ling-tiny) | 3554.14 | 100128.81 | 0.1 | 0.417 | 9379 | 4836 |
+| llm (ornith-9b) | 3375.36 | 14093.82 | 0.2 | 0.833 | 9484 | 5512 |
+| systemone-qwen3.5-4b | 112.89 | 152.63 | 7.8 | 1.000 | 9147 | 8754 |
+| **tachyone (encoder)** | 22.21 | 35.81 | 32.1 | 1.000 | 2395 | 1743 |
+
+Accuracy by primitive (calibrated):
+
+| Primitive | ling-tiny | ornith-9b | systemone | **tachyone** |
+| --- | ---: | ---: | ---: | ---: |
+| choice | 0.000 | 0.812 | 0.703 | 0.922 |
+| noul | 0.250 | 0.812 | 0.500 | 0.734 |
+| score | 0.125 | 0.125 | 0.484 | 0.906 |
+
+#### How to read these two tables
+
+- **Each engine wins at home.** 0.705 vs 0.229 on their data; 0.854 vs 0.562 on ours. That gap is
+  domain coverage — it says the released adapters are narrow (support tickets, 4 teams), not that
+  one architecture beats the other. Broadening the training data is tracked as `B-5`.
+- **Tachyone is faster and smaller on *both* turfs:** 4.8× the peer's throughput on their rows
+  (72.6 vs 350.2 ms p50) and 5.1× on ours (22.2 vs 112.9 ms), with **5× less VRAM** (1.7 vs
+  8.8 GiB) and a 1.6 GB footprint against 8.9 GB. Option count drives the peer's cost (its p95 is
+  4.7 s on 77-option questions); Tachyone's `choice` head scores 1–255 options in one pass.
+- **The small LLMs fail the contract.** `ling-tiny` produced a contract-valid answer for **3/36**
+  and **20/48** questions; `ornith-9b` for 32/36 and 40/48. Failures count as *wrong* in the
+  accuracy column. When `ornith-9b` does answer it is respectable (0.556 / 0.583) — at 3.4–6.5 s
+  p50, i.e. **~50–90× slower than the peer and 150–300× slower than Tachyone**.
+- **Calibration has to be read with confidence.** Tachyone ships well-calibrated on its own turf
+  (ECE raw **0.036**). Off-domain its confidence carries no signal: raw ECE **0.311**, the fit
+  pushes T into the 20.0 ceiling of the grid, and mean confidence collapses to **0.263**. A table
+  quoting only `ECE cal` (0.040) would look *better* than the peer's 0.044 while being useless —
+  `Brier` (0.767 vs 0.373) and `Conf` expose it. **ECE alone is not a quality metric.**
+
+#### Method
+
+| | |
+| --- | --- |
+| Hardware | single RTX 3060 12GB · Python 3.12 · torch 2.14.0+cu130 · transformers 5.17.0 |
+| Tachyone | `encoder` backend, **stock** forward (the `fast` extra is not installed here), driven through `tachyone.wire.answer` |
+| Peer scorer | Qwen3.5-4B-Base + its published adapter, bf16, `max_len=384`, option batch 4, scored by **its own** `system_one.py` imported from a local download — no third-party code is vendored in this repository |
+| LLMs | `llama-server` (Q4_K_M, `--temp 0 --seed 42`) behind Tachyone's `llm` backend, `TACHYONE_LLM_RETRIES=1` (two attempts per question) |
+| Temperature | fitted per engine on the capped **validation** split (grid 0.25–20.00, step 0.05; their card used 0.25–6.0) and applied to test |
+| Latency | sequential, batch=1, warmup excluded; includes request marshalling and, for the LLMs, HTTP + generation |
+
+**The harness validates against their published numbers.** Independent of their model card, this
+run reproduces: temperature **1.75** (card 1.75), accuracy **0.705** (card 0.707), ECE
+**0.046** (card 0.044), 537 validation / 576 test rows, and **8 of 9** per-task accuracies
+identical to the card (`mmlu` 0.688 vs 0.703 is the only deviation). Tachyone's row likewise
+reproduces ours: 0.854 on the 192-row subset against the published 0.859 on the full 1,500-row
+split.
+
+#### Limitations, before quoting anything
+
+- **Our accuracy is in-sample synthetic** (`B-9`, lesson L-005): the eval split shares states with
+  training data. External evaluation on MASSIVE / XNLI / typed-decisions is still open as `B-7`.
+- **Each engine is at home in exactly one table.** Neither number generalizes; that is why both
+  are published.
+- **Different `n` for the LLMs** (36 and 48 rows): a single failing question costs multiple
+  autoregressive attempts — one 52-option attempt took **46 s** — so they ran on the first 4 rows
+  per family / 16 per primitive, subsets of the same ordered rows the other engines scored.
+- **`p95` for the LLMs is timeout-dominated** (98 s and 100 s), not a steady-state tail.
+- **The peer and its data are CC-BY-NC-4.0**: evaluation only, never redistributed. Tachyone and
+  its adapters are Apache-2.0.
+
+Reproduce it from `benchmarks/README.md` → *Head-to-head comparison*; artifacts are the
+`benchmarks/results/compare_*.json` files.
+
+!!! note "Figures quoted from other projects"
+    The peer's model-card numbers (0.707 accuracy, 0.044 ECE, 112.3 ms at 4 options) are quoted
+    from its own card and labeled as such; everything in the four tables above is **measured
+    here** on the hardware and rows described in the method.

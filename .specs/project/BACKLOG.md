@@ -157,12 +157,19 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · Idea
+## B-5 — Multi-domain coverage (5 domains) · Ready (evidence measured 2026-09-26)
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
 domains (support, e-commerce/logistics, voice/smart-home commands, agent tool/function
 selection, document/media classification) would make the model valuable across more agent flows.
+
+**Evidence (2026-09-26, head-to-head).** The released English adapter scores **0.854** on its own
+support records and **0.229** on the public nine-family probe (`pngwn/system-one-decisions`), even
+on the four `tickets_*` families that nominally share its vocabulary (0.031–0.500) — because their
+option spaces are 52 queues and 77 intents, not our four teams. A peer scorer trained on that data
+scores 0.705 there. Domain coverage, not architecture, is the binding constraint; full tables in
+`docs/compare.md` §3.
 
 **Plan.**
 1. Generalize the data model so `choice` criteria per domain come from committed data, rather
@@ -210,21 +217,31 @@ careful negative sampling. Treat as an experiment with a strict ablation gate. E
 
 ---
 
-## B-7 — Public-probe evaluation (MASSIVE / XNLI / typed-decisions) · Ready
+## B-7 — Public-probe evaluation (MASSIVE / XNLI / typed-decisions) · Partially delivered (2026-09-26)
 
 **Why.** Every published number today comes from the deterministic **synthetic** held-out split
 (`benchmarks/report.md` says so explicitly), so OPS-06 and the M6 exit criterion "benchmark report
 comparable to MASSIVE / XNLI / typed-decisions" are only partially met. Public probes give an
 externally comparable number.
 
-**Status (not started).** Harness, model card, adapters and the synthetic report are published;
-no public-probe run exists. Tracked as `OPS-06` partial and as the unmet M6 exit criterion.
+**Status (2026-09-26 — external probe delivered, named probes still open).** `benchmarks/compare.py`
+runs an **evaluation-only** head-to-head on the public `pngwn/system-one-decisions` test split
+(9 task families: ag_news, banking77, go_emotions, mmlu, yelp_score, 4× tickets), with no training
+data change and no leak. Results, method and caveats are published in `docs/compare.md` §3.
+Findings worth carrying forward:
 
-**Plan.**
+- Tachyone (released English adapter) scores **0.229** there against **0.854** on its own records —
+  domain coverage, not an architecture verdict; recorded in `docs/benchmarks.md` §Known
+  limitations and used as the evidence for **B-5**.
+- The harness **reproduces the peer's own published metrics** (T 1.75 vs 1.75, acc 0.705 vs 0.707,
+  ECE 0.046 vs 0.044, 537/576 rows, 8 of 9 per-task values identical), which is what makes the
+  comparison usable as external evidence.
+
+**Remaining plan.**
 1. Evaluation-only loaders for MASSIVE (intent), XNLI (entailment) and typed-decisions mapped to
    Tachyone's `choice`/`score`/`noul` primitives; no training data changes.
-2. Run the released adapters (`munod/tachyone-en`, `munod/tachyone-multi`) on the probe sets and report
-   accuracy/ECE per language under `benchmarks/results/`.
+2. Run the released adapters (`munod/tachyone-en`, `munod/tachyone-multi`) on the probe sets and
+   report accuracy/ECE per language under `benchmarks/results/`.
 3. Render the comparison in `benchmarks/report.md` with the exact reproduction commands
    (`benchmarks/public_probes.py` is still undelivered — see `benchmarks/README.md`).
 
@@ -237,8 +254,8 @@ no public-probe run exists. Tracked as `OPS-06` partial and as the unmet M6 exit
 Tachyone `choice` criterion, so some probes may need a `noul`/`score` formulation. Evaluation-only —
 must not leak into training data (keeps comparability). Effort ~2–3 days (no GPU retrain).
 
-**Related.** `docs/benchmarks.md` (Known limitations), `benchmarks/README.md`, `OPS-06`,
-`docs/training.md` (§5), `NFR-D04`.
+**Related.** `docs/benchmarks.md` (Known limitations), `docs/compare.md` §3,
+`benchmarks/README.md`, `OPS-06`, `docs/training.md` (§5), `NFR-D04`.
 
 ---
 
@@ -318,6 +335,44 @@ not a measurement on unseen text. Public probes remain open in **B-7**.
 
 **Related.** `.specs/project/STATE.md` AD-008, AD-009, L-005, L-006; `docs/model-card.md`,
 `benchmarks/report.md`, `NFR-C06`, `NFR-C07`.
+
+---
+
+## B-10 · LLM backend: the prompt under-specifies the response wrapper · Ready
+
+**Why.** Measured on 2026-09-26 while benchmarking small local models through the shipped `llm`
+backend: `ling-tiny` produced a contract-valid answer for **3 of 36** probe questions and **20 of
+48** support questions; the recurring failure is `model output is missing an 'answers' object`.
+
+**Root cause (in our prompt, not in the model).** `_SYSTEM_PROMPT` in `src/tachyone/backends/llm.py`
+documents the wrapper only in the `noul` example:
+
+```
+The shape is {"answers": {"<question id>": {"noul": ...}}} for noul,
+{"choice": "<option>", "probabilities": {...}} for choice, ...
+```
+
+A model that takes the `choice` example literally answers with the *inner* object. Strong
+frontier models infer the wrapper; small ones do not, and every failure costs
+`TACHYONE_LLM_RETRIES + 1` autoregressive attempts (a 52-option question took 46 s per attempt).
+
+**Plan.**
+1. Spell out the wrapper once for all three primitives and show one complete example per type.
+2. Keep `build_answers`/`_answer_from_raw` unchanged (the wire does not move); add a unit test
+   asserting a model that answers with the inner object is *still* accepted, or fails with an
+   actionable message naming the missing `answers` key.
+3. Re-run the LLM rows of `benchmarks/compare.py` and record the before/after compliance.
+
+**Acceptance.**
+- A small local model's contract compliance on the probe rises well above the measured 8.3%
+  without changing `POST /v1/systemone` (contract suite untouched).
+- `tests/test_backends_llm.py` covers both the wrapper and the inner-object failure path.
+
+**Risks / notes.** Prompt changes move answer distributions, so accuracy/ECE for LLM backends
+are not comparable before vs after; record both. Effort ~0.5 day.
+
+**Related.** `docs/compare.md` §3 (measured compliance), `tests/test_backends_llm.py`,
+`benchmarks/compare.py`, ADR-0008.
 
 ---
 

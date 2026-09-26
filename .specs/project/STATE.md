@@ -165,6 +165,27 @@ anyone who had automated against them; links to the old Hub repo ids depend on p
 **Impact:** 136 files / 1144 occurrences renamed in one commit; `uv.lock` re-locked; ADR-0001..0012
 and the released `CHANGELOG` sections keep the original name as historical record.
 
+### AD-011: Head-to-head comparison protocol (2026-09-26)
+
+**Decision:** published comparisons must (a) make every engine answer **the same rows** through
+one implementation of accuracy / 10-bin ECE / Brier, (b) show **both** evaluation sets — the
+peer's public distribution and ours — with each engine's in-domain status labeled, (c) publish
+`answered` beside `n` and always show `ECE raw`, `ECE cal`, `Brier` and `Conf` together, (d) run
+serialized, (e) import third-party scoring code from a local download and **never vendor it**,
+and (f) count a failed answer as *wrong*. Jev itself stays **qualitative**: no API key was
+authorized, so no hosted numbers are claimed.
+**Reason:** a benchmark run on another model's training data measures **domain coverage** as much
+as the engine (our first run read 0.229 vs 0.705 and would have been quoted either way), and ECE
+can be *lowered* by flattening distributions (Tachyone posted 0.040 vs their 0.044 only because
+the fit pushed T into the grid ceiling while mean confidence collapsed to 0.263).
+**Trade-off:** two tables are harder to read than one headline number; the LLM rows use fewer rows
+(a failing question costs 2–3 autoregressive attempts, 46 s at 52 options), so `n` differs per
+engine; and Tachyone publishes its own worst case (0.229 out of domain).
+**Impact:** `benchmarks/compare.py` + `tests/test_benchmark_compare.py`; results in
+`docs/compare.md` §3 with method and limitations; the harness reproduces the peer's published
+card (T 1.75, acc 0.705, ECE 0.046, 537/576 rows) which is what licenses the comparison.
+`B-7` partially delivered, `B-5` evidence recorded, `B-10` opened from a failure the run exposed.
+
 ---
 
 ## Active Blockers
@@ -274,6 +295,24 @@ control alone moved `choice` 0.834 → 0.900 and `val_loss` 0.4177 → 0.4195; s
 found `seed: 2` at `choice` 0.948 / `score` 0.910 / ECE 0.023 (AD-009).
 **Prevents:** Tuning hyper-parameters to "fix" a symptom whose cause was never established, and
 underestimating how much a non-deterministic training loop can vary between identical runs.
+
+### L-007: A benchmark on someone else's training data measures domain coverage
+
+**Context:** the first head-to-head run put Tachyone at **0.229** against a peer scorer's
+**0.705** on the peer's own public test split — a 3× gap that could have been published as a
+verdict, in either direction.
+**Problem:** the peer trained on that exact data (12,913 questions from the same repo) while the
+released Tachyone adapter was trained on synthetic support tickets with four team labels; even the
+four `tickets_*` families score 0.031–0.500 because their option spaces are 52 queues and 77
+intents. A second failure compounded it: Tachyone's *calibrated* ECE (0.040) looked better than
+the peer's (0.044) only because the fit pushed T to the 20.0 grid ceiling and flattened mean
+confidence to 0.263 — "better calibration" bought by discarding all information.
+**Solution:** run the comparison **on both turfs** and label who trained on what; publish `ECE
+raw`, `ECE cal`, `Brier`, `Conf` and `answered` together so neither the domain shift nor the
+flattening can hide; and validate the instrument first — the harness independently reproduced the
+peer's card (T 1.75 vs 1.75, acc 0.705 vs 0.707, ECE 0.046 vs 0.044, 8 of 9 per-task values).
+**Prevents:** quoting a single-distribution benchmark as a quality verdict, and quoting a
+calibration metric without the confidence it was bought with.
 
 ---
 

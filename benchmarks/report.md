@@ -69,3 +69,7 @@ Noisy view (noise_rate 0.15) — overall: accuracy 0.854, ECE 0.026, p50 23.454 
 Worst language (accuracy): `nl` — accuracy 0.663, ECE 0.104.
 
 Noisy view (noise_rate 0.15) — overall: accuracy 0.847, ECE 0.042, p50 13.529 ms.
+
+## See also
+
+The head-to-head against the open System One scorer and two local LLMs — accuracy, ECE, Brier, latency, throughput, memory and contract compliance on two evaluation sets — is published in [`docs/compare.md`](../docs/compare.md#3-why-not-another-open-system-one-scorer) and reproduced from `benchmarks/README.md`.

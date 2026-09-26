@@ -4,6 +4,10 @@ Reproducible accuracy/ECE/latency results. The full artifact, environment captur
 reproduction commands live in
 [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
+For the **head-to-head** against the open System One scorer and two local LLMs (accuracy, ECE,
+Brier, latency, throughput, memory and contract compliance on two evaluation sets), see
+[`compare.md`](compare.md).
+
 **Setup:** single RTX 3060 12GB · 9,000 English / 18,000 multilingual deterministic synthetic
 train records (fully localized per language, per-record RNG) · 1,500 held-out eval · LoRA (r=16
 English, **r=64 multilingual**) plus a low-rank `choice` head (r=32) · 4 epochs · bf16 + gradient
@@ -63,3 +67,9 @@ with a **2.68× p50 speedup** for the fast path.
 - Calibrated ECE is measured in-sample on the held-out synthetic split.
 - Numbers are from deterministic synthetic data; public-probe comparisons (MASSIVE, XNLI,
   typed-decisions) are evaluation-only and not yet published.
+- **Domain coverage is narrow.** Run against an external public probe (the peer scorer's own nine
+  families — news, banking intents, emotions, MMLU, reviews, tickets), the released English
+  adapter scores **0.229** while scoring **0.854** on its own support records. That is the
+  adapter's training distribution, not a ceiling for the engine; broadening it is backlog `B-5`.
+  Both tables, the method and the caveats (in-sample synthetic, different `n` per engine, ECE read
+  together with `Conf`/`Brier`) are published in [`compare.md`](compare.md).

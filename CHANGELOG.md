@@ -6,6 +6,36 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/compare.md` — the three questions a prospective user asks first:** why not a small
+  model on Ollama/llama.cpp, why not Jev, why not another open System One scorer. Measured
+  figures where they exist, explicit notes where they do not, and the composition answer
+  (Tachyone first, an LLM when `confidence < τ`) linking the System-2 cookbook. The tagline
+  *"LLMs generate text. Tachyone produces calibrated decisions"* now sits in the landing hero,
+  the README blockquote, the overview value proposition and the mkdocs site description.
+- **`docs/use-cases.md` — five recipes with real JSON in and JSON out:** support-ticket
+  classification, ticket routing, incident prioritization, risk assessment and document triage.
+  The payloads live in `docs/assets/examples/*.json` and are embedded with `pymdownx.snippets`;
+  `tests/test_docs_examples.py` validates every pair against the wire (question/answer key parity,
+  probabilities over the declared options, `confidence` = selected mass, `noul` without
+  `confidence`) and fails if an example stops being embedded.
+- **Integration hub and recipes:** `docs/integrations.md` plus FastAPI, n8n, Power Automate,
+  Azure Functions and LangGraph pages. Every HTTP payload shown was executed against a local
+  `tachyone-serve` (200 with the documented shape; 422/401/429/529 rows come from
+  `test_serve.py`), and each recipe carries a verification label distinguishing *shipped +
+  tested* from *payload verified* — the third-party runtimes are not run in CI. The LangGraph
+  flow is a real script (`docs/assets/examples/langgraph_flow.py`) executed by the test suite.
+- **Head-to-head comparison harness (`benchmarks/compare.py`)** answering the same rows with the
+  local encoder, the open peer scorer `pngwn/system-one-qwen3.5-4b-scorer` (loaded from a local
+  download through its own `system_one.py` — nothing third-party is vendored) and any
+  OpenAI-compatible server behind Tachyone's `llm` backend. One metric implementation, both
+  evaluation distributions, temperature fitted per engine on the capped validation split, peak
+  RSS/VRAM of the process that did the inference, and contract compliance counted per question.
+  `tests/test_benchmark_compare.py` covers the metrics, the temperature fit, the row → wire
+  mapping and the renderer. Results, method and limitations published in `docs/compare.md` §3;
+  the run reproduces the peer's own model card (T 1.75, accuracy 0.705, ECE 0.046).
+
 ### Changed
 
 - **Renamed `jeba` → Tachyone (ADR-0013).** Package `src/tachyone/`, console scripts `tachyone`,
