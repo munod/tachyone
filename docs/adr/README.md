@@ -20,6 +20,24 @@ not edited in place to change its decision — supersede it with a new ADR inste
 | [ADR-0011](ADR-0011-no-telemetry.md) | No telemetry; opt-out variables reserved | Accepted | 2026-09-24 |
 | [ADR-0012](ADR-0012-onnx-before-fast-path.md) | Ship the ONNX backend before the TileLang fast path | Accepted | 2026-09-24 |
 
+## Implementation notes (post-acceptance)
+
+Accepted ADRs are not edited in place. Where the implementation and the original wording have
+drifted, the divergence is recorded here.
+
+- **ADR-0004 — default backend.** The decision says jeba would "default to the local encoder
+  backend once available (M3)". That switch was **never made**: `src/jeba/config.py` still ships
+  `DEFAULT_BACKEND = "llm"`, so the default path calls an OpenAI-compatible provider and needs
+  `JEBA_LLM_*` credentials. For a local, key-free run use `--backend encoder` (or
+  `JEBA_BACKEND=encoder`) or the model-free `--backend fake`. Flipping the default is an open
+  behaviour change, not a documentation fix — raise it before doing it.
+- **ADR-0010 — prefetch.** The decision names a `jeba download` subcommand. **It was never
+  implemented**: `jeba` is a single flag-based command (`src/jeba/cli.py`) with no subcommands.
+  The working equivalents today are `hf download <repo> --local-dir <JEBA_MODELS_DIR>` or one
+  warm-up prediction (`uv run jeba --predict --backend encoder "<any text>"`), after which
+  `JEBA_OFFLINE=1` serves from cache.
+- **ADR-0002 — OD-1.** The "still open (OD-1)" note predates ADR-0008, which resolved it.
+
 ## Template
 
 ```markdown

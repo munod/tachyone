@@ -87,6 +87,11 @@ nav:
   - Protocol: protocol.md
   - Architecture: architecture.md
   - Cookbook: cookbook-handoff.md
+  - CLI reference: cli.md
+  - Integrations:
+      - MCP server: mcp.md
+      - LangChain: langchain.md
+      - Docker: docker.md
   - Benchmarks: benchmarks.md
   - Roadmap: roadmap.md
   - Tasks: tasks.md
