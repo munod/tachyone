@@ -63,7 +63,8 @@ The same bodies work unchanged against a Jev server: they are `/v1/systemone` re
 **What to do with it:** write `technical` to the ticket and move on — `confidence` 0.9955 leaves
 nothing to escalate. The `probabilities` are useful even when you only store the winner: a
 `billing` mass of 0.0045 is what lets a downstream audit reconstruct *why* the routing was right.
-The `triage` preset ships this shape: `tachyone --predict --preset triage`.
+The built-in `triage` preset ships the same shape (team + urgency + frustration + churn risk):
+`tachyone --predict --preset triage`.
 
 ## 2. Ticket routing
 
