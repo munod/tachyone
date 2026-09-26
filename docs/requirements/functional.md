@@ -62,7 +62,7 @@ Conventions: `WIRE` protocol · `PRIM` primitives · `BACK` backends · `ROUTE` 
 | CAL-02 | Fit temperature to minimize ECE on a held-out calibration split. | P1 | M4 | ECE reduced vs uncalibrated baseline. |
 | CAL-03 | Report `confidence` for `choice`/`score` derived from probabilities. | P1 | M3 | Value in [0,1], monotone with concentration. |
 | CAL-04 | Probabilities are calibrated to the documented ECE target. | P1 | M4 | ECE ≤ target on held-out set. |
-| CAL-05 | `return_details=True` exposes full distributions (additive extension). | P2 | M3 | Details returned without changing canonical fields. |
+| CAL-05 | Full distributions are always present in the canonical answer; `return_details` is accepted by the backend/schema surface for API stability (additive, currently a no-op). | P2 | M3 | Details returned without changing canonical fields. |
 | CAL-06 | Expose client-side uncertainty (entropy, margin) and a thresholded abstain/handoff signal over the returned probabilities. | P2 | Post-M6 | Helpers in `handoff.py`; no wire change; covered by unit tests. |
 
 ## Extensions (EXT)
@@ -116,5 +116,5 @@ Conventions: `WIRE` protocol · `PRIM` primitives · `BACK` backends · `ROUTE` 
 
 ---
 
-**Counts:** 51 functional requirements (P1: 34 · P2: 17 · P3: 0).
+**Counts:** 60 functional requirements (P1: 40 · P2: 20 · P3: 0).
 Every requirement maps to a task in `docs/tasks.md` (0 unmapped).

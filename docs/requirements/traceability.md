@@ -5,7 +5,7 @@
 `docs/architecture.md`, `docs/tasks.md`.
 
 Status values: `Pending` (no code) → `In Progress` → `Implemented` → `Verified`.
-All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-language ECE) remain
+All requirements are implemented as of `v0.3.0`; `NFR-C06`/`NFR-C07` (per-language ECE) remain
 **partial** pending the calibration work tracked in `BACKLOG.md` B-1.
 
 ---
@@ -43,7 +43,7 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 | CAL-02 | `fit_calibration.py` | M4-T4 | Implemented |
 | CAL-03 | `calibration.py` | M3-T3 | Implemented |
 | CAL-04 | `fit_calibration.py` | M4-T4 | Implemented |
-| CAL-05 | `calibration.py` + `schemas.py` | M2-T7, M3-T3 | Implemented |
+| CAL-05 | `calibration.py` + `schemas.py` | M2-T7, M3-T3 | Implemented (no-op: distributions are canonical) |
 | CAL-06 | `calibration.py` + `handoff.py` | B-3 (B3-T1..T4) | Implemented |
 | EXT-01 | `hooks.py` | M3-T6 | Implemented |
 | EXT-02 | `hooks.py` + contract | M3-T6 | Implemented |
@@ -62,7 +62,7 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 | TRAIN-02 | `finetune_rlcd.py` | M4-T2 | Implemented |
 | TRAIN-03 | `finetune_rlcd.py` | M4-T3 | Implemented |
 | TRAIN-04 | `fit_calibration.py` | M4-T4 | Implemented |
-| TRAIN-05 | `benchmarks/evaluate.py` | M4-T5 | Implemented |
+| TRAIN-05 | `training/evaluate.py` | M4-T5 | Implemented |
 | TRAIN-06 | `training/configs/` | M4-T2, M4-T6 | Implemented |
 | TRAIN-07 | `generate_data.py` | M4-T1 | Implemented |
 | TRAIN-08 | `generate_data.py` + `evaluate.py` | B-4 (B4-T1..T3) | Implemented |
@@ -71,7 +71,7 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 | OPS-03 | `integrations/langchain.py` | M5-T4 | Implemented |
 | OPS-04 | `docker/` | M5-T5 | Implemented |
 | OPS-05 | `.github/workflows/ci.yml` | M0-T4 | Implemented |
-| OPS-06 | `benchmarks/` | M4-T5, M6-T1 | Implemented |
+| OPS-06 | `benchmarks/` | M4-T5, M6-T1 | Partial (synthetic report reproducible; public probes open — B-7) |
 | OPS-07 | release artifacts | M6-T3 | Implemented |
 | OPS-08 | `telemetry.py` | M5-T6 | Implemented |
 
@@ -85,7 +85,7 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 | NFR-P04 | `backends/llm.py` | M2-T2 | Implemented |
 | NFR-P05 | `agent.py` | M3-T4 | Implemented |
 | NFR-P06 | `serve.py` + `router.py` | M3-T2 | Implemented |
-| NFR-P07 | `fast.py` | Backlog B-2 | Done (2.47× p50, 0 top-label flips) |
+| NFR-P07 | `fast.py` | Backlog B-2 | Done (2.68× p50, 0 top-label flips) |
 | NFR-R01 | packaging | M0-T1 | Implemented |
 | NFR-R02 | `backends/encoder.py` | M3-T5 | Implemented |
 | NFR-R03 | `backends/encoder.py` | M3-T5 | Implemented |
@@ -130,9 +130,9 @@ All requirements are implemented as of `v0.2.0`; `NFR-C06`/`NFR-C07` (per-langua
 
 | Category | Count | Mapped | Unmapped |
 | --- | --- | --- | --- |
-| Functional (WIRE/PRIM/BACK/ROUTE/CAL/EXT/SERVE/TRAIN/OPS) | 53 | 53 | 0 |
-| Non-functional | 39 | 38 | 1 (NFR-A, N/A) |
-| **Total** | **92** | **91** | **0 actionable** |
+| Functional (WIRE/PRIM/BACK/ROUTE/CAL/EXT/SERVE/TRAIN/OPS) | 60 | 60 | 0 |
+| Non-functional | 44 | 43 | 1 (NFR-A, N/A) |
+| **Total** | **104** | **103** | **0 actionable** |
 
 > When a task is completed, update the matching rows to `Implemented`, and after validation
 > to `Verified` (see `docs/testing.md` and the TLC validate flow in `.specs/project/STATE.md`).

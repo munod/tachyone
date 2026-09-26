@@ -57,13 +57,14 @@ Per-language accuracy (clean): `es` 0.472 -> **0.956**, `de` 0.731 -> **0.863**,
 ## Conclusion
 
 **Adopt `lora_rank=64` / `lora_alpha=128`** for the multilingual checkpoint: overall accuracy
-+0.151 (0.702 -> 0.853), `es` ECE 0.170 -> 0.038 and accuracy 0.472 -> 0.956. This largely closes
-NFR-C06 for `choice`/`de`/`es`/`fr`/`it`/`pt`; `nl` remains the outlier (ECE 0.104, accuracy
-0.663) and stays open.
++0.151 (0.702 -> 0.853), `es` ECE 0.170 -> 0.038 and accuracy 0.472 -> 0.956. NFR-C06 is met for
+`es` (0.038) and `pt` (0.024); `de` (0.063), `fr` (0.051), `it` (0.059) and `nl` (ECE 0.104,
+accuracy 0.663) remain above the 0.05 target and stay open.
 
 ## Success Criteria
 
 - [x] r=64 improves overall accuracy and per-language ECE over r=16 without a clean-accuracy
       regression.
-- [~] Per-language ECE <= 0.05: 5/6 languages pass at r=64; `nl` (0.104) does not.
+- [~] Per-language ECE <= 0.05: 2/6 languages pass at r=64 (`es` 0.038, `pt` 0.024) — 3/6 passed
+      at r=16 (`fr`, `nl`, `pt`); `de` 0.063, `fr` 0.051, `it` 0.059 and `nl` 0.104 do not.
 - [x] Republish the r=64 multilingual adapter to the Hub (`munod/jeba-multi`, commit `599df58`).

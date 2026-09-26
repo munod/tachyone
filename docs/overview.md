@@ -1,6 +1,6 @@
 # Overview
 
-**Status:** Implemented and released (`v0.2.0`). All milestones M0–M6 are complete, plus the
+**Status:** Implemented and released (`v0.3.0`). All milestones M0–M6 are complete, plus the
 post-M6 multilingual-quality (B-1) and CUDA-graph fast-path (B-2) work. See
 [`benchmarks.md`](benchmarks.md) for measured results and `.specs/project/STATE.md` for the
 authoritative decision log.
@@ -62,13 +62,18 @@ encoder backend next.
 
 ## How jeba compares
 
+This is the canonical comparison table; `README.md` and `docs/index.md` mirror it verbatim.
+
 | Dimension | Jev | Laya | Needle | **jeba** |
 | --- | --- | --- | --- | --- |
 | Wire contract | `/v1/systemone` (hosted) | `/v1/systemone` (self-hosted) | Own tool/embedding API | **Jev-exact, self-hosted** |
 | Hosted dependency | Required | None | None (device engine) | **None in core** |
-| LLM backend | — | No (encoder only) | No | **Yes (Phase 2, optional)** |
-| Encoder backend | Own model | Yes | Yes (2-bit) | **Phase 3 (ModernBERT/mmBERT)** |
-| Multilingual | Yes | Yes (mmBERT) | Partial | **Yes (mmBERT, 100+)** |
+| LLM backend | — | No (encoder only) | No | **Yes (optional)** |
+| Encoder backend | Own model | Yes | Yes (2-bit) | **Yes (ModernBERT/mmBERT + LoRA)** |
+| ONNX backend | No | Yes | Yes | **Yes (`onnx` extra)** |
+| MCP / LangChain | No | Yes | No | **Yes** |
+| Multilingual | Yes | Yes (mmBERT) | Partial | **Yes (100+ routed, 6 trained)** |
+| Fast path | Proprietary | No | Quantized | **CUDA graphs (`fast` extra)** |
 | Extension model | n/a | Router, hooks | Grammar, telemetry | **Router, hooks, batch (additive)** |
 | License | Proprietary service | Apache-2.0 | Open | **Apache-2.0** |
 
@@ -76,7 +81,8 @@ encoder backend next.
 
 - **Contract:** golden Jev parity suite green for all primitives and error shapes.
 - **Adoption proof:** a real Jev client answers via jeba in Phase 2.
-- **Quality:** documented accuracy and ECE on public probes (MASSIVE, XNLI, typed-decisions).
+- **Quality:** documented accuracy and ECE on the held-out synthetic set (delivered); on public
+  probes (MASSIVE, XNLI, typed-decisions) — **not yet delivered**.
 - **Performance:** published p50/p95 latency and memory for encoder/ONNX/fast paths.
 - **Portability:** base install works offline on CPU and GPU; no hosted dependency.
 

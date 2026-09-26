@@ -14,7 +14,7 @@
 | NFR-P04 | LLM backend overhead beyond provider call | < 50 ms | M2 | timing measurement |
 | NFR-P05 | Batch throughput | near-linear scaling up to memory limit | M3 | batch sweep |
 | NFR-P06 | Server cold start (encoder preloaded) | ≤ 30 s **[open]** | M3 | timed startup |
-| NFR-P07 | Fast-path (TileLang/CUDA graphs) latency on supported CUDA | p50 improves vs stock forward; no shape change (met: 2.47× p50, 0 top-label flips) | Backlog B-2 | micro-benchmark |
+| NFR-P07 | Fast-path (TileLang/CUDA graphs) latency on supported CUDA | p50 improves vs stock forward; no shape change (met: 2.68× p50, 0 top-label flips) | Backlog B-2 | micro-benchmark |
 
 ## Resource footprint (NFR-R)
 
@@ -35,8 +35,8 @@
 | NFR-C03 | Deterministic inference on CPU given fixed weights + seed | required | M3 |
 | NFR-C04 | Reproducible training given seed/config | within documented tolerance | M4 |
 | NFR-C05 | Graceful fallback when acceleration/extra unavailable | no crash | M5 |
-| NFR-C06 | Calibration quality | ECE ≤ 0.05 **[near: overall multi 0.038, en 0.061; `nl` 0.104 open]** | M4 |
-| NFR-C07 | Per-language calibration quality | ECE ≤ 0.05 per language (choice/score) **[5/6 languages met; `nl` 0.104 open]** | Backlog B-1 |
+| NFR-C06 | Calibration quality | ECE ≤ 0.05 **[near: overall multi 0.038, en 0.061; per-language `de` 0.063, `fr` 0.051, `it` 0.059, `nl` 0.104 open]** | M4 |
+| NFR-C07 | Per-language calibration quality | ECE ≤ 0.05 per language (choice/score) **[2/6 met (`es` 0.038, `pt` 0.024); `de` 0.063, `fr` 0.051, `it` 0.059, `nl` 0.104 open]** | Backlog B-1 |
 
 ## Compatibility (NFR-X)
 
@@ -94,6 +94,6 @@ accessibility requirements (see the `Accessibility Testing` skill) but is out of
 
 ---
 
-**Counts:** 41 non-functional requirements (39 baseline + NFR-P07/NFR-C07 tracked in
+**Counts:** 43 non-functional requirements (NFR-P07 and NFR-C07 are tracked in
 `.specs/project/BACKLOG.md`). Targets marked **[open]** are tracked in
 `.specs/project/STATE.md` and resolved after M3/M4 measurements.

@@ -19,7 +19,7 @@ pipeline_tag: text-classification
 
 # jeba (System One decision engine)
 
-> **Status: released (`v0.2.0`).** Trained on a single RTX 3060 12GB and published as LoRA
+> **Status: released (`v0.3.0`).** Trained on a single RTX 3060 12GB and published as LoRA
 > adapters ([`munod/jeba-en`](https://huggingface.co/munod/jeba-en),
 > [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi)); measured numbers below come
 > from `benchmarks/report.md`.
@@ -32,7 +32,7 @@ pipeline_tag: text-classification
 - **Trunk:** ModernBERT-large (English) and mmBERT-base (100+ languages); see ADR-0007.
 - **Adapters:** [`munod/jeba-en`](https://huggingface.co/munod/jeba-en),
   [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi) (LoRA; load base + adapter).
-- **Licence:** Apache-2.0.
+- **License:** Apache-2.0.
 - **Repository:** <https://github.com/munod/jeba>
 
 ## Uses
@@ -78,8 +78,9 @@ Per primitive (English): `choice` 0.834, `noul` 0.744, `score` 0.712; (multiling
 0.684, `noul` 0.960, `score` 0.916. The localized, per-record-RNG data (B-1) lifted multilingual
 `choice` from 0.40 to 0.68 and English overall from 0.72 to 0.76. **Raising the multilingual LoRA
 rank from 16 to 64** (alpha 128) removed the cross-language capacity bottleneck: overall accuracy
-0.702 → 0.853 and `es` ECE 0.170 → 0.038 (`es` accuracy 0.472 → 0.956). Five of six languages now
-meet ECE ≤ 0.05; `nl` (ECE 0.104, accuracy 0.663) remains the outlier (NFR-C06 partially open).
+0.702 → 0.853 and `es` ECE 0.170 → 0.038 (`es` accuracy 0.472 → 0.956). Two of six languages now
+meet ECE ≤ 0.05 (`es` 0.038 and `pt` 0.024); `de` (0.063), `fr` (0.051), `it` (0.059) and `nl`
+(ECE 0.104, accuracy 0.663) remain above target (NFR-C06 partially open).
 The CUDA-graph fast path (`JEBA_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of

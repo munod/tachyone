@@ -8,7 +8,7 @@ Legend: **Ready** (can start now) · **Blocked** (needs a prerequisite) · **Ide
 
 ---
 
-## B-1 — Multilingual `choice`/`score` quality  · Nearly done (rank bump) / `nl` open
+## B-1 — Multilingual `choice`/`score` quality  · Done (published) / `de` `fr` `it` `nl` ECE open
 
 **Why.** After v3 (dedicated `choice` head, rich option descriptions), English `choice` reached
 0.78 but multilingual `choice` is 0.40 and multilingual `score` ECE is 0.18 (see
@@ -20,13 +20,15 @@ a low distractor rate; calibration is per `(primitive, language)`; the runtime a
 `kind` → global. The B-1 adapters are published (`munod/jeba-en`, `munod/jeba-multi`).
 **Follow-up (lora-rank experiment):** the multilingual LoRA rank was raised 16 → **64**
 (`lora_alpha` 128), removing the cross-language capacity bottleneck. Measured multilingual overall
-accuracy **0.702 → 0.853** and `es` ECE **0.170 → 0.038** (`es` accuracy 0.472 → 0.956). Five of
-six languages now meet ECE ≤ 0.05; `nl` (ECE 0.104, accuracy 0.663) remains. English is unchanged
+accuracy **0.702 → 0.853** and `es` ECE **0.170 → 0.038** (`es` accuracy 0.472 → 0.956). Two of
+six languages now meet ECE ≤ 0.05 (`es` 0.038, `pt` 0.024); `de` 0.063, `fr` 0.051, `it` 0.059 and
+`nl` (ECE 0.104, accuracy 0.663) remain. English is unchanged
 (overall 0.763). Spec/tasks: `.specs/features/multilingual-quality/`,
 `.specs/features/lora-rank-experiment/`.
 
 **Remaining plan.**
-1. `nl` is the only language above 0.05 ECE (0.104) and the lowest accuracy (0.663). Investigate
+1. Four languages sit above the 0.05 ECE target (`nl` 0.104, `de` 0.063, `it` 0.059, `fr` 0.051),
+   and `nl` also has the lowest accuracy (0.663). Investigate
    whether it needs more per-language support, a language-specific learning rate, or a richer
    calibration mapping; the scalar per-language temperature already exists.
 2. [x] Republished the r=64 multilingual adapter to the Hub (`munod/jeba-multi`, commit `599df58`).
@@ -53,8 +55,8 @@ registered"). There is no measured latency improvement yet, and `NFR-P01` is sti
 
 **Status (done).** `maybe_accelerate` now takes an injected accelerator builder and is wired by
 `JEBA_FAST` in `load_encoder` to a per-shape CUDA-graph forward with bf16-resident weights (graceful
-fallback on CPU/MPS/absent extras). `benchmarks/fast_path.py` measures stock vs fast: **p50 9.13 →
-3.70 ms, p95 10.75 → 4.09 ms (2.47× p50)**, answer parity max abs **0.0037**, **0 top-label flips**.
+fallback on CPU/MPS/absent extras). `benchmarks/fast_path.py` measures stock vs fast: **p50 10.27 →
+3.83 ms, p95 11.05 → 4.12 ms (2.68× p50)**, answer parity max abs **0.0044**, **0 top-label flips**.
 NFR-P01 and NFR-P07 met; results in `benchmarks/report.md`. TileLang fused kernels remain optional
 (no measured benefit yet). Spec/tasks: `.specs/features/fast-path/`.
 
@@ -126,8 +128,9 @@ shows data-template artifacts are a real failure mode.
 (char swap/delete, accent strip, casing flip, terminal-punctuation drop) to the `state` only,
 drawing from a per-record RNG so it stays independent of the cyclic label (L-003).
 `training/evaluate.py` adds `--noise-rate` and reports the noisy view under `report["noisy"]`;
-`benchmarks/report.py` renders it. **Result:** the released clean-trained adapters are already
-robust to this noise model — English 0.763→0.760, multilingual 0.702→0.701 on the noisy view. A
+`benchmarks/report.py` renders it. **Result:** the clean-trained adapters are already robust to
+this noise model — English 0.763→0.760, multilingual 0.702→0.701 at the r=16 baseline and
+0.853→0.847 for the released r=64 adapter. A
 noise-augmented multilingual adapter scored 0.719 on both views but calibrated worse (ECE 0.090
 vs 0.033) and regressed on `de`/`nl`, so it is **not** released. Spec/tasks:
 `.specs/features/input-noise/`.
@@ -204,6 +207,69 @@ quality idea on the table, and complementary to RLCD/proper-scoring.
 careful negative sampling. Treat as an experiment with a strict ablation gate. Effort ~2–4 days.
 
 **Related.** `backends/encoder.py` (cosine decision), `training/finetune_rlcd.py`, `STATE.md` L-002.
+
+---
+
+## B-7 — Public-probe evaluation (MASSIVE / XNLI / typed-decisions) · Ready
+
+**Why.** Every published number today comes from the deterministic **synthetic** held-out split
+(`benchmarks/report.md` says so explicitly), so OPS-06 and the M6 exit criterion "benchmark report
+comparable to MASSIVE / XNLI / typed-decisions" are only partially met. Public probes give an
+externally comparable number.
+
+**Status (not started).** Harness, model card, adapters and the synthetic report are published;
+no public-probe run exists. Tracked as `OPS-06` partial and as the unmet M6 exit criterion.
+
+**Plan.**
+1. Evaluation-only loaders for MASSIVE (intent), XNLI (entailment) and typed-decisions mapped to
+   jeba's `choice`/`score`/`noul` primitives; no training data changes.
+2. Run the released adapters (`munod/jeba-en`, `munod/jeba-multi`) on the probe sets and report
+   accuracy/ECE per language under `benchmarks/results/`.
+3. Render the comparison in `benchmarks/report.md` with the exact reproduction commands
+   (`benchmarks/public_probes.py` is still undelivered — see `benchmarks/README.md`).
+
+**Acceptance.**
+- Probe results published in `benchmarks/report.md` with seed, hardware and exact commands.
+- No regression claim is made on the synthetic numbers; both sets are labeled.
+- `OPS-06` moves to `Implemented` and the M6 exit criterion is met.
+
+**Risks / notes.** Probe licenses and download size; label/option spaces do not always map to a
+jeba `choice` criterion, so some probes may need a `noul`/`score` formulation. Evaluation-only —
+must not leak into training data (keeps comparability). Effort ~2–3 days (no GPU retrain).
+
+**Related.** `docs/benchmarks.md` (Known limitations), `benchmarks/README.md`, `OPS-06`,
+`docs/training.md` (§5), `NFR-D04`.
+
+---
+
+## B-8 · Hardening — silent degradation when calibration assets fail to load · Ready
+
+**Why.** `load_temperatures()` and `load_choice_head()` in `src/jeba/backends/encoder.py` swallow
+every exception (`except Exception: return {} / None`). On a partially populated cache — the exact
+scenario `JEBA_OFFLINE=1` promises to make safe — the engine then runs **without per-language
+temperature scaling and without the `choice` head**, silently, and reports confident numbers that
+do not reflect the calibrated model. Reported by the 2026-09-26 documentation review: an
+`JEBA_OFFLINE=1` run failed with `LocalEntryNotFoundError` because the Hub `refs/main` pointed at
+an empty snapshot.
+
+**Status (not started).** Documentation now describes the real prefetch step
+(`docs/huggingface.md`, `docs/adr/README.md`); the code path is unchanged.
+
+**Plan.**
+1. Distinguish "asset genuinely absent" (fine, documented) from "asset present but unreadable /
+   cache corrupt" (a bug) and `log.warning` on the latter, naming the file and the repo.
+2. In `offline` mode, fail loudly (or at least warn on stderr) instead of degrading silently.
+3. Add a regression test with a seeded fake encoder that asserts the warning is emitted when
+   `temperature_calibration.json` / `choice_head.json` cannot be read.
+
+**Acceptance.**
+- A corrupt/partial cache produces a warning naming the missing asset; a clean first run does not.
+- `tests/test_encoder.py` covers both branches; no wire-shape change (contract suite untouched).
+
+**Risks / notes.** Behaviour change is log-only; do not turn it into a hard failure for users who
+intentionally run without calibration. Effort ~0.5 day.
+
+**Related.** `docs/huggingface.md` (§4), `docs/adr/README.md` (ADR-0010 note), `NFR-C05`.
 
 ---
 

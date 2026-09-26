@@ -30,7 +30,7 @@ Hosted decision APIs are fast but remote, closed, and metered; autoregressive LL
 local-capable but slow and poorly calibrated for atomic judgments. jeba sits in between:
 
 - **Drop-in** — same request/response as Jev; repoint the client and keep your code.
-- **Local-first** — the base install runs offline with no API key; the HTTP server is one mode, not the only one.
+- **Local-first** — the base install runs offline with no API key; the HTTP server is one mode, not the only one (the CLI's default backend is `llm`, so pass `--backend encoder` or `--backend fake` for a key-free run).
 - **Fast** — the local backend is non-autoregressive: one forward pass, no decoding loop; `JEBA_FAST=1` adds a CUDA-graph path (2.7× p50 on an RTX 3060).
 - **Calibrated** — probabilities trained with strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature fitting.
 - **Multilingual** — mmBERT-based checkpoint covering 100+ languages via automatic script/language routing.
@@ -38,15 +38,19 @@ local-capable but slow and poorly calibrated for atomic judgments. jeba sits in 
 
 ## How it compares
 
+Mirrors the canonical table in [`docs/overview.md`](docs/overview.md#how-jeba-compares).
+
 | | Jev | Laya | Needle | **jeba** |
 | --- | --- | --- | --- | --- |
-| Wire contract | `/v1/systemone` (hosted) | `/v1/systemone` (self-hosted) | Own API | **Jev-exact, self-hosted** |
-| Hosted dependency | Required | None | None | **None in core** |
-| LLM backend | — | No | No | **Yes (optional)** |
+| Wire contract | `/v1/systemone` (hosted) | `/v1/systemone` (self-hosted) | Own tool/embedding API | **Jev-exact, self-hosted** |
+| Hosted dependency | Required | None | None (device engine) | **None in core** |
+| LLM backend | — | No (encoder only) | No | **Yes (optional)** |
 | Encoder backend | Own model | Yes | Yes (2-bit) | **Yes (ModernBERT/mmBERT + LoRA)** |
 | ONNX backend | No | Yes | Yes | **Yes (`onnx` extra)** |
 | MCP / LangChain | No | Yes | No | **Yes** |
-| Multilingual | Yes | Yes | Partial | **Yes (100+ languages)** |
+| Multilingual | Yes | Yes (mmBERT) | Partial | **Yes (100+ routed, 6 trained)** |
+| Fast path | Proprietary | No | Quantized | **CUDA graphs (`fast` extra)** |
+| Extension model | n/a | Router, hooks | Grammar, telemetry | **Router, hooks, batch (additive)** |
 | License | Proprietary service | Apache-2.0 | Open | **Apache-2.0** |
 
 ## Install & quickstart
@@ -91,7 +95,7 @@ curl -s http://127.0.0.1:8000/v1/systemone \
 
 ## Local encoder & published models
 
-`JEBA_BACKEND=encoder` (default, offline once cached) loads `answerdotai/ModernBERT-large` or
+`JEBA_BACKEND=encoder` (local, offline once cached) loads `answerdotai/ModernBERT-large` or
 `jhu-clsp/mmBERT-base` and applies the published LoRA adapter. Override with
 `JEBA_ADAPTERS="jeba-en=acme/tuned-en,jeba-multi="`; force cache-only with `JEBA_OFFLINE=1`.
 On a CUDA device, `JEBA_FAST=1` opts into the per-shape CUDA-graph forward (bf16 weights) with
@@ -108,8 +112,9 @@ graceful fallback.
 
   The dedicated `choice` head (L-002) and localized per-record-RNG data (B-1) lifted multilingual
   `choice` from ~0.25 (chance), and raising the multilingual LoRA rank to 64 lifted overall
-  accuracy to 0.853 and cut `es` ECE to 0.038 (five of six languages now meet ECE ≤ 0.05; `nl`
-  remains). The CUDA-graph fast path (`JEBA_FAST=1`) improves p50 10.3 → 3.8 ms with no top-label
+  accuracy to 0.853 and cut `es` ECE to 0.038 (two of six languages now meet ECE ≤ 0.05 — `es`
+  0.038 and `pt` 0.024; `de` 0.063, `fr` 0.051, `it` 0.059 and `nl` 0.104 remain above target). The
+  CUDA-graph fast path (`JEBA_FAST=1`) improves p50 10.3 → 3.8 ms with no top-label
   changes.
 
 ## Architecture at a glance
@@ -166,6 +171,14 @@ Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/t
 | [`docs/overview.md`](docs/overview.md) | Vision, personas, use cases, success metrics, non-goals |
 | [`docs/protocol.md`](docs/protocol.md) | The `/v1/systemone` contract |
 | [`docs/architecture.md`](docs/architecture.md) | Components, flows, backend strategy, hooks |
+| [`docs/cli.md`](docs/cli.md) | CLI flags, presets, modes, exit codes |
+| [`docs/mcp.md`](docs/mcp.md) | MCP stdio server (`jeba-mcp-server`) |
+| [`docs/langchain.md`](docs/langchain.md) | LangChain/LangGraph `Runnable` adapter |
+| [`docs/docker.md`](docs/docker.md) | Image, Compose, healthcheck, config in containers |
+| [`docs/cookbook-handoff.md`](docs/cookbook-handoff.md) | Confidence thresholding + System-2 handoff |
+| [`docs/benchmarks.md`](docs/benchmarks.md) | Accuracy/ECE/latency numbers and limitations |
+| [`docs/roadmap.md`](docs/roadmap.md) | Milestones, exit criteria, backlog |
+| [`docs/tasks.md`](docs/tasks.md) | Atomic task plan (M0–M6) |
 | [`docs/adr/`](docs/adr/) | Architecture decision records |
 | [`docs/requirements/`](docs/requirements/) | Functional, non-functional, traceability |
 | [`docs/testing.md`](docs/testing.md) | Contract/parity tests, gates, benchmarks |

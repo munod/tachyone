@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-09-26
 **Current Work:** Post-M6 backlog. **B-2 (fast path) done**: `JEBA_FAST` wires
 `maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
 `benchmarks/fast_path.py` measures 2.68× p50 (10.27 → 3.83 ms) and 0 top-label flips, meeting
@@ -8,20 +8,23 @@ NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed, retrained on the RTX 306
 adapters were republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`); the `v0.2.0` and
 `v0.3.0` GitHub Releases exist. Multilingual `choice` 0.40 → **0.684**, overall 0.609 → **0.853**;
 English overall 0.721 → **0.763**; with the multilingual LoRA at r=64, per-language ECE is now
-≤ 0.05 for 5/6 languages (`nl` 0.104 remains — NFR-C06 nearly closed).
+≤ 0.05 for only 2/6 languages (`es` 0.038, `pt` 0.024; `de` 0.063, `fr` 0.051, `it` 0.059 and `nl`
+0.104 remain open — NFR-C06 partially open).
 **B-3 (confidence thresholding / System-2 handoff) done**:
 `calibration.py` gains normalized `entropy`/`margin`, `handoff.py` exposes `assess`/
 `assess_response`, and the CLI appends a sibling `handoff` object via `--threshold` without
 changing the canonical response. **B-4 (input-noise robustness) done and measured on the RTX
 3060**: seeded opt-in `noise_rate` in `generate_data.py` plus a clean/noisy split in `evaluate.py`
-(`report["noisy"]`); the released adapters are already robust (EN 0.763→0.760, multi 0.702→0.701)
+(`report["noisy"]`); the clean-trained adapters are already robust (EN 0.763→0.760; multilingual
+0.702→0.701 at the r=16 baseline and 0.853→0.847 for the released r=64 adapter)
 and the noise-augmented adapter did not beat them (ECE 0.090 vs 0.033), so it is not released.
 **Multilingual LoRA rank (NFR-C06 follow-up) done and adopted**: `lora_rank` 16 → **64**
 (`lora_alpha` 128) in `finetune_multi.json`; measured multilingual overall accuracy 0.702 → **0.853**,
-`es` ECE 0.170 → **0.038** (accuracy 0.472 → 0.956). Five of six languages now meet ECE ≤ 0.05;
-`nl` (ECE 0.104, accuracy 0.663) remains open. The r=64 multilingual adapter is republished to the
+`es` ECE 0.170 → **0.038** (accuracy 0.472 → 0.956). Two of six languages now meet ECE ≤ 0.05
+(`es` 0.038, `pt` 0.024); `de` 0.063, `fr` 0.051, `it` 0.059 and `nl` (ECE 0.104, accuracy 0.663)
+remain open. The r=64 multilingual adapter is republished to the
 Hub (`munod/jeba-multi`, commit `599df58`); the English adapter is unchanged.
-Next ready: B-5 (multi-domain coverage, Idea).
+Next ready: B-7 (public probes, Ready); B-5/B-6 remain Ideas.
 
 ## Milestone Status
 
@@ -239,7 +242,7 @@ composable contract already covers.
 | B-1 | multilingual quality: localized data + per-language temperature + reporting + retrain | 2026-09-24 | `feat(training): localize and deepen multilingual data` | ✅ |
 | B-2 | fast path: CUDA-graph encode + micro-benchmark (NFR-P01/P07) | 2026-09-24 | `perf(fast): wire acceleration seam and CUDA-graph encode` | ✅ |
 | B-3 | confidence thresholding / System-2 handoff (entropy/margin, `handoff.py`, CLI `--threshold`) | 2026-09-25 | `feat(handoff): add confidence threshold and handoff signal` | ✅ |
-| B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrain pending GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
+| B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrained + measured on GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
 | R-T1..T3 | multilingual LoRA rank 16 → 64 (accuracy 0.702 → 0.853, `es` ECE 0.170 → 0.038) | 2026-09-25 | `chore(training): raise multilingual LoRA rank to 64` | ✅ |
 
 ---
@@ -247,10 +250,12 @@ composable contract already covers.
 ## Deferred Ideas
 
 Canonical backlog: [`BACKLOG.md`](BACKLOG.md). **B-2** fast-path kernels are **done** (measured,
-NFR-P01 met). **B-1** multilingual `choice`/`score` quality has its code (localized data,
-per-language temperature, per-language reporting) landed; the GPU retrain/publish step remains.
-Carried-over ideas (provider registry, extra checkpoints, streaming, web console, process items)
-are listed there too. Promote an item into `docs/tasks.md` when it is scheduled.
+NFR-P01 met). **B-1** multilingual `choice`/`score` quality is **done**: localized data,
+per-language temperature, per-language reporting, the GPU retrain/publish step and the r=64 rank
+bump are all shipped and published. **B-3** and **B-4** are done and measured; **B-7** (public
+probes) is Ready and not started. Carried-over ideas (provider registry, extra checkpoints,
+streaming, web console, process items) are listed there too. Promote an item into `docs/tasks.md`
+when it is scheduled.
 
 **New backlog entries (2026-09-25):** **B-3** confidence thresholding / System-2 handoff (Ready),
 **B-4** input-noise robustness (Ready), **B-5** multi-domain coverage (Idea), **B-6** contrastive
@@ -267,8 +272,11 @@ and measured evidence (see L-004).
 - [x] **OD-2:** RESOLVED (2026-09-24) — No telemetry; `jeba.telemetry` is a no-op guard and
       `JEBA_TELEMETRY`/`DO_NOT_TRACK` are reserved for a future opt-out. See ADR-0011.
 - [x] **OD-3:** RESOLVED (2026-09-24) — Weights fetched from the Hugging Face Hub on demand and
-      cached locally (`JEBA_MODELS_DIR` or `~/.cache/jeba/models`), with `jeba download` prefetch
-      and cache-only offline mode. M3 uses public base encoders + untrained heads. See ADR-0010.
+      cached locally (`JEBA_MODELS_DIR` or `~/.cache/jeba/models`), with an explicit prefetch step
+      (`hf download <repo> --local-dir …`, or one warm-up prediction) and cache-only offline mode
+      (`JEBA_OFFLINE=1`). Note: the `jeba download` subcommand named in the original decision was
+      **never implemented** — see `docs/adr/README.md` → Implementation notes. M3 uses public base
+      encoders + untrained heads. See ADR-0010.
 - [x] **OD-4:** RESOLVED (2026-09-24) — ONNX backend first, TileLang/CUDA-graph fast path
       afterwards behind the `fast` extra with graceful fallback. See ADR-0012.
 - [x] **OD-5:** RESOLVED (2026-09-24, M2) — ``/predict`` and ``/predict/batch`` mirror the
@@ -284,20 +292,24 @@ and measured evidence (see L-004).
 - [ ] Add `.specs/features/*/design.md` and `tasks.md` for the remaining phases at execution time
       (only `wire-contract` has a design.md so far; the rest are covered by `docs/architecture.md`).
 
-## Documentation Baseline (2026-09-24)
+## Documentation Baseline (originated 2026-09-24; kept current)
 
-The full spec/design/planning documentation set was produced with **zero production code**:
+The full spec/design/planning documentation set was produced with **zero production code** and has
+grown with the project:
 
-- Root: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `LICENSE` (Apache-2.0).
-- `docs/`: `overview.md`, `roadmap.md`, `protocol.md`, `architecture.md`, `tasks.md`,
-  `testing.md`, `training.md`.
-- `docs/requirements/`: `functional.md` (51 reqs), `non-functional.md` (39 reqs), `traceability.md`.
-- `docs/adr/`: `README.md` + ADR-0001..ADR-0007.
-- `.specs/project/`: `PROJECT.md`, `ROADMAP.md`, `STATE.md`.
+- Root: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CHANGELOG.md`, `LICENSE` (Apache-2.0).
+- `docs/`: `index.md`, `overview.md`, `roadmap.md`, `protocol.md`, `architecture.md`, `tasks.md`,
+  `testing.md`, `training.md`, `benchmarks.md`, `cookbook-handoff.md`, `release.md`,
+  `huggingface.md`, `model-card.md`.
+- `docs/requirements/`: `functional.md` (60 reqs), `non-functional.md` (43 reqs), `traceability.md`.
+- `docs/adr/`: `README.md` + ADR-0001..ADR-0012.
+- `.specs/project/`: `PROJECT.md`, `ROADMAP.md`, `STATE.md`, `BACKLOG.md`.
 - `.specs/features/`: `wire-contract/` (spec + design), `llm-backend/`, `encoder-backend/`,
-  `training-calibration/`, `ecosystem/` (specs).
+  `training-calibration/`, `ecosystem/`, `fast-path/`, `multilingual-quality/`,
+  `lora-rank-experiment/`, `input-noise/`, `system2-handoff/`.
 
-**Verified:** 51/51 functional requirements traced to tasks; 7/7 ADRs indexed and present;
+**Verified:** 104/104 requirements traced (60 functional + 44 non-functional; 0 actionable
+unmapped); 13/13 ADRs indexed and present;
 all relative doc links resolve; 0 `.py` files created.
 
 ---

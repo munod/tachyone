@@ -3,8 +3,9 @@
 > Canonical machine-facing roadmap lives in `.specs/project/ROADMAP.md`. This page is the
 > human-facing view with exit criteria and risk notes. Task-level detail: `docs/tasks.md`.
 
-**Current phase:** M6 Proof & Release ✅ complete and released (`v0.2.0`), including the post-M6
-B-1 (multilingual quality + per-language calibration) and B-2 (CUDA-graph fast path) work.
+**Current phase:** M6 Proof & Release ✅ complete and released (`v0.3.0`), including the post-M6
+B-1 (multilingual quality + per-language calibration), B-2 (CUDA-graph fast path), B-3
+(confidence thresholding / System-2 handoff) and B-4 (input-noise robustness) work.
 **Delivery model:** one shippable increment per milestone; no fixed dates.
 
 ```mermaid
@@ -94,7 +95,8 @@ graph LR
 **Goal:** Public credibility.
 **Depends on:** M5.
 **Exit criteria:**
-- Benchmark report comparable to MASSIVE / XNLI / typed-decisions.
+- Benchmark report comparable to MASSIVE / XNLI / typed-decisions — **not yet met** (synthetic
+  report shipped; public probes are evaluation-only and unpublished, see `benchmarks.md`).
 - Docs site published.
 - Hugging Face weights + model card and a GitHub release.
 
@@ -117,7 +119,7 @@ The active backlog items shipped across `v0.2.0` and `v0.3.0`:
 - **B-1 Multilingual `choice`/`score` quality** ✅ (`v0.2.0`) — localized per-language data,
   per-record RNG, per-`(primitive, language)` temperature fitting, runtime language detection, and
   per-language ECE reporting. Follow-up raised the multilingual LoRA rank to 64: overall accuracy
-  0.702 → 0.853 and `es` ECE 0.170 → 0.038 (5/6 languages ≤ 0.05; `nl` open).
+  0.702 → 0.853 and `es` ECE 0.170 → 0.038 (2/6 languages ≤ 0.05 — `es`, `pt`; four open).
 - **B-2 Fast-path (TileLang/CUDA graphs)** ✅ (`v0.2.0`) — `JEBA_FAST=1` wires per-shape CUDA graphs
   with bf16 weights and graceful fallback; measured 2.68× p50 (NFR-P01/P07 met).
 - **B-3 Confidence thresholding / System-2 handoff** ✅ (`v0.3.0`) — `normalized_entropy`/`margin`

@@ -40,7 +40,7 @@ Noisy view (noise_rate 0.15): overall accuracy **0.760**, ECE **0.067**.
 Noisy view (noise_rate 0.15): overall accuracy **0.847**, ECE **0.042**.
 
 Raising the multilingual LoRA rank from 16 to 64 lifted overall accuracy 0.702 → **0.853** and `es`
-ECE 0.170 → **0.038**; five of six languages now meet ECE ≤ 0.05 (`nl` remains the outlier).
+ECE 0.170 → **0.038**; two of six languages now meet ECE ≤ 0.05 (`es` 0.038 and `pt` 0.024).
 
 ## Fast path (CUDA graphs)
 
@@ -58,8 +58,8 @@ with a **2.68× p50 speedup** for the fast path.
 
 ## Known limitations
 
-- Per-language ECE is still above the `0.05` target for `nl` (0.104); the other five multilingual
-  languages now meet it.
+- Per-language ECE is above the `0.05` target for four of six languages (`nl` 0.104, `de` 0.063,
+  `it` 0.059, `fr` 0.051); only `es` (0.038) and `pt` (0.024) meet it.
 - Calibrated ECE is measured in-sample on the held-out synthetic split.
 - Numbers are from deterministic synthetic data; public-probe comparisons (MASSIVE, XNLI,
   typed-decisions) are evaluation-only and not yet published.

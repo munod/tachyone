@@ -57,8 +57,8 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
     ---
 
     Strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature scaling, with
-    per-language ECE reported. The `ECE ≤ 0.05` target is met for five of six multilingual
-    languages (`pt`/`fr`/`it`/`de`/`es`); `nl` calibration is in progress.
+    per-language ECE reported. The `ECE ≤ 0.05` target is met for two of the six multilingual
+    languages (`pt` 0.024 and `es` 0.038); `de`/`fr`/`it`/`nl` remain above it (worst `nl` 0.104).
 
 - :material-power-plug:{ .lg .middle } **Local-first, drop-in**
 
@@ -161,14 +161,19 @@ Measured on a single RTX 3060 12GB (full tables and reproduction commands in the
 
 ## How it compares
 
+Mirrors the canonical table in [`overview.md`](overview.md#how-jeba-compares).
+
 | | Jev | Laya | Needle | **jeba** |
 | --- | --- | --- | --- | --- |
-| Wire contract | `/v1/systemone` (hosted) | `/v1/systemone` (self-hosted) | Own API | **Jev-exact, self-hosted** |
-| Hosted dependency | Required | None | None | **None in core** |
-| LLM backend | — | No | No | **Yes (optional)** |
+| Wire contract | `/v1/systemone` (hosted) | `/v1/systemone` (self-hosted) | Own tool/embedding API | **Jev-exact, self-hosted** |
+| Hosted dependency | Required | None | None (device engine) | **None in core** |
+| LLM backend | — | No (encoder only) | No | **Yes (optional)** |
 | Encoder backend | Own model | Yes | Yes (2-bit) | **Yes (ModernBERT/mmBERT + LoRA)** |
-| Multilingual | Yes | Yes | Partial | **Yes (100+ routed, 6 trained)** |
+| ONNX backend | No | Yes | Yes | **Yes (`onnx` extra)** |
+| MCP / LangChain | No | Yes | No | **Yes** |
+| Multilingual | Yes | Yes (mmBERT) | Partial | **Yes (100+ routed, 6 trained)** |
 | Fast path | Proprietary | No | Quantized | **CUDA graphs (`fast` extra)** |
+| Extension model | n/a | Router, hooks | Grammar, telemetry | **Router, hooks, batch (additive)** |
 | License | Proprietary service | Apache-2.0 | Open | **Apache-2.0** |
 
 ## Start here
@@ -176,5 +181,12 @@ Measured on a single RTX 3060 12GB (full tables and reproduction commands in the
 - [Overview](overview.md) — vision, personas, non-goals.
 - [Protocol](protocol.md) — the frozen `POST /v1/systemone` contract.
 - [Architecture](architecture.md) — components, flows, backend strategy.
+- [CLI reference](cli.md) — every `jeba` flag with copy-paste examples.
+- [Cookbook](cookbook-handoff.md) — uncertainty thresholding and System-2 handoff.
+- [MCP server](mcp.md) · [LangChain](langchain.md) · [Docker](docker.md) — integrations.
 - [Training](training.md) — data → LoRA/RLCD → calibration → evaluation.
 - [Benchmarks](benchmarks.md) — accuracy, ECE, and latency.
+- [Testing](testing.md) · [Release](release.md) · [Hugging Face](huggingface.md) ·
+  [Model card](model-card.md).
+- [Roadmap](roadmap.md) · [Tasks](tasks.md) · [Requirements](requirements/functional.md) ·
+  [Decisions](adr/README.md).

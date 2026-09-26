@@ -1,6 +1,6 @@
 # Contributing to jeba
 
-Thanks for your interest. jeba is implemented and released (`v0.2.0`); see `README.md` and
+Thanks for your interest. jeba is implemented and released (`v0.3.0`); see `README.md` and
 `.specs/project/STATE.md`. This guide defines the conventions that govern code contributions.
 
 ---

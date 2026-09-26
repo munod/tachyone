@@ -3,8 +3,8 @@
 **Phase:** Post-M6 (B-1, `.specs/project/BACKLOG.md`)
 **Status:** Code landed, retrained on the RTX 3060, and adapters published. Multilingual
 `choice` 0.40 → 0.68 and English overall 0.72 → 0.76 (accuracy targets met). A follow-up raised the
-multilingual LoRA rank to 64: overall 0.702 → 0.853 and `es` ECE 0.170 → 0.038, so 5/6 languages
-now meet ECE ≤ 0.05; `nl` (0.104) remains (NFR-C06 nearly closed). See
+multilingual LoRA rank to 64: overall 0.702 → 0.853 and `es` ECE 0.170 → 0.038, so 2/6 languages
+meet ECE ≤ 0.05 (`es` 0.038, `pt` 0.024); `de`/`fr`/`it`/`nl` (0.104) remain (NFR-C06 open). See
 `.specs/features/lora-rank-experiment/`.
 **Related docs:** `docs/training.md` (§3–4, limitations), `.specs/features/training-calibration/spec.md`,
 `STATE.md` L-002/L-003, `docs/requirements/non-functional.md` (NFR-C06), `docs/requirements/functional.md`
