@@ -17,8 +17,8 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
-from jeba import __version__ as jeba_version
-from jeba.calibration import DEFAULT_GRID
+from tachyone import __version__ as tachyone_version
+from tachyone.calibration import DEFAULT_GRID
 from training.generate_data import DataConfig
 
 CONFIG_DIR = Path(__file__).parent / "configs"
@@ -88,7 +88,7 @@ def environment() -> dict[str, Any]:
     info: dict[str, Any] = {
         "python": sys.version.split()[0],
         "platform": platform.platform(),
-        "jeba": jeba_version,
+        "tachyone": tachyone_version,
         "git_commit": _git_commit(),
     }
     for module_name in ("pydantic", "torch", "transformers", "peft"):

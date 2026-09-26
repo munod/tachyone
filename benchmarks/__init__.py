@@ -1,1 +1,1 @@
-"""Benchmark and evaluation harnesses for jeba."""
+"""Benchmark and evaluation harnesses for tachyone."""

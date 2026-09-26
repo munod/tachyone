@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from jeba.config import Config
+from tachyone.config import Config
 
 
 def test_defaults_are_local_first() -> None:
@@ -23,26 +23,26 @@ def test_defaults_are_local_first() -> None:
 def test_env_overrides() -> None:
     config = Config.from_env(
         {
-            "JEBA_HOST": "0.0.0.0",
-            "JEBA_PORT": "9001",
-            "JEBA_DEVICE": "cuda",
-            "JEBA_BACKEND": "fake",
-            "JEBA_MODELS": "jeba-en, jeba-multi",
-            "JEBA_PRELOAD": "jeba-en",
-            "JEBA_FAST": "1",
-            "JEBA_THREADS": "8",
-            "JEBA_API_KEY": "secret-server",
-            "JEBA_LLM_BASE_URL": "http://localhost:11434/v1",
-            "JEBA_LLM_MODEL": "llama3",
-            "JEBA_LLM_RETRIES": "4",
+            "TACHYONE_HOST": "0.0.0.0",
+            "TACHYONE_PORT": "9001",
+            "TACHYONE_DEVICE": "cuda",
+            "TACHYONE_BACKEND": "fake",
+            "TACHYONE_MODELS": "tachyone-en, tachyone-multi",
+            "TACHYONE_PRELOAD": "tachyone-en",
+            "TACHYONE_FAST": "1",
+            "TACHYONE_THREADS": "8",
+            "TACHYONE_API_KEY": "secret-server",
+            "TACHYONE_LLM_BASE_URL": "http://localhost:11434/v1",
+            "TACHYONE_LLM_MODEL": "llama3",
+            "TACHYONE_LLM_RETRIES": "4",
         }
     )
     assert config.host == "0.0.0.0"
     assert config.port == 9001
     assert config.device == "cuda"
     assert config.backend == "fake"
-    assert config.models == ("jeba-en", "jeba-multi")
-    assert config.preload == ("jeba-en",)
+    assert config.models == ("tachyone-en", "tachyone-multi")
+    assert config.preload == ("tachyone-en",)
     assert config.threads == 8
     assert config.fast is True
     assert config.llm_base_url == "http://localhost:11434/v1"
@@ -52,11 +52,13 @@ def test_env_overrides() -> None:
 
 def test_openai_api_key_is_a_fallback_for_llm_key() -> None:
     assert Config.from_env({"OPENAI_API_KEY": "sk-x"}).llm_api_key == "sk-x"
-    assert Config.from_env({"JEBA_LLM_API_KEY": "a", "OPENAI_API_KEY": "b"}).llm_api_key == "a"
+    assert Config.from_env({"TACHYONE_LLM_API_KEY": "a", "OPENAI_API_KEY": "b"}).llm_api_key == "a"
 
 
 def test_secrets_are_not_in_repr() -> None:
-    config = Config.from_env({"JEBA_API_KEY": "top-secret", "JEBA_LLM_API_KEY": "llm-secret"})
+    config = Config.from_env(
+        {"TACHYONE_API_KEY": "top-secret", "TACHYONE_LLM_API_KEY": "llm-secret"}
+    )
     text = repr(config)
     assert "top-secret" not in text
     assert "llm-secret" not in text
@@ -65,14 +67,14 @@ def test_secrets_are_not_in_repr() -> None:
 @pytest.mark.parametrize(
     "env",
     [
-        {"JEBA_PORT": "0"},
-        {"JEBA_PORT": "70000"},
-        {"JEBA_PORT": "not-a-number"},
-        {"JEBA_BACKEND": "quantum"},
-        {"JEBA_DEVICE": "tpu"},
-        {"JEBA_THREADS": "-1"},
-        {"JEBA_LLM_TIMEOUT": "0"},
-        {"JEBA_LLM_RETRIES": "99"},
+        {"TACHYONE_PORT": "0"},
+        {"TACHYONE_PORT": "70000"},
+        {"TACHYONE_PORT": "not-a-number"},
+        {"TACHYONE_BACKEND": "quantum"},
+        {"TACHYONE_DEVICE": "tpu"},
+        {"TACHYONE_THREADS": "-1"},
+        {"TACHYONE_LLM_TIMEOUT": "0"},
+        {"TACHYONE_LLM_RETRIES": "99"},
     ],
 )
 def test_invalid_values_fail_fast(env: dict[str, str]) -> None:
@@ -81,24 +83,29 @@ def test_invalid_values_fail_fast(env: dict[str, str]) -> None:
 
 
 def test_empty_strings_fall_back_to_defaults() -> None:
-    config = Config.from_env({"JEBA_HOST": "", "JEBA_API_KEY": "", "JEBA_LLM_API_KEY": ""})
+    config = Config.from_env(
+        {"TACHYONE_HOST": "", "TACHYONE_API_KEY": "", "TACHYONE_LLM_API_KEY": ""}
+    )
     assert config.host == "127.0.0.1"
     assert config.api_key is None
     assert config.llm_api_key is None
 
 
 def test_models_dir_defaults_and_override() -> None:
-    assert Config.from_env({}).models_dir.endswith(".cache/jeba/models")
-    assert Config.from_env({"JEBA_MODELS_DIR": "/models"}).models_dir == "/models"
+    assert Config.from_env({}).models_dir.endswith(".cache/tachyone/models")
+    assert Config.from_env({"TACHYONE_MODELS_DIR": "/models"}).models_dir == "/models"
 
 
 def test_adapters_and_offline_env() -> None:
     config = Config.from_env(
-        {"JEBA_ADAPTERS": "jeba-en=munod/jeba-en,jeba-multi=,bogus", "JEBA_OFFLINE": "1"}
+        {
+            "TACHYONE_ADAPTERS": "tachyone-en=munod/tachyone-en,tachyone-multi=,bogus",
+            "TACHYONE_OFFLINE": "1",
+        }
     )
     assert config.adapters == {
-        "jeba-en": "munod/jeba-en",
-        "jeba-multi": None,
+        "tachyone-en": "munod/tachyone-en",
+        "tachyone-multi": None,
         "bogus": None,
     }
     assert config.offline is True

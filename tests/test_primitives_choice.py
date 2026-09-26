@@ -5,7 +5,13 @@ from __future__ import annotations
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from jeba.primitives import MAX_CHOICE_OPTIONS, ChoiceAnswer, ChoiceQuestion, JsonValue, Question
+from tachyone.primitives import (
+    MAX_CHOICE_OPTIONS,
+    ChoiceAnswer,
+    ChoiceQuestion,
+    JsonValue,
+    Question,
+)
 
 _QUESTION = TypeAdapter(Question)
 

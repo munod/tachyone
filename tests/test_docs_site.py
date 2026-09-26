@@ -77,26 +77,26 @@ def test_hero_styles_are_scoped_against_theme_overrides() -> None:
     """The hero rules must outrank Material's `.md-typeset h1`.
 
     The hero lives inside `.md-typeset`, where `.md-typeset h1` (specificity 0-1-1) beats a
-    bare `.jeba-hero__title` (0-1-0) even though `extra.css` loads last. That once painted the
+    bare `.tachyone-hero__title` (0-1-0) even though `extra.css` loads last. That once painted the
     hero title with `--md-default-fg-color--light` (`#0000008a` on the light scheme) — nearly
     invisible on the dark hero — and silently replaced its size, weight and margins with the
-    theme's. Scoping every child rule under `.jeba-hero` gives 0-2-0 without `!important`.
+    theme's. Scoping every child rule under `.tachyone-hero` gives 0-2-0 without `!important`.
     """
     css = (_ROOT / "docs" / "stylesheets" / "extra.css").read_text(encoding="utf-8")
     rules = re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL))
-    hero_rules = [(sel.strip(), body) for sel, body in rules if ".jeba-hero__" in sel]
+    hero_rules = [(sel.strip(), body) for sel, body in rules if ".tachyone-hero__" in sel]
 
-    assert hero_rules, "no .jeba-hero__ rules found in extra.css"
+    assert hero_rules, "no .tachyone-hero__ rules found in extra.css"
     for selector, _ in hero_rules:
-        assert selector.startswith(".jeba-hero .jeba-hero__"), (
-            f"rule {selector!r} is not scoped under `.jeba-hero`, so Material's "
+        assert selector.startswith(".tachyone-hero .tachyone-hero__"), (
+            f"rule {selector!r} is not scoped under `.tachyone-hero`, so Material's "
             f"`.md-typeset h1` (0-1-1) wins over it (0-1-0)"
         )
 
     for cls in ("__logo", "__eyebrow", "__title", "__sub", "__cta"):
-        assert any(sel.endswith(f".jeba-hero{cls}") for sel, _ in hero_rules), (
-            f"missing rule for .jeba-hero{cls}"
+        assert any(sel.endswith(f".tachyone-hero{cls}") for sel, _ in hero_rules), (
+            f"missing rule for .tachyone-hero{cls}"
         )
 
-    title = next(body for sel, body in hero_rules if sel.endswith(".jeba-hero__title"))
+    title = next(body for sel, body in hero_rules if sel.endswith(".tachyone-hero__title"))
     assert "color: #f8fafc" in title, "the hero title must stay near-white on the dark hero"

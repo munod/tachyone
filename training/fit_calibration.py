@@ -4,7 +4,7 @@ The script consumes a JSONL of *predictions* (distribution + target + language),
 split, and writes the fitted temperatures beside the checkpoint (CAL-02, TRAIN-04). Each
 primitive keeps a global fit and gains a per-language fit; a language with too few examples is
 warned about and falls back to the per-primitive value at runtime. The math is pure Python
-(``jeba.calibration``), so it runs without torch.
+(``tachyone.calibration``), so it runs without torch.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from jeba.calibration import (
+from tachyone.calibration import (
     DEFAULT_GRID,
     apply_temperature,
     confidence,
@@ -156,7 +156,7 @@ def save_report(report: dict[str, Any], out_path: str | Path) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-fit-calibration", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-fit-calibration", description=__doc__)
     parser.add_argument(
         "--calibration", required=True, help="predictions JSONL (calibration split)"
     )

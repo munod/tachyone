@@ -25,8 +25,8 @@ _ADAPTER_FILES: tuple[str, ...] = (
 def _model_card(card_path: Path, checkpoint_name: str) -> str:
     text = card_path.read_text(encoding="utf-8")
     return text.replace(
-        "# jeba (System One decision engine)",
-        f"# jeba-{checkpoint_name} (System One decision engine)",
+        "# Tachyone (System One decision engine)",
+        f"# tachyone-{checkpoint_name} (System One decision engine)",
         1,
     )
 
@@ -68,7 +68,7 @@ def package(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-package-hf", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-package-hf", description=__doc__)
     parser.add_argument(
         "--adapter", required=True, help="trained adapter directory (checkpoints/en)"
     )
@@ -89,7 +89,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         temperature=args.temperature,
     )
     print(f"packaged HF upload folder: {target}")
-    print(f"publish with: hf upload <user>/jeba-{args.name} {target} --repo-type model")
+    print(f"publish with: hf upload <user>/tachyone-{args.name} {target} --repo-type model")
     return 0
 
 

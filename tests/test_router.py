@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from jeba.router import (
+from tachyone.router import (
     ENGLISH,
     MULTILINGUAL,
     SUPPORTED_LANGUAGES,

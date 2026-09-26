@@ -3,7 +3,7 @@
 **Phase:** M5–M6 (Phase 5–6)
 **Status:** Implemented and released (`v0.3.0`). Acceleration/integrations/packaging done;
 benchmark report + docs site shipped with real numbers; HF adapters published
-(`munod/jeba-en`, `munod/jeba-multi`).
+(`munod/tachyone-en`, `munod/tachyone-multi`).
 **Related docs:** `docs/architecture.md`, `docs/roadmap.md`, `docs/adr/ADR-0006-license-telemetry.md`
 
 ## Problem Statement
@@ -43,11 +43,11 @@ changing the canonical contract.
 
 ### P1: Agent integrations ⭐ MVP
 
-**User Story:** As an agent builder, I want jeba as an MCP tool and LangChain runnable.
+**User Story:** As an agent builder, I want Tachyone as an MCP tool and LangChain runnable.
 
 **Acceptance Criteria:**
 
-1. WHEN `jeba-mcp-server` runs over stdio THEN tools SHALL expose prediction capabilities.
+1. WHEN `tachyone-mcp-server` runs over stdio THEN tools SHALL expose prediction capabilities.
 2. WHEN the LangChain adapter is used THEN it SHALL return canonical primitive results.
 3. WHEN integrations are not installed THEN imports SHALL be isolated to their extras.
 

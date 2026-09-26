@@ -1,9 +1,9 @@
 # LangChain adapter
 
-`jeba.integrations.langchain` wraps a jeba backend as a LangChain/LangGraph **`Runnable`**, so a
+`tachyone.integrations.langchain` wraps a Tachyone backend as a LangChain/LangGraph **`Runnable`**, so a
 graph node can make a typed `choice` / `score` / `noul` decision and keep the canonical response.
 
-- Module: `jeba.integrations.langchain`
+- Module: `tachyone.integrations.langchain`
 - Extra: `langchain` (`uv sync --extra langchain` → `langchain-core` + `langgraph`)
 - Tests: `tests/test_langchain.py`
 
@@ -14,17 +14,17 @@ uv sync --extra langchain
 ```
 
 Without the extra, `create_runnable()` raises `the langchain extra is required: uv sync --extra langchain`.
-`predict()` needs **no** extra — it is plain Python over `jeba.wire.answer`.
+`predict()` needs **no** extra — it is plain Python over `tachyone.wire.answer`.
 
 ## Two entry points
 
-### `predict(backend, state, questions, *, model="jeba-latest") -> dict`
+### `predict(backend, state, questions, *, model="tachyone-latest") -> dict`
 
 Runs one request and returns the canonical payload. Verified output with the model-free backend:
 
 ```python
-from jeba.backends.fake import FakeBackend
-from jeba.integrations.langchain import predict
+from tachyone.backends.fake import FakeBackend
+from tachyone.integrations.langchain import predict
 
 questions = {
     "urgent": {"type": "noul", "instructions": "Is it urgent?"},
@@ -36,7 +36,7 @@ questions = {
 }
 
 predict(FakeBackend(), "please refund", questions)
-# {'model': 'jeba-latest',
+# {'model': 'tachyone-latest',
 #  'answers': {'urgent': {'type': 'noul', 'noul': 0.5},
 #              'team': {'type': 'choice', 'choice': 'billing',
 #                       'probabilities': {'billing': 0.5, 'technical': 0.5},
@@ -44,15 +44,15 @@ predict(FakeBackend(), "please refund", questions)
 #  'usage': {'input_tokens': 3, 'output_tokens': 2}}
 ```
 
-### `create_runnable(backend, *, model="jeba-latest") -> Runnable`
+### `create_runnable(backend, *, model="tachyone-latest") -> Runnable`
 
 ```python
-from jeba.backends import build_backend
-from jeba.config import Config
-from jeba.integrations.langchain import create_runnable
+from tachyone.backends import build_backend
+from tachyone.config import Config
+from tachyone.integrations.langchain import create_runnable
 
-backend = build_backend(Config.from_env())          # JEBA_BACKEND decides
-runnable = create_runnable(backend, model="jeba-latest")
+backend = build_backend(Config.from_env())          # TACHYONE_BACKEND decides
+runnable = create_runnable(backend, model="tachyone-latest")
 
 runnable.invoke({
     "state": "please refund",
@@ -83,17 +83,17 @@ graph.add_node("decide", decide)
 
 ```python
 # model-free (tests, demos)
-from jeba.backends.fake import FakeBackend
+from tachyone.backends.fake import FakeBackend
 runnable = create_runnable(FakeBackend())
 
-# whatever JEBA_BACKEND says (fake / encoder / onnx / llm)
+# whatever TACHYONE_BACKEND says (fake / encoder / onnx / llm)
 backend = build_backend(Config.from_env())
 runnable = create_runnable(backend)
 ```
 
 ## Boundary rules
 
-- The adapter is **additive**: it calls `jeba.wire.answer`, so field names, nesting and error
+- The adapter is **additive**: it calls `tachyone.wire.answer`, so field names, nesting and error
   statuses are identical to `POST /v1/systemone`. It never invents a LangChain-specific shape.
 - `predict()`/`create_runnable()` run `asyncio.run(...)` internally — do not call them from
   inside a running event loop.

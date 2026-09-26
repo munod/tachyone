@@ -3,7 +3,7 @@
 Ships the same decision math as the encoder backend but executes the transformer through
 ``onnxruntime`` (CPU or CUDA providers), which is portable and a lightweight deployment
 payload (BACK-04, OPS-01). The backend is a thin subclass of
-:class:`~jeba.backends.encoder.EncoderBackend`, so it passes the identical contract; only the
+:class:`~tachyone.backends.encoder.EncoderBackend`, so it passes the identical contract; only the
 embedding function differs. ``onnxruntime`` is imported lazily behind the ``onnx`` extra.
 
 **Adapters are not applied here:** an ONNX graph cannot take a LoRA adapter at runtime, so the
@@ -16,12 +16,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from jeba.backends.encoder import MODEL_IDS, EncodeFn, EncoderBackend, EncoderCheckpoint
-from jeba.router import CheckpointInfo, Router
+from tachyone.backends.encoder import MODEL_IDS, EncodeFn, EncoderBackend, EncoderCheckpoint
+from tachyone.router import CheckpointInfo, Router
 
 if TYPE_CHECKING:
-    from jeba.config import Config
-    from jeba.hooks import Hooks
+    from tachyone.config import Config
+    from tachyone.hooks import Hooks
 
 _ONNX_HINT = "the onnx extra is required for the onnx backend: uv sync --extra onnx"
 

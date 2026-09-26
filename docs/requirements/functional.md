@@ -81,8 +81,8 @@ Conventions: `WIRE` protocol · `PRIM` primitives · `BACK` backends · `ROUTE` 
 | --- | --- | --- | --- | --- |
 | SERVE-01 | FastAPI server implementing `/v1/systemone`. | P1 | M2 | Endpoint live and contract-compliant. |
 | SERVE-02 | Extension endpoints `/predict`, `/predict/batch`, `/health`. | P2 | M2 | Each responds correctly. |
-| SERVE-03 | CLI `jeba "text" --preset triage --predict`. | P1 | M2 | Prints primitive answer. |
-| SERVE-04 | Entry points `jeba`, `jeba-serve`, `jeba-mcp-server`. | P1 | M2/M5 | Console scripts resolve. |
+| SERVE-03 | CLI `tachyone "text" --preset triage --predict`. | P1 | M2 | Prints primitive answer. |
+| SERVE-04 | Entry points `tachyone`, `tachyone-serve`, `tachyone-mcp-server`. | P1 | M2/M5 | Console scripts resolve. |
 | SERVE-05 | Python SDK matching the wire. | P1 | M2 | Client call round-trips. |
 | SERVE-06 | Configuration via env vars (`HOST/PORT/DEVICE/PRELOAD/MODELS/THREADS/API_KEY/BACKEND`). | P1 | M2 | Env changes take effect at startup. |
 | SERVE-07 | Presets `router`, `guard`, `moderation`, `triage`, `email`. | P2 | M2 | Each expands to canonical questions. |
@@ -106,7 +106,7 @@ Conventions: `WIRE` protocol · `PRIM` primitives · `BACK` backends · `ROUTE` 
 | ID | Requirement | Prio | Phase | Acceptance summary |
 | --- | --- | --- | --- | --- |
 | OPS-01 | pip extras `serve`, `fast`, `onnx`, `langchain`, `mcp`, `train` isolate dependencies. | P1 | M5 | Installing an extra only adds its deps. |
-| OPS-02 | MCP stdio server (`jeba-mcp-server`). | P2 | M5 | Tools callable from an MCP host. |
+| OPS-02 | MCP stdio server (`tachyone-mcp-server`). | P2 | M5 | Tools callable from an MCP host. |
 | OPS-03 | LangChain `Runnable` adapter. | P2 | M5 | Returns canonical primitives. |
 | OPS-04 | Docker + compose deployment. | P2 | M5 | Server reachable and contract-compliant. |
 | OPS-05 | CI gates: ruff, pyright, pytest on push/PR. | P1 | M0 | CI green. |

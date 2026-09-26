@@ -15,17 +15,17 @@ def test_dockerfile_uses_python_and_serve_extra() -> None:
     text = (_DOCKER / "Dockerfile").read_text(encoding="utf-8")
     assert "python:3.12" in text
     assert "uv sync --locked --no-dev --extra serve" in text
-    assert "jeba-serve" in text
-    assert "USER jeba" in text
+    assert "tachyone-serve" in text
+    assert "USER tachyone" in text
 
 
 def test_compose_defines_the_service() -> None:
     text = (_DOCKER / "compose.yaml").read_text(encoding="utf-8")
-    assert "jeba:" in text
+    assert "tachyone:" in text
     assert "context: .." in text
     assert "dockerfile: docker/Dockerfile" in text
     assert "/health" in text
-    assert "JEBA_BACKEND" in text
+    assert "TACHYONE_BACKEND" in text
 
 
 def test_dockerignore_excludes_heavy_paths() -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from jeba.calibration import (
+from tachyone.calibration import (
     apply_temperature,
     confidence,
     expected_calibration_error,

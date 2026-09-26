@@ -6,8 +6,8 @@ import importlib.util
 
 import pytest
 
-from jeba.backends.fake import FakeBackend
-from jeba.integrations.langchain import create_runnable, predict
+from tachyone.backends.fake import FakeBackend
+from tachyone.integrations.langchain import create_runnable, predict
 
 _QUESTIONS = {
     "urgent": {"type": "noul", "instructions": "Is it urgent?"},

@@ -1,6 +1,6 @@
-# The jeba Wire Protocol (`/v1/systemone`)
+# The Tachyone Wire Protocol (`/v1/systemone`)
 
-**Status:** Frozen design (ADR-0001). This is the compatibility authority for jeba.
+**Status:** Frozen design (ADR-0001). This is the compatibility authority for Tachyone.
 **Compatibility target:** TypeSafe Jev "System One" `/v1/systemone`.
 **Rule:** Any change to a field in this document is a breaking change and MUST update the
 contract test suite in the same commit (see `docs/testing.md`).
@@ -17,7 +17,7 @@ Content-Type: application/json
 
 - The endpoint always returns JSON.
 - Multiple questions are evaluated **in parallel and independently** within one request.
-- jeba honors the same semantics: ask many atomic questions, compose results in your code.
+- Tachyone honors the same semantics: ask many atomic questions, compose results in your code.
 
 ---
 
@@ -26,7 +26,7 @@ Content-Type: application/json
 ```json
 {
   "state": "the text or structured context to judge",
-  "model": "jeba-latest",
+  "model": "tachyone-latest",
   "questions": {
     "q1": { "type": "noul",   "instructions": "Is this text a greeting?" },
     "q2": { "type": "choice", "instructions": "Pick a category.",
@@ -42,7 +42,7 @@ Content-Type: application/json
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `state` | `string \| object \| array` | Yes | The subject being judged. Passed to questions verbatim. |
-| `model` | `string` | Yes | Requested model id. jeba maps this to a backend/checkpoint. |
+| `model` | `string` | Yes | Requested model id. Tachyone maps this to a backend/checkpoint. |
 | `questions` | `map<string, Question>` | Yes | Question id → question. Ids are echoed in `answers`. |
 
 ---
@@ -112,7 +112,7 @@ Rate on an ordered scale.
 
 ```json
 {
-  "model": "jeba-latest",
+  "model": "tachyone-latest",
   "answers": {
     "q1": { "type": "noul", "noul": 0.97 },
     "q2": { "type": "choice", "choice": "tech", "probabilities": { "sports": 0.02, "tech": 0.95, "politics": 0.03 }, "confidence": 0.95 },
@@ -165,9 +165,9 @@ Token accounting for cost/telemetry. Encoder backends may report an estimate or 
 | `529 Overloaded` | Server overloaded | Capacity exceeded | Retry with exponential backoff |
 
 The retry contract for `429`/`529` uses **exponential backoff**; clients should add jitter
-and cap attempts. jeba's SDK implements this (`src/jeba/client.py`).
+and cap attempts. Tachyone's SDK implements this (`src/tachyone/client.py`).
 
-> **Where these statuses come from.** jeba's server does **not** rate-limit or apply capacity
+> **Where these statuses come from.** Tachyone's server does **not** rate-limit or apply capacity
 > limits of its own: `429`/`529` are defined by the wire contract and are surfaced faithfully.
 > On the `llm` backend they are passed through from the upstream provider; on the local backends
 > they are raised only by the contract-level error constructors.
@@ -175,7 +175,7 @@ and cap attempts. jeba's SDK implements this (`src/jeba/client.py`).
 ### Error body
 
 Every error — including `500` — uses one envelope
-(`WireError.to_body()` in `src/jeba/wire.py`):
+(`WireError.to_body()` in `src/tachyone/wire.py`):
 
 ```json
 {
@@ -223,7 +223,7 @@ by FastAPI's default `422`, not by this envelope — they are outside the Jev co
 
 ## Additive extensions (non-canonical)
 
-These are jeba extensions and MUST NOT alter `/v1/systemone` output shape.
+These are Tachyone extensions and MUST NOT alter `/v1/systemone` output shape.
 
 | Extension | Surface | Purpose |
 | --- | --- | --- |

@@ -6,8 +6,8 @@ import importlib.util
 
 import pytest
 
-from jeba.fast import cuda_available, maybe_accelerate, router_override, tilelang_available
-from jeba.router import ENGLISH, MULTILINGUAL, Router
+from tachyone.fast import cuda_available, maybe_accelerate, router_override, tilelang_available
+from tachyone.router import ENGLISH, MULTILINGUAL, Router
 
 pytestmark = pytest.mark.contract
 

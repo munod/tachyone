@@ -13,12 +13,12 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel, ConfigDict
 
-from jeba.hooks import ON_EVICT, ON_LOAD, ON_ROUTE, Hooks
-from jeba.primitives import State
+from tachyone.hooks import ON_EVICT, ON_LOAD, ON_ROUTE, Hooks
+from tachyone.primitives import State
 
 #: Built-in checkpoint ids.
-ENGLISH = "jeba-en"
-MULTILINGUAL = "jeba-multi"
+ENGLISH = "tachyone-en"
+MULTILINGUAL = "tachyone-multi"
 
 #: ISO 639-1 codes served by the multilingual checkpoint (100+ languages).
 SUPPORTED_LANGUAGES: tuple[str, ...] = (
@@ -446,7 +446,7 @@ class RouteDecision(BaseModel):
 
 
 #: Default checkpoints: English (ModernBERT-large) and multilingual (mmBERT-base), each with the
-#: published jeba LoRA adapter loaded on top (override with ``JEBA_ADAPTERS``).
+#: published tachyone LoRA adapter loaded on top (override with ``TACHYONE_ADAPTERS``).
 DEFAULT_CHECKPOINTS: dict[str, CheckpointInfo] = {
     ENGLISH: CheckpointInfo(
         id=ENGLISH,
@@ -454,7 +454,7 @@ DEFAULT_CHECKPOINTS: dict[str, CheckpointInfo] = {
         context=512,
         size_params=395_000_000,
         base_model="answerdotai/ModernBERT-large",
-        adapter="munod/jeba-en",
+        adapter="munod/tachyone-en",
     ),
     MULTILINGUAL: CheckpointInfo(
         id=MULTILINGUAL,
@@ -462,7 +462,7 @@ DEFAULT_CHECKPOINTS: dict[str, CheckpointInfo] = {
         context=1024,
         size_params=315_000_000,
         base_model="jhu-clsp/mmBERT-base",
-        adapter="munod/jeba-multi",
+        adapter="munod/tachyone-multi",
     ),
 }
 

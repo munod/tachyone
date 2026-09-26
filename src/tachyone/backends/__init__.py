@@ -7,26 +7,26 @@ actionable message rather than silently misbehaving.
 
 from __future__ import annotations
 
-from jeba.backends.base import Backend, PredictionResult
-from jeba.config import Config
+from tachyone.backends.base import Backend, PredictionResult
+from tachyone.config import Config
 
 
 def build_backend(config: Config) -> Backend:
     """Instantiate the backend selected by ``config.backend``."""
     if config.backend == "fake":
-        from jeba.backends.fake import FakeBackend
+        from tachyone.backends.fake import FakeBackend
 
         return FakeBackend()
     if config.backend == "llm":
-        from jeba.backends.llm import LLMBackend
+        from tachyone.backends.llm import LLMBackend
 
         return LLMBackend.from_config(config)
     if config.backend == "encoder":
-        from jeba.backends.encoder import EncoderBackend
+        from tachyone.backends.encoder import EncoderBackend
 
         return EncoderBackend.from_config(config)
     if config.backend == "onnx":
-        from jeba.backends.onnx import OnnxBackend
+        from tachyone.backends.onnx import OnnxBackend
 
         return OnnxBackend.from_config(config)
     raise ValueError(f"unknown backend: {config.backend!r}")

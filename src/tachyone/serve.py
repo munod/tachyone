@@ -1,7 +1,7 @@
 """HTTP surface: the canonical ``POST /v1/systemone`` plus additive extensions.
 
 FastAPI/uvicorn live behind the ``serve`` extra and are imported lazily, so ``import
-jeba.serve`` succeeds on a base install and only fails with an actionable message when the
+tachyone.serve`` succeeds on a base install and only fails with an actionable message when the
 server is actually started without the extra (NFR-M06). Transport delegates to
 ``wire.answer``; it adds auth, JSON parsing, and error-status mapping only.
 """
@@ -15,12 +15,12 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
-from jeba import __version__
-from jeba.backends import build_backend
-from jeba.backends.base import Backend
-from jeba.config import Config
-from jeba.primitives import Question, State
-from jeba.wire import (
+from tachyone import __version__
+from tachyone.backends import build_backend
+from tachyone.backends.base import Backend
+from tachyone.config import Config
+from tachyone.primitives import Question, State
+from tachyone.wire import (
     SystemOneRequest,
     Unauthorized,
     UnprocessableEntity,
@@ -44,7 +44,7 @@ class PredictRequest(_ExtensionBase):
 
     state: State
     questions: dict[str, Question]
-    model: str = "jeba-latest"
+    model: str = "tachyone-latest"
 
 
 class BatchPredictRequest(_ExtensionBase):
@@ -77,7 +77,7 @@ def create_app(config: Config, backend: Backend) -> FastAPI:
     # FastAPI resolves route annotations from module globals; expose the real class here
     # without importing it at module import time (keeps the base install serve-free).
     globals()["Request"] = Request
-    app = FastAPI(title="jeba", version=__version__)
+    app = FastAPI(title="tachyone", version=__version__)
 
     @app.exception_handler(WireError)
     async def _wire_error_handler(_request: Request, exc: WireError) -> Any:
@@ -126,7 +126,7 @@ def create_app(config: Config, backend: Backend) -> FastAPI:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point for the ``jeba-serve`` console script."""
+    """Entry point for the ``tachyone-serve`` console script."""
     del argv  # configuration is environment-driven
     try:
         import uvicorn

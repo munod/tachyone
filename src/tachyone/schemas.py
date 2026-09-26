@@ -17,7 +17,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from jeba.primitives import (
+from tachyone.primitives import (
     MAX_CHOICE_OPTIONS,
     ChoiceQuestion,
     NoulQuestion,

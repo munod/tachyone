@@ -1,11 +1,11 @@
 """Client-side confidence thresholding and System-2 handoff.
 
-jeba already returns ``confidence`` for ``choice``/``score`` and a probability for ``noul``, but
+tachyone already returns ``confidence`` for ``choice``/``score`` and a probability for ``noul``, but
 callers who want to *abstain* or *hand off to a slower System-2 LLM* when the engine is unsure
 have to reimplement the threshold. This module provides the missing typed signal (B-3).
 
 Everything here is **additive and client-side**: it reads a canonical
-:class:`~jeba.wire.SystemOneResponse` and never changes the ``/v1/systemone`` shape (ADR-0001,
+:class:`~tachyone.wire.SystemOneResponse` and never changes the ``/v1/systemone`` shape (ADR-0001,
 STATE L-004). The threshold is always required — there is no universal default because the right
 ``τ`` depends on the task (see ``docs/cookbook-handoff.md``).
 """
@@ -16,9 +16,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from jeba.calibration import confidence, margin, normalized_entropy
-from jeba.primitives import Answer, ChoiceAnswer, NoulAnswer, ScoreAnswer
-from jeba.wire import SystemOneResponse
+from tachyone.calibration import confidence, margin, normalized_entropy
+from tachyone.primitives import Answer, ChoiceAnswer, NoulAnswer, ScoreAnswer
+from tachyone.wire import SystemOneResponse
 
 
 @dataclass(frozen=True, slots=True)

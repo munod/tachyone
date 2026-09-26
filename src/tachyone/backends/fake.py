@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import json
 
-from jeba.backends.base import PredictionResult
-from jeba.primitives import (
+from tachyone.backends.base import PredictionResult
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     ChoiceQuestion,
@@ -22,7 +22,7 @@ from jeba.primitives import (
     ScoreQuestion,
     State,
 )
-from jeba.wire import Usage
+from tachyone.wire import Usage
 
 #: Probability mass placed on the selected option/level by :class:`FakeBackend`.
 _SELECTED_MASS = 0.5

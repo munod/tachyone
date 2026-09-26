@@ -37,7 +37,7 @@ coverage.xml
 *.bin
 models/
 checkpoints/
-jeba_models/
+tachyone_models/
 
 # Local datasets / benchmark artifacts
 data/

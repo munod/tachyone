@@ -10,8 +10,8 @@
 **What:** Generalize `maybe_accelerate(target, *, device, builder=None)` to invoke an injected
 accelerator builder when CUDA is present and otherwise return the stock target with a reason. Build a
 CUDA-graph-captured encode per `(batch, length)` bucket with bf16-resident weights behind a
-`JEBA_FAST` config flag in the encoder loader. TileLang fused kernels stay optional.
-**Where:** `src/jeba/fast.py`, `src/jeba/backends/encoder.py`, `src/jeba/config.py`.
+`TACHYONE_FAST` config flag in the encoder loader. TileLang fused kernels stay optional.
+**Where:** `src/tachyone/fast.py`, `src/tachyone/backends/encoder.py`, `src/tachyone/config.py`.
 **Depends on:** — · **Requirement:** NFR-P01, NFR-C05, OPS-01, EXT-02.
 **Done when:** acceleration activates only under documented conditions, falls back cleanly, and never
 changes the response shape; existing `tests/test_fast.py` still pass.

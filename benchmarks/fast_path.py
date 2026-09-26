@@ -15,10 +15,10 @@ from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
-from jeba.backends.encoder import EncoderModel, load_encoder
-from jeba.fast import cuda_available
-from jeba.primitives import NoulAnswer
-from jeba.router import CheckpointInfo, state_text
+from tachyone.backends.encoder import EncoderModel, load_encoder
+from tachyone.fast import cuda_available
+from tachyone.primitives import NoulAnswer
+from tachyone.router import CheckpointInfo, state_text
 from training.evaluate import EvalExample, load_examples
 from training.predict import _DEFAULT_MODELS_DIR
 
@@ -182,7 +182,7 @@ def run(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-fast-path-benchmark", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-fast-path-benchmark", description=__doc__)
     parser.add_argument("--data", required=True, help="records JSONL providing states")
     parser.add_argument("--model-id", required=True, help="base encoder model id")
     parser.add_argument("--adapter", default=None, help="optional LoRA adapter dir")

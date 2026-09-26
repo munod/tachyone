@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 120" width="450" height="120" role="img" aria-label="jeba — System 1 inference engine">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 120" width="450" height="120" role="img" aria-label="Tachyone — System 1 inference engine">
   <defs>
-    <linearGradient id="jebaGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="tachyoneGlow" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#38BDF8" />
       <stop offset="100%" stop-color="#818CF8" />
     </linearGradient>
@@ -16,12 +16,12 @@
   <!-- Logo mark (icon) -->
   <g transform="translate(10, 10)">
     <rect x="0" y="0" width="100" height="100" rx="24" fill="#0F172A" stroke="#1E293B" stroke-width="2" />
-    <path d="M 60 28 L 42 28 L 32 58 L 48 58 L 36 78 L 68 44 L 52 44 Z" fill="url(#jebaGlow)" filter="url(#glow)" />
+    <path d="M 60 28 L 42 28 L 32 58 L 48 58 L 36 78 L 68 44 L 52 44 Z" fill="url(#tachyoneGlow)" filter="url(#glow)" />
   </g>
 
   <!-- Wordmark -->
-  <text x="130" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="52" fill="#F8FAFC" letter-spacing="2">
-    JEBA<tspan fill="#38BDF8">.</tspan>
+  <text x="130" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="44" fill="#F8FAFC" letter-spacing="2">
+    TACHYONE<tspan fill="#38BDF8">.</tspan>
   </text>
 
   <!-- SYSTEM 1 badge + subtitle -->

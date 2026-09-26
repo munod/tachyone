@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="docs/assets/logo-wordmark.svg" alt="jeba — System 1 inference engine" width="440">
+  <img src="docs/assets/logo-wordmark.svg" alt="Tachyone — System 1 inference engine" width="440">
 </p>
 
-# jeba
+# Tachyone
 
 > **Local-first, multilingual System One decision engine that speaks the TypeSafe Jev `/v1/systemone` protocol.**
 
-jeba answers atomic structured questions — `choice`, `score`, and `noul` — and returns typed
-values with probabilities and calibrated confidence. Point an existing Jev client at a jeba
+Tachyone answers atomic structured questions — `choice`, `score`, and `noul` — and returns typed
+values with probabilities and calibrated confidence. Point an existing Jev client at a Tachyone
 server and it works unchanged; run the local encoder backend for fully offline inference.
 
 **Status: `v0.3.0` released.** All milestones M0–M6 are complete, plus the post-M6
@@ -24,23 +24,23 @@ Hugging Face Hub. See the
 
 ---
 
-## Why jeba
+## Why Tachyone
 
 Hosted decision APIs are fast but remote, closed, and metered; autoregressive LLMs are
-local-capable but slow and poorly calibrated for atomic judgments. jeba sits in between:
+local-capable but slow and poorly calibrated for atomic judgments. Tachyone sits in between:
 
 - **Drop-in** — same request/response as Jev; repoint the client and keep your code.
 - **Local-first** — the base install runs offline with no API key; the HTTP server is one mode, not the only one (the CLI's default backend is `llm`, so pass `--backend encoder` or `--backend fake` for a key-free run).
-- **Fast** — the local backend is non-autoregressive: one forward pass, no decoding loop; `JEBA_FAST=1` adds a CUDA-graph path (2.7× p50 on an RTX 3060).
+- **Fast** — the local backend is non-autoregressive: one forward pass, no decoding loop; `TACHYONE_FAST=1` adds a CUDA-graph path (2.7× p50 on an RTX 3060).
 - **Calibrated** — probabilities trained with strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature fitting.
 - **Multilingual** — mmBERT-based checkpoint covering 100+ languages via automatic script/language routing.
 - **Additive** — router control, hooks, `predict_batch`, MCP, and LangChain extend the contract without breaking it.
 
 ## How it compares
 
-Mirrors the canonical table in [`docs/overview.md`](docs/overview.md#how-jeba-compares).
+Mirrors the canonical table in [`docs/overview.md`](docs/overview.md#how-tachyone-compares).
 
-| | Jev | Laya | Needle | **jeba** |
+| | Jev | Laya | Needle | **Tachyone** |
 | --- | --- | --- | --- | --- |
 | Wire contract | `/v1/systemone` (hosted) | `/v1/systemone` (self-hosted) | Own tool/embedding API | **Jev-exact, self-hosted** |
 | Hosted dependency | Required | None | None (device engine) | **None in core** |
@@ -60,22 +60,22 @@ uv sync                 # core: offline, no key, no heavy deps
 uv sync --extra serve   # + FastAPI server (+ integration/e2e test deps)
 
 # Answer a question from the CLI (offline, model-free):
-uv run jeba --predict --preset triage --backend fake "refund please"
+uv run tachyone --predict --preset triage --backend fake "refund please"
 
 # The local encoder (downloads base weights + LoRA adapters, needs the train extra):
 uv sync --extra train
-uv run jeba --predict --preset triage --backend encoder "Quero cancelar minha assinatura agora"
+uv run tachyone --predict --preset triage --backend encoder "Quero cancelar minha assinatura agora"
 
 # Run the HTTP server:
-uv run jeba-serve
+uv run tachyone-serve
 ```
 
 ```python
 # Python SDK
-from jeba import JebaClient
-from jeba.primitives import ScoreQuestion
+from tachyone import TachyoneClient
+from tachyone.primitives import ScoreQuestion
 
-client = JebaClient("http://127.0.0.1:8000")
+client = TachyoneClient("http://127.0.0.1:8000")
 result = client.system_one(
     "This product is amazing!",
     {"sentiment": ScoreQuestion(
@@ -87,22 +87,22 @@ print(result.answers["sentiment"].score)
 ```
 
 ```bash
-# Drop-in: point an existing Jev client at jeba
+# Drop-in: point an existing Jev client at tachyone
 curl -s http://127.0.0.1:8000/v1/systemone \
   -H "Content-Type: application/json" \
-  -d '{"state":"hello","model":"jeba-latest","questions":{"q":{"type":"noul","instructions":"Is this a greeting?"}}}'
+  -d '{"state":"hello","model":"tachyone-latest","questions":{"q":{"type":"noul","instructions":"Is this a greeting?"}}}'
 ```
 
 ## Local encoder & published models
 
-`JEBA_BACKEND=encoder` (local, offline once cached) loads `answerdotai/ModernBERT-large` or
+`TACHYONE_BACKEND=encoder` (local, offline once cached) loads `answerdotai/ModernBERT-large` or
 `jhu-clsp/mmBERT-base` and applies the published LoRA adapter. Override with
-`JEBA_ADAPTERS="jeba-en=acme/tuned-en,jeba-multi="`; force cache-only with `JEBA_OFFLINE=1`.
-On a CUDA device, `JEBA_FAST=1` opts into the per-shape CUDA-graph forward (bf16 weights) with
+`TACHYONE_ADAPTERS="tachyone-en=acme/tuned-en,tachyone-multi="`; force cache-only with `TACHYONE_OFFLINE=1`.
+On a CUDA device, `TACHYONE_FAST=1` opts into the per-shape CUDA-graph forward (bf16 weights) with
 graceful fallback.
 
-- Adapters: [`munod/jeba-en`](https://huggingface.co/munod/jeba-en) ·
-  [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi)
+- Adapters: [`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en) ·
+  [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)
 - Measured on a single RTX 3060 12GB (full tables: [`benchmarks/report.md`](benchmarks/report.md)):
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
@@ -114,7 +114,7 @@ graceful fallback.
   `choice` from ~0.25 (chance), and raising the multilingual LoRA rank to 64 lifted overall
   accuracy to 0.853 and cut `es` ECE to 0.038 (two of six languages now meet ECE ≤ 0.05 — `es`
   0.038 and `pt` 0.024; `de` 0.063, `fr` 0.051, `it` 0.059 and `nl` 0.104 remain above target). The
-  CUDA-graph fast path (`JEBA_FAST=1`) improves p50 10.3 → 3.8 ms with no top-label
+  CUDA-graph fast path (`TACHYONE_FAST=1`) improves p50 10.3 → 3.8 ms with no top-label
   changes.
 
 ## Architecture at a glance
@@ -172,7 +172,7 @@ Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/t
 | [`docs/protocol.md`](docs/protocol.md) | The `/v1/systemone` contract |
 | [`docs/architecture.md`](docs/architecture.md) | Components, flows, backend strategy, hooks |
 | [`docs/cli.md`](docs/cli.md) | CLI flags, presets, modes, exit codes |
-| [`docs/mcp.md`](docs/mcp.md) | MCP stdio server (`jeba-mcp-server`) |
+| [`docs/mcp.md`](docs/mcp.md) | MCP stdio server (`tachyone-mcp-server`) |
 | [`docs/langchain.md`](docs/langchain.md) | LangChain/LangGraph `Runnable` adapter |
 | [`docs/docker.md`](docs/docker.md) | Image, Compose, healthcheck, config in containers |
 | [`docs/cookbook-handoff.md`](docs/cookbook-handoff.md) | Confidence thresholding + System-2 handoff |

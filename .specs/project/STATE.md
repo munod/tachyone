@@ -1,11 +1,11 @@
 # State
 
 **Last Updated:** 2026-09-26
-**Current Work:** Post-M6 backlog. **B-2 (fast path) done**: `JEBA_FAST` wires
+**Current Work:** Post-M6 backlog. **B-2 (fast path) done**: `TACHYONE_FAST` wires
 `maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
 `benchmarks/fast_path.py` measures 2.68× p50 (10.27 → 3.83 ms) and 0 top-label flips, meeting
 NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed, retrained on the RTX 3060, and the
-adapters were republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`); the `v0.2.0` and
+adapters were republished to the Hub (`munod/tachyone-en`, `munod/tachyone-multi`); the `v0.2.0` and
 `v0.3.0` GitHub Releases exist. Multilingual `choice` 0.40 → **0.684**, overall 0.609 → **0.853**;
 English overall 0.721 → **0.859**; with the multilingual LoRA at r=64, per-language ECE is now
 ≤ 0.05 for only 2/6 languages (`es` 0.038, `pt` 0.024; `de` 0.063, `fr` 0.051, `it` 0.059 and `nl`
@@ -23,7 +23,7 @@ and the noise-augmented adapter did not beat them (ECE 0.090 vs 0.033), so it is
 `es` ECE 0.170 → **0.038** (accuracy 0.472 → 0.956). Two of six languages now meet ECE ≤ 0.05
 (`es` 0.038, `pt` 0.024); `de` 0.063, `fr` 0.051, `it` 0.059 and `nl` (ECE 0.104, accuracy 0.663)
 remain open. The r=64 multilingual adapter is republished to the
-Hub (`munod/jeba-multi`, commit `599df58`); the English adapter was reseeded separately in B-9
+Hub (`munod/tachyone-multi`, commit `599df58`); the English adapter was reseeded separately in B-9
 (AD-009: overall 0.859 / ECE 0.023).
 Next ready: B-7 (public probes, Ready); B-5/B-6 remain Ideas. **B-9 (English checkpoint)
 resolved** by a seed sweep — see AD-009 and L-006.
@@ -40,7 +40,7 @@ resolved** by a seed sweep — see AD-009 and L-006.
 | M5 Ecosystem + Accel | ✅ Complete | ONNX, fast fallback, MCP, LangChain, Docker, telemetry no-op |
 | M6 Proof + Release | ✅ Complete | benchmark report + script, docs site, model card, changelog, release process |
 
-> This is the persistent memory for the jeba project across sessions. Decisions here are
+> This is the persistent memory for the Tachyone project across sessions. Decisions here are
 > authoritative. Anything marked **DECIDED** must not be reopened without a new ADR.
 
 ---
@@ -49,7 +49,7 @@ resolved** by a seed sweep — see AD-009 and L-006.
 
 ### AD-001: Drop-in Jev `/v1/systemone` with additive extensions (2026-09-24)
 
-**Decision:** jeba speaks the exact TypeSafe Jev wire contract and accepts existing Jev
+**Decision:** Tachyone speaks the exact TypeSafe Jev wire contract and accepts existing Jev
 clients unchanged. Extensions (router control, hooks, `predict_batch`, integrations) are
 additive and never mutate the canonical request/response shape.
 **Reason:** Existing clients are the fastest path to adoption and to a verifiable contract;
@@ -121,7 +121,7 @@ English checkpoint, selected automatically by a script/language router.
 > **Superseded by AD-009** the same day: a seed sweep found a checkpoint that dominates both
 > contenders, so the choice below was overtaken rather than reversed.
 
-**Decision:** `munod/jeba-en` carries the local `checkpoints/en` — accuracy 0.763 / ECE 0.061 /
+**Decision:** `munod/tachyone-en` carries the local `checkpoints/en` — accuracy 0.763 / ECE 0.061 /
 `choice` 0.834, the source of every number in `benchmarks/report.md` — instead of the older
 Hub checkpoint `bac4de41` (accuracy 0.781 / ECE 0.077 / `choice` 0.708 / `score` 0.892), which
 remains downloadable at `revision=bac4de4`.
@@ -136,7 +136,7 @@ as `benchmarks/results/en_legacy_bac4de4.json` (gitignored) and the open choice 
 
 ### AD-009: Republish the English adapter from the seed sweep (2026-09-26)
 
-**Decision:** `munod/jeba-en` and the repository's `checkpoints/en` now carry the `seed: 2` run of
+**Decision:** `munod/tachyone-en` and the repository's `checkpoints/en` now carry the `seed: 2` run of
 the **same** `training/configs/finetune_en.json` recipe — overall **0.859** / ECE **0.023** /
 `choice` **0.948** / `score` **0.910** — superseding AD-008.
 **Reason:** B-9 asked for headline accuracy *and* choice quality at once. Four runs of the
@@ -149,6 +149,21 @@ also **not deterministic** — four runs of one config gave `val_loss` 0.4177 / 
 distribution can. `seed: 2` is pinned in the config to record what produced it.
 **Impact:** `benchmarks/report.md`, README, model card, the requirements tables and the Hub were
 regenerated from it; `BACKLOG.md` B-9 closed; lesson in L-006.
+
+### AD-010: Rename the project to Tachyone (2026-09-26)
+
+**Decision:** `jeba` → **Tachyone** everywhere: package `src/tachyone/`, console scripts
+`tachyone`/`tachyone-serve`/`tachyone-mcp-server`, env prefix `TACHYONE_*`, SDK classes
+`TachyoneClient`/`Tachyone*Error`, wire default model id `tachyone-latest`, Hub repos
+`munod/tachyone-en`/`-multi`, site `munod.github.io/tachyone/`, cache `~/.cache/tachyone/models`.
+Full record in `docs/adr/ADR-0013-rename-to-tachyone.md`.
+**Reason:** the original name was a placeholder that outlived its usefulness; renaming is cheapest
+before there are users, and the measurements confirmed there are none (0 stars/forks, 0 Hub
+downloads, PyPI never published).
+**Trade-off:** no alias period — `JEBA_*`, `jeba-serve` and `JebaClient` break immediately for
+anyone who had automated against them; links to the old Hub repo ids depend on platform redirects.
+**Impact:** 136 files / 1144 occurrences renamed in one commit; `uv.lock` re-locked; ADR-0001..0012
+and the released `CHANGELOG` sections keep the original name as historical record.
 
 ---
 
@@ -168,7 +183,7 @@ regenerated from it; `BACKLOG.md` B-9 closed; lesson in L-006.
 **Workaround:** LoRA/QLoRA + gradient checkpointing + small effective batch + grad accumulation.
 **Resolution:** Pipeline implemented (M4-T2) and executed full-scale on the RTX 3060 12GB
 (English + multilingual LoRA, 6k train / 1.5k eval, calibration). Numbers are in
-`benchmarks/report.md` and the adapters are published (`munod/jeba-en`, `munod/jeba-multi`).
+`benchmarks/report.md` and the adapters are published (`munod/tachyone-en`, `munod/tachyone-multi`).
 
 ---
 
@@ -229,7 +244,7 @@ composable contract already covers.
 
 ### L-005: A model card's disclaimer is not evidence about its weights
 
-**Context:** The 2026-09-26 documentation review found `munod/jeba-en` carrying a "pre-release /
+**Context:** The 2026-09-26 documentation review found `munod/tachyone-en` carrying a "pre-release /
 weights and metrics pending" banner beside a `temperature_calibration.json` whose
 `ece_after 0.1406` matched nothing in the repository.
 **Problem:** From that stale banner I inferred the published artifacts were out of date and
@@ -238,7 +253,7 @@ stale part: the card's numbers (0.781 / 0.077, `choice` 0.708, `score` 0.892) we
 measurements of the uploaded weights, and those weights beat the new ones on overall accuracy
 (0.781 vs 0.763), on `score` (0.892 vs 0.712) and on `noul` calibration (0.012 vs 0.101).
 **Solution:** Before replacing anything published, fetch both revisions and evaluate each:
-`JEBA_ADAPTERS="jeba-en=<path>" uv run python -m training.evaluate --data data/eval_en.jsonl
+`tachyone_ADAPTERS="tachyone-en=<path>" uv run python -m training.evaluate --data data/eval_en.jsonl
 --out <out>.json --backend encoder`. The measured comparison lives in `BACKLOG.md` B-9.
 **Prevents:** Swapping a published artifact for a different one that is better on some metrics
 and worse on others, on the strength of a document rather than a number.
@@ -338,12 +353,12 @@ and measured evidence (see L-004).
 
 - [x] **OD-1:** RESOLVED (2026-09-24, M2) — Provider-agnostic OpenAI-compatible surface with
       an injectable transport; no new core dependency. See `docs/adr/ADR-0008`.
-- [x] **OD-2:** RESOLVED (2026-09-24) — No telemetry; `jeba.telemetry` is a no-op guard and
-      `JEBA_TELEMETRY`/`DO_NOT_TRACK` are reserved for a future opt-out. See ADR-0011.
+- [x] **OD-2:** RESOLVED (2026-09-24) — No telemetry; `tachyone.telemetry` is a no-op guard and
+      `TACHYONE_TELEMETRY`/`DO_NOT_TRACK` are reserved for a future opt-out. See ADR-0011.
 - [x] **OD-3:** RESOLVED (2026-09-24) — Weights fetched from the Hugging Face Hub on demand and
-      cached locally (`JEBA_MODELS_DIR` or `~/.cache/jeba/models`), with an explicit prefetch step
+      cached locally (`TACHYONE_MODELS_DIR` or `~/.cache/tachyone/models`), with an explicit prefetch step
       (`hf download <repo> --local-dir …`, or one warm-up prediction) and cache-only offline mode
-      (`JEBA_OFFLINE=1`). Note: the `jeba download` subcommand named in the original decision was
+      (`TACHYONE_OFFLINE=1`). Note: the `tachyone download` subcommand named in the original decision was
       **never implemented** — see `docs/adr/README.md` → Implementation notes. M3 uses public base
       encoders + untrained heads. See ADR-0010.
 - [x] **OD-4:** RESOLVED (2026-09-24) — ONNX backend first, TileLang/CUDA-graph fast path

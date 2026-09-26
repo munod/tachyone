@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from jeba.handoff import (
+from tachyone.handoff import (
     HandoffReport,
     HandoffSignal,
     Uncertainty,
     assess,
     assess_response,
 )
-from jeba.primitives import ChoiceAnswer, NoulAnswer, ScoreAnswer
-from jeba.wire import SystemOneResponse, Usage
+from tachyone.primitives import ChoiceAnswer, NoulAnswer, ScoreAnswer
+from tachyone.wire import SystemOneResponse, Usage
 
 
 def _response(answers: dict[str, ChoiceAnswer | ScoreAnswer | NoulAnswer]) -> SystemOneResponse:

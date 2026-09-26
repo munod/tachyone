@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from jeba.agent import Agent
-from jeba.primitives import Answer, NoulAnswer, NoulQuestion, Question, State
+from tachyone.agent import Agent
+from tachyone.primitives import Answer, NoulAnswer, NoulQuestion, Question, State
 
 
 class _Recorder:

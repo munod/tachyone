@@ -1,6 +1,6 @@
-# Contributing to jeba
+# Contributing to Tachyone
 
-Thanks for your interest. jeba is implemented and released (`v0.3.0`); see `README.md` and
+Thanks for your interest. Tachyone is implemented and released (`v0.3.0`); see `README.md` and
 `.specs/project/STATE.md`. This guide defines the conventions that govern code contributions.
 
 ---
@@ -115,7 +115,7 @@ See [`docs/testing.md`](docs/testing.md) for the full strategy, coverage matrix,
 
 ## Adding a backend
 
-1. Implement the `Backend` protocol from `src/jeba/backends/base.py`.
+1. Implement the `Backend` protocol from `src/tachyone/backends/base.py`.
 2. Do **not** modify `wire.py` or `docs/protocol.md`.
 3. Run the shared contract suite against your backend.
 4. Put optional dependencies behind a new or existing extra with an import guard.

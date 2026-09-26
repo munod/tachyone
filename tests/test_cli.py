@@ -6,9 +6,9 @@ import json
 
 import pytest
 
-from jeba.cli import main
-from jeba.presets import PRESETS, get_preset
-from jeba.wire import SystemOneRequest
+from tachyone.cli import main
+from tachyone.presets import PRESETS, get_preset
+from tachyone.wire import SystemOneRequest
 
 
 @pytest.mark.parametrize("name", sorted(PRESETS))

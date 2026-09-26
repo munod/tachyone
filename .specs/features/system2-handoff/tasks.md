@@ -9,7 +9,7 @@
 
 **What:** Add `normalized_entropy` and `margin` beside `confidence`; handle empty/degenerate and
 unnormalized inputs consistently.
-**Where:** `src/jeba/calibration.py`, `tests/test_calibration.py`.
+**Where:** `src/tachyone/calibration.py`, `tests/test_calibration.py`.
 **Depends on:** — · **Requirement:** CAL-06.
 **Done when:** entropy returns `[0,1]` (uniform→1, one-hot→0, n≤1→0), margin is the top-two gap in
 `[0,1]`, and both normalize inputs like `confidence`.
@@ -22,7 +22,7 @@ unnormalized inputs consistently.
 `assess(probabilities, *, threshold)` and `assess_response(response, *, threshold)`; `noul` uses its
 binary certainty `max(p, 1-p)`, `choice`/`score` use `confidence` plus their distribution; reject
 thresholds outside `[0,1]`.
-**Where:** `src/jeba/handoff.py`, `tests/test_handoff.py`.
+**Where:** `src/tachyone/handoff.py`, `tests/test_handoff.py`.
 **Depends on:** B3-T1 · **Requirement:** CAL-03, EXT-02.
 **Done when:** the aggregate `abstain` is true when any question abstains and every signal carries
 `confidence`/`entropy`/`margin`/`threshold`/`abstain`.
@@ -31,10 +31,10 @@ thresholds outside `[0,1]`.
 
 ## B3-T3: Export and CLI `--threshold`
 
-**What:** Re-export `assess`/`assess_response` from `jeba.__init__`; add `jeba --predict
+**What:** Re-export `assess`/`assess_response` from `tachyone.__init__`; add `Tachyone --predict
 --threshold τ` that appends a sibling `handoff` object while keeping `model`/`answers`/`usage`
 untouched; unchanged output when the flag is absent.
-**Where:** `src/jeba/__init__.py`, `src/jeba/cli.py`, `tests/test_cli.py`, `tests/test_package.py`.
+**Where:** `src/tachyone/__init__.py`, `src/tachyone/cli.py`, `tests/test_cli.py`, `tests/test_package.py`.
 **Depends on:** B3-T2 · **Requirement:** CAL-05, NFR-R01.
 **Done when:** a base install can import the helpers and the CLI prints the handoff decision
 offline with `--backend fake`.

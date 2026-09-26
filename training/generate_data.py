@@ -255,7 +255,7 @@ def generate(config: DataConfig, out_path: str | Path) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-generate-data", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-generate-data", description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--per-type", type=int, default=200, help="records per primitive")
     parser.add_argument(

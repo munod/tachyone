@@ -6,14 +6,20 @@ from typing import Any
 
 import pytest
 
-from jeba.backends.llm import (
+from tachyone.backends.llm import (
     LLMBackend,
     build_answers,
     build_messages,
     extract_json_object,
 )
-from jeba.primitives import ChoiceAnswer, ChoiceQuestion, NoulQuestion, ScoreAnswer, ScoreQuestion
-from jeba.wire import BackendError, Overloaded, RateLimited
+from tachyone.primitives import (
+    ChoiceAnswer,
+    ChoiceQuestion,
+    NoulQuestion,
+    ScoreAnswer,
+    ScoreQuestion,
+)
+from tachyone.wire import BackendError, Overloaded, RateLimited
 
 _QUESTIONS = {
     "urgent": NoulQuestion(instructions="Is it urgent?"),

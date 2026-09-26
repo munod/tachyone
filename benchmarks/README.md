@@ -1,6 +1,6 @@
 # Benchmarks
 
-Evaluation and reproduction harnesses for jeba. Per the testing strategy
+Evaluation and reproduction harnesses for Tachyone. Per the testing strategy
 (`docs/testing.md`), benchmark runs are serialized (no parallel execution) and artifacts
 record hardware, versions, seed, and the exact command.
 
@@ -23,7 +23,7 @@ record hardware, versions, seed, and the exact command.
   ```
 
 - **Fast path (CUDA graphs)** — `benchmarks/fast_path.py` compares the stock encoder forward with
-  the `JEBA_FAST` CUDA-graph path (latency p50/p95, throughput, embedding parity). Requires the
+  the `TACHYONE_FAST` CUDA-graph path (latency p50/p95, throughput, embedding parity). Requires the
   `train` extra and a CUDA device:
 
   ```bash

@@ -1,18 +1,18 @@
-/* jeba project site — landing page styling (no external dependencies). */
+/* tachyone project site — landing page styling (no external dependencies). */
 
 :root {
-  --jeba-accent: #6366f1;
-  --jeba-accent-2: #22d3ee;
+  --tachyone-accent: #6366f1;
+  --tachyone-accent-2: #22d3ee;
 }
 
 /* Hero -------------------------------------------------------------------- */
-/* Every child rule is scoped under `.jeba-hero` on purpose: the hero lives inside
+/* Every child rule is scoped under `.tachyone-hero` on purpose: the hero lives inside
    `.md-typeset`, where Material's `.md-typeset h1` (specificity 0-1-1) would otherwise
-   outrank a bare `.jeba-hero__title` (0-1-0) and paint the title with
+   outrank a bare `.tachyone-hero__title` (0-1-0) and paint the title with
    `--md-default-fg-color--light` (#0000008a on the light scheme) — nearly invisible on
    the dark hero — while also overriding its size, weight and margins. Two classes
    (0-2-0) win without `!important`. */
-.jeba-hero {
+.tachyone-hero {
   margin: 1.5rem 0 2.5rem;
   padding: 3rem 2rem;
   border-radius: 1rem;
@@ -23,14 +23,14 @@
   text-align: center;
 }
 
-.jeba-hero .jeba-hero__logo {
+.tachyone-hero .tachyone-hero__logo {
   display: block;
   width: min(320px, 82%);
   height: auto;
   margin: 0 auto 1.25rem;
 }
 
-.jeba-hero .jeba-hero__eyebrow {
+.tachyone-hero .tachyone-hero__eyebrow {
   display: inline-block;
   margin-bottom: 1rem;
   padding: 0.25rem 0.75rem;
@@ -42,7 +42,7 @@
   color: #a5b4fc;
 }
 
-.jeba-hero .jeba-hero__title {
+.tachyone-hero .tachyone-hero__title {
   margin: 0 auto 0.75rem;
   max-width: 46rem;
   font-size: clamp(1.6rem, 4vw, 2.6rem);
@@ -51,21 +51,21 @@
   color: #f8fafc;
 }
 
-.jeba-hero .jeba-hero__sub {
+.tachyone-hero .tachyone-hero__sub {
   margin: 0 auto 1.75rem;
   max-width: 40rem;
   font-size: clamp(0.95rem, 2vw, 1.15rem);
   color: #cbd5e1;
 }
 
-.jeba-hero .jeba-hero__cta {
+.tachyone-hero .tachyone-hero__cta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   justify-content: center;
 }
 
-.jeba-btn {
+.tachyone-btn {
   display: inline-block;
   padding: 0.6rem 1.25rem;
   border-radius: 0.5rem;
@@ -74,30 +74,30 @@
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-.jeba-btn:hover {
+.tachyone-btn:hover {
   transform: translateY(-1px);
 }
 
-.jeba-btn--primary {
-  background: linear-gradient(120deg, var(--jeba-accent), var(--jeba-accent-2));
+.tachyone-btn--primary {
+  background: linear-gradient(120deg, var(--tachyone-accent), var(--tachyone-accent-2));
   color: #0b1020 !important;
   box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25);
 }
 
-.jeba-btn--ghost {
+.tachyone-btn--ghost {
   border: 1px solid rgba(148, 163, 184, 0.45);
   color: #e2e8f0 !important;
 }
 
 /* Metrics bar ------------------------------------------------------------- */
-.jeba-metrics {
+.tachyone-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: 1rem;
   margin: 2rem 0;
 }
 
-.jeba-metric {
+.tachyone-metric {
   padding: 1.1rem 1rem;
   border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0.75rem;
@@ -105,15 +105,15 @@
   background: var(--md-code-bg-color);
 }
 
-.jeba-metric__value {
+.tachyone-metric__value {
   display: block;
   font-size: 1.55rem;
   font-weight: 700;
   line-height: 1.1;
-  color: var(--jeba-accent);
+  color: var(--tachyone-accent);
 }
 
-.jeba-metric__label {
+.tachyone-metric__label {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.74rem;
@@ -121,11 +121,11 @@
 }
 
 /* Dependency-free bar charts --------------------------------------------- */
-.jeba-chart {
+.tachyone-chart {
   margin: 1rem 0 2rem;
 }
 
-.jeba-bar {
+.tachyone-bar {
   display: grid;
   grid-template-columns: 4.5rem 1fr 3.5rem;
   align-items: center;
@@ -134,31 +134,31 @@
   font-size: 0.82rem;
 }
 
-.jeba-bar__track {
+.tachyone-bar__track {
   height: 0.85rem;
   border-radius: 999px;
   background: var(--md-default-fg-color--lightest);
   overflow: hidden;
 }
 
-.jeba-bar__fill {
+.tachyone-bar__fill {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--jeba-accent), var(--jeba-accent-2));
+  background: linear-gradient(90deg, var(--tachyone-accent), var(--tachyone-accent-2));
 }
 
-.jeba-bar__value {
+.tachyone-bar__value {
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--md-default-fg-color--light);
 }
 
-.jeba-bar__fill--muted {
+.tachyone-bar__fill--muted {
   background: linear-gradient(90deg, #64748b, #94a3b8);
 }
 
-.jeba-chart__caption {
+.tachyone-chart__caption {
   margin-top: 0.6rem;
   font-size: 0.74rem;
   color: var(--md-default-fg-color--light);

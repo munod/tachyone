@@ -1,6 +1,6 @@
 {
   "state": "Hi, we were billed twice for March. Please refund the duplicate today or we will cancel our plan.",
-  "model": "jeba-latest",
+  "model": "tachyone-latest",
   "questions": {
     "is_urgent": {
       "type": "noul",

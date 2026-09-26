@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from jeba.primitives import NoulAnswer, NoulCriteria, NoulQuestion, Question
+from tachyone.primitives import NoulAnswer, NoulCriteria, NoulQuestion, Question
 
 _QUESTION = TypeAdapter(Question)
 

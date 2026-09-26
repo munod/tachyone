@@ -16,11 +16,11 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
-from jeba.backends.encoder import EncoderBackend, EncoderCheckpoint
-from jeba.backends.fake import FakeBackend
-from jeba.config import Config
-from jeba.router import Router
-from jeba.serve import create_app
+from tachyone.backends.encoder import EncoderBackend, EncoderCheckpoint
+from tachyone.backends.fake import FakeBackend
+from tachyone.config import Config
+from tachyone.router import Router
+from tachyone.serve import create_app
 
 _FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 _REQUEST: dict[str, Any] = json.loads(
@@ -65,7 +65,7 @@ def test_primitive_limit_violation_maps_to_422() -> None:
 
 
 def test_auth_required_when_key_configured() -> None:
-    client = _client(JEBA_API_KEY="secret")
+    client = _client(TACHYONE_API_KEY="secret")
     assert client.post("/v1/systemone", json=_REQUEST).status_code == 401
     assert (
         client.post(
@@ -106,7 +106,7 @@ def test_predict_batch_preserves_order() -> None:
 
 
 def test_predict_requires_auth_when_configured() -> None:
-    client = _client(JEBA_API_KEY="secret")
+    client = _client(TACHYONE_API_KEY="secret")
     body = {"state": "x", "questions": {}}
     assert client.post("/predict", json=body).status_code == 401
     assert (

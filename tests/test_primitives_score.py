@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from jeba.primitives import (
+from tachyone.primitives import (
     MAX_SCORE_LEVELS,
     MIN_SCORE_LEVELS,
     Question,

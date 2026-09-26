@@ -17,9 +17,9 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from jeba.backends.base import PredictionResult
-from jeba.config import Config
-from jeba.primitives import (
+from tachyone.backends.base import PredictionResult
+from tachyone.config import Config
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     ChoiceQuestion,
@@ -30,7 +30,7 @@ from jeba.primitives import (
     ScoreQuestion,
     State,
 )
-from jeba.wire import BackendError, Overloaded, RateLimited, Usage
+from tachyone.wire import BackendError, Overloaded, RateLimited, Usage
 
 #: Sends an OpenAI chat-completions payload and returns the assistant message content.
 type Transport = Callable[[dict[str, Any]], Awaitable[str]]
@@ -201,7 +201,7 @@ def openai_transport(*, base_url: str, api_key: str | None, timeout: float) -> T
 
     async def transport(payload: dict[str, Any]) -> str:
         if not url:
-            raise BackendError("JEBA_LLM_BASE_URL is not configured")
+            raise BackendError("TACHYONE_LLM_BASE_URL is not configured")
         return await asyncio.to_thread(_post_chat_completions, url, api_key, payload, timeout)
 
     return transport

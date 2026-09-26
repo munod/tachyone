@@ -179,7 +179,7 @@ run or published**; the committed reproduction commands cover the synthetic eval
 ## Open questions
 
 - **OD-3:** weights distribution — RESOLVED by `docs/adr/ADR-0010` (HF Hub on demand + local cache;
-  prefetch with `hf download` or a warm-up run, cache-only via `JEBA_OFFLINE=1`).
+  prefetch with `hf download` or a warm-up run, cache-only via `TACHYONE_OFFLINE=1`).
 - Exact ECE target and binning scheme — resolved by the measured target (ECE ≤ 0.05,
   10 bins, `min_samples` 30) used in `benchmarks/report.md`.
 - Whether the typed-decisions checkpoint is trained — deferred; tracked as `BACKLOG.md` B-7.

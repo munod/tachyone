@@ -10,10 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from jeba.primitives import Answer, Question, State
+from tachyone.primitives import Answer, Question, State
 
 if TYPE_CHECKING:
-    from jeba.wire import Usage
+    from tachyone.wire import Usage
 
 
 @dataclass(frozen=True, slots=True)

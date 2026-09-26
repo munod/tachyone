@@ -8,9 +8,9 @@ from typing import Any
 
 import pytest
 
-import jeba
-from jeba.client import JebaAPIError, JebaClient, JebaConnectionError
-from jeba.primitives import NoulQuestion
+import tachyone
+from tachyone.client import TachyoneAPIError, TachyoneClient, TachyoneConnectionError
+from tachyone.primitives import NoulQuestion
 
 _FIXTURES = Path(__file__).parent / "fixtures"
 _REQUEST: dict[str, Any] = json.loads(
@@ -33,12 +33,12 @@ class _Transport:
         return self.responses.pop(0)
 
 
-def _client(transport: _Transport, **kwargs: Any) -> JebaClient:
-    return JebaClient(transport=transport, sleep=lambda _d: None, **kwargs)
+def _client(transport: _Transport, **kwargs: Any) -> TachyoneClient:
+    return TachyoneClient(transport=transport, sleep=lambda _d: None, **kwargs)
 
 
 def test_client_is_exported() -> None:
-    assert jeba.JebaClient is JebaClient
+    assert tachyone.TachyoneClient is TachyoneClient
 
 
 def test_system_one_posts_canonical_payload() -> None:
@@ -51,7 +51,7 @@ def test_system_one_posts_canonical_payload() -> None:
     )
     assert "is_urgent" in response.answers
     sent = json.loads(transport.calls[0]["data"])
-    assert sent["model"] == "jeba-latest"
+    assert sent["model"] == "tachyone-latest"
     assert sent["questions"]["is_urgent"]["type"] == "noul"
     assert transport.calls[0]["url"].endswith("/v1/systemone")
 
@@ -67,7 +67,7 @@ def test_api_key_is_sent_as_bearer() -> None:
 def test_retries_on_429_then_succeeds() -> None:
     transport = _Transport([(429, "{}"), (200, _RESPONSE_TEXT)])
     delays: list[float] = []
-    client = JebaClient(transport=transport, sleep=delays.append, backoff=0.01, max_retries=3)
+    client = TachyoneClient(transport=transport, sleep=delays.append, backoff=0.01, max_retries=3)
     response = client.system_one({"body": "x"}, {"q": NoulQuestion(instructions="q?")})
     assert set(response.answers)
     assert len(transport.calls) == 2
@@ -78,7 +78,7 @@ def test_retries_on_429_then_succeeds() -> None:
 def test_raises_after_exhausting_retries() -> None:
     transport = _Transport([(529, "{}"), (529, "{}")])
     client = _client(transport, max_retries=1)
-    with pytest.raises(JebaAPIError) as excinfo:
+    with pytest.raises(TachyoneAPIError) as excinfo:
         client.system_one({"body": "x"}, {"q": NoulQuestion(instructions="q?")})
     assert excinfo.value.status_code == 529
     assert len(transport.calls) == 2
@@ -86,7 +86,7 @@ def test_raises_after_exhausting_retries() -> None:
 
 def test_non_retryable_error_carries_body() -> None:
     transport = _Transport([(422, '{"error": {"code": "unprocessable_entity"}}')])
-    with pytest.raises(JebaAPIError) as excinfo:
+    with pytest.raises(TachyoneAPIError) as excinfo:
         _client(transport).system_one({"body": "x"}, {"q": NoulQuestion(instructions="q?")})
     assert excinfo.value.status_code == 422
     assert excinfo.value.body["error"]["code"] == "unprocessable_entity"
@@ -96,9 +96,9 @@ def test_connection_error_propagates() -> None:
     def transport(
         _url: str, _data: bytes, _headers: dict[str, str], _timeout: float
     ) -> tuple[int, str]:
-        raise JebaConnectionError("down")
+        raise TachyoneConnectionError("down")
 
-    with pytest.raises(JebaConnectionError):
-        JebaClient(transport=transport).system_one(
+    with pytest.raises(TachyoneConnectionError):
+        TachyoneClient(transport=transport).system_one(
             {"body": "x"}, {"q": NoulQuestion(instructions="q?")}
         )

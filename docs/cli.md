@@ -1,21 +1,21 @@
 # CLI reference
 
-`jeba` is a **single command with flags** — there is no subcommand syntax (`jeba download`,
-`jeba serve …` and similar do not exist; use `--serve`, and prefetch weights with `hf download`,
+`tachyone` is a **single command with flags** — there is no subcommand syntax (`tachyone download`,
+`tachyone serve …` and similar do not exist; use `--serve`, and prefetch weights with `hf download`,
 see [ADR-0010](adr/ADR-0010-weights-distribution.md)).
 
 Entry points (declared in `pyproject.toml`):
 
 | Command | Module | Purpose |
 | --- | --- | --- |
-| `jeba` | `jeba.cli:main` | print questions, predict locally or against a server, start the server |
-| `jeba-serve` | `jeba.serve:main` | HTTP server (`serve` extra) |
-| `jeba-mcp-server` | `jeba.mcp.server:main` | MCP stdio server (`mcp` extra) — see [MCP](mcp.md) |
+| `tachyone` | `tachyone.cli:main` | print questions, predict locally or against a server, start the server |
+| `tachyone-serve` | `tachyone.serve:main` | HTTP server (`serve` extra) |
+| `tachyone-mcp-server` | `tachyone.mcp.server:main` | MCP stdio server (`mcp` extra) — see [MCP](mcp.md) |
 
 ## Flags
 
 ```text
-usage: jeba [-h] [--preset {email,guard,moderation,router,triage}]
+usage: tachyone [-h] [--preset {email,guard,moderation,router,triage}]
             [--questions QUESTIONS] [--predict] [--threshold THRESHOLD]
             [--url URL] [--backend {llm,encoder,onnx,fake}] [--model MODEL]
             [--list-presets] [--serve] [--version]
@@ -29,12 +29,12 @@ usage: jeba [-h] [--preset {email,guard,moderation,router,triage}]
 | `--questions JSON` | — | questions as a JSON object (alternative to `--preset`) |
 | `--predict` | off | run inference and print answers; without it the CLI only prints the questions |
 | `--threshold T` | — | add a sibling `handoff` object when confidence < `T` (requires `--predict`, `0 ≤ T ≤ 1`) |
-| `--url URL` | — | answer against a running jeba server instead of locally |
-| `--backend ID` | `JEBA_BACKEND` | `llm` / `encoder` / `onnx` / `fake` for a local run |
-| `--model ID` | `jeba-latest` | model id echoed in the request |
+| `--url URL` | — | answer against a running Tachyone server instead of locally |
+| `--backend ID` | `TACHYONE_BACKEND` | `llm` / `encoder` / `onnx` / `fake` for a local run |
+| `--model ID` | `tachyone-latest` | model id echoed in the request |
 | `--list-presets` | — | print preset names and exit |
 | `--serve` | — | start the HTTP server and exit |
-| `--version` | — | print `jeba <version>` and exit |
+| `--version` | — | print `tachyone <version>` and exit |
 
 `--questions` and `--preset` are mutually exclusive in practice: `--questions` wins if both are
 given, and the CLI errors with `provide --preset or --questions` when neither is present.
@@ -46,12 +46,12 @@ given, and the CLI errors with `provide --preset or --questions` when neither is
 Resolves a preset or your JSON into canonical questions. No backend, no network, no key.
 
 ```bash
-uv run jeba "refund please" --preset triage
+uv run tachyone "refund please" --preset triage
 ```
 
 ```json
 {
-  "model": "jeba-latest",
+  "model": "tachyone-latest",
   "questions": {
     "department": {
       "type": "choice",
@@ -72,31 +72,31 @@ uv run jeba "refund please" --preset triage
 
 ```bash
 # model-free, offline — always works
-uv run jeba "refund please" --preset triage --predict --backend fake
+uv run tachyone "refund please" --preset triage --predict --backend fake
 
 # local encoder (needs the `train` extra for real weights; cached after the first run)
-uv run jeba "refund please" --preset triage --predict --backend encoder
+uv run tachyone "refund please" --preset triage --predict --backend encoder
 ```
 
 > **The default backend is `llm`** (see `config.py` `DEFAULT_BACKEND` and the
 > [ADR-0010 implementation note](adr/README.md#implementation-notes-post-acceptance)). A bare
-> `jeba "…" --predict` therefore calls an OpenAI-compatible provider and needs `JEBA_LLM_*`
+> `tachyone "…" --predict` therefore calls an OpenAI-compatible provider and needs `TACHYONE_LLM_*`
 > credentials — it is not an offline command.
 
 ### 3. Predict against a server
 
 ```bash
-uv run jeba --serve &                                  # or: uv run jeba-serve
-uv run jeba "refund please" --preset triage --predict --url http://127.0.0.1:8000
+uv run tachyone --serve &                                  # or: uv run tachyone-serve
+uv run tachyone "refund please" --preset triage --predict --url http://127.0.0.1:8000
 ```
 
-The client reads `JEBA_API_KEY` from the environment for Bearer auth and retries `429`/`529`
+The client reads `TACHYONE_API_KEY` from the environment for Bearer auth and retries `429`/`529`
 with exponential backoff plus jitter.
 
 ### 4. Handoff to a System-2 model
 
 ```bash
-uv run jeba "refund please" --preset triage --predict --backend fake --threshold 0.5
+uv run tachyone "refund please" --preset triage --predict --backend fake --threshold 0.5
 ```
 
 The canonical response is unchanged; a sibling `handoff` object is appended:
@@ -125,13 +125,13 @@ Details and the underlying helpers: [`cookbook-handoff.md`](cookbook-handoff.md)
 ### 5. Ad-hoc questions
 
 ```bash
-uv run jeba "hello" --questions '{"g":{"type":"noul","instructions":"Is this a greeting?"}}' \
+uv run tachyone "hello" --questions '{"g":{"type":"noul","instructions":"Is this a greeting?"}}' \
   --predict --backend fake
 ```
 
 ```json
 {
-  "model": "jeba-latest",
+  "model": "tachyone-latest",
   "answers": { "g": { "type": "noul", "noul": 0.5 } },
   "usage": { "input_tokens": 1, "output_tokens": 1 }
 }
@@ -140,7 +140,7 @@ uv run jeba "hello" --questions '{"g":{"type":"noul","instructions":"Is this a g
 ## Presets
 
 ```bash
-uv run jeba --list-presets     # email  guard  moderation  router  triage
+uv run tachyone --list-presets     # email  guard  moderation  router  triage
 ```
 
 | Preset | Questions |
@@ -165,9 +165,9 @@ Validation errors from the contract (`422` for bad questions) surface as a wire 
 ## Configuration
 
 Everything else comes from environment variables — see the
-[Configuration table](architecture.md#configuration) (`JEBA_BACKEND`, `JEBA_OFFLINE`,
-`JEBA_ADAPTERS`, `JEBA_LLM_*`, `JEBA_API_KEY`, …).
+[Configuration table](architecture.md#configuration) (`TACHYONE_BACKEND`, `TACHYONE_OFFLINE`,
+`TACHYONE_ADAPTERS`, `TACHYONE_LLM_*`, `TACHYONE_API_KEY`, …).
 
 For an offline/air-gapped box, prefetch weights once with
-`hf download <repo> --local-dir ~/.cache/jeba/models` (or run one warm-up prediction online),
-then set `JEBA_OFFLINE=1`.
+`hf download <repo> --local-dir ~/.cache/tachyone/models` (or run one warm-up prediction online),
+then set `TACHYONE_OFFLINE=1`.

@@ -6,7 +6,7 @@
 
 ## Problem Statement
 
-jeba must be a drop-in replacement for the hosted TypeSafe Jev `/v1/systemone` API. Before
+Tachyone must be a drop-in replacement for the hosted TypeSafe Jev `/v1/systemone` API. Before
 any model or server exists, we need a frozen, testable data contract — primitives, request,
 response, and error shapes — so that backends, SDK, and server can be built against one
 authoritative definition. Getting this wrong causes cascading failures downstream.
@@ -31,7 +31,7 @@ authoritative definition. Getting this wrong causes cascading failures downstrea
 
 ### P1: Canonical primitives ⭐ MVP
 
-**User Story:** As a jeba developer, I want `choice`/`score`/`noul` as validated pydantic
+**User Story:** As a Tachyone developer, I want `choice`/`score`/`noul` as validated pydantic
 models so that every backend shares one definition of a question and its answer.
 
 **Why P1:** Everything (wire, server, training) depends on these types.
@@ -136,5 +136,5 @@ logic behaves as it does against Jev.
 ## Success Criteria
 
 - [ ] Golden contract test suite passes for happy paths and all documented errors.
-- [ ] No field drift between jeba serialization and captured Jev fixtures.
+- [ ] No field drift between Tachyone serialization and captured Jev fixtures.
 - [ ] `curl` (or Python) round-trip against the fake backend returns a well-formed response.

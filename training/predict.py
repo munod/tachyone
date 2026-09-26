@@ -15,9 +15,9 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from jeba.backends.encoder import MODEL_IDS, EncoderModel, load_choice_head, load_encoder
-from jeba.calibration import apply_temperature, confidence, parse_temperature_report
-from jeba.primitives import (
+from tachyone.backends.encoder import MODEL_IDS, EncoderModel, load_choice_head, load_encoder
+from tachyone.calibration import apply_temperature, confidence, parse_temperature_report
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     NoulAnswer,
@@ -25,10 +25,10 @@ from jeba.primitives import (
     ScoreAnswer,
     State,
 )
-from jeba.router import CheckpointInfo, detect_language, detect_script, state_text
+from tachyone.router import CheckpointInfo, detect_language, detect_script, state_text
 from training.evaluate import EvalExample, evaluate, load_examples, save_report
 
-_DEFAULT_MODELS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "jeba", "models")
+_DEFAULT_MODELS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "tachyone", "models")
 
 
 def _build_model(
@@ -153,11 +153,11 @@ def run(
 
 
 def _default_model_id(adapter_dir: str) -> str:
-    return MODEL_IDS["jeba-multi"] if "multi" in adapter_dir else MODEL_IDS["jeba-en"]
+    return MODEL_IDS["tachyone-multi"] if "multi" in adapter_dir else MODEL_IDS["tachyone-en"]
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-predict", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-predict", description=__doc__)
     parser.add_argument("--data", required=True, help="records JSONL")
     parser.add_argument("--adapter", default=None, help="LoRA adapter directory")
     parser.add_argument("--model-id", default=None, help="base model id (default: inferred)")

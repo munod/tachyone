@@ -8,12 +8,19 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **Renamed `jeba` → Tachyone (ADR-0013).** Package `src/tachyone/`, console scripts `tachyone`,
+  `tachyone-serve`, `tachyone-mcp-server`, env prefix `TACHYONE_*`, SDK classes `TachyoneClient` /
+  `Tachyone*Error`, wire default model id `tachyone-latest`, Hub repos `munod/tachyone-en` /
+  `munod/tachyone-multi`, site `munod.github.io/tachyone/`. No alias period: `JEBA_*`, `jeba-serve`
+  and `JebaClient` are gone. ADR-0001..ADR-0012 and the released sections below keep the original
+  name as historical record.
+
 - **English adapter reseeded (B-9).** The published `training/configs/finetune_en.json` recipe run
   again from `seed: 2` produced a checkpoint that beats the previously published one on seven of
   eight metrics: overall accuracy **0.763 → 0.859**, overall ECE **0.061 → 0.023**, `choice`
   0.834 → 0.948, `score` 0.712 → 0.910 and their ECEs 0.074 → 0.020 / 0.042 → 0.039. Only `noul`
   accuracy moved against it (0.744 → 0.718), while `noul` ECE improved 0.101 → 0.020. The config
-  now pins `seed: 2`, `munod/jeba-en` was republished from it, and `benchmarks/report.md` was
+  now pins `seed: 2`, `munod/tachyone-en` was republished from it, and `benchmarks/report.md` was
   regenerated. Background: `.specs/project/BACKLOG.md` B-9.
 
 ### Fixed
@@ -28,7 +35,7 @@ All notable changes to this project are documented here. The format is based on
   classes (specificity 0-1-0), so Material's `.md-typeset h1` (0-1-1) won despite `extra.css`
   loading last and painted the title with `--md-default-fg-color--light` (`#0000008a`) over the
   dark hero gradient — it also silently replaced the title's size, weight and margins. Every
-  `.jeba-hero__*` rule is now scoped under `.jeba-hero` (0-2-0, no `!important`), guarded by
+  `.tachyone-hero__*` rule is now scoped under `.tachyone-hero` (0-2-0, no `!important`), guarded by
   `tests/test_docs_site.py::test_hero_styles_are_scoped_against_theme_overrides`.
 
 ### Documentation

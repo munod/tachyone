@@ -72,10 +72,10 @@ mass.
 
 **Acceptance Criteria:**
 
-1. WHEN `jeba --predict --threshold τ` runs THEN stdout SHALL keep `model`, `answers`, `usage`
+1. WHEN `tachyone --predict --threshold τ` runs THEN stdout SHALL keep `model`, `answers`, `usage`
    unchanged and append a sibling `handoff` object.
 2. WHEN `--threshold` is absent THEN output SHALL be byte-identical to today.
-3. WHEN `assess`/`assess_response` are imported from `jeba` THEN they SHALL import without
+3. WHEN `assess`/`assess_response` are imported from `tachyone` THEN they SHALL import without
    torch/transformers (base install, NFR-R01).
 
 ### P2: Documentation

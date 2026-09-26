@@ -12,7 +12,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from jeba.router import ENGLISH, MULTILINGUAL, RouteDecision, Router
+from tachyone.router import ENGLISH, MULTILINGUAL, RouteDecision, Router
 
 #: Checkpoint ids to which a forced language maps.
 _ENGLISH_CODES = frozenset({"en", "eng", "english"})

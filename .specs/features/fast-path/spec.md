@@ -1,11 +1,11 @@
 # Fast Path (TileLang / CUDA graphs) Specification
 
 **Phase:** Post-M6 (B-2, `.specs/project/BACKLOG.md`)
-**Status:** Implemented. `maybe_accelerate` is wired via `JEBA_FAST` to per-shape CUDA graphs
+**Status:** Implemented. `maybe_accelerate` is wired via `TACHYONE_FAST` to per-shape CUDA graphs
 (bf16 weights) with graceful fallback; measured 2.68× p50, 0 top-label flips (NFR-P01 met).
 TileLang fused kernels remain optional (no measured benefit yet).
 **Related docs:** `docs/adr/ADR-0012-onnx-before-fast-path.md`, `docs/tasks.md` M5-T2,
-`docs/requirements/non-functional.md` (NFR-P01), `src/jeba/fast.py`.
+`docs/requirements/non-functional.md` (NFR-P01), `src/tachyone/fast.py`.
 
 ## Problem Statement
 

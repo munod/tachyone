@@ -1,15 +1,15 @@
 # Publishing to the Hugging Face Hub
 
-jeba ships **PEFT LoRA adapters**, not full checkpoints. Each adapter's
+Tachyone ships **PEFT LoRA adapters**, not full checkpoints. Each adapter's
 `adapter_config.json` records `base_model_name_or_path` (ModernBERT-large or mmBERT-base), so
 consumers load the base trunk plus the adapter. Weights are fetched/cached locally at runtime
 (ADR-0010); publishing is only about distribution.
 
 > **Published (verified):**
-> - <https://huggingface.co/munod/jeba-en> (ModernBERT-large adapter, LoRA r=16)
-> - <https://huggingface.co/munod/jeba-multi> (mmBERT-base adapter, LoRA r=64)
+> - <https://huggingface.co/munod/tachyone-en> (ModernBERT-large adapter, LoRA r=16)
+> - <https://huggingface.co/munod/tachyone-multi> (mmBERT-base adapter, LoRA r=64)
 >
-> Both load via `PeftModel.from_pretrained(base, "munod/jeba-en")` and predict.
+> Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
 > The multilingual adapter was republished at **LoRA rank 64** (commit `599df58`), lifting
 > multilingual overall accuracy 0.702 → 0.853 and `es` ECE 0.170 → 0.038; see
@@ -38,11 +38,11 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 
 ## 1. Create the model repos (once)
 
-Web UI: create `<user>/jeba-en` and `<user>/jeba-multi` as **Model** repos. Or with a token:
+Web UI: create `<user>/tachyone-en` and `<user>/tachyone-multi` as **Model** repos. Or with a token:
 
 ```bash
-uv run hf repo create <user>/jeba-en   --repo-type model
-uv run hf repo create <user>/jeba-multi --repo-type model
+uv run hf repo create <user>/tachyone-en   --repo-type model
+uv run hf repo create <user>/tachyone-multi --repo-type model
 ```
 
 ## 2. Package the adapters
@@ -61,8 +61,8 @@ Each folder contains the adapter files, the fitted temperature, and a `README.md
 
 ```bash
 export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx
-uv run hf upload <user>/jeba-en    dist/hf/en    --repo-type model
-uv run hf upload <user>/jeba-multi dist/hf/multi --repo-type model
+uv run hf upload <user>/tachyone-en    dist/hf/en    --repo-type model
+uv run hf upload <user>/tachyone-multi dist/hf/multi --repo-type model
 ```
 
 ### Option B — git over SSH (your configured key)
@@ -72,17 +72,17 @@ Requires SSH access to `hf.co:22`. Verify with `ssh -T git@hf.co` (you should se
 `ssh -T -p 443 git@hf.co` (SSH config `Hostname hf.co`, `Port 443`).
 
 ```bash
-git clone git@hf.co:<user>/jeba-en     hf-jeba-en
-cd hf-jeba-en && git lfs install --local   # required: safetensors > 10 MiB
+git clone git@hf.co:<user>/tachyone-en     hf-tachyone-en
+cd hf-tachyone-en && git lfs install --local   # required: safetensors > 10 MiB
 cp -r ../dist/hf/en/.  .
 git add -A
-git commit -m "Add jeba-en adapter, temperature, and model card"
+git commit -m "Add tachyone-en adapter, temperature, and model card"
 git push
-# repeat for jeba-multi
+# repeat for tachyone-multi
 ```
 
 If SSH is blocked, clone over HTTPS with the token instead:
-`git clone https://<user>:${HF_TOKEN}@huggingface.co/<user>/jeba-en`.
+`git clone https://<user>:${HF_TOKEN}@huggingface.co/<user>/tachyone-en`.
 
 ## 4. Load a published adapter
 
@@ -90,40 +90,40 @@ If SSH is blocked, clone over HTTPS with the token instead:
 from peft import PeftModel
 from transformers import AutoModel
 base = AutoModel.from_pretrained("answerdotai/ModernBERT-large")
-model = PeftModel.from_pretrained(base, "<user>/jeba-en")
+model = PeftModel.from_pretrained(base, "<user>/tachyone-en")
 ```
 
-The runtime `jeba` encoder backend loads these adapters whenever `JEBA_BACKEND=encoder` is
+The runtime `tachyone` encoder backend loads these adapters whenever `TACHYONE_BACKEND=encoder` is
 selected:
 `CheckpointInfo` for each checkpoint carries `base_model` + `adapter`, so the backend
-loads ModernBERT-large/mmBERT-base and applies `munod/jeba-en` / `munod/jeba-multi` (and their
-per-primitive fitted temperature) on first use, cached under `JEBA_MODELS_DIR`.
+loads ModernBERT-large/mmBERT-base and applies `munod/tachyone-en` / `munod/tachyone-multi` (and their
+per-primitive fitted temperature) on first use, cached under `TACHYONE_MODELS_DIR`.
 
 ```bash
-uv run jeba --predict --preset triage --backend encoder "Quero cancelar minha assinatura agora"
+uv run tachyone --predict --preset triage --backend encoder "Quero cancelar minha assinatura agora"
 
 # point a checkpoint at another adapter, or disable it (empty value):
-JEBA_ADAPTERS="jeba-en=acme/tuned-en,jeba-multi=" uv run jeba --predict --backend encoder "..."
-JEBA_OFFLINE=1 uv run jeba --predict --backend encoder "..."   # cache-only, no network
+TACHYONE_ADAPTERS="tachyone-en=acme/tuned-en,tachyone-multi=" uv run tachyone --predict --backend encoder "..."
+TACHYONE_OFFLINE=1 uv run tachyone --predict --backend encoder "..."   # cache-only, no network
 ```
 
 !!! note "Air-gapped installs: prefetch first"
-    `JEBA_OFFLINE=1` sets `local_files_only` on every Hub call, so it **fails** on a machine that
+    `TACHYONE_OFFLINE=1` sets `local_files_only` on every Hub call, so it **fails** on a machine that
     has never downloaded the base encoder and the adapter. Prefetch once while online, then go
     offline:
 
     ```bash
-    hf download munod/jeba-multi --local-dir ~/.cache/jeba/models/munod/jeba-multi
-    hf download munod/jeba-en    --local-dir ~/.cache/jeba/models/munod/jeba-en
+    hf download munod/tachyone-multi --local-dir ~/.cache/tachyone/models/munod/tachyone-multi
+    hf download munod/tachyone-en    --local-dir ~/.cache/tachyone/models/munod/tachyone-en
     # or simply run one warm-up prediction online:
-    uv run jeba --predict --preset triage --backend encoder "warm-up"
-    JEBA_OFFLINE=1 uv run jeba --predict --preset triage --backend encoder "..."
+    uv run tachyone --predict --preset triage --backend encoder "warm-up"
+    TACHYONE_OFFLINE=1 uv run tachyone --predict --preset triage --backend encoder "..."
     ```
 
-    There is **no `jeba download` subcommand** (ADR-0010 named one that was never implemented —
-    see [ADR notes](adr/README.md#implementation-notes-post-acceptance)). Note also that `JEBA_MODELS_DIR` must
+    There is **no `tachyone download` subcommand** (ADR-0010 named one that was never implemented —
+    see [ADR notes](adr/README.md#implementation-notes-post-acceptance)). Note also that `TACHYONE_MODELS_DIR` must
     point at the directory layout `huggingface_hub` expects; if the cache is only partially
-    populated, prefer a fresh warm-up run over `JEBA_OFFLINE=1`.
+    populated, prefer a fresh warm-up run over `TACHYONE_OFFLINE=1`.
 
 ## 5. After a full-scale run
 

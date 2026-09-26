@@ -10,37 +10,37 @@ import importlib
 
 import pytest
 
-import jeba
+import tachyone
 
 _CORE_MODULES = [
-    "jeba",
-    "jeba.calibration",
-    "jeba.cli",
-    "jeba.config",
-    "jeba.fast",
-    "jeba.handoff",
-    "jeba.primitives",
-    "jeba.telemetry",
-    "jeba.wire",
-    "jeba.backends",
-    "jeba.backends.base",
-    "jeba.backends.fake",
-    "jeba.backends.llm",
-    "jeba.backends.onnx",
-    "jeba.integrations",
-    "jeba.integrations.langchain",
-    "jeba.mcp",
-    "jeba.mcp.server",
+    "tachyone",
+    "tachyone.calibration",
+    "tachyone.cli",
+    "tachyone.config",
+    "tachyone.fast",
+    "tachyone.handoff",
+    "tachyone.primitives",
+    "tachyone.telemetry",
+    "tachyone.wire",
+    "tachyone.backends",
+    "tachyone.backends.base",
+    "tachyone.backends.fake",
+    "tachyone.backends.llm",
+    "tachyone.backends.onnx",
+    "tachyone.integrations",
+    "tachyone.integrations.langchain",
+    "tachyone.mcp",
+    "tachyone.mcp.server",
 ]
 
 
 def test_version_is_exposed() -> None:
-    assert jeba.__version__ == "0.3.0"
+    assert tachyone.__version__ == "0.3.0"
 
 
 def test_handoff_helpers_are_public() -> None:
     for name in ("assess", "assess_response", "HandoffReport", "HandoffSignal", "Uncertainty"):
-        assert callable(getattr(jeba, name)), name
+        assert callable(getattr(tachyone, name)), name
 
 
 @pytest.mark.parametrize("module_name", _CORE_MODULES)
@@ -51,8 +51,8 @@ def test_core_modules_import_without_optional_deps(module_name: str) -> None:
 @pytest.mark.parametrize(
     ("module_name", "func_name"),
     [
-        ("jeba.cli", "main"),
-        ("jeba.mcp.server", "main"),
+        ("tachyone.cli", "main"),
+        ("tachyone.mcp.server", "main"),
     ],
 )
 def test_core_entry_points_are_callable(module_name: str, func_name: str) -> None:
@@ -62,7 +62,7 @@ def test_core_entry_points_are_callable(module_name: str, func_name: str) -> Non
 
 def test_serve_module_requires_extra() -> None:
     pytest.importorskip("fastapi")
-    import jeba.serve
+    import tachyone.serve
 
-    assert callable(jeba.serve.main)
-    assert callable(jeba.serve.create_app)
+    assert callable(tachyone.serve.main)
+    assert callable(tachyone.serve.create_app)

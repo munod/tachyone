@@ -7,7 +7,7 @@
 ## Problem Statement
 
 The LLM backend proves the contract but depends on an external model and inference speed.
-jeba's differentiator is a local, non-autoregressive encoder that answers all three
+Tachyone's differentiator is a local, non-autoregressive encoder that answers all three
 primitives in a single forward pass, offline, in 100+ languages, with calibrated confidence.
 
 ## Goals

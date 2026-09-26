@@ -89,7 +89,7 @@
 
 ## Accessibility (NFR-A)
 
-Not applicable — jeba has no GUI (CLI + HTTP + SDK). A future web console would introduce
+Not applicable — Tachyone has no GUI (CLI + HTTP + SDK). A future web console would introduce
 accessibility requirements (see the `Accessibility Testing` skill) but is out of scope.
 
 ---

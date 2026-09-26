@@ -79,10 +79,10 @@ M5 → M6-T1 → M6-T2 → M6-T3
 
 #### M0-T1: uv project skeleton
 
-**What:** `pyproject.toml` (py>=3.12,<3.13), extras (`serve`/`fast`/`onnx`/`langchain`/`mcp`/`train`), console entry points, `src/jeba/__init__.py`, `tests/__init__.py`.
-**Where:** `pyproject.toml`, `.python-version`, `uv.lock`, `src/jeba/`, `tests/`.
+**What:** `pyproject.toml` (py>=3.12,<3.13), extras (`serve`/`fast`/`onnx`/`langchain`/`mcp`/`train`), console entry points, `src/tachyone/__init__.py`, `tests/__init__.py`.
+**Where:** `pyproject.toml`, `.python-version`, `uv.lock`, `src/tachyone/`, `tests/`.
 **Depends on:** None · **Reuses:** — · **Requirement:** NFR-X03, NFR-M06, OPS-01.
-**Done when:** `uv sync` succeeds on 3.12; `uv run python -c "import jeba"` works; entry points resolve to importable stubs.
+**Done when:** `uv sync` succeeds on 3.12; `uv run python -c "import tachyone"` works; entry points resolve to importable stubs.
 **Tests:** none (config) · **Gate:** quick · **Commit:** `build: bootstrap uv project (python 3.12)`.
 
 #### M0-T2: quality tooling config
@@ -116,7 +116,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M1-T1: `noul` primitive
 
 **What:** `NoulQuestion` + `NoulAnswer` pydantic models and validators.
-**Where:** `src/jeba/primitives.py`.
+**Where:** `src/tachyone/primitives.py`.
 **Depends on:** M0-T1 · **Requirement:** PRIM-01.
 **Done when:** valid `noul` validates; answer serializes `{type:"noul", noul: float}`.
 **Tests:** unit (`tests/test_primitives_noul.py`) · **Gate:** quick · **Commit:** `feat(primitives): add noul question and answer`.
@@ -124,7 +124,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M1-T2: `choice` primitive
 
 **What:** `ChoiceQuestion` + `ChoiceAnswer`; enforce ≤255 options; probability key coverage.
-**Where:** `src/jeba/primitives.py` (modify).
+**Where:** `src/tachyone/primitives.py` (modify).
 **Depends on:** M1-T1 · **Requirement:** PRIM-02, PRIM-04.
 **Done when:** 255 options accepted, 256 rejected; probabilities keys checked.
 **Tests:** unit (`tests/test_primitives_choice.py`) · **Gate:** quick · **Commit:** `feat(primitives): add choice question and answer`.
@@ -132,7 +132,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M1-T3: `score` primitive [P]
 
 **What:** `ScoreQuestion` + `ScoreAnswer`; enforce 2–10 levels; `legend` mapping.
-**Where:** `src/jeba/primitives.py` (modify).
+**Where:** `src/tachyone/primitives.py` (modify).
 **Depends on:** M1-T1 · **Requirement:** PRIM-03, PRIM-04.
 **Done when:** 2 and 10 levels accepted, 1/11 rejected; `legend` generated from criteria.
 **Tests:** unit (`tests/test_primitives_score.py`) · **Gate:** quick · **Commit:** `feat(primitives): add score question and answer`.
@@ -140,7 +140,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M1-T4: wire envelope [P]
 
 **What:** `SystemOneRequest`, `SystemOneResponse`, `Usage`; `answer()` delegating to a backend.
-**Where:** `src/jeba/wire.py`.
+**Where:** `src/tachyone/wire.py`.
 **Depends on:** M1-T1 · **Requirement:** WIRE-02, WIRE-03, WIRE-07, PRIM-06.
 **Done when:** N questions → N answers keyed by id; response has `model/answers/usage`.
 **Tests:** unit (`tests/test_wire.py`) · **Gate:** quick · **Commit:** `feat(wire): add systemone request and response`.
@@ -148,7 +148,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M1-T5: backend seam + fake backend [P]
 
 **What:** `Backend` Protocol, `PredictionResult`, deterministic `FakeBackend` for tests.
-**Where:** `src/jeba/backends/base.py`, `tests/fakes.py`.
+**Where:** `src/tachyone/backends/base.py`, `tests/fakes.py`.
 **Depends on:** M1-T1 · **Requirement:** BACK-01.
 **Done when:** `wire.answer` works with `FakeBackend`; no backend import leaks into wire.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(backends): add backend protocol and fake backend`.
@@ -175,8 +175,8 @@ M5 → M6-T1 → M6-T2 → M6-T3
 
 #### M2-T1: configuration module
 
-**What:** `config.py` reading `JEBA_*` env vars with defaults + validation.
-**Where:** `src/jeba/config.py`.
+**What:** `config.py` reading `TACHYONE_*` env vars with defaults + validation.
+**Where:** `src/tachyone/config.py`.
 **Depends on:** M1-T6 · **Requirement:** SERVE-06, NFR-S02.
 **Done when:** defaults applied; secrets never logged; invalid config fails fast.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(config): add environment configuration`.
@@ -184,7 +184,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M2-T2: LLM backend
 
 **What:** `LLMBackend` using structured outputs; prompt assembly from questions; JSON extraction; normalization.
-**Where:** `src/jeba/backends/llm.py`.
+**Where:** `src/tachyone/backends/llm.py`.
 **Depends on:** M2-T1 · **Requirement:** BACK-02, BACK-05.
 **Done when:** answers all primitives via a configured provider; probabilities normalized; bounded retry on parse failure.
 **Tests:** unit (mocked provider) + integration (optional live) · **Gate:** full · **Commit:** `feat(backends): add structured-output LLM backend`.
@@ -192,7 +192,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M2-T3: server `/v1/systemone`
 
 **What:** FastAPI app, Bearer auth dependency, request/response wiring, error mapping.
-**Where:** `src/jeba/serve.py`.
+**Where:** `src/tachyone/serve.py`.
 **Depends on:** M2-T1, M2-T2 · **Requirement:** SERVE-01, WIRE-01, WIRE-04.
 **Done when:** contract tests pass over HTTP; 401 without key; 422 on bad body.
 **Tests:** integration · **Gate:** full · **Commit:** `feat(serve): add systemone HTTP endpoint`.
@@ -200,7 +200,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M2-T4: extension endpoints
 
 **What:** `/predict`, `/predict/batch`, `/health`.
-**Where:** `src/jeba/serve.py` (modify).
+**Where:** `src/tachyone/serve.py` (modify).
 **Depends on:** M2-T3 · **Requirement:** SERVE-02, EXT-04.
 **Done when:** each endpoint responds; `/health` reports backend/device.
 **Tests:** integration · **Gate:** full · **Commit:** `feat(serve): add predict, batch, and health endpoints`.
@@ -208,30 +208,30 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M2-T5: Python SDK client + retry
 
 **What:** SDK client posting wire requests, parsing responses, exponential backoff + jitter on 429/529.
-**Where:** `src/jeba/client.py`, `src/jeba/__init__.py`.
+**Where:** `src/tachyone/client.py`, `src/tachyone/__init__.py`.
 **Depends on:** M2-T1 · **Requirement:** SERVE-05, WIRE-05, EXT-05.
 **Done when:** round-trip matches wire; retry verified against a fault-injected server.
 **Tests:** unit + integration · **Gate:** full · **Commit:** `feat(sdk): add python client with backoff`.
 
 #### M2-T6: CLI + presets [P]
 
-**What:** `jeba` CLI with `--preset`, `--predict`, `--serve`; presets `router/guard/moderation/triage/email`.
-**Where:** `src/jeba/cli.py`.
+**What:** `tachyone` CLI with `--preset`, `--predict`, `--serve`; presets `router/guard/moderation/triage/email`.
+**Where:** `src/tachyone/cli.py`.
 **Depends on:** M2-T1 · **Requirement:** SERVE-03, SERVE-04, SERVE-07.
-**Done when:** `jeba "text" --preset triage --predict` prints an answer; presets expand to questions.
+**Done when:** `tachyone "text" --preset triage --predict` prints an answer; presets expand to questions.
 **Tests:** unit (preset expansion) + smoke · **Gate:** full · **Commit:** `feat(cli): add predict CLI and presets`.
 
 #### M2-T7: `schemas.py` decide() [P]
 
 **What:** Convert JSON Schema / pydantic models into decision primitives; `return_details` passthrough.
-**Where:** `src/jeba/schemas.py`.
+**Where:** `src/tachyone/schemas.py`.
 **Depends on:** M2-T1 · **Requirement:** SERVE-08, CAL-05.
 **Done when:** a sample schema yields valid questions; unknown schema fails clearly.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(schemas): add decide() from json schema`.
 
 #### M2-T8: repointed-Jev-client e2e
 
-**What:** End-to-end test where a captured Jev client payload is sent to a live jeba server; compare shape.
+**What:** End-to-end test where a captured Jev client payload is sent to a live Tachyone server; compare shape.
 **Where:** `tests/e2e/test_jev_client.py`.
 **Depends on:** M2-T3, M2-T4, M2-T5, M2-T6, M2-T7 · **Requirement:** NFR-X01, NFR-X02.
 **Done when:** e2e passes; canonical shape unchanged by any extension.
@@ -244,7 +244,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M3-T1: script/language detection + checkpoint selection
 
 **What:** `Router.route(text) -> checkpoint_id`; language/script map; English vs multilingual.
-**Where:** `src/jeba/router.py`.
+**Where:** `src/tachyone/router.py`.
 **Depends on:** M2-T8 · **Requirement:** ROUTE-01, ROUTE-02, ROUTE-03, ROUTE-05.
 **Done when:** correct checkpoint chosen across Latin/Cyrillic/CJK/Arabic samples; 100+ language list; routing overhead measured < 0.5 ms.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(router): add script and language routing`.
@@ -252,7 +252,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M3-T2: checkpoint lifecycle
 
 **What:** `preload`, `max_loaded`, LRU `evict`, `unload`, `attach`.
-**Where:** `src/jeba/router.py` (modify).
+**Where:** `src/tachyone/router.py` (modify).
 **Depends on:** M3-T1 · **Requirement:** ROUTE-04.
 **Done when:** `max_loaded=1` evicts correctly; no leaked references.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(router): add checkpoint lifecycle management`.
@@ -260,7 +260,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M3-T3: confidence derivation
 
 **What:** `confidence(probabilities)` + `return_details` support.
-**Where:** `src/jeba/calibration.py`.
+**Where:** `src/tachyone/calibration.py`.
 **Depends on:** M2-T8 · **Requirement:** CAL-03, CAL-05, PRIM-05, EXT-05.
 **Done when:** confidence ∈ [0,1], monotone with concentration; details returned additively.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(calibration): derive confidence from distributions`.
@@ -268,7 +268,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M3-T4: agent forward pass + batching
 
 **What:** Single forward pass path, `sort_by_length`, `predict_batch`.
-**Where:** `src/jeba/agent.py`.
+**Where:** `src/tachyone/agent.py`.
 **Depends on:** M3-T3 · **Requirement:** BACK-07, NFR-P05.
 **Done when:** batch results align to inputs; sorted batching improves throughput vs naive.
 **Tests:** unit + benchmark · **Gate:** full · **Commit:** `feat(agent): add single-pass batching`.
@@ -276,7 +276,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M3-T5: encoder backend (3 heads)
 
 **What:** `EncoderBackend` implementing `Backend` with three task heads (noul/choice/score).
-**Where:** `src/jeba/backends/encoder.py`.
+**Where:** `src/tachyone/backends/encoder.py`.
 **Depends on:** M3-T1, M3-T4 · **Requirement:** BACK-03, BACK-06, PRIM-01, PRIM-02, PRIM-03.
 **Done when:** all primitives answered offline; contract tests pass; no network/key.
 **Tests:** contract + integration (offline) · **Gate:** full · **Commit:** `feat(backends): add encoder backend with three heads`.
@@ -284,7 +284,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M3-T6: hooks
 
 **What:** Hook registry for `on_predict_start/end`, `on_route`, `on_load`, `on_evict`, `on_error`; `on_error` on raise.
-**Where:** `src/jeba/hooks.py` (+ wiring in `agent.py`).
+**Where:** `src/tachyone/hooks.py` (+ wiring in `agent.py`).
 **Depends on:** M3-T4 · **Requirement:** EXT-01, EXT-02.
 **Done when:** each hook fires; raising hook triggers `on_error` and serving continues; contract shape unchanged.
 **Tests:** unit + hook-contract (`tests/test_hooks_api.py`) · **Gate:** full · **Commit:** `feat(hooks): add prediction and lifecycle hooks`.
@@ -292,7 +292,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M3-T7: predict_batch extension [P]
 
 **What:** Expose `predict_batch` via agent API and extension endpoint.
-**Where:** `src/jeba/agent.py`, `src/jeba/serve.py` (modify).
+**Where:** `src/tachyone/agent.py`, `src/tachyone/serve.py` (modify).
 **Depends on:** M3-T4 · **Requirement:** BACK-07, EXT-04.
 **Done when:** batch of states returns aligned answers over HTTP.
 **Tests:** integration · **Gate:** full · **Commit:** `feat(agent): expose batch prediction`.
@@ -364,7 +364,7 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M5-T1: ONNX backend [P]
 
 **What:** `OnnxBackend` implementing `Backend` via onnxruntime.
-**Where:** `src/jeba/backends/onnx.py`.
+**Where:** `src/tachyone/backends/onnx.py`.
 **Depends on:** M3-T5 · **Requirement:** BACK-04, OPS-01.
 **Done when:** contract tests pass against ONNX; extra import-guarded.
 **Tests:** contract + integration · **Gate:** full · **Commit:** `feat(backends): add onnx runtime backend`.
@@ -372,18 +372,18 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M5-T2: fast path (TileLang/CUDA graphs) [P]
 
 **What:** Optional accelerated execution path behind the `fast` extra; graceful fallback.
-**Where:** `src/jeba/fast.py`, packaging.
+**Where:** `src/tachyone/fast.py`, packaging.
 **Depends on:** M3-T5 · **Requirement:** NFR-P01, NFR-C05, OPS-01, EXT-03.
 **Done when:** latency improves on supported CUDA; falls back otherwise; router override (force checkpoint/language) honored additively.
 **Tests:** benchmark (conditional-by-extra) · **Gate:** full · **Commit:** `perf: add optional fast path`.
 **Status:** ✅ Delivered. The seam + graceful fallback and router override ship in M5; the B-2
-follow-up (`JEBA_FAST`) wires the seam to a per-shape CUDA-graph forward with bf16-resident
+follow-up (`TACHYONE_FAST`) wires the seam to a per-shape CUDA-graph forward with bf16-resident
 weights, measured in `benchmarks/fast_path.py` (2.68× p50, 0 top-label flips). NFR-P01 met.
 
 #### M5-T3: MCP stdio server [P]
 
-**What:** `jeba-mcp-server` exposing prediction tools over stdio.
-**Where:** `src/jeba/mcp/`.
+**What:** `tachyone-mcp-server` exposing prediction tools over stdio.
+**Where:** `src/tachyone/mcp/`.
 **Depends on:** M3-T5 · **Requirement:** OPS-02, SERVE-04.
 **Done when:** an MCP host can list and call the tool; clean shutdown on disconnect.
 **Tests:** integration (conditional-by-extra) · **Gate:** full · **Commit:** `feat(mcp): add stdio server`.
@@ -391,14 +391,14 @@ weights, measured in `benchmarks/fast_path.py` (2.68× p50, 0 top-label flips). 
 #### M5-T4: LangChain adapter [P]
 
 **What:** `Runnable` adapter returning canonical primitives.
-**Where:** `src/jeba/integrations/langchain.py`.
+**Where:** `src/tachyone/integrations/langchain.py`.
 **Depends on:** M3-T5 · **Requirement:** OPS-03, EXT-02.
 **Done when:** adapter invocation returns contract-shaped results; extra import-guarded.
 **Tests:** integration (conditional-by-extra) · **Gate:** full · **Commit:** `feat(langchain): add runnable adapter`.
 
 #### M5-T5: Docker + compose [P]
 
-**What:** `Dockerfile` + `docker/compose.yaml` running `jeba-serve`.
+**What:** `Dockerfile` + `docker/compose.yaml` running `tachyone-serve`.
 **Where:** `docker/`.
 **Depends on:** M3-T5 · **Requirement:** OPS-04.
 **Done when:** container answers `/v1/systemone`; compose up works.
@@ -407,7 +407,7 @@ weights, measured in `benchmarks/fast_path.py` (2.68× p50, 0 top-label flips). 
 #### M5-T6: telemetry opt-out
 
 **What:** Opt-out telemetry guard (`DO_NOT_TRACK=1`), disabled by default.
-**Where:** `src/jeba/telemetry.py`.
+**Where:** `src/tachyone/telemetry.py`.
 **Depends on:** M5-T1..T5 · **Requirement:** OPS-08, NFR-S05.
 **Done when:** telemetry never blocks offline use; opt-out honored.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(telemetry): add opt-out telemetry guard`.

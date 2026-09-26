@@ -21,7 +21,7 @@ all pass (even if tests are trivial), and CI runs the same on push/PR.
 
 **Project scaffolding** - DONE
 - `pyproject.toml` with `requires-python = ">=3.12,<3.13"`, extras, entry points
-- `uv.lock`, `.python-version`, `src/jeba/` layout, `tests/`
+- `uv.lock`, `.python-version`, `src/tachyone/` layout, `tests/`
 - ruff + pytest + pyright dev dependencies and config
 
 **Repo hygiene & CI** - DONE
@@ -50,7 +50,7 @@ deterministic backend lets us validate the full request/response cycle offline.
 
 **Goal:** End-to-end system: a real HTTP server answering `/v1/systemone` via structured
 outputs from existing LLMs, usable by existing Jev clients.
-**Exit:** a Jev client repointed at `jeba-serve` returns correct answers; SDK + CLI work;
+**Exit:** a Jev client repointed at `tachyone-serve` returns correct answers; SDK + CLI work;
 backend is swappable behind a stable interface.
 
 ### Features
@@ -60,7 +60,7 @@ backend is swappable behind a stable interface.
 
 **Server, SDK, CLI** - DONE
 - `serve.py` (`/v1/systemone`, `/predict`, `/predict/batch`, `/health`)
-- Python SDK + `jeba` / `jeba-serve` entry points
+- Python SDK + `tachyone` / `tachyone-serve` entry points
 - Retry/backoff on 429/529; API-key handling
 
 ---

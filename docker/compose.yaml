@@ -1,17 +1,17 @@
 services:
-  jeba:
+  tachyone:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: jeba:local
+    image: tachyone:local
     ports:
       - "8000:8000"
     environment:
-      # Offline, model-free default. Point JEBA_BACKEND at llm/encoder for real answers.
-      JEBA_BACKEND: "fake"
-      JEBA_HOST: "0.0.0.0"
-      JEBA_PORT: "8000"
-      # Set JEBA_API_KEY to require Bearer auth.
+      # Offline, model-free default. Point TACHYONE_BACKEND at llm/encoder for real answers.
+      TACHYONE_BACKEND: "fake"
+      TACHYONE_HOST: "0.0.0.0"
+      TACHYONE_PORT: "8000"
+      # Set TACHYONE_API_KEY to require Bearer auth.
     healthcheck:
       test:
         - CMD

@@ -2,7 +2,7 @@
 backend dispatch.
 
 This module is the compatibility authority in code (``docs/protocol.md``). It knows the
-contract and delegates the actual judgment to a :class:`~jeba.backends.base.Backend`;
+contract and delegates the actual judgment to a :class:`~tachyone.backends.base.Backend`;
 it never imports a concrete backend.
 """
 
@@ -12,8 +12,8 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from jeba.backends.base import Backend, PredictionResult
-from jeba.primitives import (
+from tachyone.backends.base import Backend, PredictionResult
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     ChoiceQuestion,

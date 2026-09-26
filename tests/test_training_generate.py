@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pydantic import TypeAdapter
 
-from jeba.primitives import Question
+from tachyone.primitives import Question
 from training.generate_data import DataConfig, generate, iter_records, main
 
 _QUESTION = TypeAdapter(Question)

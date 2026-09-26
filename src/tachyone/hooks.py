@@ -14,10 +14,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from jeba.primitives import Answer, Question, State
+from tachyone.primitives import Answer, Question, State
 
 if TYPE_CHECKING:
-    from jeba.router import RouteDecision
+    from tachyone.router import RouteDecision
 
 ON_PREDICT_START = "on_predict_start"
 ON_PREDICT_END = "on_predict_end"

@@ -6,7 +6,7 @@
 
 ## Problem Statement
 
-We need an end-to-end jeba system quickly, before any encoder training. Existing LLMs can
+We need an end-to-end Tachyone system quickly, before any encoder training. Existing LLMs can
 already answer structured questions. By wrapping them behind the `Backend` seam and serving
 the Jev contract, we get a usable, verifiable product that existing Jev clients can hit.
 
@@ -14,7 +14,7 @@ the Jev contract, we get a usable, verifiable product that existing Jev clients 
 
 - [x] Ship a `POST /v1/systemone` server backed by structured outputs of existing LLMs.
 - [x] Provide a Python SDK and CLI that speak the same contract.
-- [x] Prove a real Jev client can be repointed at jeba unchanged.
+- [x] Prove a real Jev client can be repointed at Tachyone unchanged.
 - [x] Keep the LLM backend optional so the base install stays offline/no-key.
 
 ## Out of Scope
@@ -31,7 +31,7 @@ the Jev contract, we get a usable, verifiable product that existing Jev clients 
 
 ### P1: Drop-in server ⭐ MVP
 
-**User Story:** As an integrator, I want to point my existing Jev client at jeba's base URL
+**User Story:** As an integrator, I want to point my existing Jev client at Tachyone's base URL
 and have it work, so I can migrate without a rewrite.
 
 **Acceptance Criteria:**
@@ -63,14 +63,14 @@ can use my preferred model or a local one.
 
 ### P2: Python SDK & CLI
 
-**User Story:** As a Python user, I want `jeba` and a small client so I can answer questions
+**User Story:** As a Python user, I want `tachyone` and a small client so I can answer questions
 locally and in scripts.
 
 **Acceptance Criteria:**
 
-1. WHEN `jeba "text" --preset triage --predict` runs THEN the CLI SHALL print the primitive answer.
+1. WHEN `tachyone "text" --preset triage --predict` runs THEN the CLI SHALL print the primitive answer.
 2. WHEN the SDK client method is called THEN it SHALL POST the exact wire request and parse the response.
-3. WHEN `jeba-serve` runs THEN it SHALL start the HTTP server with env-configurable host/port/device.
+3. WHEN `tachyone-serve` runs THEN it SHALL start the HTTP server with env-configurable host/port/device.
 
 **Independent Test:** CLI invocation against a local server returns a well-formed answer.
 

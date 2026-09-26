@@ -11,7 +11,7 @@ def test_model_card_has_front_matter_and_sections() -> None:
     text = (_ROOT / "docs" / "model-card.md").read_text(encoding="utf-8")
     assert text.startswith("---")
     assert "license: apache-2.0" in text
-    assert "library_name: jeba" in text
+    assert "library_name: tachyone" in text
     for section in ("## Model details", "## Uses", "## Training", "## Evaluation", "## Citation"):
         assert section in text
 

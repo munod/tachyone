@@ -21,7 +21,7 @@ support scales evenly; existing generator tests still pass.
 
 **What:** Carry `lang` through calibration examples; emit per-language fits beside the per-primitive
 aggregate; widen the grid; add a shared report parser.
-**Where:** `training/fit_calibration.py`, `src/jeba/calibration.py`,
+**Where:** `training/fit_calibration.py`, `src/tachyone/calibration.py`,
 `training/configs/calibration.json`.
 **Depends on:** A1 · **Requirement:** CAL-02, CAL-04, NFR-C06.
 **Done when:** report contains `per_primitive[kind]` (unchanged shape) plus per-language entries with
@@ -34,7 +34,7 @@ warnings below `min_samples`; the grid no longer truncates.
 **What:** Flatten temperature keys to `kind`/`kind:lang`; `EncoderModel` applies `kind:lang` →
 `kind` → global, detecting language from the state text when not given; offline `predict` passes the
 ground-truth `lang`.
-**Where:** `src/jeba/backends/encoder.py`, `training/predict.py`.
+**Where:** `src/tachyone/backends/encoder.py`, `training/predict.py`.
 **Depends on:** A2 · **Requirement:** CAL-02, EXT-02.
 **Done when:** old and new temperature files both apply; response shape unchanged.
 **Tests:** `tests/test_encoder.py` · **Gate:** full · **Contract:** unchanged.
@@ -52,7 +52,7 @@ ground-truth `lang`.
 ## A5: GPU retrain and publish
 
 **Status:** Done. Retrained on the RTX 3060 and adapters republished to the Hub
-(`munod/jeba-en`, `munod/jeba-multi`); per-language ECE target not fully met (see spec).
+(`munod/tachyone-en`, `munod/tachyone-multi`); per-language ECE target not fully met (see spec).
 **What:** Run data → LoRA → calibration → eval → report on the RTX 3060; update model card, changelog,
 and STATE/BACKLOG; publish adapters.
 **Where:** `benchmarks/report.md`, `docs/model-card.md`, `CHANGELOG.md`,

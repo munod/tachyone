@@ -10,8 +10,8 @@ import socket
 
 import pytest
 
-from jeba.backends.encoder import EncoderBackend, EncoderCheckpoint
-from jeba.primitives import (
+from tachyone.backends.encoder import EncoderBackend, EncoderCheckpoint
+from tachyone.primitives import (
     ChoiceAnswer,
     ChoiceQuestion,
     NoulAnswer,
@@ -20,7 +20,7 @@ from jeba.primitives import (
     ScoreAnswer,
     ScoreQuestion,
 )
-from jeba.router import ENGLISH, MULTILINGUAL, CheckpointInfo, Router
+from tachyone.router import ENGLISH, MULTILINGUAL, CheckpointInfo, Router
 
 pytestmark = pytest.mark.contract
 
@@ -94,7 +94,7 @@ async def test_multilingual_offline_answers(
     backend: tuple[EncoderBackend, _Loader], label: str, state: str, expected: str
 ) -> None:
     manager, loader = backend
-    result = await manager.predict(_QUESTIONS, state=state, model="jeba-latest")
+    result = await manager.predict(_QUESTIONS, state=state, model="tachyone-latest")
     _assert_valid(result)
     assert loader.loaded[0] == expected, f"{label}: expected {expected}, loaded {loader.loaded}"
 
@@ -109,5 +109,5 @@ async def test_runs_with_network_disabled(
     monkeypatch.setattr(socket, "socket", _no_socket)
     monkeypatch.setattr(socket, "create_connection", _no_socket)
     manager, _ = backend
-    result = await manager.predict(_QUESTIONS, state="请退款", model="jeba-latest")
+    result = await manager.predict(_QUESTIONS, state="请退款", model="tachyone-latest")
     _assert_valid(result)

@@ -57,7 +57,7 @@ jobs:
         run: uv sync --locked --no-dev
 
       - name: Import core offline (NFR-R01)
-        run: uv run python -c "import jeba, jeba.cli, jeba.client, jeba.config, jeba.primitives, jeba.presets, jeba.schemas, jeba.wire, jeba.backends, jeba.backends.fake, jeba.backends.llm, jeba.telemetry; print('base install ok')"
+        run: uv run python -c "import tachyone, tachyone.cli, tachyone.client, tachyone.config, tachyone.primitives, tachyone.presets, tachyone.schemas, tachyone.wire, tachyone.backends, tachyone.backends.fake, tachyone.backends.llm, tachyone.telemetry; print('base install ok')"
 
   docs:
     name: build documentation site

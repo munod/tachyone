@@ -3,7 +3,7 @@
 **Status:** Design (approved decisions locked; open items flagged).
 **Related:** `docs/protocol.md`, `docs/adr/`, `docs/requirements/`, `docs/training.md`.
 
-This document defines **how jeba is built**. It is organized around one hard boundary —
+This document defines **how Tachyone is built**. It is organized around one hard boundary —
 the frozen wire — and one flexible seam — the pluggable backend.
 
 ---
@@ -30,13 +30,13 @@ the frozen wire — and one flexible seam — the pluggable backend.
 graph TB
     subgraph Clients
         JC["Existing Jev client"]
-        SDK["jeba Python SDK"]
-        CLI["jeba CLI"]
+        SDK["tachyone Python SDK"]
+        CLI["tachyone CLI"]
         MCPC["MCP host"]
         LC["LangChain app"]
     end
 
-    subgraph jeba
+    subgraph tachyone
         SRV["serve.py<br/>FastAPI /v1/systemone"]
         MCP["mcp/ stdio server"]
         INT["integrations/langchain.py"]
@@ -79,12 +79,12 @@ graph TB
 ## Repository structure
 
 ```text
-projeto_jeba/
+projeto_tachyone/
 ├── pyproject.toml            # uv project, py>=3.12,<3.13, extras, entry points
 ├── uv.lock                   # committed lockfile
 ├── .python-version           # 3.12
 ├── AGENTS.md  README.md  CONTRIBUTING.md  CHANGELOG.md  LICENSE (Apache-2.0)
-├── src/jeba/
+├── src/tachyone/
 │   ├── __init__.py           # public SDK surface
 │   ├── primitives.py         # Choice / Score / Noul + Answer models (pydantic v2)
 │   ├── wire.py               # /v1/systemone request/response + error mapping
@@ -96,10 +96,10 @@ projeto_jeba/
 │   ├── presets.py            # named question presets + schema helpers
 │   ├── schemas.py            # JSON Schema / pydantic → questions (decide())
 │   ├── client.py             # SDK client for /v1/systemone
-│   ├── cli.py                # `jeba` entry point + presets
+│   ├── cli.py                # `tachyone` entry point + presets
 │   ├── serve.py              # FastAPI: /v1/systemone, /predict, /predict/batch, /health
 │   ├── config.py             # env-var configuration + validation
-│   ├── fast.py               # optional CUDA-graph fast path (JEBA_FAST)
+│   ├── fast.py               # optional CUDA-graph fast path (TACHYONE_FAST)
 │   ├── telemetry.py          # no-op opt-out guard (ADR-0011)
 │   ├── backends/
 │   │   ├── base.py           # Backend Protocol + PredictionResult
@@ -107,7 +107,7 @@ projeto_jeba/
 │   │   ├── encoder.py        # local ModernBERT/mmBERT + 3 heads
 │   │   ├── llm.py            # structured outputs of existing LLMs
 │   │   └── onnx.py           # onnxruntime backend
-│   ├── mcp/                  # stdio MCP server (`jeba-mcp-server`)
+│   ├── mcp/                  # stdio MCP server (`tachyone-mcp-server`)
 │   └── integrations/
 │       └── langchain.py      # Runnable adapter
 ├── training/
@@ -124,7 +124,7 @@ projeto_jeba/
 ```
 
 **pip extras:** `serve`, `fast`, `onnx`, `langchain`, `mcp`, `train`.
-**Entry points:** `jeba`, `jeba-serve`, `jeba-mcp-server`.
+**Entry points:** `tachyone`, `tachyone-serve`, `tachyone-mcp-server`.
 
 ---
 
@@ -133,7 +133,7 @@ projeto_jeba/
 ### `primitives.py`
 
 - **Purpose:** Canonical pydantic v2 models for the three primitives and their answers.
-- **Location:** `src/jeba/primitives.py`
+- **Location:** `src/tachyone/primitives.py`
 - **Interfaces:**
   - `NoulQuestion`, `ChoiceQuestion`, `ScoreQuestion` (discriminated union `Question` on `type`)
   - `NoulAnswer`, `ChoiceAnswer`, `ScoreAnswer` (discriminated union `Answer`)
@@ -144,7 +144,7 @@ projeto_jeba/
 ### `wire.py`
 
 - **Purpose:** Envelope models, backend dispatch, and error mapping for `/v1/systemone`.
-- **Location:** `src/jeba/wire.py`
+- **Location:** `src/tachyone/wire.py`
 - **Interfaces:**
   - `SystemOneRequest`, `SystemOneResponse`, `Usage`
   - `answer(request: SystemOneRequest, backend: Backend) -> SystemOneResponse`
@@ -155,7 +155,7 @@ projeto_jeba/
 ### `backends/base.py` (the seam)
 
 - **Purpose:** Stable interface every engine implements.
-- **Location:** `src/jeba/backends/base.py`
+- **Location:** `src/tachyone/backends/base.py`
 - **Interfaces:**
   - `class Backend(Protocol):` `async def predict(self, questions, *, state, model, return_details=False) -> PredictionResult`
   - `PredictionResult(answers: dict[str, Answer], usage: Usage)`
@@ -165,7 +165,7 @@ projeto_jeba/
 ### `backends/llm.py` (Phase 2)
 
 - **Purpose:** Answer primitives via structured outputs of existing LLMs.
-- **Location:** `src/jeba/backends/llm.py`
+- **Location:** `src/tachyone/backends/llm.py`
 - **Interfaces:** implements `Backend`; provider selection via config.
 - **Dependencies:** optional extra (provider SDK/HTTP client).
 - **Boundary:** Never required by core; no key/network needed unless selected.
@@ -174,7 +174,7 @@ projeto_jeba/
 ### `backends/encoder.py` + `agent.py` (Phase 3)
 
 - **Purpose:** Local single-forward-pass inference with three task heads.
-- **Location:** `src/jeba/backends/encoder.py`, `src/jeba/agent.py`
+- **Location:** `src/tachyone/backends/encoder.py`, `src/tachyone/agent.py`
 - **Interfaces:**
   - `Agent.predict_batch(states, questions, *, sort_by_length=True)`
   - `Agent.preload(checkpoints)`, `Agent.unload(checkpoint)`
@@ -185,7 +185,7 @@ projeto_jeba/
 ### `router.py` (Phase 3)
 
 - **Purpose:** Detect script/language and select the right checkpoint; manage lifecycle.
-- **Location:** `src/jeba/router.py`
+- **Location:** `src/tachyone/router.py`
 - **Interfaces:**
   - `Router.route(text) -> checkpoint_id` (target overhead < 0.5 ms)
   - `Router.preload(...)`, `Router.attach(...)`, `Router.unload(...)`, `max_loaded`
@@ -195,7 +195,7 @@ projeto_jeba/
 ### `calibration.py` (Phase 3–4)
 
 - **Purpose:** Derive `confidence` from distributions; fit temperature to minimize ECE.
-- **Location:** `src/jeba/calibration.py`
+- **Location:** `src/tachyone/calibration.py`
 - **Interfaces:**
   - `confidence(probabilities) -> float`
   - `fit_temperature(logits, labels) -> Temperature`
@@ -205,7 +205,7 @@ projeto_jeba/
 ### `schemas.py`
 
 - **Purpose:** Turn JSON Schema / pydantic models into decision primitives.
-- **Location:** `src/jeba/schemas.py`
+- **Location:** `src/tachyone/schemas.py`
 - **Interfaces:** `decide(schema, *, return_details=False) -> questions | result`.
 - **Dependencies:** pydantic; JSON Schema parsing.
 - **Reuses:** `primitives.py`.
@@ -213,7 +213,7 @@ projeto_jeba/
 ### `serve.py`
 
 - **Purpose:** HTTP surface.
-- **Location:** `src/jeba/serve.py`
+- **Location:** `src/tachyone/serve.py`
 - **Interfaces:**
   - `POST /v1/systemone` (canonical)
   - `POST /predict`, `POST /predict/batch`, `GET /health` (extensions)
@@ -228,7 +228,7 @@ projeto_jeba/
 
 ### `cli.py`
 
-- **Purpose:** `jeba "text" --preset triage --predict` and `--serve`.
+- **Purpose:** `tachyone "text" --preset triage --predict` and `--serve`.
 - **Interfaces:** presets `router`, `guard`, `moderation`, `triage`, `email`; flags `--predict`,
   `--serve`, `--preset`, `--backend`, `--model`, `--threshold`, `--list-presets`.
 - **Dependencies:** argparse (stdlib); core.
@@ -236,10 +236,10 @@ projeto_jeba/
 ### `config.py`
 
 - **Purpose:** Env-var configuration, single source of truth.
-- **Interface (env vars):** `JEBA_HOST`, `JEBA_PORT`, `JEBA_DEVICE`, `JEBA_PRELOAD`,
-  `JEBA_MODELS`, `JEBA_MODELS_DIR`, `JEBA_ADAPTERS`, `JEBA_OFFLINE`, `JEBA_FAST`, `JEBA_THREADS`,
-  `JEBA_API_KEY`, `JEBA_BACKEND`, `JEBA_LLM_BASE_URL`, `JEBA_LLM_API_KEY`, `JEBA_LLM_MODEL`,
-  `JEBA_LLM_TIMEOUT`, `JEBA_LLM_RETRIES` (full table under [Configuration](#configuration)).
+- **Interface (env vars):** `TACHYONE_HOST`, `TACHYONE_PORT`, `TACHYONE_DEVICE`, `TACHYONE_PRELOAD`,
+  `TACHYONE_MODELS`, `TACHYONE_MODELS_DIR`, `TACHYONE_ADAPTERS`, `TACHYONE_OFFLINE`, `TACHYONE_FAST`, `TACHYONE_THREADS`,
+  `TACHYONE_API_KEY`, `TACHYONE_BACKEND`, `TACHYONE_LLM_BASE_URL`, `TACHYONE_LLM_API_KEY`, `TACHYONE_LLM_MODEL`,
+  `TACHYONE_LLM_TIMEOUT`, `TACHYONE_LLM_RETRIES` (full table under [Configuration](#configuration)).
 - **Boundary:** Never logs secrets; validates at startup.
 
 ---
@@ -277,8 +277,8 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Req["Request arrives"] --> Cfg{"JEBA_BACKEND?"}
-    Cfg -->|"llm (default; needs JEBA_LLM_*)"| LLM["LLMBackend"]
+    Req["Request arrives"] --> Cfg{"TACHYONE_BACKEND?"}
+    Cfg -->|"llm (default; needs TACHYONE_LLM_*)"| LLM["LLMBackend"]
     Cfg -->|"encoder (local, offline once cached)"| Enc["EncoderBackend"]
     Cfg -->|"onnx"| ONNX["OnnxBackend"]
     Cfg -->|"fake (model-free, tests/CI)"| Fake["FakeBackend"]
@@ -305,7 +305,7 @@ class PredictionResult(BaseModel):
     usage: Usage
 
 class CheckpointInfo(BaseModel):
-    id: str                 # e.g. "jeba-en", "jeba-multi"
+    id: str                 # e.g. "tachyone-en", "tachyone-multi"
     languages: list[str]    # ["en"] or ["*"] for multilingual
     context: int
     size_params: int
@@ -368,7 +368,7 @@ Signature pattern: a callable or object registered for lifecycle events.
 
 **Rule:** hooks may observe and log; they must not alter the canonical `/v1/systemone` shape.
 A raising hook triggers `on_error` and serving continues. This mirrors Laya's public-API
-contract (`tests/test_hooks_api.py` in Laya is the inspiration for jeba's hook contract test).
+contract (`tests/test_hooks_api.py` in Laya is the inspiration for Tachyone's hook contract test).
 
 ---
 
@@ -389,28 +389,28 @@ contract (`tests/test_hooks_api.py` in Laya is the inspiration for jeba's hook c
 
 ## Configuration
 
-All configuration via environment variables (prefix `JEBA_`), documented in `config.py`:
+All configuration via environment variables (prefix `TACHYONE_`), documented in `config.py`:
 
 | Var | Default | Purpose |
 | --- | --- | --- |
-| `JEBA_HOST` | `127.0.0.1` | Server bind host |
-| `JEBA_PORT` | `8000` | Server port |
-| `JEBA_DEVICE` | `auto` | `auto` / `cpu` / `cuda` / `mps` |
-| `JEBA_BACKEND` | `llm` | `llm` / `encoder` / `onnx` / `fake` (ADR-0004 intended `encoder` from M3; never switched — see `docs/adr/README.md`) |
-| `JEBA_MODELS` | built-in ids | Available checkpoints |
-| `JEBA_MODELS_DIR` | `~/.cache/jeba/models` | Local weights cache (see ADR-0010) |
-| `JEBA_ADAPTERS` | built-in adapters | `id=repo|path` overrides; empty value disables the adapter |
-| `JEBA_OFFLINE` | unset | `1` = cache-only, no network (`local_files_only` on every Hub call) |
-| `JEBA_PRELOAD` | empty | Checkpoints to load at startup |
-| `JEBA_FAST` | unset | `1` = opt into the CUDA-graph fast path when a CUDA device is present |
-| `JEBA_THREADS` | `0` (runtime decides) | CPU thread budget |
-| `JEBA_API_KEY` | unset | Enables Bearer auth; unset = auth disabled (dev only) |
-| `JEBA_LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible endpoint for the `llm` backend |
-| `JEBA_LLM_API_KEY` | unset (falls back to `OPENAI_API_KEY`) | Provider key for the `llm` backend |
-| `JEBA_LLM_MODEL` | `gpt-4o-mini` | Model id for the `llm` backend |
-| `JEBA_LLM_TIMEOUT` | `30.0` | Per-request timeout (s) |
-| `JEBA_LLM_RETRIES` | `2` | Retry count (0–10) |
-| `JEBA_TELEMETRY` | reserved | No telemetry exists (ADR-0011); the variable is a reserved no-op |
+| `TACHYONE_HOST` | `127.0.0.1` | Server bind host |
+| `TACHYONE_PORT` | `8000` | Server port |
+| `TACHYONE_DEVICE` | `auto` | `auto` / `cpu` / `cuda` / `mps` |
+| `TACHYONE_BACKEND` | `llm` | `llm` / `encoder` / `onnx` / `fake` (ADR-0004 intended `encoder` from M3; never switched — see `docs/adr/README.md`) |
+| `TACHYONE_MODELS` | built-in ids | Available checkpoints |
+| `TACHYONE_MODELS_DIR` | `~/.cache/tachyone/models` | Local weights cache (see ADR-0010) |
+| `TACHYONE_ADAPTERS` | built-in adapters | `id=repo|path` overrides; empty value disables the adapter |
+| `TACHYONE_OFFLINE` | unset | `1` = cache-only, no network (`local_files_only` on every Hub call) |
+| `TACHYONE_PRELOAD` | empty | Checkpoints to load at startup |
+| `TACHYONE_FAST` | unset | `1` = opt into the CUDA-graph fast path when a CUDA device is present |
+| `TACHYONE_THREADS` | `0` (runtime decides) | CPU thread budget |
+| `TACHYONE_API_KEY` | unset | Enables Bearer auth; unset = auth disabled (dev only) |
+| `TACHYONE_LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible endpoint for the `llm` backend |
+| `TACHYONE_LLM_API_KEY` | unset (falls back to `OPENAI_API_KEY`) | Provider key for the `llm` backend |
+| `TACHYONE_LLM_MODEL` | `gpt-4o-mini` | Model id for the `llm` backend |
+| `TACHYONE_LLM_TIMEOUT` | `30.0` | Per-request timeout (s) |
+| `TACHYONE_LLM_RETRIES` | `2` | Retry count (0–10) |
+| `TACHYONE_TELEMETRY` | reserved | No telemetry exists (ADR-0011); the variable is a reserved no-op |
 | `DO_NOT_TRACK` | unset | Honored unconditionally; `telemetry_enabled()` is always `False` |
 
 No secrets are committed to the repository.

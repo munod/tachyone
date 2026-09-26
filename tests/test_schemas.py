@@ -7,9 +7,9 @@ from typing import Literal
 import pytest
 from pydantic import BaseModel
 
-from jeba.primitives import ChoiceQuestion, NoulQuestion, ScoreQuestion
-from jeba.schemas import decide, schema_to_questions
-from jeba.wire import SystemOneRequest
+from tachyone.primitives import ChoiceQuestion, NoulQuestion, ScoreQuestion
+from tachyone.schemas import decide, schema_to_questions
+from tachyone.wire import SystemOneRequest
 
 _SCHEMA = {
     "type": "object",

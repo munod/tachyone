@@ -6,14 +6,14 @@ import dataclasses
 
 import pytest
 
-from jeba.backends.base import Backend, PredictionResult
-from jeba.primitives import ChoiceAnswer, NoulAnswer, ScoreAnswer
-from jeba.wire import Usage, parse_request
+from tachyone.backends.base import Backend, PredictionResult
+from tachyone.primitives import ChoiceAnswer, NoulAnswer, ScoreAnswer
+from tachyone.wire import Usage, parse_request
 from tests.fakes import FakeBackend, ScriptedBackend
 
 _REQUEST = {
     "state": "please refund the duplicate charge",
-    "model": "jeba-latest",
+    "model": "tachyone-latest",
     "questions": {
         "refund": {"type": "noul", "instructions": "Does this request a refund?"},
         "team": {

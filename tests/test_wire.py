@@ -6,9 +6,9 @@ from typing import Any
 
 import pytest
 
-from jeba.backends.base import PredictionResult
-from jeba.primitives import Answer, ChoiceAnswer, NoulAnswer, Question, ScoreAnswer, State
-from jeba.wire import (
+from tachyone.backends.base import PredictionResult
+from tachyone.primitives import Answer, ChoiceAnswer, NoulAnswer, Question, ScoreAnswer, State
+from tachyone.wire import (
     BackendError,
     SystemOneRequest,
     UnprocessableEntity,
@@ -19,7 +19,7 @@ from jeba.wire import (
 
 _REQUEST: dict[str, Any] = {
     "state": "Help! My payouts have been failing for 3 days.",
-    "model": "jeba-latest",
+    "model": "tachyone-latest",
     "questions": {
         "is_urgent": {"type": "noul", "instructions": "Does this convey urgency?"},
         "department": {
@@ -76,7 +76,7 @@ class _StubBackend:
 def test_parse_request_accepts_valid_body() -> None:
     request = parse_request(_REQUEST)
     assert isinstance(request, SystemOneRequest)
-    assert request.model == "jeba-latest"
+    assert request.model == "tachyone-latest"
     assert set(request.questions) == {"is_urgent", "department", "frustration"}
 
 
@@ -89,7 +89,7 @@ def test_parse_request_accepts_empty_questions() -> None:
 async def test_answer_roundtrip_keys_and_usage() -> None:
     request = parse_request(_REQUEST)
     response = await answer(request, _StubBackend())
-    assert response.model == "jeba-latest"
+    assert response.model == "tachyone-latest"
     assert set(response.answers) == set(request.questions)
     assert response.usage == Usage(input_tokens=42, output_tokens=7)
     assert response.answers["is_urgent"].type == "noul"

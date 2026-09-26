@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from jeba.router import ENGLISH, MULTILINGUAL, CheckpointInfo, Router
+from tachyone.router import ENGLISH, MULTILINGUAL, CheckpointInfo, Router
 
 
 class _Loader:
@@ -54,7 +54,7 @@ def test_recent_use_is_not_evicted() -> None:
     router.get(ENGLISH)
     router.get(MULTILINGUAL)
     router.get(ENGLISH)  # touch English -> multilingual is now LRU
-    router.attach("jeba-third", object())
+    router.attach("tachyone-third", object())
     assert MULTILINGUAL not in router.loaded
     assert ENGLISH in router.loaded
 

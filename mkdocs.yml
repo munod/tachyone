@@ -1,10 +1,10 @@
-site_name: jeba
+site_name: Tachyone
 site_description: Local-first, multilingual System One decision engine — ultra-fast, non-autoregressive, calibrated. Speaks the Jev /v1/systemone protocol.
-site_url: https://munod.github.io/jeba/
-repo_url: https://github.com/munod/jeba
-repo_name: munod/jeba
+site_url: https://munod.github.io/tachyone/
+repo_url: https://github.com/munod/tachyone
+repo_name: munod/tachyone
 edit_uri: edit/main/docs/
-copyright: Copyright &copy; 2026 The jeba Authors · Apache-2.0
+copyright: Copyright &copy; 2026 The Tachyone Authors · Apache-2.0
 docs_dir: docs
 
 theme:
@@ -43,11 +43,11 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/munod/jeba
-      name: jeba on GitHub
+      link: https://github.com/munod/tachyone
+      name: tachyone on GitHub
     - icon: fontawesome/solid/robot
       link: https://huggingface.co/munod
-      name: jeba models on Hugging Face
+      name: tachyone models on Hugging Face
 
 extra_css:
   - stylesheets/extra.css
@@ -118,3 +118,4 @@ nav:
       - ADR-0010 Weights distribution: adr/ADR-0010-weights-distribution.md
       - ADR-0011 No telemetry: adr/ADR-0011-no-telemetry.md
       - ADR-0012 ONNX before fast path: adr/ADR-0012-onnx-before-fast-path.md
+      - ADR-0013 Rename to Tachyone: adr/ADR-0013-rename-to-tachyone.md

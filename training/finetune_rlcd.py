@@ -1,6 +1,6 @@
 """LoRA/QLoRA fine-tuning of the encoder with an RLCD proper-scoring objective.
 
-The training head mirrors the inference math in ``jeba.backends.encoder`` (cosine similarity
+The training head mirrors the inference math in ``tachyone.backends.encoder`` (cosine similarity
 between the state, question, and criterion embeddings, softmaxed with a learned temperature),
 so fine-tuning the shared encoder directly improves the local backend without a separate
 head format. Torch/transformers/peft are imported lazily (the ``train`` extra); a ``--dry-run``
@@ -346,7 +346,7 @@ def run(config: FinetuneConfig, *, dry_run: bool = False) -> dict[str, Any]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-finetune", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-finetune", description=__doc__)
     parser.add_argument("--config", required=True, help="path to a JSON FinetuneConfig")
     parser.add_argument("--dry-run", action="store_true", help="validate config and data only")
     return parser

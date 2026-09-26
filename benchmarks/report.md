@@ -1,4 +1,4 @@
-# jeba Benchmark Report
+# Tachyone Benchmark Report
 
 > Measured on a single RTX 3060 12GB: 9,000 English / 18,000 multilingual deterministic synthetic records (fully localized per-record RNG, one-in-six hard negatives), LoRA plus a low-rank choice head (r=32), 4 epochs, bf16 + gradient checkpointing. Calibrated ECE is in-sample on the held-out synthetic split. English LoRA r=16; multilingual LoRA raised to r=64 (alpha=128), which lifted overall accuracy 0.702 -> 0.853 and cut es ECE 0.170 -> 0.038. The noisy view applies one surface edit to 15% of states (B-4). nl per-language ECE remains > 0.05.
 
@@ -7,7 +7,7 @@
 ```json
 {
   "git_commit": "2b4e77d1f917e891d08f6b11e9bf3742f63a9af4",
-  "jeba": "0.3.0",
+  "tachyone": "0.3.0",
   "peft": "0.21.0",
   "platform": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44",
   "pydantic": "2.13.5",

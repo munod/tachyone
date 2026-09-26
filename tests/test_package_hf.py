@@ -30,7 +30,7 @@ def test_package_assembles_hf_layout(tmp_path: Path) -> None:
     assert (out / "temperature_calibration.json").exists()
     readme = (out / "README.md").read_text(encoding="utf-8")
     assert readme.startswith("---")  # HF front matter preserved
-    assert "# jeba-en (System One decision engine)" in readme
+    assert "# tachyone-en (System One decision engine)" in readme
 
 
 def test_package_requires_adapter_files(tmp_path: Path) -> None:

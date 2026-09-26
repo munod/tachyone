@@ -91,7 +91,7 @@ def render_report(
     entries: Sequence[ReportEntry],
     *,
     commands: Sequence[str] = (),
-    title: str = "jeba Benchmark Report",
+    title: str = "tachyone Benchmark Report",
     notes: str | None = None,
 ) -> str:
     """Render Markdown for the given entries, environment, and reproduction commands."""
@@ -116,7 +116,7 @@ def write_report(markdown: str, path: str | Path) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-benchmark-report", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-benchmark-report", description=__doc__)
     parser.add_argument(
         "--entry",
         action="append",
@@ -125,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="a labeled evaluation report (repeatable)",
     )
     parser.add_argument("--out", required=True, help="output Markdown path")
-    parser.add_argument("--title", default="jeba Benchmark Report")
+    parser.add_argument("--title", default="tachyone Benchmark Report")
     parser.add_argument("--note", default=None)
     return parser
 

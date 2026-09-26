@@ -11,9 +11,9 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 
-from jeba.hooks import ON_ERROR, ON_PREDICT_END, ON_PREDICT_START, Hooks
-from jeba.primitives import Answer, Question, State
-from jeba.router import state_text
+from tachyone.hooks import ON_ERROR, ON_PREDICT_END, ON_PREDICT_START, Hooks
+from tachyone.primitives import Answer, Question, State
+from tachyone.router import state_text
 
 #: Encodes a list of states against the same questions, returning one answer map per state.
 type Runner = Callable[[list[State], dict[str, Question]], list[dict[str, Answer]]]

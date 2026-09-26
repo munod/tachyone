@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from jeba.primitives import ChoiceQuestion, NoulQuestion, Question, ScoreQuestion
+from tachyone.primitives import ChoiceQuestion, NoulQuestion, Question, ScoreQuestion
 
 
 def router_questions() -> dict[str, Question]:

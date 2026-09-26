@@ -1,6 +1,6 @@
-# jeba
+# Tachyone
 
-**Vision:** jeba is a local-first, multilingual decision engine that answers atomic
+**Vision:** Tachyone is a local-first, multilingual decision engine that answers atomic
 `choice` / `score` / `noul` questions in a single forward pass and speaks the exact
 TypeSafe Jev `/v1/systemone` wire protocol, so any existing Jev client can be repointed
 at it unchanged.
@@ -10,20 +10,20 @@ calibrated structured decisions without sending data to a hosted LLM API.
 
 **Solves:** Hosted "System One" decision APIs are fast but remote, closed, and paid per
 call. Autoregressive LLMs are local-capable but slow, expensive, and poorly calibrated
-for atomic decisions. jeba gives you the Jev contract you already build against, running
+for atomic decisions. Tachyone gives you the Jev contract you already build against, running
 on your own box, with an optional LLM backend and a trained encoder backend.
 
 > Status: **implemented and released (`v0.3.0`)**. All milestones M0–M6 are complete, plus the
 > post-M6 work: multilingual quality (B-1, LoRA rank 16 → 64), CUDA-graph fast path (B-2),
 > confidence thresholding / System-2 handoff (B-3), and input-noise robustness (B-4). The trained
-> adapters are published (`munod/jeba-en`, `munod/jeba-multi`) and the `v0.3.0` GitHub Release
+> adapters are published (`munod/tachyone-en`, `munod/tachyone-multi`) and the `v0.3.0` GitHub Release
 > exists; `nl` per-language calibration remains the open quality target. See
 > `.specs/project/STATE.md` and `.specs/project/BACKLOG.md`.
 
 ## Goals
 
 - **G1 — Wire parity (measurable):** 100% pass on a golden contract test suite where the
-  same Jev request produces structurally identical jeba responses for all three primitive
+  same Jev request produces structurally identical Tachyone responses for all three primitive
   types, including documented 401 / 422 / 429 / 529 error shapes.
 - **G2 — End-to-end in one phase (measurable):** a working `POST /v1/systemone` server on
   the LLM backend, plus Python SDK and CLI, that answers a real repointed Jev client in
@@ -70,8 +70,8 @@ onnxruntime (`onnx`), model-context-protocol (`mcp`), langchain-core (`langchain
 
 **Explicitly out of scope (for now):**
 
-- Hosted SaaS control plane, billing, or multi-tenant auth (jeba is local-first)
-- Autoregressive generation / free-form chat — jeba answers atomic structured questions only
+- Hosted SaaS control plane, billing, or multi-tenant auth (Tachyone is local-first)
+- Autoregressive generation / free-form chat — Tachyone answers atomic structured questions only
 - Reimplementing the Jev SDK's hosted client, or depending on `typesafe-sdk` in core
 - A GUI/web console (CLI + HTTP + SDK only)
 - Training a foundation model from scratch (we fine-tune existing encoders)

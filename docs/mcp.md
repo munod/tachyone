@@ -1,11 +1,11 @@
 # MCP server
 
-jeba ships a stdio **Model Context Protocol** server so any MCP host (Claude Desktop, an MCP-aware
+Tachyone ships a stdio **Model Context Protocol** server so any MCP host (Claude Desktop, an MCP-aware
 agent, a custom client) can call the decision engine as a tool, without HTTP.
 
-- Console script: `jeba-mcp-server` → `jeba.mcp.server:main`
+- Console script: `tachyone-mcp-server` → `tachyone.mcp.server:main`
 - Extra: `mcp` (`uv sync --extra mcp`)
-- Tool exposed: **`jeba_predict`**
+- Tool exposed: **`tachyone_predict`**
 - Tests: `tests/test_mcp.py` (marker: the test skips when the `mcp` extra is absent)
 
 ## Install
@@ -20,7 +20,7 @@ Without the extra, `create_server()` raises
 ## Run
 
 ```bash
-uv run jeba-mcp-server
+uv run tachyone-mcp-server
 ```
 
 The server builds a backend from the environment (`Config.from_env()`) and then blocks on stdio.
@@ -28,10 +28,10 @@ There is no port and no `--port` flag.
 
 ```bash
 # model-free, always works
-JEBA_BACKEND=fake uv run jeba-mcp-server
+TACHYONE_BACKEND=fake uv run tachyone-mcp-server
 
 # local encoder, offline once the weights are cached
-JEBA_BACKEND=encoder JEBA_OFFLINE=1 uv run jeba-mcp-server
+TACHYONE_BACKEND=encoder TACHYONE_OFFLINE=1 uv run tachyone-mcp-server
 ```
 
 ## Registering with an MCP host
@@ -39,37 +39,37 @@ JEBA_BACKEND=encoder JEBA_OFFLINE=1 uv run jeba-mcp-server
 ```json
 {
   "mcpServers": {
-    "jeba": {
+    "tachyone": {
       "command": "uv",
-      "args": ["run", "--no-sync", "jeba-mcp-server"],
-      "cwd": "/path/to/projeto_jeba",
-      "env": { "JEBA_BACKEND": "encoder" }
+      "args": ["run", "--no-sync", "tachyone-mcp-server"],
+      "cwd": "/path/to/projeto_tachyone",
+      "env": { "TACHYONE_BACKEND": "encoder" }
     }
   }
 }
 ```
 
-`--no-sync` avoids re-resolving the lockfile on every spawn. If you install jeba into a venv
-instead, point `command` at that interpreter's `jeba-mcp-server`.
+`--no-sync` avoids re-resolving the lockfile on every spawn. If you install Tachyone into a venv
+instead, point `command` at that interpreter's `tachyone-mcp-server`.
 
 ## The tool
 
 ```text
-jeba_predict(state: str, questions: dict, model: str = "jeba-latest") -> dict
+tachyone_predict(state: str, questions: dict, model: str = "tachyone-latest") -> dict
 ```
 
 | Argument | Type | Meaning |
 | --- | --- | --- |
 | `state` | `str` | the text being judged |
 | `questions` | `dict` | canonical `/v1/systemone` question objects, keyed by id |
-| `model` | `str` | model id echoed back (default `jeba-latest`) |
+| `model` | `str` | model id echoed back (default `tachyone-latest`) |
 
 The return value is the **canonical response payload** — exactly what `POST /v1/systemone`
 returns:
 
 ```json
 {
-  "model": "jeba-latest",
+  "model": "tachyone-latest",
   "answers": {
     "department": {
       "type": "choice",
@@ -88,7 +88,7 @@ tool error rather than a malformed payload.
 ## Boundary
 
 - The MCP layer owns **transport only**. Question validation, calibration, confidence and the
-  response shape all come from `jeba.wire.answer`, so an MCP answer is byte-compatible with an
+  response shape all come from `tachyone.wire.answer`, so an MCP answer is byte-compatible with an
   HTTP answer.
 - `predict_payload()` is plain Python and does **not** need the `mcp` extra — only
   `create_server()`/`main()` do, which is what keeps the tool testable in CI.

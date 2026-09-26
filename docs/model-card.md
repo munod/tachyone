@@ -1,6 +1,6 @@
 ---
 license: apache-2.0
-library_name: jeba
+library_name: tachyone
 language:
   - en
   - pt
@@ -17,27 +17,27 @@ tags:
 pipeline_tag: text-classification
 ---
 
-# jeba (System One decision engine)
+# Tachyone (System One decision engine)
 
 > **Status: released (`v0.3.0`).** Trained on a single RTX 3060 12GB and published as LoRA
-> adapters ([`munod/jeba-en`](https://huggingface.co/munod/jeba-en),
-> [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi)); measured numbers below come
+> adapters ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
+> [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
 
 ## Model details
 
-- **Developed by:** The jeba Authors.
+- **Developed by:** The Tachyone Authors.
 - **Model type:** non-autoregressive encoder with three task distributions (`noul`, `choice`,
   `score`), answering typed questions about a state in one forward pass.
 - **Trunk:** ModernBERT-large (English) and mmBERT-base (100+ languages); see ADR-0007.
-- **Adapters:** [`munod/jeba-en`](https://huggingface.co/munod/jeba-en),
-  [`munod/jeba-multi`](https://huggingface.co/munod/jeba-multi) (LoRA; load base + adapter).
+- **Adapters:** [`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
+  [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi) (LoRA; load base + adapter).
 - **License:** Apache-2.0.
-- **Repository:** <https://github.com/munod/jeba>
+- **Repository:** <https://github.com/munod/tachyone>
 
 ## Uses
 
-jeba answers atomic `choice` / `score` / `noul` questions about a state and returns typed values
+Tachyone answers atomic `choice` / `score` / `noul` questions about a state and returns typed values
 with probabilities and `confidence`. It speaks the TypeSafe Jev `/v1/systemone` wire protocol as
 a drop-in and runs **locally/offline** with no API key. Compose several atomic answers in code
 rather than asking one broad question.
@@ -81,22 +81,22 @@ rank from 16 to 64** (alpha 128) removed the cross-language capacity bottleneck:
 0.702 → 0.853 and `es` ECE 0.170 → 0.038 (`es` accuracy 0.472 → 0.956). Two of six languages now
 meet ECE ≤ 0.05 (`es` 0.038 and `pt` 0.024); `de` (0.063), `fr` (0.051), `it` (0.059) and `nl`
 (ECE 0.104, accuracy 0.663) remain above target (NFR-C06 partially open).
-The CUDA-graph fast path (`JEBA_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
+The CUDA-graph fast path (`TACHYONE_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
 states) English drops only 0.859 → 0.854 and multilingual (r=64) 0.853 → 0.847, so the released
 adapters are already robust to this noise model.
 
 Full tables and environment are in
-[`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
+[`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
 ## Citation
 
 ```bibtex
-@misc{jeba2026,
-  title        = {jeba: a local-first System One decision engine},
-  author       = {The jeba Authors},
+@misc{tachyone2026,
+  title        = {tachyone: a local-first System One decision engine},
+  author       = {The tachyone Authors},
   year         = {2026},
-  howpublished = {\url{https://github.com/munod/jeba}}
+  howpublished = {\url{https://github.com/munod/tachyone}}
 }
 ```

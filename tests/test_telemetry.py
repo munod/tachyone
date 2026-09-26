@@ -6,7 +6,7 @@ import socket
 
 import pytest
 
-from jeba.telemetry import (
+from tachyone.telemetry import (
     DO_NOT_TRACK_ENV,
     TELEMETRY_ENV,
     do_not_track,

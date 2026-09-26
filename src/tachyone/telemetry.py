@@ -1,7 +1,7 @@
-"""Telemetry guard: jeba sends nothing (ADR-0011).
+"""Telemetry guard: tachyone sends nothing (ADR-0011).
 
 This module exists so the policy is explicit and future-proof: there is no endpoint, no
-install id, and no network I/O. ``JEBA_TELEMETRY`` and ``DO_NOT_TRACK`` are reserved so that
+install id, and no network I/O. ``TACHYONE_TELEMETRY`` and ``DO_NOT_TRACK`` are reserved so that
 any future telemetry must be opt-out and can never block offline use (NFR-S05, OPS-08).
 """
 
@@ -11,12 +11,12 @@ import os
 from collections.abc import Mapping
 
 #: Reserved variables for a future opt-out telemetry implementation.
-TELEMETRY_ENV = "JEBA_TELEMETRY"
+TELEMETRY_ENV = "TACHYONE_TELEMETRY"
 DO_NOT_TRACK_ENV = "DO_NOT_TRACK"
 
 
 def telemetry_enabled(env: Mapping[str, str] | None = None) -> bool:
-    """Always ``False``: jeba has no telemetry."""
+    """Always ``False``: tachyone has no telemetry."""
     del env
     return False
 

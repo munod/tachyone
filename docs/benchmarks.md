@@ -2,7 +2,7 @@
 
 Reproducible accuracy/ECE/latency results. The full artifact, environment capture, and exact
 reproduction commands live in
-[`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).
+[`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
 **Setup:** single RTX 3060 12GB · 9,000 English / 18,000 multilingual deterministic synthetic
 train records (fully localized per language, per-record RNG) · 1,500 held-out eval · LoRA (r=16
@@ -44,7 +44,7 @@ ECE 0.170 → **0.038**; two of six languages now meet ECE ≤ 0.05 (`es` 0.038 
 
 ## Fast path (CUDA graphs)
 
-mmBERT + `checkpoints/multi`, 56 held-out states, batch=1; `JEBA_FAST=1` uses per-shape CUDA
+mmBERT + `checkpoints/multi`, 56 held-out states, batch=1; `TACHYONE_FAST=1` uses per-shape CUDA
 graphs with bf16-resident weights. Capture is warmed before timing.
 
 | Path | p50 (ms) | p95 (ms) | Throughput b1 (items/s) | b4 | b16 |

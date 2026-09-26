@@ -48,7 +48,7 @@ graph LR
 **Depends on:** M1.
 **Exit criteria:**
 - `POST /v1/systemone` served by FastAPI; SDK + CLI work.
-- A real Jev client repointed at `jeba-serve` returns correct answers.
+- A real Jev client repointed at `tachyone-serve` returns correct answers.
 - Backend is swappable behind `backends/base.py`; no wire change.
 - Retry/backoff verified for 429/529.
 
@@ -120,7 +120,7 @@ The active backlog items shipped across `v0.2.0` and `v0.3.0`:
   per-record RNG, per-`(primitive, language)` temperature fitting, runtime language detection, and
   per-language ECE reporting. Follow-up raised the multilingual LoRA rank to 64: overall accuracy
   0.702 → 0.853 and `es` ECE 0.170 → 0.038 (2/6 languages ≤ 0.05 — `es`, `pt`; four open).
-- **B-2 Fast-path (TileLang/CUDA graphs)** ✅ (`v0.2.0`) — `JEBA_FAST=1` wires per-shape CUDA graphs
+- **B-2 Fast-path (TileLang/CUDA graphs)** ✅ (`v0.2.0`) — `TACHYONE_FAST=1` wires per-shape CUDA graphs
   with bf16 weights and graceful fallback; measured 2.68× p50 (NFR-P01/P07 met).
 - **B-3 Confidence thresholding / System-2 handoff** ✅ (`v0.3.0`) — `normalized_entropy`/`margin`
   and `assess`/`assess_response`; CLI `--threshold` appends a sibling `handoff` object (`CAL-06`).

@@ -63,14 +63,14 @@ def test_environment_has_core_fields() -> None:
     info = environment()
     assert info["python"]
     assert info["platform"]
-    assert info["jeba"]
+    assert info["tachyone"]
     assert "git_commit" in info
 
 
 def test_write_artifact_includes_environment(tmp_path: Path) -> None:
     out = tmp_path / "artifact.json"
     artifact = write_artifact(out, {"metrics": {"accuracy": 0.9}})
-    assert artifact["environment"]["jeba"]
+    assert artifact["environment"]["tachyone"]
     on_disk = json.loads(out.read_text(encoding="utf-8"))
     assert on_disk["metrics"]["accuracy"] == 0.9
     assert "environment" in on_disk

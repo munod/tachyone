@@ -1,7 +1,7 @@
 # Multilingual LoRA Rank — Tasks
 
 **Spec:** `.specs/features/lora-rank-experiment/spec.md`
-**Status:** Done; `lora_rank=64` adopted and republished (`munod/jeba-multi`, commit `599df58`).
+**Status:** Done; `lora_rank=64` adopted and republished (`munod/tachyone-multi`, commit `599df58`).
 
 ---
 

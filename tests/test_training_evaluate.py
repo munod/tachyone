@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from jeba.primitives import (
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     ChoiceQuestion,
@@ -188,13 +188,13 @@ def test_add_state_noise_rejects_out_of_range() -> None:
 
 def test_backend_predictor_honors_process_env(monkeypatch: pytest.MonkeyPatch) -> None:
     # Regression: the predictor used to pass a literal env dict to Config.from_env, dropping
-    # JEBA_ADAPTERS. It must merge the process env so a local adapter can be evaluated.
-    from jeba.config import Config
+    # TACHYONE_ADAPTERS. It must merge the process env so a local adapter can be evaluated.
+    from tachyone.config import Config
 
-    monkeypatch.setenv("JEBA_ADAPTERS", "jeba-multi=checkpoints/multi_noisy")
+    monkeypatch.setenv("TACHYONE_ADAPTERS", "tachyone-multi=checkpoints/multi_noisy")
     merged = {
         **__import__("os").environ,
-        "JEBA_BACKEND": "encoder",
-        "JEBA_MODELS_DIR": ".cache/jeba/models",
+        "TACHYONE_BACKEND": "encoder",
+        "TACHYONE_MODELS_DIR": ".cache/tachyone/models",
     }
-    assert Config.from_env(merged).adapters == {"jeba-multi": "checkpoints/multi_noisy"}
+    assert Config.from_env(merged).adapters == {"tachyone-multi": "checkpoints/multi_noisy"}

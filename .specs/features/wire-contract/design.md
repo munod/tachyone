@@ -7,7 +7,7 @@
 
 ## Architecture Overview
 
-The contract layer is the ground truth of jeba. `primitives.py` defines question/answer
+The contract layer is the ground truth of Tachyone. `primitives.py` defines question/answer
 types; `wire.py` defines the `/v1/systemone` envelope and delegates answering to a
 `Backend`. A deterministic `FakeBackend` in tests exercises the whole cycle without a model.
 
@@ -30,7 +30,7 @@ graph TD
 ### primitives.py
 
 - **Purpose:** Define the three question primitives and their answer types with pydantic v2.
-- **Location:** `src/jeba/primitives.py`
+- **Location:** `src/tachyone/primitives.py`
 - **Interfaces:**
   - `Question = NoulQuestion | ChoiceQuestion | ScoreQuestion` (discriminated union on `type`)
   - `ChoiceAnswer(type, choice, probabilities: dict[str, float], confidence: float)`
@@ -44,7 +44,7 @@ graph TD
 ### wire.py
 
 - **Purpose:** Model and validate the Jev request/response envelope and map it to backends.
-- **Location:** `src/jeba/wire.py`
+- **Location:** `src/tachyone/wire.py`
 - **Interfaces:**
   - `SystemOneRequest(state: str | dict | list, model: str, questions: dict[str, Question])`
   - `SystemOneResponse(model: str, answers: dict[str, Answer], usage: Usage)`
@@ -56,7 +56,7 @@ graph TD
 ### backends/base.py (seam)
 
 - **Purpose:** Stable interface so `wire.py` never knows which engine answers.
-- **Location:** `src/jeba/backends/base.py`
+- **Location:** `src/tachyone/backends/base.py`
 - **Interfaces:**
   - `class Backend(Protocol): async def predict(self, questions, *, state, model, return_details=False) -> PredictionResult`
   - `PredictionResult(answers: dict[str, Answer], usage: Usage)`

@@ -1,6 +1,6 @@
 # Release process
 
-Checklist for publishing a jeba release. Release artifacts that depend on trained weights wait
+Checklist for publishing a Tachyone release. Release artifacts that depend on trained weights wait
 for the RTX 3060 training run (`uv sync --extra train`).
 
 ## 1. Preconditions
@@ -8,7 +8,7 @@ for the RTX 3060 training run (`uv sync --extra train`).
 - [ ] All gates green: `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest`.
 - [ ] `uv sync --locked --extra serve` passes; integration/e2e tests not skipped.
 - [ ] `uv run mkdocs build --strict` succeeds.
-- [ ] `CHANGELOG.md` updated; version bumped in `pyproject.toml` and `src/jeba/__init__.py`.
+- [ ] `CHANGELOG.md` updated; version bumped in `pyproject.toml` and `src/tachyone/__init__.py`.
 - [ ] `tests/test_contract_wire.py` unchanged for the release (or updated with the wire change).
 
 ## 2. Train and calibrate (GPU)

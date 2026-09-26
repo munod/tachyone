@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from jeba.backends.encoder import (
+from tachyone.backends.encoder import (
     ChoiceScorer,
     EncoderBackend,
     EncoderCheckpoint,
@@ -22,7 +22,7 @@ from jeba.backends.encoder import (
     load_encoder,
     load_temperatures,
 )
-from jeba.primitives import (
+from tachyone.primitives import (
     ChoiceAnswer,
     ChoiceQuestion,
     NoulAnswer,
@@ -31,8 +31,8 @@ from jeba.primitives import (
     ScoreAnswer,
     ScoreQuestion,
 )
-from jeba.router import DEFAULT_CHECKPOINTS, ENGLISH, MULTILINGUAL, CheckpointInfo, Router
-from jeba.wire import SystemOneRequest, answer
+from tachyone.router import DEFAULT_CHECKPOINTS, ENGLISH, MULTILINGUAL, CheckpointInfo, Router
+from tachyone.wire import SystemOneRequest, answer
 
 pytestmark = pytest.mark.contract
 
@@ -71,7 +71,7 @@ def _backend(loader: _Loader | None = None) -> tuple[EncoderBackend, _Loader]:
 @pytest.mark.asyncio
 async def test_all_primitives_answered() -> None:
     backend, _ = _backend()
-    result = await backend.predict(_QUESTIONS, state="please refund", model="jeba-latest")
+    result = await backend.predict(_QUESTIONS, state="please refund", model="tachyone-latest")
     assert isinstance(result.answers["is_urgent"], NoulAnswer)
     assert isinstance(result.answers["department"], ChoiceAnswer)
     assert isinstance(result.answers["urgency"], ScoreAnswer)
@@ -80,7 +80,7 @@ async def test_all_primitives_answered() -> None:
 @pytest.mark.asyncio
 async def test_distributions_are_normalized_and_confident() -> None:
     backend, _ = _backend()
-    result = await backend.predict(_QUESTIONS, state="please refund", model="jeba-latest")
+    result = await backend.predict(_QUESTIONS, state="please refund", model="tachyone-latest")
     department = result.answers["department"]
     urgency = result.answers["urgency"]
     assert isinstance(department, ChoiceAnswer)
@@ -98,7 +98,7 @@ async def test_distributions_are_normalized_and_confident() -> None:
 @pytest.mark.asyncio
 async def test_empty_questions_short_circuits() -> None:
     backend, loader = _backend()
-    result = await backend.predict({}, state="x", model="jeba-latest")
+    result = await backend.predict({}, state="x", model="tachyone-latest")
     assert result.answers == {}
     assert result.usage.input_tokens == 0
     assert loader.loaded == []
@@ -107,7 +107,7 @@ async def test_empty_questions_short_circuits() -> None:
 @pytest.mark.asyncio
 async def test_routes_multilingual_for_non_latin() -> None:
     backend, loader = _backend()
-    await backend.predict({"q": _QUESTIONS["is_urgent"]}, state="请退款", model="jeba-latest")
+    await backend.predict({"q": _QUESTIONS["is_urgent"]}, state="请退款", model="tachyone-latest")
     assert loader.loaded == [MULTILINGUAL]
 
 
@@ -121,7 +121,7 @@ async def test_explicit_model_overrides_routing() -> None:
 @pytest.mark.asyncio
 async def test_encoder_backend_passes_the_contract() -> None:
     backend, _ = _backend()
-    request = SystemOneRequest(state="help", model="jeba-en", questions=_QUESTIONS)
+    request = SystemOneRequest(state="help", model="tachyone-en", questions=_QUESTIONS)
     response = await answer(request, backend)
     assert set(response.answers) == set(_QUESTIONS)
     dumped = response.model_dump(mode="json")
@@ -129,10 +129,10 @@ async def test_encoder_backend_passes_the_contract() -> None:
 
 
 def test_from_config_injects_encoder() -> None:
-    from jeba.config import Config
+    from tachyone.config import Config
 
     backend = EncoderBackend.from_config(
-        Config.from_env({"JEBA_BACKEND": "encoder"}), encode=_encode
+        Config.from_env({"TACHYONE_BACKEND": "encoder"}), encode=_encode
     )
     assert backend.name == "encoder"
 
@@ -141,16 +141,16 @@ def test_load_encoder_requires_train_extra() -> None:
     if importlib.util.find_spec("torch") is not None:
         pytest.skip("torch is installed; the real encoder path is exercised elsewhere")
     with pytest.raises(RuntimeError, match="train extra"):
-        load_encoder(DEFAULT_CHECKPOINTS[ENGLISH], models_dir="/tmp/jeba-models", device="cpu")
+        load_encoder(DEFAULT_CHECKPOINTS[ENGLISH], models_dir="/tmp/tachyone-models", device="cpu")
 
 
 def test_default_checkpoints_declare_base_and_adapter() -> None:
     english = DEFAULT_CHECKPOINTS[ENGLISH]
     multilingual = DEFAULT_CHECKPOINTS[MULTILINGUAL]
     assert english.base_model == "answerdotai/ModernBERT-large"
-    assert english.adapter == "munod/jeba-en"
+    assert english.adapter == "munod/tachyone-en"
     assert multilingual.base_model == "jhu-clsp/mmBERT-base"
-    assert multilingual.adapter == "munod/jeba-multi"
+    assert multilingual.adapter == "munod/tachyone-multi"
 
 
 def test_apply_adapters_overrides_and_disables() -> None:
@@ -232,14 +232,16 @@ def test_runtime_detects_language_for_temperature() -> None:
 
 
 def test_from_config_applies_adapter_overrides() -> None:
-    from jeba.config import Config
+    from tachyone.config import Config
 
     backend = EncoderBackend.from_config(
-        Config.from_env({"JEBA_BACKEND": "encoder", "JEBA_ADAPTERS": "jeba-en=acme/tuned"}),
+        Config.from_env(
+            {"TACHYONE_BACKEND": "encoder", "TACHYONE_ADAPTERS": "tachyone-en=acme/tuned"}
+        ),
         encode=_encode,
     )
     assert backend._router.checkpoints[ENGLISH].adapter == "acme/tuned"
-    assert backend._router.checkpoints[MULTILINGUAL].adapter == "munod/jeba-multi"
+    assert backend._router.checkpoints[MULTILINGUAL].adapter == "munod/tachyone-multi"
 
 
 def _choice_question() -> ChoiceQuestion:
@@ -307,7 +309,7 @@ def test_cuda_graph_encode_matches_eager_on_cuda() -> None:
     torch = pytest.importorskip("torch")
     if not torch.cuda.is_available():
         pytest.skip("no CUDA device")
-    from jeba.backends.encoder import _cuda_graph_encode
+    from tachyone.backends.encoder import _cuda_graph_encode
 
     class _Out:
         def __init__(self, last_hidden_state: object) -> None:

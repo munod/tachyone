@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from jeba.backends.fake import FakeBackend
-from jeba.mcp.server import create_server, predict_payload
+from tachyone.backends.fake import FakeBackend
+from tachyone.mcp.server import create_server, predict_payload
 
 _QUESTIONS = {
     "department": {
@@ -24,7 +24,7 @@ def test_predict_payload_returns_canonical_shape() -> None:
 
 
 def test_predict_payload_rejects_invalid_questions() -> None:
-    from jeba.wire import UnprocessableEntity
+    from tachyone.wire import UnprocessableEntity
 
     with pytest.raises(UnprocessableEntity):
         predict_payload(FakeBackend(), "x", {"q": {"type": "score", "criteria": ["only"]}})

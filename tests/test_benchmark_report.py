@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from benchmarks.report import ReportEntry, _parse_entries, main, render_report, write_report
-from jeba.primitives import (
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     ChoiceQuestion,
@@ -56,7 +56,7 @@ def test_render_report_contains_tables_and_sections(tmp_path: Path) -> None:
         commands=["uv run python -m training.evaluate --data data/eval.jsonl"],
         notes="pending run",
     )
-    assert "# jeba Benchmark Report" in markdown
+    assert "# tachyone Benchmark Report" in markdown
     assert "> pending run" in markdown
     assert "## Environment" in markdown
     assert "## Reproduce" in markdown

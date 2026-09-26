@@ -16,8 +16,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from jeba.calibration import confidence, expected_calibration_error
-from jeba.primitives import (
+from tachyone.calibration import confidence, expected_calibration_error
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     ChoiceQuestion,
@@ -206,18 +206,18 @@ def _backend_predictor(backend_name: str, models_dir: str) -> Predictor:
     import asyncio
     import os
 
-    from jeba.backends import build_backend
-    from jeba.config import Config
-    from jeba.wire import SystemOneRequest, answer
+    from tachyone.backends import build_backend
+    from tachyone.config import Config
+    from tachyone.wire import SystemOneRequest, answer
 
-    # Merge the process env with the explicit overrides so `JEBA_ADAPTERS` (and any other
+    # Merge the process env with the explicit overrides so `TACHYONE_ADAPTERS` (and any other
     # setting) is honored; passing a literal dict replaces the whole environment.
-    source = {**os.environ, "JEBA_BACKEND": backend_name, "JEBA_MODELS_DIR": models_dir}
+    source = {**os.environ, "TACHYONE_BACKEND": backend_name, "TACHYONE_MODELS_DIR": models_dir}
     config = Config.from_env(source)
     backend = build_backend(config)
 
     def predict(state: State, question: Question) -> Answer:
-        request = SystemOneRequest(state=state, model="jeba-latest", questions={"q": question})
+        request = SystemOneRequest(state=state, model="tachyone-latest", questions={"q": question})
         response = asyncio.run(answer(request, backend))
         return response.answers["q"]
 
@@ -229,11 +229,11 @@ def _iter_examples(examples: Sequence[EvalExample]) -> Iterator[EvalExample]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jeba-evaluate", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tachyone-evaluate", description=__doc__)
     parser.add_argument("--data", required=True, help="JSONL evaluation records")
     parser.add_argument("--out", required=True, help="output report JSON")
     parser.add_argument("--backend", default="fake", help="fake / encoder / llm")
-    parser.add_argument("--models-dir", default=".cache/jeba/models")
+    parser.add_argument("--models-dir", default=".cache/tachyone/models")
     parser.add_argument("--bins", type=int, default=10)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument(

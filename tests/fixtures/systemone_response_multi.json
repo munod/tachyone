@@ -1,5 +1,5 @@
 {
-  "model": "jeba-latest",
+  "model": "tachyone-latest",
   "answers": {
     "is_urgent": {
       "type": "noul",

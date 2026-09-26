@@ -1,7 +1,7 @@
 """Environment configuration: the single source of truth for server/backend settings.
 
-All settings come from ``JEBA_*`` environment variables with safe local-first defaults.
-Secrets (``JEBA_API_KEY``, ``JEBA_LLM_API_KEY``) are never included in ``repr`` so they
+All settings come from ``TACHYONE_*`` environment variables with safe local-first defaults.
+Secrets (``TACHYONE_API_KEY``, ``TACHYONE_LLM_API_KEY``) are never included in ``repr`` so they
 cannot be logged accidentally (NFR-S02). Invalid values fail fast at startup.
 """
 
@@ -15,7 +15,7 @@ BACKENDS = ("llm", "encoder", "onnx", "fake")
 DEVICES = ("auto", "cpu", "cuda", "mps")
 
 #: Default backend for M2. ADR-0004 intended the flip to ``encoder`` once the local engine landed
-#: in M3; the switch was never made, so the default path still needs ``JEBA_LLM_*`` credentials.
+#: in M3; the switch was never made, so the default path still needs ``TACHYONE_LLM_*`` credentials.
 #: Changing this is a behaviour change, not a typo — see ``docs/adr/README.md`` (notes).
 DEFAULT_BACKEND = "llm"
 
@@ -80,7 +80,7 @@ def _pairs(env: Mapping[str, str], name: str) -> dict[str, str | None]:
 
 
 def _default_models_dir() -> str:
-    return os.path.join(os.path.expanduser("~"), ".cache", "jeba", "models")
+    return os.path.join(os.path.expanduser("~"), ".cache", "tachyone", "models")
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,25 +110,27 @@ class Config:
         """Build a config from ``env`` (defaults to ``os.environ``)."""
         source = os.environ if env is None else env
         return cls(
-            host=_text(source, "JEBA_HOST", "127.0.0.1"),
-            port=_int(source, "JEBA_PORT", 8000, 1, 65535),
-            device=_choice(source, "JEBA_DEVICE", "auto", DEVICES),
-            backend=_choice(source, "JEBA_BACKEND", DEFAULT_BACKEND, BACKENDS),
-            models=_csv(source, "JEBA_MODELS"),
-            models_dir=_text(source, "JEBA_MODELS_DIR", _default_models_dir()),
-            adapters=_pairs(source, "JEBA_ADAPTERS"),
-            offline=_bool(source, "JEBA_OFFLINE", False),
-            preload=_csv(source, "JEBA_PRELOAD"),
-            fast=_bool(source, "JEBA_FAST", False),
-            threads=_int(source, "JEBA_THREADS", 0, 0, 4096),
-            api_key=_text(source, "JEBA_API_KEY", "") or None,
-            llm_base_url=_text(source, "JEBA_LLM_BASE_URL", "https://api.openai.com/v1"),
+            host=_text(source, "TACHYONE_HOST", "127.0.0.1"),
+            port=_int(source, "TACHYONE_PORT", 8000, 1, 65535),
+            device=_choice(source, "TACHYONE_DEVICE", "auto", DEVICES),
+            backend=_choice(source, "TACHYONE_BACKEND", DEFAULT_BACKEND, BACKENDS),
+            models=_csv(source, "TACHYONE_MODELS"),
+            models_dir=_text(source, "TACHYONE_MODELS_DIR", _default_models_dir()),
+            adapters=_pairs(source, "TACHYONE_ADAPTERS"),
+            offline=_bool(source, "TACHYONE_OFFLINE", False),
+            preload=_csv(source, "TACHYONE_PRELOAD"),
+            fast=_bool(source, "TACHYONE_FAST", False),
+            threads=_int(source, "TACHYONE_THREADS", 0, 0, 4096),
+            api_key=_text(source, "TACHYONE_API_KEY", "") or None,
+            llm_base_url=_text(source, "TACHYONE_LLM_BASE_URL", "https://api.openai.com/v1"),
             llm_api_key=(
-                _text(source, "JEBA_LLM_API_KEY", "") or _text(source, "OPENAI_API_KEY", "") or None
+                _text(source, "TACHYONE_LLM_API_KEY", "")
+                or _text(source, "OPENAI_API_KEY", "")
+                or None
             ),
-            llm_model=_text(source, "JEBA_LLM_MODEL", "gpt-4o-mini"),
-            llm_timeout=_float(source, "JEBA_LLM_TIMEOUT", 30.0, lo=0.1),
-            llm_retries=_int(source, "JEBA_LLM_RETRIES", 2, 0, 10),
+            llm_model=_text(source, "TACHYONE_LLM_MODEL", "gpt-4o-mini"),
+            llm_timeout=_float(source, "TACHYONE_LLM_TIMEOUT", 30.0, lo=0.1),
+            llm_retries=_int(source, "TACHYONE_LLM_RETRIES", 2, 0, 10),
         )
 
 

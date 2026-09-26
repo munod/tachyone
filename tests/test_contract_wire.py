@@ -15,8 +15,8 @@ from typing import Any
 import pytest
 from pydantic import TypeAdapter
 
-from jeba.primitives import Answer
-from jeba.wire import SystemOneRequest, Usage, answer, parse_request
+from tachyone.primitives import Answer
+from tachyone.wire import SystemOneRequest, Usage, answer, parse_request
 from tests.fakes import FakeBackend, ScriptedBackend
 
 pytestmark = pytest.mark.contract

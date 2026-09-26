@@ -10,9 +10,9 @@ import importlib.util
 
 import pytest
 
-from jeba.backends.encoder import EncoderBackend, EncoderCheckpoint
-from jeba.backends.onnx import OnnxBackend, load_onnx_encoder, onnx_model_path
-from jeba.primitives import (
+from tachyone.backends.encoder import EncoderBackend, EncoderCheckpoint
+from tachyone.backends.onnx import OnnxBackend, load_onnx_encoder, onnx_model_path
+from tachyone.primitives import (
     ChoiceAnswer,
     ChoiceQuestion,
     NoulAnswer,
@@ -21,8 +21,8 @@ from jeba.primitives import (
     ScoreAnswer,
     ScoreQuestion,
 )
-from jeba.router import DEFAULT_CHECKPOINTS, ENGLISH, Router
-from jeba.wire import SystemOneRequest, answer
+from tachyone.router import DEFAULT_CHECKPOINTS, ENGLISH, Router
+from tachyone.wire import SystemOneRequest, answer
 
 pytestmark = pytest.mark.contract
 
@@ -50,7 +50,9 @@ def _onnx_backend() -> OnnxBackend:
 
 @pytest.mark.asyncio
 async def test_onnx_backend_answers_all_primitives() -> None:
-    result = await _onnx_backend().predict(_QUESTIONS, state="please refund", model="jeba-latest")
+    result = await _onnx_backend().predict(
+        _QUESTIONS, state="please refund", model="tachyone-latest"
+    )
     assert isinstance(result.answers["urgent"], NoulAnswer)
     assert isinstance(result.answers["team"], ChoiceAnswer)
     assert isinstance(result.answers["urgency"], ScoreAnswer)
@@ -72,9 +74,9 @@ async def test_onnx_matches_encoder_contract() -> None:
 
 
 def test_onnx_backend_from_config_with_injected_encoder() -> None:
-    from jeba.config import Config
+    from tachyone.config import Config
 
-    backend = OnnxBackend.from_config(Config.from_env({"JEBA_BACKEND": "onnx"}), encode=_encode)
+    backend = OnnxBackend.from_config(Config.from_env({"TACHYONE_BACKEND": "onnx"}), encode=_encode)
     assert backend.name == "onnx"
 
 
@@ -86,4 +88,4 @@ def test_load_onnx_encoder_requires_extra() -> None:
     if importlib.util.find_spec("onnxruntime") is not None:
         pytest.skip("onnxruntime is installed; the real ONNX path is exercised elsewhere")
     with pytest.raises(RuntimeError, match="onnx extra"):
-        load_onnx_encoder(DEFAULT_CHECKPOINTS[ENGLISH], models_dir="/tmp/jeba-models")
+        load_onnx_encoder(DEFAULT_CHECKPOINTS[ENGLISH], models_dir="/tmp/tachyone-models")

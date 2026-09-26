@@ -1,4 +1,4 @@
-# jeba server image: Python 3.12 + uv, `serve` extra only, non-root.
+# tachyone server image: Python 3.12 + uv, `serve` extra only, non-root.
 FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -15,14 +15,14 @@ COPY src ./src
 RUN uv sync --locked --no-dev --extra serve
 
 # Default to the offline, model-free backend so the image runs without keys.
-ENV JEBA_BACKEND=fake \
-    JEBA_HOST=0.0.0.0 \
-    JEBA_PORT=8000
+ENV TACHYONE_BACKEND=fake \
+    TACHYONE_HOST=0.0.0.0 \
+    TACHYONE_PORT=8000
 
-RUN useradd --create-home --uid 10001 jeba && chown -R jeba:jeba /app
-USER jeba
+RUN useradd --create-home --uid 10001 tachyone && chown -R tachyone:tachyone /app
+USER tachyone
 
 EXPOSE 8000
 
 # `uv run` uses the project environment; `--no-sync` avoids re-resolving at runtime.
-CMD ["uv", "run", "--no-sync", "jeba-serve"]
+CMD ["uv", "run", "--no-sync", "tachyone-serve"]

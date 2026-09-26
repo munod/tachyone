@@ -5,7 +5,7 @@ Field names and types mirror the TypeSafe Jev ``/v1/systemone`` contract
 knowledge, no optional dependencies (NFR-R01).
 
 Answer invariants that need the originating question (for example, probability keys
-matching the declared options) are enforced in :mod:`jeba.wire` where both sides are
+matching the declared options) are enforced in :mod:`tachyone.wire` where both sides are
 available.
 """
 

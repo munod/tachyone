@@ -1,4 +1,4 @@
-"""LangChain/LangGraph adapter returning canonical jeba primitives.
+"""LangChain/LangGraph adapter returning canonical tachyone primitives.
 
 The prediction helper is plain Python so it is testable without the extra; the ``Runnable``
 wrapper is built lazily and only needs ``langchain-core`` when used (OPS-03, EXT-02).
@@ -10,8 +10,8 @@ import asyncio
 from collections.abc import Mapping
 from typing import Any
 
-from jeba.backends.base import Backend
-from jeba.wire import answer, parse_request
+from tachyone.backends.base import Backend
+from tachyone.wire import answer, parse_request
 
 _LANGCHAIN_HINT = "the langchain extra is required: uv sync --extra langchain"
 
@@ -21,7 +21,7 @@ def predict(
     state: str,
     questions: Mapping[str, Any],
     *,
-    model: str = "jeba-latest",
+    model: str = "tachyone-latest",
 ) -> dict[str, Any]:
     """Return the canonical ``/v1/systemone`` response payload for one state."""
     request = parse_request({"state": state, "model": model, "questions": dict(questions)})
@@ -29,7 +29,7 @@ def predict(
     return response.model_dump(mode="json")
 
 
-def create_runnable(backend: Backend, *, model: str = "jeba-latest") -> Any:
+def create_runnable(backend: Backend, *, model: str = "tachyone-latest") -> Any:
     """Wrap the backend as a LangChain ``Runnable``.
 
     The runnable accepts ``{"state": str, "questions": {...}, "model"?: str}`` and returns

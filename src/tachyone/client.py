@@ -1,8 +1,8 @@
-"""Python SDK client for the jeba ``/v1/systemone`` endpoint.
+"""Python SDK client for the tachyone ``/v1/systemone`` endpoint.
 
 Stdlib-only (ADR-0004): the base install can call a local server with no extra dependency.
 Retries ``429``/``529`` with exponential backoff plus jitter (WIRE-05); other non-2xx
-statuses raise :class:`JebaAPIError` carrying the server's JSON body.
+statuses raise :class:`TachyoneAPIError` carrying the server's JSON body.
 """
 
 from __future__ import annotations
@@ -15,8 +15,8 @@ import urllib.request
 from collections.abc import Callable
 from typing import Any
 
-from jeba.primitives import Question, State
-from jeba.wire import SystemOneRequest, SystemOneResponse
+from tachyone.primitives import Question, State
+from tachyone.wire import SystemOneRequest, SystemOneResponse
 
 #: Sends a request and returns ``(status_code, body_text)``.
 type Transport = Callable[[str, bytes, dict[str, str], float], tuple[int, str]]
@@ -24,19 +24,19 @@ type Transport = Callable[[str, bytes, dict[str, str], float], tuple[int, str]]
 _RETRYABLE = (429, 529)
 
 
-class JebaError(Exception):
+class TachyoneError(Exception):
     """Base class for SDK errors."""
 
 
-class JebaConnectionError(JebaError):
+class TachyoneConnectionError(TachyoneError):
     """The server could not be reached."""
 
 
-class JebaAPIError(JebaError):
+class TachyoneAPIError(TachyoneError):
     """The server returned a non-2xx status other than a retryable one."""
 
     def __init__(self, status_code: int, body: Any) -> None:
-        super().__init__(f"jeba returned HTTP {status_code}")
+        super().__init__(f"tachyone returned HTTP {status_code}")
         self.status_code = status_code
         self.body = body
 
@@ -51,7 +51,7 @@ def _http_transport(
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read().decode("utf-8", errors="replace")
     except urllib.error.URLError as exc:
-        raise JebaConnectionError(f"could not reach jeba at {url}: {exc.reason}") from exc
+        raise TachyoneConnectionError(f"could not reach tachyone at {url}: {exc.reason}") from exc
 
 
 def _parse_body(text: str) -> Any:
@@ -61,7 +61,7 @@ def _parse_body(text: str) -> Any:
         return text
 
 
-class JebaClient:
+class TachyoneClient:
     """Synchronous client speaking the exact ``/v1/systemone`` wire request."""
 
     def __init__(
@@ -88,7 +88,7 @@ class JebaClient:
         state: State,
         questions: dict[str, Question],
         *,
-        model: str = "jeba-latest",
+        model: str = "tachyone-latest",
     ) -> SystemOneResponse:
         """Ask one or more typed questions and return the parsed response."""
         request = SystemOneRequest(state=state, model=model, questions=questions)
@@ -107,7 +107,13 @@ class JebaClient:
                 continue
             if 200 <= status < 300:
                 return SystemOneResponse.model_validate_json(text)
-            raise JebaAPIError(status, _parse_body(text))
+            raise TachyoneAPIError(status, _parse_body(text))
 
 
-__all__ = ["JebaAPIError", "JebaClient", "JebaConnectionError", "JebaError", "Transport"]
+__all__ = [
+    "TachyoneAPIError",
+    "TachyoneClient",
+    "TachyoneConnectionError",
+    "TachyoneError",
+    "Transport",
+]

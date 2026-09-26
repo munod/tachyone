@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from jeba.wire import (
+from tachyone.wire import (
     BackendError,
     Overloaded,
     RateLimited,
@@ -24,7 +24,7 @@ pytestmark = pytest.mark.contract
 def _body(overrides: dict[str, object]) -> dict[str, object]:
     base: dict[str, object] = {
         "state": "some text",
-        "model": "jeba-latest",
+        "model": "tachyone-latest",
         "questions": {"q": {"type": "noul", "instructions": "Is it so?"}},
     }
     base.update(overrides)
@@ -34,7 +34,7 @@ def _body(overrides: dict[str, object]) -> dict[str, object]:
 @pytest.mark.parametrize(
     "payload",
     [
-        {"model": "jeba-latest", "questions": {}},  # missing state
+        {"model": "tachyone-latest", "questions": {}},  # missing state
         {"state": "x", "questions": {}},  # missing model
         {"state": "x", "model": "m"},  # missing questions
         _body({"questions": {"q": {"type": "unknown", "instructions": "x"}}}),

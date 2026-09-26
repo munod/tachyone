@@ -1,6 +1,6 @@
 # Backlog
 
-Active next steps and carried-over ideas for jeba. This is the canonical "what's next" list;
+Active next steps and carried-over ideas for Tachyone. This is the canonical "what's next" list;
 `.specs/project/STATE.md` points here. Each item names its motivation, plan, acceptance criteria,
 and known risks. Items are not scheduled until promoted into `docs/tasks.md`.
 
@@ -17,7 +17,7 @@ support, and calibration is fitted **per primitive**, not per language.
 
 **Status (retrained, published, then rank-bumped).** Data is fully localized with per-record RNG and
 a low distractor rate; calibration is per `(primitive, language)`; the runtime applies `kind:lang` →
-`kind` → global. The B-1 adapters are published (`munod/jeba-en`, `munod/jeba-multi`).
+`kind` → global. The B-1 adapters are published (`munod/tachyone-en`, `munod/tachyone-multi`).
 **Follow-up (lora-rank experiment):** the multilingual LoRA rank was raised 16 → **64**
 (`lora_alpha` 128), removing the cross-language capacity bottleneck. Measured multilingual overall
 accuracy **0.702 → 0.853** and `es` ECE **0.170 → 0.038** (`es` accuracy 0.472 → 0.956). Two of
@@ -31,7 +31,7 @@ reseeded separately in B-9 (overall 0.859). Spec/tasks: `.specs/features/multili
    and `nl` also has the lowest accuracy (0.663). Investigate
    whether it needs more per-language support, a language-specific learning rate, or a richer
    calibration mapping; the scalar per-language temperature already exists.
-2. [x] Republished the r=64 multilingual adapter to the Hub (`munod/jeba-multi`, commit `599df58`).
+2. [x] Republished the r=64 multilingual adapter to the Hub (`munod/tachyone-multi`, commit `599df58`).
 3. Keep per-language accuracy/ECE reporting and gate on the worst language, not the average.
 
 **Acceptance.**
@@ -50,11 +50,11 @@ retrain.
 ## B-2 — Fast path kernels (TileLang / CUDA graphs) · Done
 
 **Why.** M5 shipped the fast-path **seam and graceful fallback** only
-(`src/jeba/fast.py`: `maybe_accelerate` returns the stock target with reason "no accelerated kernels
+(`src/tachyone/fast.py`: `maybe_accelerate` returns the stock target with reason "no accelerated kernels
 registered"). There is no measured latency improvement yet, and `NFR-P01` is still `[open]`.
 
 **Status (done).** `maybe_accelerate` now takes an injected accelerator builder and is wired by
-`JEBA_FAST` in `load_encoder` to a per-shape CUDA-graph forward with bf16-resident weights (graceful
+`TACHYONE_FAST` in `load_encoder` to a per-shape CUDA-graph forward with bf16-resident weights (graceful
 fallback on CPU/MPS/absent extras). `benchmarks/fast_path.py` measures stock vs fast: **p50 10.27 →
 3.83 ms, p95 11.05 → 4.12 ms (2.68× p50)**, answer parity max abs **0.0044**, **0 top-label flips**.
 NFR-P01 and NFR-P07 met; results in `benchmarks/report.md`. TileLang fused kernels remain optional
@@ -222,8 +222,8 @@ no public-probe run exists. Tracked as `OPS-06` partial and as the unmet M6 exit
 
 **Plan.**
 1. Evaluation-only loaders for MASSIVE (intent), XNLI (entailment) and typed-decisions mapped to
-   jeba's `choice`/`score`/`noul` primitives; no training data changes.
-2. Run the released adapters (`munod/jeba-en`, `munod/jeba-multi`) on the probe sets and report
+   Tachyone's `choice`/`score`/`noul` primitives; no training data changes.
+2. Run the released adapters (`munod/tachyone-en`, `munod/tachyone-multi`) on the probe sets and report
    accuracy/ECE per language under `benchmarks/results/`.
 3. Render the comparison in `benchmarks/report.md` with the exact reproduction commands
    (`benchmarks/public_probes.py` is still undelivered — see `benchmarks/README.md`).
@@ -234,7 +234,7 @@ no public-probe run exists. Tracked as `OPS-06` partial and as the unmet M6 exit
 - `OPS-06` moves to `Implemented` and the M6 exit criterion is met.
 
 **Risks / notes.** Probe licenses and download size; label/option spaces do not always map to a
-jeba `choice` criterion, so some probes may need a `noul`/`score` formulation. Evaluation-only —
+Tachyone `choice` criterion, so some probes may need a `noul`/`score` formulation. Evaluation-only —
 must not leak into training data (keeps comparability). Effort ~2–3 days (no GPU retrain).
 
 **Related.** `docs/benchmarks.md` (Known limitations), `benchmarks/README.md`, `OPS-06`,
@@ -244,12 +244,12 @@ must not leak into training data (keeps comparability). Effort ~2–3 days (no G
 
 ## B-8 · Hardening — silent degradation when calibration assets fail to load · Ready
 
-**Why.** `load_temperatures()` and `load_choice_head()` in `src/jeba/backends/encoder.py` swallow
+**Why.** `load_temperatures()` and `load_choice_head()` in `src/tachyone/backends/encoder.py` swallow
 every exception (`except Exception: return {} / None`). On a partially populated cache — the exact
-scenario `JEBA_OFFLINE=1` promises to make safe — the engine then runs **without per-language
+scenario `TACHYONE_OFFLINE=1` promises to make safe — the engine then runs **without per-language
 temperature scaling and without the `choice` head**, silently, and reports confident numbers that
 do not reflect the calibrated model. Reported by the 2026-09-26 documentation review: an
-`JEBA_OFFLINE=1` run failed with `LocalEntryNotFoundError` because the Hub `refs/main` pointed at
+`TACHYONE_OFFLINE=1` run failed with `LocalEntryNotFoundError` because the Hub `refs/main` pointed at
 an empty snapshot.
 
 **Status (not started).** Documentation now describes the real prefetch step
@@ -275,7 +275,7 @@ intentionally run without calibration. Effort ~0.5 day.
 
 ## B-9 · Which English checkpoint is canonical? · Done (seed sweep → AD-009)
 
-**Why.** `munod/jeba-en` held two different English checkpoints and the trade-off looked like a
+**Why.** `munod/tachyone-en` held two different English checkpoints and the trade-off looked like a
 property of the model. On 2026-09-26 every candidate was evaluated on the same split
 (`data/eval_en.jsonl`, 1500 records, RTX 3060, `--backend encoder`, calibration refit per
 checkpoint with the identical procedure):
@@ -299,8 +299,8 @@ dataset) was ruled out before landing on variance.
 cleared both acceptance targets with margin, and posted the lowest English ECE measured. Promoted
 per AD-009: `training/configs/finetune_en.json` pins `seed: 2`, `checkpoints/en` holds the run,
 `benchmarks/report.md` + README + model card + requirements were regenerated together, and
-`munod/jeba-en` was republished. Nothing was lost: `bac4de41` stays at
-`hf_hub_download("munod/jeba-en", ..., revision="bac4de4")` and the pre-sweep `checkpoints/en`
+`munod/tachyone-en` was republished. Nothing was lost: `bac4de41` stays at
+`hf_hub_download("munod/tachyone-en", ..., revision="bac4de4")` and the pre-sweep `checkpoints/en`
 was kept as `checkpoints/en_prev_pub0.7633`.
 
 **Acceptance.**

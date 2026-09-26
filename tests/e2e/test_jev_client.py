@@ -1,6 +1,6 @@
-"""End-to-end: an existing Jev client repointed at a live jeba server.
+"""End-to-end: an existing Jev client repointed at a live tachyone server.
 
-Binds a real ephemeral port and drives the server with :class:`JebaClient`, proving the
+Binds a real ephemeral port and drives the server with :class:`TachyoneClient`, proving the
 SDK + transport + wire + backend path end to end (NFR-X01, NFR-X02). Skipped without the
 ``serve`` extra.
 """
@@ -22,11 +22,11 @@ pytest.importorskip("uvicorn")
 
 import uvicorn
 
-from jeba.backends.fake import FakeBackend
-from jeba.client import JebaAPIError, JebaClient
-from jeba.config import Config
-from jeba.serve import create_app
-from jeba.wire import parse_request
+from tachyone.backends.fake import FakeBackend
+from tachyone.client import TachyoneAPIError, TachyoneClient
+from tachyone.config import Config
+from tachyone.serve import create_app
+from tachyone.wire import parse_request
 
 pytestmark = pytest.mark.e2e
 
@@ -65,7 +65,7 @@ def running_server(**env: str) -> Iterator[str]:
 def test_repointed_jev_client_round_trip() -> None:
     request = parse_request(_REQUEST)
     with running_server() as base_url:
-        response = JebaClient(base_url).system_one(
+        response = TachyoneClient(base_url).system_one(
             request.state, request.questions, model=request.model
         )
     dumped = response.model_dump(mode="json")
@@ -77,12 +77,12 @@ def test_repointed_jev_client_round_trip() -> None:
 
 def test_authenticated_round_trip() -> None:
     request = parse_request(_REQUEST)
-    with running_server(JEBA_API_KEY="secret") as base_url:
-        anonymous = JebaClient(base_url)
-        with pytest.raises(JebaAPIError) as excinfo:
+    with running_server(TACHYONE_API_KEY="secret") as base_url:
+        anonymous = TachyoneClient(base_url)
+        with pytest.raises(TachyoneAPIError) as excinfo:
             anonymous.system_one(request.state, request.questions)
         assert excinfo.value.status_code == 401
-        authorized = JebaClient(base_url, api_key="secret")
+        authorized = TachyoneClient(base_url, api_key="secret")
         assert set(authorized.system_one(request.state, request.questions).answers) == set(
             request.questions
         )

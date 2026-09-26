@@ -1,1 +1,1 @@
-"""Training pipeline for jeba (data generation, fine-tuning, calibration, evaluation)."""
+"""Training pipeline for tachyone (data generation, fine-tuning, calibration, evaluation)."""

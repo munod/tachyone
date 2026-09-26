@@ -11,8 +11,8 @@ from typing import Any
 
 import pytest
 
-from jeba.agent import Agent
-from jeba.hooks import (
+from tachyone.agent import Agent
+from tachyone.hooks import (
     ON_ERROR,
     ON_EVICT,
     ON_LOAD,
@@ -22,8 +22,8 @@ from jeba.hooks import (
     HookContext,
     Hooks,
 )
-from jeba.primitives import NoulAnswer, NoulQuestion, Question, State
-from jeba.router import ENGLISH, MULTILINGUAL, CheckpointInfo, Router
+from tachyone.primitives import NoulAnswer, NoulQuestion, Question, State
+from tachyone.router import ENGLISH, MULTILINGUAL, CheckpointInfo, Router
 
 pytestmark = pytest.mark.contract
 

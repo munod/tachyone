@@ -18,10 +18,10 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
-from jeba.agent import Agent
-from jeba.backends.base import PredictionResult
-from jeba.calibration import confidence, parse_temperature_report
-from jeba.primitives import (
+from tachyone.agent import Agent
+from tachyone.backends.base import PredictionResult
+from tachyone.calibration import confidence, parse_temperature_report
+from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
     ChoiceQuestion,
@@ -32,7 +32,7 @@ from jeba.primitives import (
     ScoreQuestion,
     State,
 )
-from jeba.router import (
+from tachyone.router import (
     ENGLISH,
     MULTILINGUAL,
     CheckpointInfo,
@@ -41,16 +41,16 @@ from jeba.router import (
     detect_script,
     state_text,
 )
-from jeba.wire import Usage
+from tachyone.wire import Usage
 
 if TYPE_CHECKING:
-    from jeba.config import Config
-    from jeba.hooks import Hooks
+    from tachyone.config import Config
+    from tachyone.hooks import Hooks
 
 #: Encodes a batch of texts into dense vectors (one list of floats per text).
 type EncodeFn = Callable[[list[str]], list[list[float]]]
 
-#: Base checkpoints used until M4 fine-tunes jeba-owned weights (see ADR-0010).
+#: Base checkpoints used until M4 fine-tunes tachyone-owned weights (see ADR-0010).
 MODEL_IDS: dict[str, str] = {
     ENGLISH: "answerdotai/ModernBERT-large",
     MULTILINGUAL: "jhu-clsp/mmBERT-base",
@@ -405,7 +405,7 @@ def load_encoder(
         return cast("list[list[float]]", pooled.cpu().tolist())
 
     if fast:
-        from jeba.fast import maybe_accelerate
+        from tachyone.fast import maybe_accelerate
 
         def tokenize(texts: list[str]) -> tuple[Any, Any]:
             batch = tokenizer(
@@ -530,7 +530,7 @@ def _usage(state: State, questions: dict[str, Question]) -> Usage:
 
 
 class EncoderBackend:
-    """Offline :class:`~jeba.backends.base.Backend` backed by local encoder checkpoints."""
+    """Offline :class:`~tachyone.backends.base.Backend` backed by local encoder checkpoints."""
 
     name = "encoder"
 

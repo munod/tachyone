@@ -4,20 +4,20 @@ Compact, high-signal guide for agents and contributors working in this repositor
 
 ## Status
 
-**All milestones M0–M6 complete.** `src/jeba/` has the wire contract, a pluggable backend seam
+**All milestones M0–M6 complete.** `src/tachyone/` has the wire contract, a pluggable backend seam
 (LLM, model-free `FakeBackend`, local encoder, ONNX), language routing with checkpoint lifecycle,
 confidence/calibration, batched single-pass inference, hooks, an optional fast path, FastAPI
 serving, an SDK, a CLI, preset/schema helpers, an MCP stdio server, a LangChain adapter, and a
 no-op telemetry guard. `training/` has the full data → LoRA/RLCD → calibration → evaluation
 pipeline; `benchmarks/` renders a reproducible report; `docs/` builds an mkdocs site. The RTX 3060
 training run is done and the adapters plus measured numbers are published (Releases `v0.2.0` and
-`v0.3.0`, Hub `munod/jeba-en` / `munod/jeba-multi`). Open quality work is tracked in
+`v0.3.0`, Hub `munod/tachyone-en` / `munod/tachyone-multi`). Open quality work is tracked in
 `.specs/project/BACKLOG.md` (worst: `nl` per-language ECE, and the public probes in **B-7**).
 Current state and blockers: `.specs/project/STATE.md`.
 
 ## What this project is
 
-jeba — a local-first, multilingual decision engine that answers atomic `choice` / `score` /
+Tachyone — a local-first, multilingual decision engine that answers atomic `choice` / `score` /
 `noul` questions and speaks the **TypeSafe Jev `/v1/systemone`** wire protocol as a drop-in
 contract. Read first:
 
@@ -56,11 +56,11 @@ and e2e tests need `serve`:
 ```bash
 uv sync --extra serve          # adds fastapi + uvicorn (+ httpx from the dev group)
 uv run pytest -m "not e2e"     # skip the port-binding end-to-end tests
-uv run jeba --predict --preset triage --backend fake "refund please"   # offline demo
+uv run tachyone --predict --preset triage --backend fake "refund please"   # offline demo
 ```
 
-The default backend is `llm` (needs `JEBA_LLM_*`); use `--backend fake` or `JEBA_BACKEND=fake`
-for a model-free run, and `JEBA_BACKEND=encoder` for the local encoder. The encoder's real
+The default backend is `llm` (needs `TACHYONE_LLM_*`); use `--backend fake` or `TACHYONE_BACKEND=fake`
+for a model-free run, and `TACHYONE_BACKEND=encoder` for the local encoder. The encoder's real
 weights need the `train` extra (`uv sync --extra train`); the decision math and all tests work
 without it. Weights are fetched on demand (ADR-0010); tests use an injected fake encoder.
 
@@ -71,8 +71,8 @@ Training lives in `training/` (not installed):
 `uv run python -m training.evaluate --data data/eval_en.jsonl --out report.json`. Heavy modules
 (torch/transformers/peft) are imported lazily behind the `train` extra.
 
-Integration extras are similarly lazy: `JEBA_BACKEND=onnx` needs `--extra onnx`; `jeba-mcp-server`
-needs `--extra mcp`; `jeba.integrations.langchain` needs `--extra langchain`; the fast path needs
+Integration extras are similarly lazy: `TACHYONE_BACKEND=onnx` needs `--extra onnx`; `tachyone-mcp-server`
+needs `--extra mcp`; `tachyone.integrations.langchain` needs `--extra langchain`; the fast path needs
 `--extra fast`. Each raises a clear error naming the extra when it is missing.
 
 Docs site: `uv sync --group docs && uv run mkdocs build --strict` (CI has a dedicated job).
@@ -82,11 +82,11 @@ Benchmarks: `uv run python -m benchmarks.report --entry encoder=<report.json> --
 
 | Path | Belongs here | Does NOT belong here |
 | --- | --- | --- |
-| `src/jeba/primitives.py` | Primitive models + validators | I/O, model code |
-| `src/jeba/wire.py` | `/v1/systemone` envelope + dispatch | Backend-specific logic |
-| `src/jeba/backends/` | Backend implementations behind `base.py` | Wire changes |
-| `src/jeba/agent.py`, `router.py`, `calibration.py` | Local inference internals | HTTP concerns |
-| `src/jeba/serve.py`, `cli.py`, `client.py` | Transport + UX | Model internals |
+| `src/tachyone/primitives.py` | Primitive models + validators | I/O, model code |
+| `src/tachyone/wire.py` | `/v1/systemone` envelope + dispatch | Backend-specific logic |
+| `src/tachyone/backends/` | Backend implementations behind `base.py` | Wire changes |
+| `src/tachyone/agent.py`, `router.py`, `calibration.py` | Local inference internals | HTTP concerns |
+| `src/tachyone/serve.py`, `cli.py`, `client.py` | Transport + UX | Model internals |
 | `training/` | Data gen, fine-tuning, calibration scripts | Runtime code |
 | `tests/` | Contract, unit, integration, e2e, conditional | Fixtures with secrets |
 | `benchmarks/` | Latency/throughput/ECE harnesses | Unit tests |
@@ -101,7 +101,7 @@ Benchmarks: `uv run python -m benchmarks.report --entry encoder=<report.json> --
    heavy deps go behind extras: `serve`, `fast`, `onnx`, `langchain`, `mcp`, `train`.
 3. **Additive extensions only.** Router control, hooks, `predict_batch` must never change the
    canonical `/v1/systemone` response shape.
-4. **No secrets in the repo.** API keys come from env vars (`JEBA_API_KEY`, etc.).
+4. **No secrets in the repo.** API keys come from env vars (`TACHYONE_API_KEY`, etc.).
 5. **Conventional commits**, one logical change per commit; English docs/PRs.
 6. **Tests are co-located** with the code they cover — never deferred to a later task.
 
