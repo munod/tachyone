@@ -47,7 +47,7 @@ Every stage is a committed script with a committed config and a fixed seed.
   so noise stays independent of the cyclic label (L-003). Evaluate the noisy view separately: the
   harness reports it under `report["noisy"]` when `--noise-rate` is passed.
 
-### JSONL record format (planned)
+### JSONL record format
 
 ```json
 {"id": "noul-000001", "type": "noul", "state": "…", "instructions": "…", "criteria": {"true": "…", "false": "…"}, "target": 1, "lang": "en", "source": "synthetic"}
@@ -148,8 +148,9 @@ Report per primitive and per language group:
 | Throughput | requests/s vs batch size |
 | Coverage | Languages/scripts exercised |
 
-Public probes: **MASSIVE**, **XNLI**, **typed-decisions** — evaluation only, with exact
-reproduction commands committed.
+Public probes: **MASSIVE**, **XNLI**, **typed-decisions** — evaluation only. They are **not yet
+run or published**; the committed reproduction commands cover the synthetic evaluation only
+(see `benchmarks/report.md` → Known limitations).
 
 ---
 
@@ -177,6 +178,8 @@ reproduction commands committed.
 
 ## Open questions
 
-- **OD-3:** weights distribution (HF hub vs bundled vs download-on-first-use).
-- Exact ECE target and binning scheme (resolve after first calibration run).
-- Whether typed-decisions checkpoint is trained in M4 or deferred.
+- **OD-3:** weights distribution — RESOLVED by `docs/adr/ADR-0010` (HF Hub on demand + local cache;
+  prefetch with `hf download` or a warm-up run, cache-only via `JEBA_OFFLINE=1`).
+- Exact ECE target and binning scheme — resolved by the measured target (ECE ≤ 0.05,
+  10 bins, `min_samples` 30) used in `benchmarks/report.md`.
+- Whether the typed-decisions checkpoint is trained — deferred; tracked as `BACKLOG.md` B-7.

@@ -165,7 +165,46 @@ Token accounting for cost/telemetry. Encoder backends may report an estimate or 
 | `529 Overloaded` | Server overloaded | Capacity exceeded | Retry with exponential backoff |
 
 The retry contract for `429`/`529` uses **exponential backoff**; clients should add jitter
-and cap attempts. jeba's own SDK implements this; the server surfaces the status faithfully.
+and cap attempts. jeba's SDK implements this (`src/jeba/client.py`).
+
+> **Where these statuses come from.** jeba's server does **not** rate-limit or apply capacity
+> limits of its own: `429`/`529` are defined by the wire contract and are surfaced faithfully.
+> On the `llm` backend they are passed through from the upstream provider; on the local backends
+> they are raised only by the contract-level error constructors.
+
+### Error body
+
+Every error — including `500` — uses one envelope
+(`WireError.to_body()` in `src/jeba/wire.py`):
+
+```json
+{
+  "error": {
+    "code": "unprocessable_entity",
+    "message": "request body failed validation",
+    "details": [
+      {
+        "loc": ["questions", "q", "choice", "criteria"],
+        "msg": "Value error, choice accepts at most 255 options, got 256",
+        "type": "value_error"
+      }
+    ]
+  }
+}
+```
+
+| Status | `code` | Raised by |
+| --- | --- | --- |
+| `401` | `unauthorized` | `serve.py` auth dependency |
+| `422` | `unprocessable_entity` | `parse_request` / primitive validators |
+| `429` | `rate_limited` | upstream provider pass-through (`llm` backend) |
+| `500` | `internal_error` | `BackendError` — backend failure or inconsistent response |
+| `529` | `overloaded` | upstream provider pass-through (`llm` backend) |
+
+`details` is optional and only present when there is structured context (e.g. pydantic
+validation errors). Non-contract extension bodies (`/predict`, `/predict/batch`) are validated
+by FastAPI's default `422`, not by this envelope — they are outside the Jev contract
+(ADR-0009).
 
 ---
 
@@ -178,7 +217,7 @@ and cap attempts. jeba's own SDK implements this; the server surfaces the status
    on extension endpoints or optional fields — never in the canonical response required shape.
 4. **Unknown request fields:** default behavior is to ignore (forward-compatible), unless a
    future ADR decides otherwise.
-5. **Contract test is law.** `tests/test_contract_wire.py` (planned) encodes this document.
+5. **Contract test is law.** `tests/test_contract_wire.py` encodes this document.
 
 ---
 
@@ -191,7 +230,7 @@ These are jeba extensions and MUST NOT alter `/v1/systemone` output shape.
 | Router control | optional request field / extension endpoint | Force a checkpoint or language |
 | Hooks | Python API | `on_predict_start`, `on_predict_end`, `on_route`, `on_load`, `on_evict`, `on_error` |
 | `predict_batch` | `/predict/batch` (extension) | Batch several states in one call |
-| `return_details` | optional request flag / SDK arg | Include full distributions |
+| `return_details` | Backend protocol kwarg | Accepted for API stability; distributions are already canonical, so it is currently a **no-op** (no request flag or SDK argument exposes it) |
 | Presets | CLI/SDK | `router`, `guard`, `moderation`, `triage`, `email` |
 
 See `docs/architecture.md` for the extension contracts and `docs/adr/ADR-0002-pluggable-backend-phasing.md`.

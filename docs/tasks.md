@@ -1,6 +1,6 @@
 # Task Plan
 
-**Status:** All phases M0–M6 complete, including the M4 GPU run and published numbers/weights (`v0.2.0`).
+**Status:** All phases M0–M6 complete, including the M4 GPU run and published numbers/weights (`v0.3.0`).
 **Design:** `docs/architecture.md` · **Requirements:** `docs/requirements/`
 **Gates:** `uv run ruff check .` (lint) · `uv run pyright` (types) · `uv run pytest` (tests), per `docs/testing.md`.
 
@@ -23,7 +23,7 @@ M0-T1 → M0-T2 → M0-T3 → M0-T4
 
 ```
                  ┌→ M1-T3 ─┐
-M1-T1 → M0-T1,2 ─┼→ M1-T4 ─┼→ M1-T6 → M1-T7
+M0-T1,T2 → M1-T1 ┼→ M1-T4 ─┼→ M1-T6 → M1-T7
                  └→ M1-T5 ─┘
         M1-T2 ─────────────┘
 ```
@@ -343,8 +343,8 @@ M5 → M6-T1 → M6-T2 → M6-T3
 
 #### M4-T5: evaluation harness [P]
 
-**What:** Accuracy/ECE/latency per primitive + language; public probes (MASSIVE/XNLI/typed-decisions).
-**Where:** `benchmarks/`, `training/evaluate.py`.
+**What:** Accuracy/ECE/latency per primitive + language; public probes (MASSIVE/XNLI/typed-decisions) as a follow-up.
+**Where:** `training/evaluate.py`, `benchmarks/`.
 **Depends on:** M4-T1 · **Requirement:** TRAIN-05, OPS-06.
 **Done when:** report artifacts reproducible from committed commands.
 **Tests:** evaluation · **Gate:** full · **Commit:** `feat(benchmarks): add accuracy, ECE, latency harness`.
@@ -372,13 +372,13 @@ M5 → M6-T1 → M6-T2 → M6-T3
 #### M5-T2: fast path (TileLang/CUDA graphs) [P]
 
 **What:** Optional accelerated execution path behind the `fast` extra; graceful fallback.
-**Where:** `src/jeba/fast.py` (planned), packaging.
+**Where:** `src/jeba/fast.py`, packaging.
 **Depends on:** M3-T5 · **Requirement:** NFR-P01, NFR-C05, OPS-01, EXT-03.
 **Done when:** latency improves on supported CUDA; falls back otherwise; router override (force checkpoint/language) honored additively.
 **Tests:** benchmark (conditional-by-extra) · **Gate:** full · **Commit:** `perf: add optional fast path`.
 **Status:** ✅ Delivered. The seam + graceful fallback and router override ship in M5; the B-2
 follow-up (`JEBA_FAST`) wires the seam to a per-shape CUDA-graph forward with bf16-resident
-weights, measured in `benchmarks/fast_path.py` (2.47× p50, 0 top-label flips). NFR-P01 met.
+weights, measured in `benchmarks/fast_path.py` (2.68× p50, 0 top-label flips). NFR-P01 met.
 
 #### M5-T3: MCP stdio server [P]
 
@@ -398,7 +398,7 @@ weights, measured in `benchmarks/fast_path.py` (2.47× p50, 0 top-label flips). 
 
 #### M5-T5: Docker + compose [P]
 
-**What:** `Dockerfile` + `docker-compose.yml` running `jeba-serve`.
+**What:** `Dockerfile` + `docker/compose.yaml` running `jeba-serve`.
 **Where:** `docker/`.
 **Depends on:** M3-T5 · **Requirement:** OPS-04.
 **Done when:** container answers `/v1/systemone`; compose up works.
@@ -407,7 +407,7 @@ weights, measured in `benchmarks/fast_path.py` (2.47× p50, 0 top-label flips). 
 #### M5-T6: telemetry opt-out
 
 **What:** Opt-out telemetry guard (`DO_NOT_TRACK=1`), disabled by default.
-**Where:** `src/jeba/telemetry.py` (planned).
+**Where:** `src/jeba/telemetry.py`.
 **Depends on:** M5-T1..T5 · **Requirement:** OPS-08, NFR-S05.
 **Done when:** telemetry never blocks offline use; opt-out honored.
 **Tests:** unit · **Gate:** quick · **Commit:** `feat(telemetry): add opt-out telemetry guard`.
@@ -418,7 +418,7 @@ weights, measured in `benchmarks/fast_path.py` (2.47× p50, 0 top-label flips). 
 
 #### M6-T1: benchmark report
 
-**What:** Reproducible benchmark report vs MASSIVE/XNLI/typed-decisions.
+**What:** Reproducible benchmark report; public probes (MASSIVE/XNLI/typed-decisions) still open.
 **Where:** `benchmarks/report.md`, scripts.
 **Depends on:** M5 · **Requirement:** OPS-06, NFR-D04.
 **Done when:** report regenerated from committed commands.
@@ -512,5 +512,5 @@ Phase M6 (Sequential): M6-T1 → M6-T2 → M6-T3
 
 ## Requirement Coverage
 
-All 51 functional requirements map to at least one task above; the full matrix is in
-`docs/requirements/traceability.md`. **Coverage: 51/51 mapped, 0 unmapped.**
+All 60 functional requirements map to at least one task above; the full matrix is in
+`docs/requirements/traceability.md`. **Coverage: 60/60 mapped, 0 unmapped.**

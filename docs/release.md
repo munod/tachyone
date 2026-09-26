@@ -15,16 +15,16 @@ for the RTX 3060 training run (`uv sync --extra train`).
 
 ```bash
 uv sync --extra train
-uv run python -m training.generate_data --per-type 2000 --out data/train.jsonl
+uv run python -m training.generate_data --languages en --per-type 2000 --out data/train_en.jsonl
 uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json
 uv run python -m training.finetune_rlcd --config training/configs/finetune_multi.json
-uv run python -m training.fit_calibration --calibration data/preds.jsonl --out temperature.json
+uv run python -m training.fit_calibration --calibration data/preds_en.jsonl --out temperature.json
 ```
 
 ## 3. Benchmarks
 
 ```bash
-uv run python -m training.evaluate --data data/eval.jsonl --out benchmarks/results/encoder.json --backend encoder
+uv run python -m training.evaluate --data data/eval_en.jsonl --out benchmarks/results/encoder.json --backend encoder
 uv run python -m benchmarks.report --entry encoder=benchmarks/results/encoder.json --out benchmarks/report.md
 ```
 

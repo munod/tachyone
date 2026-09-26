@@ -93,8 +93,9 @@ base = AutoModel.from_pretrained("answerdotai/ModernBERT-large")
 model = PeftModel.from_pretrained(base, "<user>/jeba-en")
 ```
 
-The runtime `jeba` encoder backend loads these adapters **by default**:
-`CheckpointInfo` for each checkpoint carries `base_model` + `adapter`, so `JEBA_BACKEND=encoder`
+The runtime `jeba` encoder backend loads these adapters whenever `JEBA_BACKEND=encoder` is
+selected:
+`CheckpointInfo` for each checkpoint carries `base_model` + `adapter`, so the backend
 loads ModernBERT-large/mmBERT-base and applies `munod/jeba-en` / `munod/jeba-multi` (and their
 per-primitive fitted temperature) on first use, cached under `JEBA_MODELS_DIR`.
 
@@ -105,6 +106,24 @@ uv run jeba --predict --preset triage --backend encoder "Quero cancelar minha as
 JEBA_ADAPTERS="jeba-en=acme/tuned-en,jeba-multi=" uv run jeba --predict --backend encoder "..."
 JEBA_OFFLINE=1 uv run jeba --predict --backend encoder "..."   # cache-only, no network
 ```
+
+!!! note "Air-gapped installs: prefetch first"
+    `JEBA_OFFLINE=1` sets `local_files_only` on every Hub call, so it **fails** on a machine that
+    has never downloaded the base encoder and the adapter. Prefetch once while online, then go
+    offline:
+
+    ```bash
+    hf download munod/jeba-multi --local-dir ~/.cache/jeba/models/munod/jeba-multi
+    hf download munod/jeba-en    --local-dir ~/.cache/jeba/models/munod/jeba-en
+    # or simply run one warm-up prediction online:
+    uv run jeba --predict --preset triage --backend encoder "warm-up"
+    JEBA_OFFLINE=1 uv run jeba --predict --preset triage --backend encoder "..."
+    ```
+
+    There is **no `jeba download` subcommand** (ADR-0010 named one that was never implemented —
+    see [ADR notes](adr/README.md#implementation-notes-post-acceptance)). Note also that `JEBA_MODELS_DIR` must
+    point at the directory layout `huggingface_hub` expects; if the cache is only partially
+    populated, prefer a fresh warm-up run over `JEBA_OFFLINE=1`.
 
 ## 5. After a full-scale run
 

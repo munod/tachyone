@@ -27,21 +27,21 @@
 | **Unit** | One function/class in isolation | `tests/test_*.py` | Always |
 | **Integration** | Server + backend + wire together | `tests/integration/` | Always (offline) |
 | **E2E** | Repointed Jev client against a live server | `tests/e2e/` | Always |
-| **Conditional** | Extra-specific behavior | `tests/extras/` | Only if extra installed |
+| **Conditional** | Extra-specific behavior | `tests/test_onnx_backend.py`, `tests/test_mcp.py`, `tests/test_langchain.py` | Only if extra installed |
 | **Benchmark** | Latency/throughput/ECE | `benchmarks/` | On demand / M4+ |
 
 ---
 
 ## Test Coverage Matrix
 
-| Code Layer | Required Test Type | Location Pattern | Run Command (planned) |
+| Code Layer | Required Test Type | Location Pattern | Run Command |
 | --- | --- | --- | --- |
 | `primitives.py` | unit | `tests/test_primitives_*.py` | `uv run pytest tests/test_primitives_*.py` |
 | `wire.py` | unit + contract | `tests/test_wire.py`, `tests/test_contract_wire.py` | `uv run pytest tests/test_contract_wire.py` |
 | `backends/base.py` | unit | `tests/test_backends_base.py` | `uv run pytest tests/test_backends_base.py` |
 | `backends/llm.py` | unit + integration | `tests/test_backends_llm.py` | `uv run pytest tests/test_backends_llm.py` |
 | `backends/encoder.py` | contract + integration | `tests/test_contract_wire.py`, `tests/integration/` | `uv run pytest tests/` |
-| `backends/onnx.py` | contract + integration (conditional) | `tests/extras/test_onnx.py` | `uv run pytest tests/extras/test_onnx.py` |
+| `backends/onnx.py` | contract + integration (conditional) | `tests/test_onnx_backend.py` | `uv run pytest tests/test_onnx_backend.py` |
 | `router.py` | unit | `tests/test_router.py` | `uv run pytest tests/test_router.py` |
 | `calibration.py` | unit | `tests/test_calibration.py` | `uv run pytest tests/test_calibration.py` |
 | `agent.py` | unit + benchmark | `tests/test_agent.py` | `uv run pytest tests/test_agent.py` |
@@ -51,7 +51,7 @@
 | `cli.py` | unit + smoke | `tests/test_cli.py` | `uv run pytest tests/test_cli.py` |
 | `schemas.py` | unit | `tests/test_schemas.py` | `uv run pytest tests/test_schemas.py` |
 | `training/*` | unit + evaluation | `tests/test_training_*.py` | `uv run pytest tests/test_training_*.py` |
-| `mcp/`, `integrations/` | integration (conditional) | `tests/extras/` | `uv run pytest tests/extras/` |
+| `mcp/`, `integrations/` | integration (conditional) | `tests/test_mcp.py`, `tests/test_langchain.py` | `uv run pytest tests/test_mcp.py tests/test_langchain.py` |
 
 ---
 
@@ -71,16 +71,16 @@ their code has no dependencies.
 
 ---
 
-## Gate Check Commands (planned)
+## Gate Check Commands
 
 | Gate Level | When to Use | Command |
 | --- | --- | --- |
 | **Quick** | After tasks with unit tests only | `uv run pytest tests/ -q -x` |
 | **Full** | After tasks with integration/e2e/contract tests | `uv run pytest tests/ && uv run ruff check . && uv run pyright` |
-| **Build** | After phase completion | `uv run ruff check . && uv run pyright && uv run pytest tests/` |
+| **Build** | After phase completion | `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest tests/` |
 
-> These commands are **planned**. They become authoritative in M0-T2 once `pyproject.toml`
-> exists. Until then, treat them as the intended interface, not as runnable commands.
+> These commands are what CI runs (`.github/workflows/ci.yml`); the **Build** level is the
+> documented phase gate in `docs/tasks.md`.
 
 ---
 
@@ -125,12 +125,12 @@ when installed.
 
 ## Benchmarks & reproduction
 
-| Benchmark | Measures | Command (planned) |
+| Benchmark | Measures | Command |
 | --- | --- | --- |
-| Latency | p50/p95 per backend, batch sizes | `uv run python benchmarks/latency.py` |
-| Throughput | requests/s vs batch size | `uv run python benchmarks/throughput.py` |
-| Calibration | ECE per primitive/language | `uv run python benchmarks/calibration.py` |
-| Public probes | MASSIVE / XNLI / typed-decisions | `uv run python benchmarks/public_probes.py` |
+| Evaluation (accuracy / ECE) | per-primitive and per-language accuracy + ECE | `uv run python -m training.evaluate --data data/eval_multi.jsonl --out benchmarks/results/eval.json` |
+| Fast path | p50/p95 and answer parity, stock vs `JEBA_FAST` | `uv run python -m benchmarks.fast_path --data data/eval_multi.jsonl --model-id jhu-clsp/mmBERT-base --adapter checkpoints/multi --out benchmarks/results/fast_path.json` |
+| Report renderer | Markdown report from evaluation JSON artifacts | `uv run python -m benchmarks.report --entry encoder=<report.json> --out benchmarks/report.md` |
+| Public probes | MASSIVE / XNLI / typed-decisions | **not yet delivered** (see `docs/benchmarks.md` → Known limitations) |
 
 Reproduction rules:
 
@@ -142,13 +142,17 @@ Reproduction rules:
 
 ## CI
 
-`.github/workflows/ci.yml` (planned, M0-T4):
+`.github/workflows/ci.yml`:
 
-1. Checkout, install uv, `uv sync --frozen`.
-2. `uv run ruff check .`
-3. `uv run pyright`
-4. `uv run pytest tests/`
-5. Contract test step is explicit and blocking.
+1. **quality** — checkout, install uv (Python 3.12), `uv sync --locked --extra serve`,
+   `uv run ruff check .`, `uv run ruff format --check .`, `uv run pyright`, `uv run pytest`.
+2. **base-install** — `uv sync --locked --no-dev`, then import the core package offline
+   (NFR-R01: no network, no API key).
+3. **docs** — `uv sync --locked --group docs`, then `uv run mkdocs build --strict`.
+
+Contract tests are not a separate step: they run inside `uv run pytest`, which blocks the
+`quality` job. Any public wire or primitives change must update `tests/test_contract_*.py` in the
+same commit (NFR-M03).
 
 ---
 
@@ -156,8 +160,8 @@ Reproduction rules:
 
 | Gate | Blocks |
 | --- | --- |
-| ruff | Merge |
+| ruff (`check` + `format --check`) | Merge |
 | pyright | Merge |
 | pytest (incl. contract) | Merge |
-| Contract test updated with public API change | Merge |
-| Test count not decreased without justification | Merge |
+| Contract test updated with public API change | Merge (review rule; CI runs the suite, the pairing rule is enforced in review) |
+| Test count not decreased without justification | Merge (review rule — not automated in CI) |

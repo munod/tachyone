@@ -10,7 +10,16 @@ record hardware, versions, seed, and the exact command.
   metrics over a JSONL of labeled records:
 
   ```bash
-  uv run python -m training.evaluate --data data/eval.jsonl --out benchmarks/results/eval.json --backend fake
+  uv run python -m training.evaluate --data data/eval_multi.jsonl \
+    --out benchmarks/results/eval_multi.json --backend fake
+  ```
+
+- **Report renderer** — `benchmarks/report.py` renders committed JSON artifacts into
+  `benchmarks/report.md`:
+
+  ```bash
+  uv run python -m benchmarks.report --entry encoder=benchmarks/results/eval.json \
+    --out benchmarks/report.md
   ```
 
 - **Fast path (CUDA graphs)** — `benchmarks/fast_path.py` compares the stock encoder forward with
@@ -23,10 +32,11 @@ record hardware, versions, seed, and the exact command.
     --out benchmarks/results/fast_path.json
   ```
 
-## Planned (M6)
+## Not yet delivered
 
 - `public_probes.py` — MASSIVE / XNLI / typed-decisions, evaluation only.
 - `latency.py` / `throughput.py` — batch-size sweeps per backend.
 - `calibration.py` — ECE curves before/after temperature fitting.
 
-Results are written under `benchmarks/results/` (gitignored) and summarized in `BENCHMARKS.md`.
+Results are written under `benchmarks/results/` (gitignored) and summarized in
+[`benchmarks/report.md`](report.md).
