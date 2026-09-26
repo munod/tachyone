@@ -24,6 +24,12 @@ All notable changes to this project are documented here. The format is based on
 - The report's hardcoded Reproduce block pointed at files that do not exist (`data/eval.jsonl`)
   and omitted the predict / fit-calibration / evaluate / report steps, so a regenerated report
   could not be reproduced from its own instructions.
+- **Landing hero title was nearly invisible on the light theme.** The hero rules were bare
+  classes (specificity 0-1-0), so Material's `.md-typeset h1` (0-1-1) won despite `extra.css`
+  loading last and painted the title with `--md-default-fg-color--light` (`#0000008a`) over the
+  dark hero gradient — it also silently replaced the title's size, weight and margins. Every
+  `.jeba-hero__*` rule is now scoped under `.jeba-hero` (0-2-0, no `!important`), guarded by
+  `tests/test_docs_site.py::test_hero_styles_are_scoped_against_theme_overrides`.
 
 ### Documentation
 

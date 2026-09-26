@@ -6,6 +6,12 @@
 }
 
 /* Hero -------------------------------------------------------------------- */
+/* Every child rule is scoped under `.jeba-hero` on purpose: the hero lives inside
+   `.md-typeset`, where Material's `.md-typeset h1` (specificity 0-1-1) would otherwise
+   outrank a bare `.jeba-hero__title` (0-1-0) and paint the title with
+   `--md-default-fg-color--light` (#0000008a on the light scheme) — nearly invisible on
+   the dark hero — while also overriding its size, weight and margins. Two classes
+   (0-2-0) win without `!important`. */
 .jeba-hero {
   margin: 1.5rem 0 2.5rem;
   padding: 3rem 2rem;
@@ -17,14 +23,14 @@
   text-align: center;
 }
 
-.jeba-hero__logo {
+.jeba-hero .jeba-hero__logo {
   display: block;
   width: min(320px, 82%);
   height: auto;
   margin: 0 auto 1.25rem;
 }
 
-.jeba-hero__eyebrow {
+.jeba-hero .jeba-hero__eyebrow {
   display: inline-block;
   margin-bottom: 1rem;
   padding: 0.25rem 0.75rem;
@@ -36,7 +42,7 @@
   color: #a5b4fc;
 }
 
-.jeba-hero__title {
+.jeba-hero .jeba-hero__title {
   margin: 0 auto 0.75rem;
   max-width: 46rem;
   font-size: clamp(1.6rem, 4vw, 2.6rem);
@@ -45,14 +51,14 @@
   color: #f8fafc;
 }
 
-.jeba-hero__sub {
+.jeba-hero .jeba-hero__sub {
   margin: 0 auto 1.75rem;
   max-width: 40rem;
   font-size: clamp(0.95rem, 2vw, 1.15rem);
   color: #cbd5e1;
 }
 
-.jeba-hero__cta {
+.jeba-hero .jeba-hero__cta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
