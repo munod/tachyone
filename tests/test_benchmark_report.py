@@ -94,6 +94,17 @@ def test_parse_entries_requires_name_and_path(tmp_path: Path) -> None:
         _parse_entries(["just-a-path.json"])
 
 
+def test_parse_entries_splits_on_last_equals(tmp_path: Path) -> None:
+    """Entry names contain ``=`` (``LoRA r=16``); only the final one separates the path."""
+    path = tmp_path / "r.json"
+    path.write_text(json.dumps(_evaluation_report(tmp_path)), encoding="utf-8")
+    entry = _parse_entries([f"english (ModernBERT-large + LoRA r=16 + choice head)={path}"])[0]
+    assert entry.name == "english (ModernBERT-large + LoRA r=16 + choice head)"
+    assert entry.report["overall"]["n"] > 0
+    with pytest.raises(ValueError, match=r"NAME=REPORT\.json"):
+        _parse_entries(["no-path-here"])
+
+
 def test_cli_main(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     path = tmp_path / "r.json"
     path.write_text(json.dumps(_evaluation_report(tmp_path)), encoding="utf-8")

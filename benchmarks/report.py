@@ -133,8 +133,10 @@ def build_parser() -> argparse.ArgumentParser:
 def _parse_entries(specs: Iterable[str]) -> list[ReportEntry]:
     entries: list[ReportEntry] = []
     for spec in specs:
-        name, _, path = spec.partition("=")
-        if not path:
+        # Split on the *last* ``=``: entry names legitimately contain one (``LoRA r=16``),
+        # and the report's own section titles do.
+        name, sep, path = spec.rpartition("=")
+        if not sep or not name or not path:
             raise ValueError(f"--entry expects NAME=REPORT.json, got {spec!r}")
         entries.append(ReportEntry.from_files(name, path))
     return entries
@@ -145,11 +147,30 @@ def main(argv: Iterable[str] | None = None) -> int:
     report = render_report(
         _parse_entries(args.entry),
         commands=[
-            "uv run python -m training.generate_data --out data/eval.jsonl",
-            "uv run python -m training.evaluate --data data/eval.jsonl "
-            "--out benchmarks/results/eval.json --backend encoder",
+            "uv run python -m training.generate_data --seed 1 --per-type 3000 --languages en "
+            "--out data/train_en.jsonl",
+            "uv run python -m training.generate_data --seed 1 --per-type 6000 "
+            "--languages pt,es,fr,de,it,nl --out data/train_multi.jsonl",
+            "uv run python -m training.generate_data --seed 2 --per-type 500 --languages en "
+            "--out data/eval_en.jsonl",
+            "uv run python -m training.generate_data --seed 2 --per-type 500 "
+            "--languages pt,es,fr,de,it,nl --out data/eval_multi.jsonl",
+            "uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json",
+            "uv run python -m training.finetune_rlcd --config training/configs/finetune_multi.json",
+            "uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en "
+            "--out-predictions data/preds_en.jsonl",
+            "uv run python -m training.fit_calibration --calibration data/preds_en.jsonl "
+            "--out checkpoints/en/temperature_calibration.json",
+            "uv run python -m training.predict --data data/eval_multi.jsonl "
+            "--adapter checkpoints/multi --max-len 1024 --out-predictions data/preds_multi.jsonl",
+            "uv run python -m training.fit_calibration --calibration data/preds_multi.jsonl "
+            "--out checkpoints/multi/temperature_calibration.json",
+            "uv run python -m training.evaluate --data data/eval_en.jsonl "
+            "--out benchmarks/results/en_split.json --backend encoder",
+            "uv run python -m training.evaluate --data data/eval_multi.jsonl "
+            "--out benchmarks/results/multi_split.json --backend encoder",
             "uv run python -m benchmarks.report "
-            "--entry encoder=benchmarks/results/eval.json --out benchmarks/report.md",
+            "--entry encoder=benchmarks/results/en_split.json --out benchmarks/report.md",
         ],
         title=args.title,
         notes=args.note,
