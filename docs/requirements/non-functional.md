@@ -35,8 +35,8 @@
 | NFR-C03 | Deterministic inference on CPU given fixed weights + seed | required | M3 |
 | NFR-C04 | Reproducible training given seed/config | within documented tolerance | M4 |
 | NFR-C05 | Graceful fallback when acceleration/extra unavailable | no crash | M5 |
-| NFR-C06 | Calibration quality | ECE ≤ 0.05 **[open]** | M4 |
-| NFR-C07 | Per-language calibration quality | ECE ≤ 0.05 per language (choice/score) **[open]** | Backlog B-1 |
+| NFR-C06 | Calibration quality | ECE ≤ 0.05 **[near: overall multi 0.038, en 0.061; `nl` 0.104 open]** | M4 |
+| NFR-C07 | Per-language calibration quality | ECE ≤ 0.05 per language (choice/score) **[5/6 languages met; `nl` 0.104 open]** | Backlog B-1 |
 
 ## Compatibility (NFR-X)
 

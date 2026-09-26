@@ -8,29 +8,28 @@ Legend: **Ready** (can start now) · **Blocked** (needs a prerequisite) · **Ide
 
 ---
 
-## B-1 — Multilingual `choice`/`score` quality  · Done (accuracy) / partial (calibration)
+## B-1 — Multilingual `choice`/`score` quality  · Nearly done (rank bump) / `nl` open
 
 **Why.** After v3 (dedicated `choice` head, rich option descriptions), English `choice` reached
 0.78 but multilingual `choice` is 0.40 and multilingual `score` ECE is 0.18 (see
 `benchmarks/report.md`). The multilingual checkpoint carries six training languages with imbalanced
 support, and calibration is fitted **per primitive**, not per language.
 
-**Status (retrained and published).** Data is fully localized with per-record RNG and a low
-distractor rate; calibration is per `(primitive, language)`; the runtime applies `kind:lang` →
-`kind` → global. Measured: multilingual `choice` 0.40 → **0.734**, overall 0.609 → **0.711**;
-English overall 0.721 → **0.781**; the CUDA-graph fast path adds 2.7× p50. The adapters are
-republished to the Hub (`munod/jeba-en`, `munod/jeba-multi`). Per-language ECE still misses 0.05
-for `es`/`nl`/`de` and multilingual `score` (0.09–0.16), so calibration remains **partial** and
-NFR-C06 is still open. See `STATE.md` L-003 (shared-RNG shortcut).
-Spec/tasks: `.specs/features/multilingual-quality/`.
+**Status (retrained, published, then rank-bumped).** Data is fully localized with per-record RNG and
+a low distractor rate; calibration is per `(primitive, language)`; the runtime applies `kind:lang` →
+`kind` → global. The B-1 adapters are published (`munod/jeba-en`, `munod/jeba-multi`).
+**Follow-up (lora-rank experiment):** the multilingual LoRA rank was raised 16 → **64**
+(`lora_alpha` 128), removing the cross-language capacity bottleneck. Measured multilingual overall
+accuracy **0.702 → 0.853** and `es` ECE **0.170 → 0.038** (`es` accuracy 0.472 → 0.956). Five of
+six languages now meet ECE ≤ 0.05; `nl` (ECE 0.104, accuracy 0.663) remains. English is unchanged
+(overall 0.763). Spec/tasks: `.specs/features/multilingual-quality/`,
+`.specs/features/lora-rank-experiment/`.
 
-**Remaining plan (calibration).**
-1. The per-`(primitive, language)` temperature fit is **already implemented and applied**; the
-   residual gap is that a single scalar temperature cannot fix per-language miscalibration when
-   it hits the grid boundary (temp=0.1/10.0). Move to a richer mapping, e.g. power/vector scaling
-   fitted per language, or more per-language calibration examples, rather than widening the grid.
-2. Increase per-language calibration data so each fit has enough support (avoid small-sample
-   noise; keep the `min_samples` warning).
+**Remaining plan.**
+1. `nl` is the only language above 0.05 ECE (0.104) and the lowest accuracy (0.663). Investigate
+   whether it needs more per-language support, a language-specific learning rate, or a richer
+   calibration mapping; the scalar per-language temperature already exists.
+2. Republish the r=64 multilingual adapter to the Hub (`munod/jeba-multi`) — pending decision.
 3. Keep per-language accuracy/ECE reporting and gate on the worst language, not the average.
 
 **Acceptance.**

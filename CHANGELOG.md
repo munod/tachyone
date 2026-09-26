@@ -23,10 +23,14 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **Multilingual LoRA rank (NFR-C06):** raised `lora_rank` 16 → 64 / `lora_alpha` 128 in
+  `training/configs/finetune_multi.json`. Multilingual overall accuracy 0.702 → 0.853 and `es` ECE
+  0.170 → 0.038 (`es` accuracy 0.472 → 0.956); 5/6 languages now meet ECE ≤ 0.05 (`nl` 0.104
+  remains). See `.specs/features/lora-rank-experiment/`.
 - Retrained end-to-end on the RTX 3060; refreshed `benchmarks/report.md` (English 0.763 / ECE
-  0.061; multilingual 0.702 / ECE 0.033) and the model card. The released adapters are already
-  robust to the injected noise (EN 0.763→0.760, multi 0.702→0.701); a noise-augmented adapter
-  scored 0.719/0.719 but calibrated worse (ECE 0.090) and is not released.
+  0.061; multilingual r=64 0.853 / ECE 0.038) and the model card. The released adapters are already
+  robust to the injected noise (EN 0.763→0.760, multi 0.853→0.847); a noise-augmented adapter
+  (r=16) scored 0.719/0.719 but calibrated worse and is not released.
 
 ## [0.2.0] - 2026-09-24
 

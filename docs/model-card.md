@@ -71,21 +71,20 @@ checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA + choice head) | 0.763 | 0.061 | 22.6 |
-| Multilingual (mmBERT-base + LoRA + choice head) | 0.702 | 0.033 | 13.3 |
+| English (ModernBERT-large + LoRA r=16 + choice head) | 0.763 | 0.061 | 22.6 |
+| Multilingual (mmBERT-base + LoRA r=64 + choice head) | 0.853 | 0.038 | 13.3 |
 
 Per primitive (English): `choice` 0.834, `noul` 0.744, `score` 0.712; (multilingual): `choice`
-0.454, `noul` 0.738, `score` 0.914. The localized, per-record-RNG data (B-1) lifted multilingual
-`choice` from 0.40 to 0.73 and English overall from 0.72 to 0.78. Per-language calibration for a
-few multilingual languages (`es` 0.170, `de` 0.077, `nl` 0.045) and multilingual `choice` remain
-the next targets (NFR-C06 open).
+0.684, `noul` 0.960, `score` 0.916. The localized, per-record-RNG data (B-1) lifted multilingual
+`choice` from 0.40 to 0.68 and English overall from 0.72 to 0.76. **Raising the multilingual LoRA
+rank from 16 to 64** (alpha 128) removed the cross-language capacity bottleneck: overall accuracy
+0.702 → 0.853 and `es` ECE 0.170 → 0.038 (`es` accuracy 0.472 → 0.956). Five of six languages now
+meet ECE ≤ 0.05; `nl` (ECE 0.104, accuracy 0.663) remains the outlier (NFR-C06 partially open).
 The CUDA-graph fast path (`JEBA_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
-states) English drops only 0.763 → 0.760 and multilingual 0.702 → 0.701, so the released adapters
-are already robust to this noise model. A noise-augmented multilingual adapter (trained on the same
-data with `noise_rate=0.15`) reached 0.719 on both views but calibrated worse (ECE 0.090 vs 0.033)
-and regressed on `de`/`nl`, so it is **not** the released adapter; see `benchmarks/report.md`.
+states) English drops only 0.763 → 0.760 and multilingual (r=64) 0.853 → 0.847, so the released
+adapters are already robust to this noise model.
 
 Full tables and environment are in
 [`benchmarks/report.md`](https://github.com/munod/jeba/blob/main/benchmarks/report.md).

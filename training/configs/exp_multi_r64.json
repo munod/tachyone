@@ -12,7 +12,7 @@
   "lora_rank": 64,
   "max_len": 1024,
   "model_id": "jhu-clsp/mmBERT-base",
-  "out_dir": "checkpoints/multi",
+  "out_dir": "checkpoints/multi_r64",
   "seed": 42,
   "use_4bit": false,
   "val_split": 0.1

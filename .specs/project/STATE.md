@@ -15,6 +15,10 @@ changing the canonical response. **B-4 (input-noise robustness) done and measure
 3060**: seeded opt-in `noise_rate` in `generate_data.py` plus a clean/noisy split in `evaluate.py`
 (`report["noisy"]`); the released adapters are already robust (EN 0.763→0.760, multi 0.702→0.701)
 and the noise-augmented adapter did not beat them (ECE 0.090 vs 0.033), so it is not released.
+**Multilingual LoRA rank (NFR-C06 follow-up) done and adopted**: `lora_rank` 16 → **64**
+(`lora_alpha` 128) in `finetune_multi.json`; measured multilingual overall accuracy 0.702 → **0.853**,
+`es` ECE 0.170 → **0.038** (accuracy 0.472 → 0.956). Five of six languages now meet ECE ≤ 0.05;
+`nl` (ECE 0.104, accuracy 0.663) remains open. Adapters **not** republished to the Hub yet.
 Next ready: B-5 (multi-domain coverage, Idea).
 
 ## Milestone Status
@@ -234,6 +238,7 @@ composable contract already covers.
 | B-2 | fast path: CUDA-graph encode + micro-benchmark (NFR-P01/P07) | 2026-09-24 | `perf(fast): wire acceleration seam and CUDA-graph encode` | ✅ |
 | B-3 | confidence thresholding / System-2 handoff (entropy/margin, `handoff.py`, CLI `--threshold`) | 2026-09-25 | `feat(handoff): add confidence threshold and handoff signal` | ✅ |
 | B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrain pending GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
+| R-T1..T3 | multilingual LoRA rank 16 → 64 (accuracy 0.702 → 0.853, `es` ECE 0.170 → 0.038) | 2026-09-25 | `chore(training): raise multilingual LoRA rank to 64` | ✅ |
 
 ---
 
