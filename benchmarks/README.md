@@ -144,6 +144,26 @@ Why the two tables use different caps: the LLM rows ran **4 rows per probe famil
 (one 52-option attempt took 46 s), while the encoders scored every capped row (n=576 / n=192).
 Their rows are subsets of the same ordered rows, and `docs/compare.md` §3 says so.
 
+### The LLM rows were re-run after the B-10 prompt fix (2026-09-26)
+
+`src/tachyone/backends/llm.py` now spells out the `answers` wrapper for all three primitives, so
+the four `--engine llm` runs above were repeated with the **same servers, flags and rows** and
+their artifacts written to `compare_{,home_}llm_{ling,ornith}_after.json`. Those four are the
+numbers in `docs/compare.md` §3; the pre-fix artifacts (`compare_{,home_}llm_*.json` without the
+`_after` suffix) hold the before side of the compliance table there:
+
+```bash
+# identical to the two llm commands above, only the output names differ
+uv run python -m benchmarks.compare run --engine llm \
+  --llm-base-url http://127.0.0.1:8081/v1 --llm-model ling-tiny --llm-timeout 300 --per-task 4 \
+  --out benchmarks/results/compare_llm_ling_after.json
+
+uv run python -m benchmarks.compare run --engine llm --format jsonl --per-task 16 \
+  --llm-base-url http://127.0.0.1:8081/v1 --llm-model ling-tiny --llm-timeout 300 \
+  --data data/eval_en.jsonl --val-data data/train_en.jsonl \
+  --out benchmarks/results/compare_home_llm_ling_after.json     # and ornith on 8082
+```
+
 ## Not yet delivered
 
 - `probes.py` — MASSIVE / XNLI / typed-decisions loaders (design in `BACKLOG.md` **B-7**),

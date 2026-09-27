@@ -41,7 +41,7 @@ mmBERT-base trunk 1.23 GB + 54 MB adapter). Accuracy, ECE and latency come from 
     The 3.83 / 10.27 ms figures are p50 on short, four-option benchmark states. Measured
     end-to-end on real corpora, the same stock path runs **22.2 ms p50** on Tachyone's own support
     records and **72.6 ms** on a nine-family public probe where option counts reach 77 — against
-    112.9 / 350.2 ms for the open peer scorer and 3.4–7.2 **seconds** for the small LLMs. The
+    112.9 / 350.2 ms for the open peer scorer and 1.4–6.8 **seconds** for the small LLMs. The
     full method and both tables are in [§3](#3-why-not-another-open-system-one-scorer).
 
 The memory and latency columns are the ones people underestimate. An encoder answer costs one
@@ -126,15 +126,15 @@ They trained on this data; Tachyone and both LLMs are zero-shot here.
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| llm (ling-tiny) | 36 | 3 | 0.028 | 0.533 | 0.533 | 1.200 | 0.467 |
-| llm (ornith-9b) | 36 | 32 | 0.556 | 0.280 | 0.200 | 0.524 | 0.542 |
+| llm (ling-tiny) | 36 | 32 | 0.333 | 0.231 | 0.150 | 0.736 | 0.384 |
+| llm (ornith-9b) | 36 | 36 | 0.611 | 0.242 | 0.263 | 0.641 | 0.513 |
 | systemone-qwen3.5-4b | 576 | 576 | 0.705 | 0.134 | 0.046 | 0.373 | 0.746 |
 | **tachyone (encoder)** | 576 | 576 | 0.229 | 0.311 | 0.040 | 0.767 | 0.263 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| llm (ling-tiny) | 7161.44 | 98056.82 | 0.0 | 0.083 | 5763 | 4836 |
-| llm (ornith-9b) | 6541.17 | 19186.75 | 0.1 | 0.889 | 9484 | 5512 |
+| llm (ling-tiny) | 1662.23 | 50326.40 | 0.1 | 0.889 | 9494 | 4836 |
+| llm (ornith-9b) | 6844.39 | 20876.05 | 0.1 | 1.000 | 8749 | 5512 |
 | systemone-qwen3.5-4b | 350.23 | 4660.68 | 0.9 | 1.000 | 9147 | 8921 |
 | **tachyone (encoder)** | 72.61 | 542.45 | 6.6 | 1.000 | 2939 | 3626 |
 
@@ -142,15 +142,15 @@ Accuracy by task family (calibrated):
 
 | Task family | ling-tiny | ornith-9b | systemone | **tachyone** |
 | --- | ---: | ---: | ---: | ---: |
-| ag_news | 0.000 | 1.000 | 0.922 | 0.250 |
+| ag_news | 0.500 | 1.000 | 0.922 | 0.250 |
 | banking77 | 0.000 | 0.750 | 0.891 | 0.031 |
-| go_emotions | 0.000 | 0.500 | 0.859 | 0.359 |
-| mmlu | 0.000 | 0.750 | 0.688 | 0.266 |
-| tickets_language | 0.000 | 1.000 | 0.891 | 0.500 |
-| tickets_priority | 0.000 | 0.000 | 0.469 | 0.203 |
-| tickets_queue | 0.000 | 0.000 | 0.234 | 0.031 |
-| tickets_type | 0.000 | 0.750 | 0.750 | 0.219 |
-| yelp_score | 0.250 | 0.250 | 0.641 | 0.203 |
+| go_emotions | 0.750 | 0.500 | 0.859 | 0.359 |
+| mmlu | 0.500 | 0.750 | 0.688 | 0.266 |
+| tickets_language | 0.500 | 1.000 | 0.891 | 0.500 |
+| tickets_priority | 0.000 | 0.500 | 0.469 | 0.203 |
+| tickets_queue | 0.250 | 0.000 | 0.234 | 0.031 |
+| tickets_type | 0.500 | 0.750 | 0.750 | 0.219 |
+| yelp_score | 0.000 | 0.250 | 0.641 | 0.203 |
 
 #### B. Tachyone's distribution — our English support records, 64 rows per primitive
 
@@ -159,15 +159,15 @@ validation rows for the temperature fit.
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| llm (ling-tiny) | 48 | 20 | 0.125 | 0.325 | 0.225 | 0.774 | 0.525 |
-| llm (ornith-9b) | 48 | 40 | 0.583 | 0.132 | 0.139 | 0.435 | 0.576 |
+| llm (ling-tiny) | 48 | 44 | 0.312 | 0.310 | 0.206 | 0.790 | 0.471 |
+| llm (ornith-9b) | 48 | 48 | 0.688 | 0.199 | 0.186 | 0.483 | 0.502 |
 | systemone-qwen3.5-4b | 192 | 192 | 0.562 | 0.182 | 0.161 | 0.589 | 0.534 |
 | **tachyone (encoder)** | 192 | 192 | 0.854 | 0.036 | 0.083 | 0.209 | 0.857 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| llm (ling-tiny) | 3554.14 | 100128.81 | 0.1 | 0.417 | 9379 | 4836 |
-| llm (ornith-9b) | 3375.36 | 14093.82 | 0.2 | 0.833 | 9484 | 5512 |
+| llm (ling-tiny) | 1352.84 | 5267.21 | 0.3 | 0.917 | 9542 | 4836 |
+| llm (ornith-9b) | 3377.85 | 9279.27 | 0.2 | 1.000 | 9500 | 5512 |
 | systemone-qwen3.5-4b | 112.89 | 152.63 | 7.8 | 1.000 | 9147 | 8754 |
 | **tachyone (encoder)** | 22.21 | 35.81 | 32.1 | 1.000 | 2395 | 1743 |
 
@@ -175,9 +175,9 @@ Accuracy by primitive (calibrated):
 
 | Primitive | ling-tiny | ornith-9b | systemone | **tachyone** |
 | --- | ---: | ---: | ---: | ---: |
-| choice | 0.000 | 0.812 | 0.703 | 0.922 |
-| noul | 0.250 | 0.812 | 0.500 | 0.734 |
-| score | 0.125 | 0.125 | 0.484 | 0.906 |
+| choice | 0.500 | 0.812 | 0.703 | 0.922 |
+| noul | 0.188 | 0.750 | 0.500 | 0.734 |
+| score | 0.250 | 0.500 | 0.484 | 0.906 |
 
 #### How to read these two tables
 
@@ -188,15 +188,41 @@ Accuracy by primitive (calibrated):
   (72.6 vs 350.2 ms p50) and 5.1× on ours (22.2 vs 112.9 ms), with **5× less VRAM** (1.7 vs
   8.8 GiB) and a 1.6 GB footprint against 8.9 GB. Option count drives the peer's cost (its p95 is
   4.7 s on 77-option questions); Tachyone's `choice` head scores 1–255 options in one pass.
-- **The small LLMs fail the contract.** `ling-tiny` produced a contract-valid answer for **3/36**
-  and **20/48** questions; `ornith-9b` for 32/36 and 40/48. Failures count as *wrong* in the
-  accuracy column. When `ornith-9b` does answer it is respectable (0.556 / 0.583) — at 3.4–6.5 s
-  p50, i.e. **~50–90× slower than the peer and 150–300× slower than Tachyone**.
+- **The small LLMs failed the contract, and the prompt was part of the reason.** With the
+  original system prompt `ling-tiny` produced a contract-valid answer for **3/36** and **20/48**
+  questions and `ornith-9b` for 32/36 and 40/48; after the prompt fix (`B-10`, table below) those
+  are **32/36** and **44/48**, **36/36** and **48/48**. Failures still count as *wrong* in the
+  accuracy column. When `ornith-9b` answers it is respectable (0.611 / 0.688) — at 1.4–6.8 s p50,
+  i.e. **5–30× slower than the peer and 23–152× slower than Tachyone**.
 - **Calibration has to be read with confidence.** Tachyone ships well-calibrated on its own turf
   (ECE raw **0.036**). Off-domain its confidence carries no signal: raw ECE **0.311**, the fit
   pushes T into the 20.0 ceiling of the grid, and mean confidence collapses to **0.263**. A table
   quoting only `ECE cal` (0.040) would look *better* than the peer's 0.044 while being useless —
   `Brier` (0.767 vs 0.373) and `Conf` expose it. **ECE alone is not a quality metric.**
+
+#### What the prompt fix (`B-10`) changed
+
+The four LLM rows above were re-run after `src/tachyone/backends/llm.py` started spelling out the
+`answers` wrapper for **all three** primitives (one complete example, an explicit rule that the
+wrapper is mandatory, and bans on the value errors actually observed: a boolean `noul`, the
+criteria text echoed back, a bare string instead of an answer object, and an option label used as
+the question id). The parser was not loosened — `build_answers` still rejects the inner shape, it
+just now names the missing wrapper and echoes the top-level keys it saw. Same rows, same servers,
+same flags, greedy decoding (`--temp 0 --seed 42`):
+
+| Engine | Set | `JSON ok` before → after | answered before → after | Accuracy before → after |
+| --- | --- | ---: | ---: | ---: |
+| llm (ling-tiny) | probe, n=36 | 0.083 → **0.889** | 3 → 32 | 0.028 → 0.333 |
+| llm (ornith-9b) | probe, n=36 | 0.889 → **1.000** | 32 → 36 | 0.556 → 0.611 |
+| llm (ling-tiny) | home, n=48 | 0.417 → **0.917** | 20 → 44 | 0.125 → 0.312 |
+| llm (ornith-9b) | home, n=48 | 0.833 → **1.000** | 40 → 48 | 0.583 → 0.688 |
+
+Compliance is the metric this change targets; **accuracy and ECE are not comparable before vs
+after** (the prompt moves the answer distribution and a different set of rows gets answered), so
+both are recorded rather than one. Latency moves for the same reason: with the wrapper failures
+gone, `ling-tiny` stops spending its second attempt on a shape it was never going to fix — probe
+p50 7.16 s → 1.66 s. Four probe and four home questions still fail with `ling-tiny`; those are the
+residual `0.889` / `0.917`.
 
 #### Method
 
@@ -205,7 +231,7 @@ Accuracy by primitive (calibrated):
 | Hardware | single RTX 3060 12GB · Python 3.12 · torch 2.14.0+cu130 · transformers 5.17.0 |
 | Tachyone | `encoder` backend, **stock** forward (the `fast` extra is not installed here), driven through `tachyone.wire.answer` |
 | Peer scorer | Qwen3.5-4B-Base + its published adapter, bf16, `max_len=384`, option batch 4, scored by **its own** `system_one.py` imported from a local download — no third-party code is vendored in this repository |
-| LLMs | `llama-server` (Q4_K_M, `--temp 0 --seed 42`) behind Tachyone's `llm` backend, `TACHYONE_LLM_RETRIES=1` (two attempts per question) |
+| LLMs | `llama-server` (Q4_K_M, `--temp 0 --seed 42`) behind Tachyone's `llm` backend, `TACHYONE_LLM_RETRIES=1` (two attempts per question), system prompt as of the `B-10` fix |
 | Temperature | fitted per engine on the capped **validation** split (grid 0.25–20.00, step 0.05; their card used 0.25–6.0) and applied to test |
 | Latency | sequential, batch=1, warmup excluded; includes request marshalling and, for the LLMs, HTTP + generation |
 
@@ -225,7 +251,8 @@ split.
 - **Different `n` for the LLMs** (36 and 48 rows): a single failing question costs multiple
   autoregressive attempts — one 52-option attempt took **46 s** — so they ran on the first 4 rows
   per family / 16 per primitive, subsets of the same ordered rows the other engines scored.
-- **`p95` for the LLMs is timeout-dominated** (98 s and 100 s), not a steady-state tail.
+- **`p95` for the LLMs is failure-dominated** (50.3 s for `ling-tiny` and 20.9 s for `ornith-9b`
+  on the probe), not a steady-state tail.
 - **The peer and its data are CC-BY-NC-4.0**: evaluation only, never redistributed. Tachyone and
   its adapters are Apache-2.0.
 

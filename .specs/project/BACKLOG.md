@@ -402,7 +402,7 @@ not a measurement on unseen text. Public probes remain open in **B-7**.
 
 ---
 
-## B-10 · LLM backend: the prompt under-specifies the response wrapper · Ready
+## B-10 · LLM backend: the prompt under-specifies the response wrapper · Done (2026-09-26)
 
 **Why.** Measured on 2026-09-26 while benchmarking small local models through the shipped `llm`
 backend: `ling-tiny` produced a contract-valid answer for **3 of 36** probe questions and **20 of
@@ -420,25 +420,41 @@ A model that takes the `choice` example literally answers with the *inner* objec
 frontier models infer the wrapper; small ones do not, and every failure costs
 `TACHYONE_LLM_RETRIES + 1` autoregressive attempts (a 52-option question took 46 s per attempt).
 
+**Status (done, 2026-09-26).** `_SYSTEM_PROMPT` now states the wrapper once for all three
+primitives, gives one complete example with question ids, and bans the value errors actually
+observed (boolean `noul`, criteria text echoed back, bare string instead of an answer object,
+option label used as the question id); `build_answers` names the missing `answers` key and echoes
+the top-level keys it saw, and stays strict — no inner-shape fallback. Re-run of the four LLM rows
+(same servers, flags and rows, greedy): probe `JSON ok` **0.083 → 0.889** (`ling-tiny`) and
+**0.889 → 1.000** (`ornith-9b`), home **0.417 → 0.917** and **0.833 → 1.000**. Prompt selection was
+gated on the **worst set** (project convention): four candidate prompts were measured on both sets
+and the winner posts 0.889 / 0.917 against the runner-up's 0.917 / 0.729 — an earlier draft that
+scored higher on the probe alone regressed home `noul` to 3/16 (below the original prompt's
+10/16), which is why one set was not allowed to decide. Accuracy/ECE moved with the answer
+distribution and are recorded, not compared, per the plan.
+
 **Plan.**
-1. Spell out the wrapper **once** for all three primitives, with one complete example per type and
-   an explicit rule: the outer object MUST contain an `answers` key mapping question id → answer.
+1. [x] Spell out the wrapper **once** for all three primitives, with one complete example per type
+   and an explicit rule: the outer object MUST contain an `answers` key mapping question id →
+   answer.
 2. **Decision (2026-09-26): stay strict — do not accept the inner shape as a fallback.**
    `build_answers` / `_answer_from_raw` do not change. Reason: tolerating the inner object would
    push measured compliance to ~100% by construction and destroy the `JSON ok` column in
    `benchmarks/compare.py`, which exists precisely to catch this. Improve the error instead — name
    the missing `answers` key and echo the top-level keys actually observed. If compliance is still
    poor after the prompt fix, revisit tolerance as its own decision, with the harness counting
-   "model emitted the contract shape" separately from "backend answered".
-3. Re-run the LLM rows of `benchmarks/compare.py` (probe n=36, home n=48) and publish the
+   "model emitted the contract shape" separately from "backend answered". **Still strict after the
+   fix** — residual failures are reported below.
+3. [x] Re-run the LLM rows of `benchmarks/compare.py` (probe n=36, home n=48) and publish the
    before/after compliance.
 
 **Acceptance.**
-- A small local model's contract compliance on the probe rises well above the measured 8.3%
-  without changing `POST /v1/systemone` (contract suite untouched).
-- `tests/test_backends_llm.py` covers the wrapper being documented for `choice`/`score`, and the
+- [x] A small local model's contract compliance on the probe rises well above the measured 8.3%
+  without changing `POST /v1/systemone` (contract suite untouched) → **0.889** (`ling-tiny`),
+  **1.000** (`ornith-9b`).
+- [x] `tests/test_backends_llm.py` covers the wrapper being documented for `choice`/`score`, and the
   inner-object failure path producing the actionable message.
-- Before/after numbers published in `docs/compare.md` §3.
+- [x] Before/after numbers published in `docs/compare.md` §3 ("What the prompt fix changed").
 
 **Risks / notes.** Prompt changes move answer distributions, so accuracy/ECE for LLM backends
 are not comparable before vs after; record both. Effort ~0.5 day.

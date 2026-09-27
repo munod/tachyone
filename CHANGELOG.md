@@ -55,6 +55,18 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- **The `llm` backend's prompt under-specified the response wrapper (B-10).** `_SYSTEM_PROMPT`
+  documented `{"answers": ...}` only inside its `noul` example, so a model that took the `choice`
+  example literally answered with the *inner* object and every failure cost
+  `TACHYONE_LLM_RETRIES + 1` autoregressive attempts. The prompt now states the wrapper once for
+  all three primitives with a complete example and bans the value errors actually observed
+  (boolean `noul`, the criteria text echoed back, a bare string instead of an answer object, an
+  option label used as the question id); `build_answers` names the missing `answers` key and echoes
+  the top-level keys it saw. **Parsing stays strict** — the inner shape is still rejected, so the
+  `JSON ok` column keeps measuring the model rather than the parser. Re-run of the four LLM rows
+  with the same servers, flags and rows: probe `JSON ok` **0.083 → 0.889** (`ling-tiny`) and
+  **0.889 → 1.000** (`ornith-9b`), home **0.417 → 0.917** and **0.833 → 1.000**; accuracy/ECE are
+  recorded before *and* after in `docs/compare.md` §3 because the prompt moves the distribution.
 - `benchmarks/report.py` split `--entry` on the **first** `=`, which broke on the report's own
   entry names (`english (... r=16 ...)`) with a misleading `FileNotFoundError`; it now splits on
   the last one.
