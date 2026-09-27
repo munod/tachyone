@@ -1,7 +1,9 @@
 # Overview
 
-**Status:** Implemented and released (`v0.3.0`). All milestones M0–M6 are complete, plus the
-post-M6 multilingual-quality (B-1) and CUDA-graph fast-path (B-2) work. See
+**Status:** Implemented and released (`v0.4.0`). All milestones M0–M6 are complete, plus the
+post-M6 multilingual-quality (B-1), fast path (B-2), handoff (B-3), input noise (B-4), public
+probes (B-7), calibration hardening (B-8) and the LLM prompt fix (B-10); the multi-domain data
+refactor (B-5a) ships with its checkpoint still in training. See
 [`benchmarks.md`](benchmarks.md) for measured results and `.specs/project/STATE.md` for the
 authoritative decision log.
 

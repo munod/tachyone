@@ -131,6 +131,19 @@ The active backlog items shipped across `v0.2.0` and `v0.3.0`:
 - **B-4 Input-noise robustness** ✅ (`v0.3.0`) — seeded `noise_rate` augmentation and a clean/noisy
   evaluation split; the released adapters are already robust to the injected noise (`TRAIN-08`).
 
+Shipped in `v0.4.0`:
+
+- **B-7 Public probes** ✅ — `benchmarks/probes.py` loaders + `benchmarks/probes.md`:
+  typed-decisions 0.323, MASSIVE 0.033 across seven locales, XNLI 0.334, each against its own
+  chance level, with licences, citations and reproduction commands; `OPS-06` implemented.
+- **B-8 Calibration-asset hardening** ✅ — an adapter asset that cannot be loaded warns by name
+  instead of degrading silently (`docs/huggingface.md` §4).
+- **B-10 LLM prompt wrapper** ✅ — the `answers` wrapper documented for all three primitives;
+  probe `JSON ok` 0.083 → 0.889 with parsing kept strict.
+- **B-5a Multi-domain data** 🔄 — the generator is split per domain with byte-identical output for
+  existing configs, reports `per_domain`, and ships four new English domains plus presets; the
+  five-domain checkpoint is still in training (gates: support ≥ 0.85, worst new domain ≥ 0.70).
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

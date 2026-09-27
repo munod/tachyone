@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-27
+
 ### Added
 
 - **`docs/compare.md` — the three questions a prospective user asks first:** why not a small
@@ -49,6 +51,18 @@ All notable changes to this project are documented here. The format is based on
   `Conf` and `Brier` are published next to `ECE cal`. XNLI's licence was verified against
   `facebookresearch/XNLI`: **CC BY-NC 4.0**, and only derived metrics are published. 14 tests in
   `tests/test_benchmark_probes.py`, one per probe's label mapping.
+
+- **Multi-domain synthetic data (B-5a refactor, in progress).** `training/generate_data.py` now
+  reads committed per-domain content from `training/data/domains/<domain>.json` — `lexicon.json`,
+  `phrases.json` and `team_descriptions.json` merge into `domains/support.json` — and
+  `DataConfig.domains` / `--domains` choose which domains to emit (default `support`, so every
+  existing config regenerates **byte-for-byte**: golden hashes plus a config-vs-dataset test pin
+  it). Four new English domains ship (`ecommerce`, `agent_tools`, `documents`, `voice`), records
+  carry a `domain` field for non-default runs, `training/evaluate.py` reports `per_domain`
+  (rendered by `benchmarks/report.py` together with the worst-domain line), `DataConfig.per_domain`
+  keeps an incumbent domain's record volume while new domains are added smaller, and four presets
+  follow the data (`orders`, `tools`, `docs`, `voice`). **The published adapter is unchanged** —
+  the multi-domain checkpoint is still in training (gates: support ≥ 0.85, worst new domain ≥ 0.70).
 
 ### Changed
 
@@ -103,6 +117,19 @@ All notable changes to this project are documented here. The format is based on
   dark hero gradient — it also silently replaced the title's size, weight and margins. Every
   `.tachyone-hero__*` rule is now scoped under `.tachyone-hero` (0-2-0, no `!important`), guarded by
   `tests/test_docs_site.py::test_hero_styles_are_scoped_against_theme_overrides`.
+
+- **Two training-loop bugs behind the multi-domain collapses (B-5a).** `val_split` took the *tail*
+  of the file, so on domain-ordered data the validation set was the tail of the last domain (the
+  published `val_loss` 0.326 turned out to be `support`/`score` alone); it now shuffles with the
+  config seed (`split_records()`). Every optimizer step was also 32 consecutive records of one
+  primitive and one domain, with every epoch ending on `score` — textbook multi-domain
+  interference — so epochs now permute each primitive's records (`shuffled()`, seeded by
+  `seed:epoch:kind`). Both fixes moved the five-domain run from 0.630 to 0.804 accuracy; 3 tests,
+  plus a per-epoch per-primitive train-loss line so a plateau is visible without a second run.
+- **Two committed data configs did not reproduce the data they document.** `data_multi.json` and
+  `data_noisy.json` claimed `seed: 42` while the shipped datasets were generated with seed 1
+  (hash-verified); `data_en.json`, `data_eval_en.json` and `data_eval_multi.json` now document the
+  datasets that had no config at all.
 
 ### Documentation
 

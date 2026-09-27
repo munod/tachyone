@@ -12,11 +12,17 @@ Tachyone answers atomic structured questions — `choice`, `score`, and `noul` �
 values with probabilities and calibrated confidence. Point an existing Jev client at a Tachyone
 server and it works unchanged; run the local encoder backend for fully offline inference.
 
-**Status: `v0.3.0` released.** All milestones M0–M6 are complete, plus the post-M6
+**Status: `v0.4.0` released.** All milestones M0–M6 are complete, plus the post-M6
 **B-1 multilingual quality** work (localized data, per-`(primitive, language)` temperature, and a
 multilingual LoRA raised to rank 64 — accuracy 0.702 → 0.853), **B-2 fast path** (per-shape CUDA
 graphs with bf16 weights), **B-3 confidence thresholding / System-2 handoff**, and **B-4
-input-noise robustness**. The wire contract, an OpenAI-compatible LLM backend, a local encoder
+input-noise robustness** — plus **B-7 public probes** (typed-decisions, MASSIVE and XNLI with
+licences, chance levels and reproduction commands in `benchmarks/probes.md`), **B-8
+calibration-asset hardening** (an unusable adapter asset warns by name instead of degrading
+silently), **B-10's LLM prompt fix** (probe `JSON ok` 0.083 → 0.889 with parsing kept strict), and
+the **B-5a multi-domain data refactor** (five committed domains, `per_domain` reporting and
+byte-identical output for every existing config) whose checkpoint is still in training. The wire
+contract, an OpenAI-compatible LLM backend, a local encoder
 (ModernBERT/mmBERT + LoRA), an ONNX backend, FastAPI serving, an SDK/CLI, MCP + LangChain
 integrations, a training pipeline, and a docs site all ship. LoRA adapters are published on the
 Hugging Face Hub. See the

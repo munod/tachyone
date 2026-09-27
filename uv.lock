@@ -551,92 +551,6 @@ wheels = [
 ]
 
 [[package]]
-name = "tachyone"
-version = "0.3.0"
-source = { editable = "." }
-dependencies = [
-    { name = "pydantic" },
-]
-
-[package.optional-dependencies]
-fast = [
-    { name = "tilelang" },
-]
-langchain = [
-    { name = "langchain-core" },
-    { name = "langgraph" },
-]
-mcp = [
-    { name = "mcp" },
-]
-onnx = [
-    { name = "onnx" },
-    { name = "onnxruntime" },
-]
-serve = [
-    { name = "fastapi" },
-    { name = "python-multipart" },
-    { name = "uvicorn" },
-]
-train = [
-    { name = "accelerate" },
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "peft" },
-    { name = "safetensors" },
-    { name = "torch" },
-    { name = "transformers" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "httpx" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
-]
-docs = [
-    { name = "mkdocs" },
-    { name = "mkdocs-material", extra = ["imaging"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "accelerate", marker = "extra == 'train'", specifier = ">=0.30" },
-    { name = "fastapi", marker = "extra == 'serve'", specifier = ">=0.110" },
-    { name = "huggingface-hub", marker = "extra == 'train'", specifier = ">=0.20" },
-    { name = "langchain-core", marker = "extra == 'langchain'", specifier = ">=0.2" },
-    { name = "langgraph", marker = "extra == 'langchain'", specifier = ">=0.1" },
-    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.0" },
-    { name = "numpy", marker = "extra == 'train'", specifier = ">=1.26" },
-    { name = "onnx", marker = "extra == 'onnx'", specifier = ">=1.16" },
-    { name = "onnxruntime", marker = "extra == 'onnx'", specifier = ">=1.17" },
-    { name = "peft", marker = "extra == 'train'", specifier = ">=0.10" },
-    { name = "pydantic", specifier = ">=2.6,<3" },
-    { name = "python-multipart", marker = "extra == 'serve'", specifier = ">=0.0.9" },
-    { name = "safetensors", marker = "extra == 'train'", specifier = ">=0.4" },
-    { name = "tilelang", marker = "extra == 'fast'", specifier = ">=0.1.14" },
-    { name = "torch", marker = "extra == 'train'", specifier = ">=2.2" },
-    { name = "transformers", marker = "extra == 'train'", specifier = ">=4.48" },
-    { name = "uvicorn", marker = "extra == 'serve'", specifier = ">=0.27" },
-]
-provides-extras = ["serve", "onnx", "langchain", "mcp", "train", "fast"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "pyright", specifier = ">=1.1.380" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23" },
-    { name = "ruff", specifier = ">=0.6" },
-]
-docs = [
-    { name = "mkdocs", specifier = ">=1.6" },
-    { name = "mkdocs-material", extras = ["imaging"], specifier = ">=9.5" },
-]
-
-[[package]]
 name = "jinja2"
 version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1814,6 +1728,92 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/83/d3/803453b36afefb7c2bb238361cd4ae6125a569b4db67cd9e79846ba2d68c/sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517", size = 7793921, upload-time = "2025-04-27T18:05:01.611Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5", size = 6299353, upload-time = "2025-04-27T18:04:59.103Z" },
+]
+
+[[package]]
+name = "tachyone"
+version = "0.4.0"
+source = { editable = "." }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.optional-dependencies]
+fast = [
+    { name = "tilelang" },
+]
+langchain = [
+    { name = "langchain-core" },
+    { name = "langgraph" },
+]
+mcp = [
+    { name = "mcp" },
+]
+onnx = [
+    { name = "onnx" },
+    { name = "onnxruntime" },
+]
+serve = [
+    { name = "fastapi" },
+    { name = "python-multipart" },
+    { name = "uvicorn" },
+]
+train = [
+    { name = "accelerate" },
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "peft" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-material", extra = ["imaging"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "accelerate", marker = "extra == 'train'", specifier = ">=0.30" },
+    { name = "fastapi", marker = "extra == 'serve'", specifier = ">=0.110" },
+    { name = "huggingface-hub", marker = "extra == 'train'", specifier = ">=0.20" },
+    { name = "langchain-core", marker = "extra == 'langchain'", specifier = ">=0.2" },
+    { name = "langgraph", marker = "extra == 'langchain'", specifier = ">=0.1" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.0" },
+    { name = "numpy", marker = "extra == 'train'", specifier = ">=1.26" },
+    { name = "onnx", marker = "extra == 'onnx'", specifier = ">=1.16" },
+    { name = "onnxruntime", marker = "extra == 'onnx'", specifier = ">=1.17" },
+    { name = "peft", marker = "extra == 'train'", specifier = ">=0.10" },
+    { name = "pydantic", specifier = ">=2.6,<3" },
+    { name = "python-multipart", marker = "extra == 'serve'", specifier = ">=0.0.9" },
+    { name = "safetensors", marker = "extra == 'train'", specifier = ">=0.4" },
+    { name = "tilelang", marker = "extra == 'fast'", specifier = ">=0.1.14" },
+    { name = "torch", marker = "extra == 'train'", specifier = ">=2.2" },
+    { name = "transformers", marker = "extra == 'train'", specifier = ">=4.48" },
+    { name = "uvicorn", marker = "extra == 'serve'", specifier = ">=0.27" },
+]
+provides-extras = ["serve", "onnx", "langchain", "mcp", "train", "fast"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "pyright", specifier = ">=1.1.380" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23" },
+    { name = "ruff", specifier = ">=0.6" },
+]
+docs = [
+    { name = "mkdocs", specifier = ">=1.6" },
+    { name = "mkdocs-material", extras = ["imaging"], specifier = ">=9.5" },
 ]
 
 [[package]]

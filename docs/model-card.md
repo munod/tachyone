@@ -19,7 +19,7 @@ pipeline_tag: text-classification
 
 # Tachyone (System One decision engine)
 
-> **Status: released (`v0.3.0`).** Trained on a single RTX 3060 12GB and published as LoRA
+> **Status: released (`v0.4.0`).** Trained on a single RTX 3060 12GB and published as LoRA
 > adapters ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
