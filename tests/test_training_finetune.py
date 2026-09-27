@@ -13,6 +13,8 @@ from training.finetune_rlcd import (
     load_config,
     read_records,
     run,
+    shuffled,
+    split_records,
     summarize_dataset,
 )
 from training.generate_data import DataConfig, generate
@@ -68,3 +70,41 @@ def test_train_without_extra_raises(tmp_path: Path) -> None:
     config = FinetuneConfig(data_path=str(_dataset(tmp_path)), out_dir=str(tmp_path / "out"))
     with pytest.raises(RuntimeError, match="train extra"):
         run(config, dry_run=False)
+
+
+def test_split_records_is_seeded_disjoint_and_valid() -> None:
+    records = [{"id": index} for index in range(100)]
+    train, val = split_records(records, val_fraction=0.2, seed=7)
+    assert (train, val) == split_records(records, val_fraction=0.2, seed=7)
+    assert len(train) == 80 and len(val) == 20
+    assert {record["id"] for record in train} | {record["id"] for record in val} == set(range(100))
+    assert not {record["id"] for record in train} & {record["id"] for record in val}
+    with pytest.raises(ValueError, match="val_fraction"):
+        split_records(records, val_fraction=1.5, seed=1)
+    empty_train, empty_val = split_records([], val_fraction=0.1, seed=1)
+    assert empty_train == [] and empty_val == []
+
+
+def test_split_records_stops_one_domain_owning_the_validation_set(tmp_path: Path) -> None:
+    """The old tail split put the *last* domain alone in val (B-5); the shuffle does not."""
+    path = tmp_path / "d.jsonl"
+    generate(DataConfig(seed=1, per_type=50, languages=("en",), domains=("support", "voice")), path)
+    records = list(read_records(path))
+    tail = records[int(len(records) * 0.9) :]
+    assert {record["domain"] for record in tail} == {"voice"}  # what the old split produced
+
+    train, val = split_records(records, val_fraction=0.1, seed=3)
+    assert {record["domain"] for record in train} == {"support", "voice"}
+    assert {record["domain"] for record in val} == {"support", "voice"}
+    for kind in ("noul", "choice", "score"):
+        assert {record["type"] for record in val if record["domain"] == "voice"} >= {kind}
+
+
+def test_shuffled_is_deterministic_a_permutation_and_pure() -> None:
+    items = list(range(50))
+    first = shuffled(items, seed="epoch:0:noul")
+    assert first == shuffled(items, seed="epoch:0:noul")
+    assert first != shuffled(items, seed="epoch:1:noul")
+    assert sorted(first) == items
+    assert items == list(range(50))  # the input is untouched
+    assert shuffled([], seed=1) == []

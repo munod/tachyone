@@ -199,6 +199,23 @@ def main(argv: Iterable[str] | None = None) -> int:
             "--out benchmarks/results/en_split.json --backend encoder",
             "uv run python -m training.evaluate --data data/eval_multi.jsonl "
             "--out benchmarks/results/multi_split.json --backend encoder",
+            # B-5a: five domains, English, support keeping its published volume
+            "uv run python -m training.generate_data --seed 1 --per-type 1000 --languages en "
+            "--domains support,ecommerce,agent_tools,documents,voice --per-domain support=3000 "
+            "--out data/train_en_domains.jsonl",
+            "uv run python -m training.generate_data --seed 2 --per-type 500 --languages en "
+            "--domains support,ecommerce,agent_tools,documents,voice "
+            "--out data/eval_en_domains.jsonl",
+            "uv run python -m training.finetune_rlcd "
+            "--config training/configs/finetune_en_domains.json",
+            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
+            "--adapter checkpoints/en_domains --out-predictions data/preds_en_domains.jsonl",
+            "uv run python -m training.fit_calibration --calibration data/preds_en_domains.jsonl "
+            "--out checkpoints/en_domains/temperature_calibration.json",
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en_domains "
+            "uv run python -m training.evaluate "
+            "--data data/eval_en_domains.jsonl --out benchmarks/results/en_domains.json "
+            "--backend encoder",
             "uv run python -m benchmarks.report "
             "--entry encoder=benchmarks/results/en_split.json --out benchmarks/report.md",
         ],

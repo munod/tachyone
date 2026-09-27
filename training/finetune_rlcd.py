@@ -12,7 +12,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from collections.abc import Iterable, Iterator
+import random
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Any
@@ -88,6 +89,37 @@ def read_records(path: str | Path, *, limit: int | None = None) -> Iterator[dict
             line = line.strip()
             if line:
                 yield json.loads(line)
+
+
+def split_records(
+    records: Sequence[dict[str, Any]], *, val_fraction: float, seed: int | str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split into train/validation with a **seeded shuffle** (B-5).
+
+    The split used to take the tail of the file, and generated data is ordered by domain and then
+    primitive — so on a multi-domain dataset the "validation" set was the tail of a single domain,
+    and the published ``val_loss`` 0.326 turned out to be `support`/`score` alone. Shuffling makes
+    it representative of what is being reported while staying reproducible.
+    """
+    if not 0.0 <= val_fraction < 1.0:
+        raise ValueError(f"val_fraction must be within [0, 1), got {val_fraction!r}")
+    order = list(range(len(records)))
+    random.Random(seed).shuffle(order)
+    cut = int(len(records) * (1.0 - val_fraction))
+    return [records[index] for index in order[:cut]], [records[index] for index in order[cut:]]
+
+
+def shuffled[T](items: Sequence[T], *, seed: int | str) -> list[T]:
+    """Return ``items`` in a seeded random order (a new list; the input is untouched).
+
+    Optimizer steps are built from consecutive batches, so feeding records in file order makes
+    every step a single (domain, primitive) gradient — 32 correlated records per step, domains
+    fighting each other from step to step. Shuffling inside each primitive keeps the per-kind
+    batching the encoder needs while mixing the domains across steps (B-5).
+    """
+    order = list(items)
+    random.Random(seed).shuffle(order)
+    return order
 
 
 def summarize_dataset(path: str | Path, *, limit: int | None = None) -> dict[str, Any]:
@@ -182,8 +214,9 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     )
 
     records = list(read_records(config.data_path, limit=config.max_records))
-    split = max(1, int(len(records) * (1.0 - config.val_split)))
-    train_records, val_records = records[:split], records[split:]
+    train_records, val_records = split_records(
+        records, val_fraction=config.val_split, seed=config.seed
+    )
     grouped: dict[str, list[dict[str, Any]]] = {kind: [] for kind in ("noul", "choice", "score")}
     for record in train_records:
         grouped[record["type"]].append(record)
@@ -253,12 +286,14 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
         return total / count if count else float("nan")
 
     epochs_run = 0
-    for _epoch in range(config.epochs):
+    for epoch in range(config.epochs):
         model.train()  # type: ignore[attr-defined]
         optimizer.zero_grad(set_to_none=True)
         accumulations = 0
         for kind in ("noul", "choice", "score"):
-            items = grouped[kind]
+            # Mixed-domain data must not arrive domain by domain: every optimizer step would then
+            # be one (domain, primitive) gradient (B-5, see `shuffled`).
+            items = shuffled(grouped[kind], seed=f"{config.seed}:{epoch}:{kind}")
             for start in range(0, len(items), config.batch_size):
                 chunk = items[start : start + config.batch_size]
                 loss = batch_loss(kind, chunk) / config.grad_accum
