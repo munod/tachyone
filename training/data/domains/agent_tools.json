@@ -1,0 +1,133 @@
+{
+  "domain": "agent_tools",
+  "title": "Agent tool selection",
+  "description": "Decide which tool an agent should call next, how urgent the step is, and whether the step requires a tool at all. The choice task is the tool. The score task is urgency, not complexity: the generator's phrase banks are tone-shaped (calm → urgent), so an axis that is not urgency would label urgent-sounding text as something else. That is a documented design decision, see BACKLOG B-5.",
+  "options": [
+    "search",
+    "code",
+    "files",
+    "other"
+  ],
+  "languages": {
+    "en": {
+      "entities": [
+        "web search",
+        "python script",
+        "file read",
+        "API call",
+        "unit test",
+        "database query",
+        "image generation",
+        "translation",
+        "calendar lookup",
+        "email draft",
+        "code refactor",
+        "log parsing",
+        "schema migration",
+        "browser session",
+        "form fill",
+        "data export",
+        "dependency install",
+        "report summary",
+        "token refresh",
+        "sandbox check"
+      ],
+      "instructions": {
+        "choice": "Which tool should the agent use next?",
+        "noul": "Does this step require the {entity}?",
+        "score": "How urgent is this step?"
+      },
+      "levels": [
+        "routine",
+        "soon",
+        "today",
+        "blocking"
+      ],
+      "noul_criteria": {
+        "false": "does not require one",
+        "true": "requires the {entity}"
+      },
+      "option_descriptions": {
+        "code": "running scripts, tests, builds, refactors, and debugging steps",
+        "files": "reading or writing files, uploads, downloads, exports, and archives",
+        "other": "everything else: summaries, translations, scheduling, drafts, and asking the user",
+        "search": "web searches, documentation lookups, research steps, and reference answers"
+      },
+      "option_terms": {
+        "code": [
+          "python script",
+          "unit test",
+          "build step",
+          "code review",
+          "refactor",
+          "debug session",
+          "compile",
+          "lint check"
+        ],
+        "files": [
+          "csv upload",
+          "file download",
+          "directory listing",
+          "pdf export",
+          "image resize",
+          "archive extraction",
+          "log file",
+          "config write"
+        ],
+        "other": [
+          "summarization",
+          "translation",
+          "scheduling",
+          "user confirmation",
+          "email draft",
+          "note taking",
+          "calendar lookup",
+          "follow-up question"
+        ],
+        "search": [
+          "web search",
+          "documentation lookup",
+          "google query",
+          "article search",
+          "answer lookup",
+          "research step",
+          "api reference",
+          "docs query"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "No rush on the {entity}.",
+          "The {entity} can wait.",
+          "Whenever you get to the {entity}.",
+          "Low priority: just the {entity}."
+        ],
+        "distractor": [
+          "There is also a {distractor} queued.",
+          "A {distractor} was requested too.",
+          "Do not forget the {distractor}.",
+          "There is an unrelated {distractor} as well."
+        ],
+        "neutral": [
+          "The plan mentions a {entity}.",
+          "There is a note about the {entity}.",
+          "Background on the {entity} is in the doc.",
+          "For the record, the {entity} was discussed."
+        ],
+        "request": [
+          "Next, please run the {entity}.",
+          "Go ahead with the {entity} now.",
+          "We need the {entity} done before review.",
+          "Could the agent take care of the {entity}?",
+          "Please perform the {entity} as a first step."
+        ],
+        "urgent": [
+          "The {entity} is blocking the whole pipeline!",
+          "We cannot ship until the {entity} is fixed!",
+          "This {entity} is on fire, handle it now!",
+          "Everything is stalled on the {entity}!"
+        ]
+      }
+    }
+  }
+}

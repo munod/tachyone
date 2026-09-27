@@ -1,0 +1,133 @@
+{
+  "domain": "documents",
+  "title": "Document triage",
+  "description": "Classify an incoming document, say how urgent its handling is, and judge whether it needs a human step. The score axis is urgency like every other domain: the generator's phrase banks are tone-shaped (calm → urgent), so a confidence axis would label urgent text with a confidence level. Documented as a design decision in BACKLOG B-5.",
+  "options": [
+    "invoice",
+    "contract",
+    "report",
+    "other"
+  ],
+  "languages": {
+    "en": {
+      "entities": [
+        "human review",
+        "signature",
+        "redaction",
+        "translation",
+        "OCR pass",
+        "indexing",
+        "archival",
+        "approval",
+        "line-item check",
+        "version merge",
+        "citation check",
+        "metadata fix",
+        "anonymization",
+        "page reorder",
+        "table extraction",
+        "format cleanup",
+        "compliance check",
+        "duplicate scan",
+        "language tag",
+        "quality pass"
+      ],
+      "instructions": {
+        "choice": "How should this document be classified?",
+        "noul": "Does this document need the {entity}?",
+        "score": "How urgent is this document request?"
+      },
+      "levels": [
+        "routine",
+        "this week",
+        "today",
+        "immediately"
+      ],
+      "noul_criteria": {
+        "false": "does not need one",
+        "true": "needs the {entity}"
+      },
+      "option_descriptions": {
+        "contract": "contracts, agreements, clauses, signatures, addenda, and renewal terms",
+        "invoice": "invoices, receipts, purchase orders, expense claims, and payment terms",
+        "other": "everything else: resumes, policies, memos, press releases, and office notes",
+        "report": "reports, spreadsheets, decks, audits, forecasts, and analysis documents"
+      },
+      "option_terms": {
+        "contract": [
+          "contract",
+          "agreement",
+          "service level",
+          "clause",
+          "signature page",
+          "renewal terms",
+          "addendum",
+          "non-disclosure"
+        ],
+        "invoice": [
+          "invoice",
+          "receipt",
+          "purchase order",
+          "billing statement",
+          "expense claim",
+          "payment terms",
+          "credit note",
+          "vendor bill"
+        ],
+        "other": [
+          "resume",
+          "policy page",
+          "meeting memo",
+          "press release",
+          "job posting",
+          "office note",
+          "event flyer",
+          "handbook page"
+        ],
+        "report": [
+          "quarterly report",
+          "spreadsheet",
+          "metrics deck",
+          "audit summary",
+          "analysis doc",
+          "status report",
+          "forecast sheet",
+          "board pack"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "No rush on the {entity}.",
+          "The {entity} can wait until next month.",
+          "Whenever you get to the {entity}.",
+          "No hurry with the {entity}."
+        ],
+        "distractor": [
+          "There is also a {distractor} on file.",
+          "A {distractor} was added as well.",
+          "Separately, a {distractor} arrived.",
+          "Unrelated: there is a {distractor} too."
+        ],
+        "neutral": [
+          "Filing a note about the {entity}.",
+          "No action needed on the {entity}.",
+          "Just recording the {entity} here.",
+          "The {entity} was discussed in the meeting."
+        ],
+        "request": [
+          "Please take care of the {entity} before filing.",
+          "This {entity} needs attention today.",
+          "Could you handle the {entity} for us?",
+          "I would like the {entity} done this week.",
+          "We need help with the {entity} before the deadline."
+        ],
+        "urgent": [
+          "The {entity} is needed before the deadline, right now!",
+          "We cannot file without the {entity}!",
+          "This {entity} is blocking the submission!",
+          "Escalating the {entity} immediately, the audit starts!"
+        ]
+      }
+    }
+  }
+}

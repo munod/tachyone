@@ -1,0 +1,133 @@
+{
+  "domain": "ecommerce",
+  "title": "E-commerce and logistics",
+  "description": "Route an order-related message to the queue that owns it, say how urgent the order issue is, and judge whether the customer is asking for something. Vocabulary is deliberately distinct from support (queues, not teams).",
+  "options": [
+    "shipping",
+    "returns",
+    "payments",
+    "catalog"
+  ],
+  "languages": {
+    "en": {
+      "entities": [
+        "refund",
+        "return label",
+        "tracking update",
+        "order invoice",
+        "exchange",
+        "delivery slot",
+        "price adjustment",
+        "order cancellation",
+        "warranty claim",
+        "gift card",
+        "shipping quote",
+        "address change",
+        "restock alert",
+        "subscription box",
+        "damaged parcel",
+        "store credit",
+        "promo code",
+        "order status",
+        "pickup slot",
+        "seller payout"
+      ],
+      "instructions": {
+        "choice": "Which queue should handle this order?",
+        "noul": "Does this message request the {entity}?",
+        "score": "How urgent is this order issue?"
+      },
+      "levels": [
+        "routine",
+        "soon",
+        "today",
+        "immediately"
+      ],
+      "noul_criteria": {
+        "false": "does not ask",
+        "true": "asks for the {entity}"
+      },
+      "option_descriptions": {
+        "catalog": "product pages, sizes, stock, sellers, reviews, discount codes, and wishlists",
+        "payments": "charges, cards, receipts, invoices, wallet credit, and tax on orders",
+        "returns": "returns, exchanges, replacements, return labels, and damaged items",
+        "shipping": "tracking, delivery dates, couriers, address changes, and lost parcels"
+      },
+      "option_terms": {
+        "catalog": [
+          "product page",
+          "size guide",
+          "stock level",
+          "seller listing",
+          "product review",
+          "discount code",
+          "wishlist",
+          "comparison chart"
+        ],
+        "payments": [
+          "charge",
+          "card declined",
+          "receipt",
+          "order invoice",
+          "wallet credit",
+          "duplicate charge",
+          "tax receipt",
+          "payment method"
+        ],
+        "returns": [
+          "return",
+          "exchange",
+          "replacement",
+          "damaged item",
+          "return label",
+          "restocking fee",
+          "return window",
+          "warranty claim"
+        ],
+        "shipping": [
+          "tracking",
+          "delivery",
+          "courier",
+          "parcel",
+          "dispatch",
+          "shipping address",
+          "delivery estimate",
+          "lost package"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "No rush on the {entity}.",
+          "Whenever you can look at the {entity}.",
+          "All good, just noting the {entity}.",
+          "No hurry with the {entity}."
+        ],
+        "distractor": [
+          "There is also a {distractor} pending.",
+          "I opened a {distractor} as well.",
+          "Separately, a {distractor} was raised.",
+          "Unrelated, but there is a {distractor} too."
+        ],
+        "neutral": [
+          "I am noting the {entity} for our records.",
+          "This is about the {entity}, no action needed.",
+          "Just a heads-up about the {entity}.",
+          "We filed the {entity} last week."
+        ],
+        "request": [
+          "I need help with the {entity} today.",
+          "Please take care of my {entity}.",
+          "Could you sort out the {entity} for me?",
+          "I would like to get the {entity} done.",
+          "Can you assist with my {entity}?"
+        ],
+        "urgent": [
+          "The {entity} is blocking checkout right now!",
+          "We are losing orders because of the {entity}!",
+          "This {entity} is critical, customers are waiting!",
+          "Escalating the {entity} now, nobody can order!"
+        ]
+      }
+    }
+  }
+}

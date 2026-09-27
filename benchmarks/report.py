@@ -33,15 +33,22 @@ def _fmt(value: float) -> str:
     return f"{value:.3f}"
 
 
-def _worst_language(report: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
-    """The language with the lowest accuracy (tie-break: highest ECE), or ``None``."""
-    per_language = report.get("per_language") or {}
-    if not per_language:
+def _worst(table: Mapping[str, Any]) -> tuple[str, dict[str, Any]] | None:
+    """The key with the lowest accuracy (tie-break: highest ECE), or ``None``.
+
+    The project gates on the worst group, never the average (B-1, B-5).
+    """
+    if not table:
         return None
     return min(
-        per_language.items(),
+        table.items(),
         key=lambda item: (item[1].get("accuracy", 0.0), -item[1].get("ece", 0.0)),
     )
+
+
+def _worst_language(report: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
+    """The language with the lowest accuracy, or ``None``."""
+    return _worst(report.get("per_language") or {})
 
 
 def _table(entry: ReportEntry) -> list[str]:
@@ -57,6 +64,11 @@ def _table(entry: ReportEntry) -> list[str]:
         (f"lang:{lang}", metrics)
         for lang, metrics in sorted(entry.report.get("per_language", {}).items())
     ]
+    domains = entry.report.get("per_domain") or {}
+    # A single-domain report would just repeat `overall`, so the rows appear only for the
+    # multi-domain datasets (B-5).
+    if len(domains) > 1:
+        scopes += [(f"domain:{domain}", metrics) for domain, metrics in sorted(domains.items())]
     for scope, metrics in scopes:
         latency = metrics.get("latency_ms", {})
         lines.append(
@@ -70,6 +82,14 @@ def _table(entry: ReportEntry) -> list[str]:
         lines += [
             "",
             f"Worst language (accuracy): `{lang}` — accuracy {_fmt(metrics.get('accuracy', 0.0))}, "
+            f"ECE {_fmt(metrics.get('ece', 0.0))}.",
+        ]
+    worst_domain = _worst(domains) if len(domains) > 1 else None
+    if worst_domain is not None:
+        domain, metrics = worst_domain
+        lines += [
+            "",
+            f"Worst domain (accuracy): `{domain}` — accuracy {_fmt(metrics.get('accuracy', 0.0))}, "
             f"ECE {_fmt(metrics.get('ece', 0.0))}.",
         ]
     noisy = entry.report.get("noisy")

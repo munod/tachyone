@@ -1,0 +1,895 @@
+{
+  "description": "Route a support message to the team that owns it, judge whether it is urgent, and say whether it needs a human. The original four teams every published number was measured on.",
+  "domain": "support",
+  "languages": {
+    "de": {
+      "entities": [
+        "Rückerstattung",
+        "Rechnung",
+        "Passwort zurücksetzen",
+        "Ausfall",
+        "Upgrade",
+        "Doppelabbuchung",
+        "Anmeldecode",
+        "Stornierung",
+        "Rückbuchung",
+        "Mahngebühr",
+        "Webhook",
+        "Latenz",
+        "SSO",
+        "API-Fehler",
+        "Demo-Anfrage",
+        "Verlängerung",
+        "Angebot",
+        "Tarifwechsel",
+        "Zahlung",
+        "Abonnement"
+      ],
+      "instructions": {
+        "choice": "Welches Team sollte diese Anfrage bearbeiten?",
+        "noul": "Fordert diese Nachricht eine {entity} an?",
+        "score": "Wie dringend ist diese Anfrage?"
+      },
+      "levels": [
+        "keine",
+        "niedrig",
+        "mittel",
+        "hoch"
+      ],
+      "noul_criteria": {
+        "false": "fordert keine an",
+        "true": "fordert eine {entity} an"
+      },
+      "option_descriptions": {
+        "billing": "Zahlungen, Rechnungen, Rückerstattungen, Doppelabbuchungen und Abonnements",
+        "other": "alles außerhalb von Abrechnung, Technik und Vertrieb: allgemeine Fragen, Partnerschaften, Feedback, Karriere und Presse",
+        "sales": "Preise, Tarife, Upgrades, Angebote, Verlängerungen und neue Verträge",
+        "technical": "Fehler, Ausfälle, Integrationen und Zugriffsprobleme"
+      },
+      "option_terms": {
+        "billing": [
+          "Rückerstattung",
+          "Rechnung",
+          "Doppelabbuchung",
+          "Zahlung",
+          "Abonnement",
+          "Lastschrift",
+          "Mahngebühr",
+          "Beleg",
+          "Steuer",
+          "Abrechnung"
+        ],
+        "other": [
+          "allgemeine Frage",
+          "Partnerschaft",
+          "Feedback",
+          "Karriere",
+          "Presse",
+          "Sicherheitsbericht",
+          "Compliance",
+          "Marketing"
+        ],
+        "sales": [
+          "Upgrade",
+          "Preis",
+          "Tarifwechsel",
+          "Angebot",
+          "Verlängerung",
+          "Demo",
+          "Testphase",
+          "Rabatt",
+          "Neuvertrag",
+          "Onboarding"
+        ],
+        "technical": [
+          "Ausfall",
+          "Passwort zurücksetzen",
+          "Anmeldecode",
+          "Integrationsfehler",
+          "Latenz",
+          "Serverfehler",
+          "SSO",
+          "Zeitüberschreitung",
+          "API-Fehler",
+          "Webhook"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Keine Eile, wenn Sie den {entity} ansehen können.",
+          "Alles gut, ich notiere den {entity}.",
+          "Wenn Sie einen Moment für den {entity} haben.",
+          "Ich lasse nur eine Notiz zum {entity}."
+        ],
+        "distractor": [
+          "Ich habe auch ein {distractor} erwähnt.",
+          "Es gibt auch ein {distractor} offen.",
+          "Wir haben auch ein {distractor} eröffnet.",
+          "Es gibt auch ein {distractor} ohne Bezug."
+        ],
+        "neutral": [
+          "Ich schaue nur nach dem {entity}.",
+          "Gibt es Neuigkeiten zum {entity}?",
+          "Ich wollte zum {entity} nachfragen.",
+          "Kurze Frage zum {entity}."
+        ],
+        "request": [
+          "Ich brauche heute eine {entity}.",
+          "Bitte helfen Sie mir mit dem {entity}.",
+          "Können Sie die {entity} für mich prüfen?",
+          "Ich möchte eine {entity} klären.",
+          "Können Sie mir mit einer {entity} helfen?"
+        ],
+        "urgent": [
+          "Der {entity} blockiert uns gerade!",
+          "Wir verlieren Verkäufe wegen des {entity}.",
+          "Diese {entity} ist kritisch, bitte antworten Sie!",
+          "Unser Team hängt dringend am {entity}!"
+        ]
+      }
+    },
+    "en": {
+      "entities": [
+        "refund",
+        "invoice",
+        "password reset",
+        "outage",
+        "upgrade",
+        "duplicate charge",
+        "login code",
+        "cancellation",
+        "chargeback",
+        "late fee",
+        "webhook",
+        "latency",
+        "sso",
+        "api error",
+        "demo request",
+        "renewal",
+        "quote",
+        "plan change",
+        "payment",
+        "subscription"
+      ],
+      "instructions": {
+        "choice": "Which team should handle this request?",
+        "noul": "Does this message request a {entity}?",
+        "score": "How urgent is this request?"
+      },
+      "levels": [
+        "none",
+        "low",
+        "medium",
+        "high"
+      ],
+      "noul_criteria": {
+        "false": "does not ask",
+        "true": "asks for a {entity}"
+      },
+      "option_descriptions": {
+        "billing": "payments, invoices, refunds, duplicate charges, and subscriptions",
+        "other": "anything outside billing, technical, and sales: general questions, partnerships, feedback, careers, and press",
+        "sales": "pricing, plans, upgrades, quotes, renewals, and new contracts",
+        "technical": "bugs, outages, integrations, errors, and login or access issues"
+      },
+      "option_terms": {
+        "billing": [
+          "refund",
+          "invoice",
+          "duplicate charge",
+          "payment",
+          "late fee",
+          "chargeback",
+          "subscription",
+          "receipt",
+          "tax",
+          "billing"
+        ],
+        "other": [
+          "general question",
+          "partnership",
+          "feedback",
+          "careers",
+          "press",
+          "security report",
+          "compliance",
+          "marketing"
+        ],
+        "sales": [
+          "upgrade",
+          "pricing",
+          "plan change",
+          "demo request",
+          "new contract",
+          "renewal",
+          "quote",
+          "trial",
+          "discount",
+          "onboarding"
+        ],
+        "technical": [
+          "outage",
+          "password reset",
+          "login code",
+          "webhook",
+          "latency",
+          "api error",
+          "sso",
+          "integration error",
+          "server error",
+          "timeout"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "No rush, whenever you can look at the {entity}.",
+          "All good, noting the {entity}.",
+          "Whenever you have a moment for the {entity}.",
+          "Just leaving a note about the {entity}."
+        ],
+        "distractor": [
+          "I also raised a {distractor}.",
+          "There is also a {distractor} pending.",
+          "We opened a {distractor} as well.",
+          "There's an unrelated {distractor} too."
+        ],
+        "neutral": [
+          "Just checking in about the {entity}.",
+          "Any update on the {entity}?",
+          "I wanted to ask about the {entity}.",
+          "Quick question about the {entity}."
+        ],
+        "request": [
+          "I need a {entity} today.",
+          "Please help me with my {entity}.",
+          "Could you look into my {entity} for me?",
+          "I'd like to get a {entity} sorted out.",
+          "Can you assist me with a {entity}?"
+        ],
+        "urgent": [
+          "The {entity} is blocking us right now!",
+          "Losing sales because of the {entity}.",
+          "This {entity} is critical, please respond!",
+          "Our team is stuck on the {entity} urgently!"
+        ]
+      }
+    },
+    "es": {
+      "entities": [
+        "reembolso",
+        "factura",
+        "restablecimiento de contraseña",
+        "caída",
+        "mejora",
+        "cargo duplicado",
+        "código de acceso",
+        "cancelación",
+        "contracargo",
+        "recargo por mora",
+        "webhook",
+        "latencia",
+        "sso",
+        "error de api",
+        "solicitud de demostración",
+        "renovación",
+        "presupuesto",
+        "cambio de plan",
+        "pago",
+        "suscripción"
+      ],
+      "instructions": {
+        "choice": "¿Qué equipo debería gestionar esta solicitud?",
+        "noul": "¿Este mensaje solicita un {entity}?",
+        "score": "¿Qué urgencia tiene esta solicitud?"
+      },
+      "levels": [
+        "ninguna",
+        "baja",
+        "media",
+        "alta"
+      ],
+      "noul_criteria": {
+        "false": "no lo solicita",
+        "true": "solicita un {entity}"
+      },
+      "option_descriptions": {
+        "billing": "pagos, facturas, reembolsos, cargos duplicados y suscripciones",
+        "other": "cualquier tema fuera de facturación, técnico y ventas: preguntas generales, alianzas, comentarios, empleo y prensa",
+        "sales": "precios, planes, mejoras, presupuestos, renovaciones y nuevos contratos",
+        "technical": "errores, caídas, integraciones y problemas de acceso"
+      },
+      "option_terms": {
+        "billing": [
+          "reembolso",
+          "factura",
+          "cargo duplicado",
+          "pago",
+          "suscripción",
+          "devolución",
+          "recargo por mora",
+          "recibo",
+          "impuesto",
+          "cobro"
+        ],
+        "other": [
+          "pregunta general",
+          "alianza",
+          "comentarios",
+          "empleo",
+          "prensa",
+          "informe de seguridad",
+          "cumplimiento",
+          "marketing"
+        ],
+        "sales": [
+          "mejora",
+          "precio",
+          "cambio de plan",
+          "presupuesto",
+          "renovación",
+          "demostración",
+          "prueba gratuita",
+          "descuento",
+          "nuevo contrato",
+          "incorporación"
+        ],
+        "technical": [
+          "caída",
+          "restablecer contraseña",
+          "código de acceso",
+          "error de integración",
+          "lentitud",
+          "error del servidor",
+          "sso",
+          "tiempo de espera",
+          "error de api",
+          "webhook"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sin prisa, cuando puedas ver el {entity}.",
+          "Todo bien, solo anotando el {entity}.",
+          "Cuando tengas un momento para el {entity}.",
+          "Solo dejo una nota sobre el {entity}."
+        ],
+        "distractor": [
+          "También mencioné un {distractor}.",
+          "También hay un {distractor} pendiente.",
+          "Abrimos un {distractor} también.",
+          "Hay un {distractor} no relacionado también."
+        ],
+        "neutral": [
+          "Solo revisando el {entity}.",
+          "¿Alguna novedad sobre el {entity}?",
+          "Quería preguntar sobre el {entity}.",
+          "Una pregunta rápida sobre el {entity}."
+        ],
+        "request": [
+          "Necesito un {entity} hoy.",
+          "Por favor, ayúdame con el {entity}.",
+          "¿Puedes revisar el {entity} por mí?",
+          "Me gustaría resolver un {entity}.",
+          "¿Puedes ayudarme con un {entity}?"
+        ],
+        "urgent": [
+          "¡El {entity} nos está bloqueando ahora!",
+          "Perdiendo ventas por el {entity}.",
+          "¡Este {entity} es crítico, respondan por favor!",
+          "¡Nuestro equipo está atascado con el {entity} con urgencia!"
+        ]
+      }
+    },
+    "fr": {
+      "entities": [
+        "remboursement",
+        "facture",
+        "réinitialisation du mot de passe",
+        "panne",
+        "mise à niveau",
+        "double prélèvement",
+        "code de connexion",
+        "annulation",
+        "contrefacturation",
+        "frais de retard",
+        "webhook",
+        "latence",
+        "sso",
+        "erreur d'api",
+        "demande de démonstration",
+        "renouvellement",
+        "devis",
+        "changement de forfait",
+        "paiement",
+        "abonnement"
+      ],
+      "instructions": {
+        "choice": "Quelle équipe doit traiter cette demande ?",
+        "noul": "Ce message demande-t-il un {entity} ?",
+        "score": "Quelle est l'urgence de cette demande ?"
+      },
+      "levels": [
+        "aucune",
+        "faible",
+        "moyenne",
+        "élevée"
+      ],
+      "noul_criteria": {
+        "false": "ne le demande pas",
+        "true": "demande un {entity}"
+      },
+      "option_descriptions": {
+        "billing": "paiements, factures, remboursements, doubles prélèvements et abonnements",
+        "other": "tout ce qui sort de la facturation, de la technique et des ventes : questions générales, partenariats, retours, carrières et presse",
+        "sales": "tarifs, forfaits, mises à niveau, devis, renouvellements et nouveaux contrats",
+        "technical": "bugs, pannes, intégrations et problèmes de connexion"
+      },
+      "option_terms": {
+        "billing": [
+          "remboursement",
+          "facture",
+          "double prélèvement",
+          "paiement",
+          "abonnement",
+          "contrefacturation",
+          "frais de retard",
+          "reçu",
+          "taxe",
+          "facturation"
+        ],
+        "other": [
+          "question générale",
+          "partenariat",
+          "retour",
+          "carrières",
+          "presse",
+          "rapport de sécurité",
+          "conformité",
+          "marketing"
+        ],
+        "sales": [
+          "mise à niveau",
+          "tarif",
+          "changement de forfait",
+          "devis",
+          "renouvellement",
+          "démonstration",
+          "essai gratuit",
+          "remise",
+          "nouveau contrat",
+          "intégration"
+        ],
+        "technical": [
+          "panne",
+          "réinitialisation du mot de passe",
+          "code de connexion",
+          "erreur d'intégration",
+          "lenteur",
+          "erreur serveur",
+          "sso",
+          "délai dépassé",
+          "erreur d'api",
+          "webhook"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Pas pressé, quand vous pourrez voir le {entity}.",
+          "Tout va bien, je note le {entity}.",
+          "Quand vous aurez un moment pour le {entity}.",
+          "Je laisse juste une note sur le {entity}."
+        ],
+        "distractor": [
+          "J'ai aussi mentionné un {distractor}.",
+          "Il y a aussi un {distractor} en attente.",
+          "Nous avons aussi ouvert un {distractor}.",
+          "Il y a aussi un {distractor} sans rapport."
+        ],
+        "neutral": [
+          "Je vérifie juste le {entity}.",
+          "Des nouvelles du {entity} ?",
+          "Je voulais demander au sujet du {entity}.",
+          "Une question rapide sur le {entity}."
+        ],
+        "request": [
+          "J'ai besoin d'un {entity} aujourd'hui.",
+          "Aidez-moi avec le {entity} svp.",
+          "Pouvez-vous regarder le {entity} pour moi ?",
+          "Je voudrais régler un {entity}.",
+          "Pouvez-vous m'aider avec un {entity} ?"
+        ],
+        "urgent": [
+          "Le {entity} nous bloque maintenant !",
+          "Perte de ventes à cause du {entity}.",
+          "Ce {entity} est critique, répondez vite !",
+          "Notre équipe est bloquée sur le {entity} en urgence !"
+        ]
+      }
+    },
+    "it": {
+      "entities": [
+        "rimborso",
+        "fattura",
+        "reimpostazione password",
+        "disservizio",
+        "upgrade",
+        "addebito duplicato",
+        "codice di accesso",
+        "annullamento",
+        "storno",
+        "penale di ritardo",
+        "webhook",
+        "latenza",
+        "sso",
+        "errore api",
+        "richiesta demo",
+        "rinnovo",
+        "preventivo",
+        "cambio piano",
+        "pagamento",
+        "abbonamento"
+      ],
+      "instructions": {
+        "choice": "Quale team dovrebbe gestire questa richiesta?",
+        "noul": "Questa richiesta riguarda un {entity}?",
+        "score": "Quanto è urgente questa richiesta?"
+      },
+      "levels": [
+        "nessuna",
+        "bassa",
+        "media",
+        "alta"
+      ],
+      "noul_criteria": {
+        "false": "non lo richiede",
+        "true": "richiede un {entity}"
+      },
+      "option_descriptions": {
+        "billing": "pagamenti, fatture, rimborsi, addebiti duplicati e abbonamenti",
+        "other": "qualsiasi cosa fuori da fatturazione, tecnico e vendite: domande generali, partnership, feedback, carriere e stampa",
+        "sales": "prezzi, piani, upgrade, preventivi, rinnovi e nuovi contratti",
+        "technical": "errori, disservizi, integrazioni e problemi di accesso"
+      },
+      "option_terms": {
+        "billing": [
+          "rimborso",
+          "fattura",
+          "addebito duplicato",
+          "pagamento",
+          "abbonamento",
+          "storno",
+          "penale di ritardo",
+          "ricevuta",
+          "imposta",
+          "fatturazione"
+        ],
+        "other": [
+          "domanda generale",
+          "partnership",
+          "feedback",
+          "carriere",
+          "stampa",
+          "rapporto di sicurezza",
+          "conformità",
+          "marketing"
+        ],
+        "sales": [
+          "upgrade",
+          "prezzo",
+          "cambio piano",
+          "preventivo",
+          "rinnovo",
+          "demo",
+          "prova gratuita",
+          "sconto",
+          "nuovo contratto",
+          "onboarding"
+        ],
+        "technical": [
+          "disservizio",
+          "reimpostazione password",
+          "codice di accesso",
+          "errore di integrazione",
+          "latenza",
+          "errore del server",
+          "sso",
+          "timeout",
+          "errore api",
+          "webhook"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Nessuna fretta, quando puoi guarda il {entity}.",
+          "Tutto bene, segnalo solo il {entity}.",
+          "Quando hai un momento per il {entity}.",
+          "Lascio solo una nota sul {entity}."
+        ],
+        "distractor": [
+          "Ho anche segnalato un {distractor}.",
+          "C'è anche un {distractor} in sospeso.",
+          "Abbiamo aperto anche un {distractor}.",
+          "C'è anche un {distractor} non correlato."
+        ],
+        "neutral": [
+          "Sto solo controllando il {entity}.",
+          "Novità sul {entity}?",
+          "Volevo chiedere del {entity}.",
+          "Una domanda veloce sul {entity}."
+        ],
+        "request": [
+          "Ho bisogno di un {entity} oggi.",
+          "Per favore, aiutami con il {entity}.",
+          "Puoi controllare il {entity} per me?",
+          "Vorrei risolvere un {entity}.",
+          "Puoi aiutarmi con un {entity}?"
+        ],
+        "urgent": [
+          "Il {entity} ci sta bloccando adesso!",
+          "Stiamo perdendo vendite per il {entity}.",
+          "Questo {entity} è critico, rispondete subito!",
+          "Il nostro team è bloccato sul {entity} con urgenza!"
+        ]
+      }
+    },
+    "nl": {
+      "entities": [
+        "terugbetaling",
+        "factuur",
+        "wachtwoord reset",
+        "storing",
+        "upgrade",
+        "dubbele afschrijving",
+        "inlogcode",
+        "annulering",
+        "terugboeking",
+        "late vergoeding",
+        "webhook",
+        "latentie",
+        "sso",
+        "api-fout",
+        "demo-aanvraag",
+        "verlenging",
+        "offerte",
+        "planwijziging",
+        "betaling",
+        "abonnement"
+      ],
+      "instructions": {
+        "choice": "Welk team moet deze aanvraag behandelen?",
+        "noul": "Vraagt dit bericht om een {entity}?",
+        "score": "Hoe urgent is deze aanvraag?"
+      },
+      "levels": [
+        "geen",
+        "laag",
+        "gemiddeld",
+        "hoog"
+      ],
+      "noul_criteria": {
+        "false": "vraagt er niet om",
+        "true": "vraagt om een {entity}"
+      },
+      "option_descriptions": {
+        "billing": "betalingen, facturen, terugbetalingen, dubbele afschrijvingen en abonnementen",
+        "other": "alles buiten facturatie, techniek en verkoop: algemene vragen, partnerschappen, feedback, carriere en pers",
+        "sales": "prijzen, plannen, upgrades, offertes, verlengingen en nieuwe contracten",
+        "technical": "fouten, storingen, integraties en toegangsproblemen"
+      },
+      "option_terms": {
+        "billing": [
+          "terugbetaling",
+          "factuur",
+          "dubbele afschrijving",
+          "betaling",
+          "abonnement",
+          "incasso",
+          "late vergoeding",
+          "bon",
+          "belasting",
+          "facturatie"
+        ],
+        "other": [
+          "algemene vraag",
+          "partnerschap",
+          "feedback",
+          "carriere",
+          "pers",
+          "beveiligingsrapport",
+          "naleving",
+          "marketing"
+        ],
+        "sales": [
+          "upgrade",
+          "prijs",
+          "planwijziging",
+          "offerte",
+          "verlenging",
+          "demo",
+          "gratis proef",
+          "korting",
+          "nieuw contract",
+          "onboarding"
+        ],
+        "technical": [
+          "storing",
+          "wachtwoord reset",
+          "inlogcode",
+          "integratiefout",
+          "traagheid",
+          "serverfout",
+          "sso",
+          "time-out",
+          "api-fout",
+          "webhook"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Geen haast, wanneer je de {entity} kunt bekijken.",
+          "Alles goed, ik noteer de {entity}.",
+          "Wanneer je een moment hebt voor de {entity}.",
+          "Ik laat alleen een notitie over de {entity} achter."
+        ],
+        "distractor": [
+          "Ik meldde ook een {distractor}.",
+          "Er is ook een {distractor} open.",
+          "We hebben ook een {distractor} geopend.",
+          "Er is ook een {distractor} zonder verband."
+        ],
+        "neutral": [
+          "Ik check alleen de {entity}.",
+          "Nog nieuws over de {entity}?",
+          "Ik wilde even naar de {entity} vragen.",
+          "Snelle vraag over de {entity}."
+        ],
+        "request": [
+          "Ik heb vandaag een {entity} nodig.",
+          "Help me alsjeblieft met de {entity}.",
+          "Kun je de {entity} voor me bekijken?",
+          "Ik wil graag een {entity} oplossen.",
+          "Kun je me helpen met een {entity}?"
+        ],
+        "urgent": [
+          "De {entity} blokkeert ons nu!",
+          "We verliezen verkopen door de {entity}.",
+          "Deze {entity} is cruciaal, reageer alsjeblieft!",
+          "Ons team zit dringend vast op de {entity}!"
+        ]
+      }
+    },
+    "pt": {
+      "entities": [
+        "reembolso",
+        "fatura",
+        "redefinição de senha",
+        "instabilidade",
+        "upgrade",
+        "cobrança duplicada",
+        "código de acesso",
+        "cancelamento",
+        "estorno",
+        "taxa de atraso",
+        "webhook",
+        "lentidão",
+        "sso",
+        "erro de api",
+        "pedido de demonstração",
+        "renovação",
+        "orçamento",
+        "troca de plano",
+        "pagamento",
+        "assinatura"
+      ],
+      "instructions": {
+        "choice": "Qual equipe deve tratar este pedido?",
+        "noul": "Esta mensagem solicita um {entity}?",
+        "score": "Qual é a urgência deste pedido?"
+      },
+      "levels": [
+        "nenhuma",
+        "baixa",
+        "média",
+        "alta"
+      ],
+      "noul_criteria": {
+        "false": "não solicita",
+        "true": "solicita um {entity}"
+      },
+      "option_descriptions": {
+        "billing": "pagamentos, faturas, reembolsos, cobranças duplicadas e assinaturas",
+        "other": "qualquer assunto fora de cobrança, técnico e vendas: dúvidas gerais, parcerias, feedback, carreiras e imprensa",
+        "sales": "preços, planos, upgrades, orçamentos, renovações e novos contratos",
+        "technical": "erros, indisponibilidade, integrações, falhas e problemas de acesso"
+      },
+      "option_terms": {
+        "billing": [
+          "reembolso",
+          "fatura",
+          "cobrança duplicada",
+          "pagamento",
+          "assinatura",
+          "estorno",
+          "taxa de atraso",
+          "recibo",
+          "imposto",
+          "cobrança"
+        ],
+        "other": [
+          "dúvida geral",
+          "parceria",
+          "feedback",
+          "carreiras",
+          "imprensa",
+          "relatório de segurança",
+          "conformidade",
+          "marketing"
+        ],
+        "sales": [
+          "upgrade",
+          "preço",
+          "troca de plano",
+          "orçamento",
+          "renovação",
+          "demonstração",
+          "teste grátis",
+          "desconto",
+          "novo contrato",
+          "integração inicial"
+        ],
+        "technical": [
+          "instabilidade",
+          "redefinição de senha",
+          "código de acesso",
+          "erro na integração",
+          "lentidão",
+          "falha no sistema",
+          "sso",
+          "erro de servidor",
+          "tempo esgotado",
+          "erro de api"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sem pressa, quando puder ver o {entity}.",
+          "Tudo bem, só registrando o {entity}.",
+          "Quando tiver um tempo para o {entity}.",
+          "Só deixando uma nota sobre o {entity}."
+        ],
+        "distractor": [
+          "Também mencionei um {distractor}.",
+          "Há também um {distractor} em aberto.",
+          "Abrimos um {distractor} também.",
+          "Tem um {distractor} não relacionado também."
+        ],
+        "neutral": [
+          "Só verificando o {entity}.",
+          "Alguma novidade sobre o {entity}?",
+          "Queria perguntar sobre o {entity}.",
+          "Uma dúvida rápida sobre o {entity}."
+        ],
+        "request": [
+          "Preciso de um {entity} hoje.",
+          "Por favor, me ajude com o {entity}.",
+          "Você pode verificar o {entity} para mim?",
+          "Gostaria de resolver um {entity}.",
+          "Pode me ajudar com um {entity}?"
+        ],
+        "urgent": [
+          "O {entity} está nos bloqueando agora!",
+          "Perdendo vendas por causa do {entity}.",
+          "Este {entity} é crítico, por favor respondam!",
+          "Nossa equipe está travada no {entity} com urgência!"
+        ]
+      }
+    }
+  },
+  "options": [
+    "billing",
+    "technical",
+    "sales",
+    "other"
+  ],
+  "title": "Customer support triage"
+}

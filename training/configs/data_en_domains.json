@@ -1,0 +1,15 @@
+{
+  "domains": [
+    "support",
+    "ecommerce",
+    "agent_tools",
+    "documents",
+    "voice"
+  ],
+  "languages": [
+    "en"
+  ],
+  "per_type": 1000,
+  "seed": 1,
+  "source": "synthetic"
+}

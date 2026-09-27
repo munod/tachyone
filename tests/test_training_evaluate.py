@@ -156,7 +156,13 @@ def test_evaluate_noise_rate_adds_noisy_view(tmp_path: Path) -> None:
     report = evaluate(examples, _biased, noise_rate=0.3)
     assert report["noise_rate"] == 0.3
     assert "noisy" in report
-    assert set(report["noisy"]) == {"bins", "overall", "per_primitive", "per_language"}
+    assert set(report["noisy"]) == {
+        "bins",
+        "overall",
+        "per_primitive",
+        "per_language",
+        "per_domain",
+    }
     assert report["noisy"]["overall"]["n"] == report["overall"]["n"]
 
 
@@ -198,3 +204,25 @@ def test_backend_predictor_honors_process_env(monkeypatch: pytest.MonkeyPatch) -
         "TACHYONE_MODELS_DIR": ".cache/tachyone/models",
     }
     assert Config.from_env(merged).adapters == {"tachyone-multi": "checkpoints/multi_noisy"}
+
+
+def test_evaluate_reports_per_domain(tmp_path: Path) -> None:
+    """B-5 gates on the worst domain, so the report must break down by domain."""
+    path = tmp_path / "eval.jsonl"
+    generate(DataConfig(seed=13, per_type=5, languages=("en",), domains=("support", "voice")), path)
+    examples = load_examples(path)
+    report = evaluate(examples, _perfect(examples))
+    assert set(report["per_domain"]) == {"support", "voice"}
+    assert report["per_domain"]["voice"]["n"] == 15  # 5 records per primitive
+    assert report["per_domain"]["support"]["accuracy"] == 1.0
+
+
+def test_records_without_a_domain_are_attributed_to_support(tmp_path: Path) -> None:
+    """Pre-B-5 datasets carry no ``domain`` field; they are the support domain by definition."""
+    path = tmp_path / "eval.jsonl"
+    generate(DataConfig(seed=13, per_type=3, languages=("en",)), path)
+    examples = load_examples(path)
+    assert {example.domain for example in examples} == {"support"}
+    report = evaluate(examples, _perfect(examples))
+    assert set(report["per_domain"]) == {"support"}
+    assert report["per_domain"]["support"] == report["overall"]

@@ -1,0 +1,133 @@
+{
+  "domain": "voice",
+  "title": "Voice-assistant commands",
+  "description": "Route a spoken command to the device group that owns it, say how urgent the request is, and judge whether it is a command at all. The states are command-shaped so the router learns device vocabulary rather than support vocabulary.",
+  "options": [
+    "lights",
+    "climate",
+    "media",
+    "other"
+  ],
+  "languages": {
+    "en": {
+      "entities": [
+        "light scene",
+        "room lights",
+        "thermostat",
+        "volume",
+        "playlist",
+        "timer",
+        "blind position",
+        "speaker group",
+        "air purifier",
+        "camera",
+        "door lock",
+        "reminder",
+        "shopping list",
+        "radio station",
+        "night light",
+        "fan speed",
+        "humidifier",
+        "morning routine",
+        "alarm sound",
+        "display brightness"
+      ],
+      "instructions": {
+        "choice": "Which device group should handle this command?",
+        "noul": "Is this a request to change the {entity}?",
+        "score": "How urgent is this voice request?"
+      },
+      "levels": [
+        "casual",
+        "soon",
+        "now",
+        "critical"
+      ],
+      "noul_criteria": {
+        "false": "is not a request",
+        "true": "is a request to change the {entity}"
+      },
+      "option_descriptions": {
+        "climate": "thermostats, temperature, fan speed, humidifiers, and air purifiers",
+        "lights": "lamps, light scenes, brightness, strips, and porch or night lights",
+        "media": "volume, playlists, radio, songs, podcasts, and speaker groups",
+        "other": "everything else: timers, reminders, lists, routines, locks, and cameras"
+      },
+      "option_terms": {
+        "climate": [
+          "thermostat",
+          "temperature",
+          "fan speed",
+          "humidifier",
+          "air purifier",
+          "heat setting",
+          "cooling",
+          "air quality"
+        ],
+        "lights": [
+          "lights",
+          "lamp",
+          "light scene",
+          "brightness",
+          "night light",
+          "light strip",
+          "porch light",
+          "dimmer"
+        ],
+        "media": [
+          "volume",
+          "playlist",
+          "radio station",
+          "song",
+          "podcast",
+          "speaker group",
+          "queue",
+          "audio balance"
+        ],
+        "other": [
+          "timer",
+          "reminder",
+          "shopping list",
+          "morning routine",
+          "alarm sound",
+          "door lock",
+          "camera",
+          "note to self"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "No rush with the {entity}.",
+          "The {entity} can wait.",
+          "Whenever you can look at the {entity}.",
+          "No hurry on the {entity}."
+        ],
+        "distractor": [
+          "There is also a {distractor} on the list.",
+          "I asked about the {distractor} too.",
+          "Separately, the {distractor} needs a look.",
+          "Unrelated, but there is a {distractor}."
+        ],
+        "neutral": [
+          "Talking about the {entity} again.",
+          "No action needed on the {entity}.",
+          "Just a note about the {entity}.",
+          "We discussed the {entity} earlier."
+        ],
+        "request": [
+          "Please set the {entity} now.",
+          "I need the {entity} changed today.",
+          "Could you take care of the {entity}?",
+          "Go ahead and adjust the {entity}.",
+          "Can you assist with the {entity}?"
+        ],
+        "urgent": [
+          "The {entity} is not responding, fix it now!",
+          "We need the {entity} working immediately!",
+          "This {entity} is critical, everyone is waiting!",
+          "Stop everything and sort the {entity}!"
+        ]
+      }
+    }
+  }
+}

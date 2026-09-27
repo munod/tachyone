@@ -5,8 +5,26 @@ so generation never holds the dataset in memory (TRAIN-01, TRAIN-07). The output
 documented in ``docs/training.md``; it is training data, not the wire contract.
 
 Records are fully localized: the ``state``, the ``instructions``, the ``criteria`` and the
-``noul``/``score`` entities all come from committed per-language data, so the multilingual
-checkpoint learns language-specific cues instead of an English template (B-1).
+``noul``/``score`` entities all come from committed per-domain, per-language data, so the
+checkpoint learns language- and domain-specific cues instead of one English template (B-1, B-5).
+
+Domains (B-5)
+-------------
+``DataConfig.domains`` names the domains to emit and defaults to ``("support",)`` — the original
+four-team triage every published number was measured on. Each domain is a committed file under
+``training/data/domains/<domain>.json`` holding its option labels, option terms and descriptions,
+entities, phrase banks, score levels, ``noul`` criteria and per-primitive instructions.
+
+Two rules keep the guarantee in BACKLOG B-5 ("existing configs produce byte-identical output"):
+
+1. ``support`` keeps the **legacy record seed** ``f"{seed}:{kind}:{index}:{language}"`` — it
+   predates domains — while every other domain qualifies the seed with its name. Support records
+   are therefore identical whether they are generated alone or inside a five-domain run, so a
+   support measurement stays comparable across datasets.
+2. The ``domain`` field is written only when the run is not the default single-domain one, so
+   ``data.json``, ``data_multi.json`` and ``data_noisy.json`` regenerate byte-for-byte.
+
+``tests/test_training_generate.py`` pins both rules with golden hashes.
 """
 
 from __future__ import annotations
@@ -23,65 +41,98 @@ from typing import Any
 #: Default language set; states are authored here, other tags fall back to English text.
 DEFAULT_LANGUAGES: tuple[str, ...] = ("en", "pt", "es", "fr", "de", "it", "nl")
 
+#: The pre-B-5 domain: customer-support triage. Everything published until now comes from it.
+DEFAULT_DOMAIN = "support"
+DEFAULT_DOMAINS: tuple[str, ...] = (DEFAULT_DOMAIN,)
+
 _DATA_DIR = Path(__file__).parent / "data"
+_DOMAIN_DIR = _DATA_DIR / "domains"
 
-#: Per-language phrasing loaded from committed data. ``{entity}``/``{distractor}`` substituted.
-_PHRASES: dict[str, dict[str, list[str]]] = json.loads(
-    (_DATA_DIR / "phrases.json").read_text(encoding="utf-8")
-)
 
-#: Per-language lexicon (entities, team cues, instructions, levels) from committed data.
-_LEXICON: dict[str, dict[str, Any]] = json.loads(
-    (_DATA_DIR / "lexicon.json").read_text(encoding="utf-8")
-)
+def _load_domains() -> dict[str, dict[str, Any]]:
+    """Read every committed domain file, keyed by its ``domain`` field (file stem as fallback)."""
+    domains: dict[str, dict[str, Any]] = {}
+    for path in sorted(_DOMAIN_DIR.glob("*.json")):
+        spec = json.loads(path.read_text(encoding="utf-8"))
+        domains[str(spec.get("domain", path.stem))] = spec
+    if DEFAULT_DOMAIN not in domains:
+        raise RuntimeError(f"default domain data missing: {_DOMAIN_DIR / f'{DEFAULT_DOMAIN}.json'}")
+    return domains
 
-_TEAMS: tuple[str, ...] = ("billing", "technical", "sales", "other")
+
+#: Committed per-domain content (``training/data/domains/*.json``).
+DOMAINS: dict[str, dict[str, Any]] = _load_domains()
 
 _LEVEL_BY_TONE: dict[str, int] = {"calm": 0, "neutral": 1, "request": 2, "urgent": 3}
 
-#: One in this many ``choice`` records appends a hard-negative distractor from another team.
-#: Kept low: appended distractors make the label ambiguous (the target is the *first* team), so a
-#: high rate corrupts the term→team signal the head needs.
+#: One in this many ``choice`` records appends a hard-negative distractor from another option.
+#: Kept low: appended distractors make the label ambiguous (the target is the *first* option), so
+#: a high rate corrupts the term→option signal the head needs.
 _HARD_NEGATIVE_RATE = 6
 
-#: Rich option descriptions (esp. ``other``) so the option embedding c_k is informative; loaded
-#: from committed data. ``other`` must be a genuinely learnable class, not a bare label.
-_TEAM_DESCRIPTIONS: dict[str, dict[str, str]] = json.loads(
-    (_DATA_DIR / "team_descriptions.json").read_text(encoding="utf-8")
-)
+
+@dataclass(frozen=True, slots=True)
+class DomainData:
+    """Committed content for one domain, with the same fallbacks the pre-B-5 loader had.
+
+    A missing language falls back to the domain's English table (whole table for entities,
+    phrases, levels and instructions; per key for criteria, option terms and descriptions).
+    """
+
+    name: str
+    spec: dict[str, Any]
+
+    @classmethod
+    def load(cls, name: str) -> DomainData:
+        if name not in DOMAINS:
+            known = ", ".join(sorted(DOMAINS))
+            raise SystemExit(f"unknown domain {name!r}; committed domains: {known}")
+        return cls(name=name, spec=DOMAINS[name])
+
+    @property
+    def options(self) -> tuple[str, ...]:
+        return tuple(self.spec["options"])
+
+    @property
+    def _languages(self) -> dict[str, Any]:
+        return self.spec["languages"]
+
+    def _lang(self, lang: str) -> dict[str, Any]:
+        return self._languages.get(lang, self._languages["en"])
+
+    def entities(self, lang: str) -> list[str]:
+        return list(self._lang(lang)["entities"])
+
+    def instructions(self, lang: str, kind: str) -> str:
+        table = self._lang(lang)["instructions"]
+        return table.get(kind, self._languages["en"]["instructions"][kind])
+
+    def noul_criteria(self, lang: str) -> dict[str, str]:
+        table = self._lang(lang)["noul_criteria"]
+        fallback = self._languages["en"]["noul_criteria"]
+        return {key: table.get(key, fallback[key]) for key in ("true", "false")}
+
+    def levels(self, lang: str) -> list[str]:
+        return list(self._lang(lang)["levels"])
+
+    def phrases(self, lang: str) -> dict[str, list[str]]:
+        return self._lang(lang)["phrases"]
+
+    def option_terms(self, lang: str, option: str) -> tuple[str, ...]:
+        table = self._lang(lang)["option_terms"]
+        return tuple(table.get(option, self._languages["en"]["option_terms"][option]))
+
+    def option_description(self, lang: str, option: str) -> str:
+        table = self._lang(lang)["option_descriptions"]
+        return table.get(option, self._languages["en"]["option_descriptions"][option])
+
+    def criteria(self, lang: str) -> dict[str, str]:
+        """Option labels → written descriptions (the ``choice`` criteria of this domain)."""
+        return {option: self.option_description(lang, option) for option in self.options}
 
 
-def _lexicon(lang: str) -> dict[str, Any]:
-    return _LEXICON.get(lang, _LEXICON["en"])
-
-
-def _entities(lang: str) -> list[str]:
-    return list(_lexicon(lang)["entities"])
-
-
-def _instructions(lang: str, kind: str) -> str:
-    table = _lexicon(lang)["instructions"]
-    return table.get(kind, _LEXICON["en"]["instructions"][kind])
-
-
-def _noul_criteria(lang: str) -> dict[str, str]:
-    table = _lexicon(lang)["noul_criteria"]
-    fallback = _LEXICON["en"]["noul_criteria"]
-    return {key: table.get(key, fallback[key]) for key in ("true", "false")}
-
-
-def _levels(lang: str) -> list[str]:
-    return list(_lexicon(lang)["levels"])
-
-
-def _team_description(lang: str, team: str) -> str:
-    table = _TEAM_DESCRIPTIONS.get(lang, _TEAM_DESCRIPTIONS["en"])
-    return table.get(team, _TEAM_DESCRIPTIONS["en"][team])
-
-
-def _team_terms(lang: str, team: str) -> tuple[str, ...]:
-    table = _lexicon(lang)["team_terms"]
-    return tuple(table.get(team, _LEXICON["en"]["team_terms"][team]))
+def _domain(name: str) -> DomainData:
+    return DomainData.load(name)
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,6 +142,8 @@ class DataConfig:
     seed: int = 42
     per_type: int = 200
     languages: tuple[str, ...] = DEFAULT_LANGUAGES
+    #: Domains to emit; the default keeps the pre-B-5 output byte-identical.
+    domains: tuple[str, ...] = DEFAULT_DOMAINS
     source: str = "synthetic"
     #: Fraction of records whose ``state`` gets one surface-noise edit (typos/accents/casing).
     #: ``0.0`` (default) reproduces the clean dataset byte-for-byte (B-4).
@@ -130,10 +183,6 @@ def _perturb_state(text: str, rng: random.Random) -> str:
     return text
 
 
-def _phrases(lang: str) -> dict[str, list[str]]:
-    return _PHRASES.get(lang, _PHRASES["en"])
-
-
 def _boundary_state(index: int, base: str) -> str:
     if index % 19 == 0:
         return ""  # empty input
@@ -142,16 +191,18 @@ def _boundary_state(index: int, base: str) -> str:
     return base
 
 
-def _noul_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
-    entity = rng.choice(_entities(lang))
+def _noul_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
+    entity = rng.choice(domain.entities(lang))
     positive = (index % 2 == 0) if index else True
     tone = rng.choice(("request", "neutral"))
-    state = _boundary_state(index, rng.choice(_phrases(lang)[tone]).format(entity=entity))
+    state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
     if positive and tone == "neutral":
         positive = False
     target = 1 if positive else 0
-    instructions = _instructions(lang, "noul").format(entity=entity)
-    criteria = {key: value.format(entity=entity) for key, value in _noul_criteria(lang).items()}
+    instructions = domain.instructions(lang, "noul").format(entity=entity)
+    criteria = {
+        key: value.format(entity=entity) for key, value in domain.noul_criteria(lang).items()
+    }
     return {
         "id": f"noul-{index:06d}",
         "type": "noul",
@@ -163,34 +214,35 @@ def _noul_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
     }
 
 
-def _choice_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
-    # Cycle teams deterministically (so every team, including "other", is well represented)
-    # and regularly pick a distractor clause from a different team as a hard negative.
-    team = _TEAMS[index % len(_TEAMS)]
-    term = rng.choice(_team_terms(lang, team))
-    request_phrase = rng.choice(_phrases(lang)["request"])
+def _choice_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
+    # Cycle options deterministically (so every option, including the catch-all, is well
+    # represented) and regularly pick a distractor term from a different option as a hard negative.
+    options = domain.options
+    option = options[index % len(options)]
+    term = rng.choice(domain.option_terms(lang, option))
+    request_phrase = rng.choice(domain.phrases(lang)["request"])
     state = request_phrase.format(entity=term)
     if index % _HARD_NEGATIVE_RATE == 0:
-        other_team = rng.choice([candidate for candidate in _TEAMS if candidate != team])
-        distractor = rng.choice(_team_terms(lang, other_team))
-        distractor_phrase = rng.choice(_phrases(lang)["distractor"])
+        other = rng.choice([candidate for candidate in options if candidate != option])
+        distractor = rng.choice(domain.option_terms(lang, other))
+        distractor_phrase = rng.choice(domain.phrases(lang)["distractor"])
         state = f"{state} {distractor_phrase.format(distractor=distractor)}"
     state = _boundary_state(index, state)
     return {
         "id": f"choice-{index:06d}",
         "type": "choice",
         "state": state,
-        "instructions": _instructions(lang, "choice"),
-        "criteria": {option: _team_description(lang, option) for option in _TEAMS},
-        "target": team,
+        "instructions": domain.instructions(lang, "choice"),
+        "criteria": domain.criteria(lang),
+        "target": option,
         "lang": lang,
     }
 
 
-def _score_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
-    entity = rng.choice(_entities(lang))
+def _score_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
+    entity = rng.choice(domain.entities(lang))
     tone = rng.choice(("calm", "neutral", "request", "urgent"))
-    state = _boundary_state(index, rng.choice(_phrases(lang)[tone]).format(entity=entity))
+    state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
     target = _LEVEL_BY_TONE[tone]
     if index % 13 == 0:  # ambiguous near-tie label
         target = max(0, target - 1)
@@ -198,8 +250,8 @@ def _score_record(index: int, lang: str, rng: random.Random) -> dict[str, Any]:
         "id": f"score-{index:06d}",
         "type": "score",
         "state": state,
-        "instructions": _instructions(lang, "score"),
-        "criteria": _levels(lang),
+        "instructions": domain.instructions(lang, "score"),
+        "criteria": domain.levels(lang),
         "target": target,
         "lang": lang,
     }
@@ -212,29 +264,46 @@ _GENERATORS = {
 }
 
 
-def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
-    """Yield deterministic records: ``per_type`` of each primitive, languages interleaved.
+def _seed_base(seed: int, domain: str) -> str:
+    """Record-seed prefix for a domain.
 
-    Each record draws from its own RNG seeded by ``(seed, kind, index, language)``. A single
-    shared RNG makes feature choices correlate with the cyclic label (team/tone) across records,
-    which the model then exploits as a shortcut that does not generalize; per-record seeding
-    keeps choices independent while staying byte-for-byte deterministic.
+    ``support`` predates domains and keeps the legacy prefix, so its records are byte-identical
+    to a single-domain run and identical inside a multi-domain run; every other domain is
+    qualified with its name so two domains never share draws (L-003's lesson, per domain).
+    """
+    return str(seed) if domain == DEFAULT_DOMAIN else f"{seed}:{domain}"
+
+
+def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
+    """Yield deterministic records: ``per_type`` of each primitive per domain, languages cycled.
+
+    Each record draws from its own RNG seeded by ``(seed[, domain], kind, index, language)``. A
+    single shared RNG makes feature choices correlate with the cyclic label (option/tone) across
+    records, which the model then exploits as a shortcut that does not generalize; per-record
+    seeding keeps choices independent while staying byte-for-byte deterministic.
     """
     languages = config.languages or DEFAULT_LANGUAGES
-    for kind in ("noul", "choice", "score"):
-        generator = _GENERATORS[kind]
-        for index in range(config.per_type):
-            language = languages[index % len(languages)]
-            rng = random.Random(f"{config.seed}:{kind}:{index}:{language}")
-            record = generator(index, language, rng)
-            record["source"] = config.source
-            if config.noise_rate > 0.0:
-                # A dedicated RNG keeps the apply-or-not draw and the edit independent of the
-                # content draws (L-003), while remaining byte-for-byte deterministic.
-                noise_rng = random.Random(f"{config.seed}:{kind}:{index}:{language}:noise")
-                if noise_rng.random() < config.noise_rate:
-                    record["state"] = _perturb_state(record["state"], noise_rng)
-            yield record
+    domains = config.domains or DEFAULT_DOMAINS
+    writes_domain = tuple(domains) != DEFAULT_DOMAINS
+    for domain_name in domains:
+        domain = DomainData.load(domain_name)
+        base = _seed_base(config.seed, domain_name)
+        for kind in ("noul", "choice", "score"):
+            generator = _GENERATORS[kind]
+            for index in range(config.per_type):
+                language = languages[index % len(languages)]
+                rng = random.Random(f"{base}:{kind}:{index}:{language}")
+                record = generator(domain, index, language, rng)
+                record["source"] = config.source
+                if writes_domain:
+                    record["domain"] = domain_name
+                if config.noise_rate > 0.0:
+                    # A dedicated RNG keeps the apply-or-not draw and the edit independent of the
+                    # content draws (L-003), while remaining byte-for-byte deterministic.
+                    noise_rng = random.Random(f"{base}:{kind}:{index}:{language}:noise")
+                    if noise_rng.random() < config.noise_rate:
+                        record["state"] = _perturb_state(record["state"], noise_rng)
+                yield record
 
 
 def _line(record: dict[str, Any]) -> str:
@@ -261,6 +330,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--languages", default=",".join(DEFAULT_LANGUAGES), help="comma-separated language tags"
     )
+    parser.add_argument(
+        "--domains",
+        default=",".join(DEFAULT_DOMAINS),
+        help="comma-separated domains from training/data/domains/ (default: support only)",
+    )
     parser.add_argument("--source", default="synthetic")
     parser.add_argument(
         "--noise-rate",
@@ -280,6 +354,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         seed=args.seed,
         per_type=args.per_type,
         languages=tuple(item for item in args.languages.split(",") if item),
+        domains=tuple(item for item in args.domains.split(",") if item),
         source=args.source,
         noise_rate=args.noise_rate,
     )

@@ -7,7 +7,7 @@
     "it",
     "nl"
   ],
-  "per_type": 6000,
-  "seed": 1,
+  "per_type": 500,
+  "seed": 2,
   "source": "synthetic"
 }

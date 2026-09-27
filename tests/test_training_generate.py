@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -10,9 +11,18 @@ import pytest
 from pydantic import TypeAdapter
 
 from tachyone.primitives import Question
-from training.generate_data import DataConfig, generate, iter_records, main
+from training.generate_data import (
+    DEFAULT_DOMAIN,
+    DOMAINS,
+    DataConfig,
+    _line,
+    generate,
+    iter_records,
+    main,
+)
 
 _QUESTION = TypeAdapter(Question)
+_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _records(count: int = 12) -> list[dict[str, Any]]:
@@ -227,3 +237,136 @@ def test_noise_cli_runs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
     code = main(["--seed", "9", "--per-type", "3", "--noise-rate", "0.5", "--out", str(out)])
     assert code == 0
     assert "wrote 9 records" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------ B-5: domains
+#: sha256[:16] of ``iter_records`` for these configs, captured **before** the B-5 refactor that
+#: moved every byte of content into ``training/data/domains/``. This is the hard guarantee from
+#: BACKLOG B-5: existing configs must keep producing byte-identical output (L-003/B-4 already cost
+#: days to a determinism assumption that did not hold).
+_GOLDEN_SINGLE_DOMAIN = {
+    "en": ("dd788005b3fc5aef", DataConfig(seed=42, per_type=50, languages=("en",))),
+    "en_pt": ("ce219d4637a1e146", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
+    "noisy": (
+        "8e2d8ab5c428ecb6",
+        DataConfig(seed=7, per_type=30, languages=("en", "pt", "de"), noise_rate=0.15),
+    ),
+}
+
+#: Committed data configs and the dataset each one is supposed to reproduce (hash-checked in
+#: CI-agnostic form: skipped when ``data/`` is absent, since it is gitignored).
+_SHIPPED = [
+    ("data_en.json", "data/train_en.jsonl"),
+    ("data_eval_en.json", "data/eval_en.jsonl"),
+    ("data_multi.json", "data/train_multi.jsonl"),
+    ("data_noisy.json", "data/train_multi_noisy.jsonl"),
+    ("data_eval_multi.json", "data/eval_multi.jsonl"),
+]
+
+_FIVE = ("support", "ecommerce", "agent_tools", "documents", "voice")
+
+
+def _digest(config: DataConfig) -> str:
+    digest = hashlib.sha256()
+    for record in iter_records(config):
+        digest.update(_line(record).encode())
+    return digest.hexdigest()[:16]
+
+
+@pytest.mark.parametrize("case", sorted(_GOLDEN_SINGLE_DOMAIN))
+def test_single_domain_output_is_byte_identical(case: str) -> None:
+    """The B-5 guarantee: moving content into ``domains/`` changed no existing byte."""
+    expected, config = _GOLDEN_SINGLE_DOMAIN[case]
+    assert _digest(config) == expected
+
+
+@pytest.mark.parametrize(("config_name", "dataset"), _SHIPPED)
+def test_committed_config_reproduces_its_shipped_dataset(config_name: str, dataset: str) -> None:
+    """``training/configs/*.json`` documents the data it generated, seed and all (TRAIN-06)."""
+    from training.config import load_data_config
+
+    config_path = _ROOT / "training" / "configs" / config_name
+    data_path = _ROOT / dataset
+    if not data_path.exists():
+        pytest.skip(f"{dataset} is gitignored and not present")
+    config = load_data_config(config_path)
+    shipped = hashlib.sha256(data_path.read_bytes()).hexdigest()[:16]
+    assert _digest(config) == shipped, f"{config_name} does not reproduce {dataset}"
+
+
+def test_multi_domain_run_labels_every_record_and_keeps_counts() -> None:
+    per_type = 4
+    records = list(
+        iter_records(DataConfig(seed=1, per_type=per_type, languages=("en",), domains=_FIVE))
+    )
+    assert len(records) == len(_FIVE) * 3 * per_type
+    assert {record["domain"] for record in records} == set(_FIVE)
+    for domain in _FIVE:
+        for kind in ("noul", "choice", "score"):
+            count = sum(1 for r in records if r["domain"] == domain and r["type"] == kind)
+            assert count == per_type
+
+
+def test_support_records_are_identical_inside_and_outside_a_multi_domain_run() -> None:
+    """``support`` keeps the legacy seed, so a support measurement stays comparable (B-5)."""
+    solo = list(iter_records(DataConfig(seed=1, per_type=6, languages=("en",))))
+    multi = [
+        {k: v for k, v in record.items() if k != "domain"}
+        for record in iter_records(DataConfig(seed=1, per_type=6, languages=("en",), domains=_FIVE))
+        if record["domain"] == DEFAULT_DOMAIN
+    ]
+    assert multi == solo
+
+
+def test_single_domain_run_writes_no_domain_field() -> None:
+    """The default config must stay byte-identical: no new keys (BACKLOG B-5)."""
+    records = list(iter_records(DataConfig(seed=4, per_type=3, languages=("en",))))
+    assert all("domain" not in record for record in records)
+    # ... while a non-default single domain is labelled, so evaluation can attribute it.
+    records = list(
+        iter_records(DataConfig(seed=4, per_type=3, languages=("en",), domains=("voice",)))
+    )
+    assert all(record["domain"] == "voice" for record in records)
+
+
+def test_unknown_domain_is_rejected_with_the_committed_list() -> None:
+    with pytest.raises(SystemExit, match="committed domains"):
+        list(iter_records(DataConfig(domains=("telepathy",), per_type=1, languages=("en",))))
+
+
+def test_every_committed_domain_file_is_complete() -> None:
+    """A domain needs options, terms, descriptions, entities, phrases, levels and instructions."""
+    assert set(DOMAINS) == set(_FIVE)
+    for name, spec in DOMAINS.items():
+        options = spec["options"]
+        assert len(options) >= 2
+        assert len(set(options)) == len(options)
+        english = spec["languages"]["en"]
+        assert len(english["entities"]) >= 8
+        assert len(english["levels"]) == 4
+        assert set(english["instructions"]) == {"noul", "choice", "score"}
+        assert set(english["noul_criteria"]) == {"true", "false"}
+        assert set(english["phrases"]) == {"request", "neutral", "urgent", "calm", "distractor"}
+        assert set(english["option_terms"]) == set(options)
+        assert set(english["option_descriptions"]) == set(options)
+        for option in options:
+            assert len(english["option_terms"][option]) >= 4, (name, option)
+            assert len(english["option_descriptions"][option]) >= 20, (name, option)
+        for tone in ("request", "neutral", "urgent", "calm"):
+            assert len(english["phrases"][tone]) >= 3, (name, tone)
+        assert all("{entity}" in p for p in english["phrases"]["request"]), name
+        assert all("{distractor}" in p for p in english["phrases"]["distractor"]), name
+        assert "{entity}" in english["instructions"]["noul"], name
+
+
+def test_multi_domain_records_validate_as_primitives() -> None:
+    for record in iter_records(DataConfig(seed=6, per_type=5, languages=("en",), domains=_FIVE)):
+        _QUESTION.validate_python(
+            {
+                "type": record["type"],
+                "instructions": record["instructions"],
+                "criteria": record["criteria"],
+            }
+        )
+        if record["type"] == "choice":
+            assert record["target"] in record["criteria"]

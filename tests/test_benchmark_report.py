@@ -112,3 +112,21 @@ def test_cli_main(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--entry", f"encoder={path}", "--out", str(out)]) == 0
     assert out.exists()
     assert "wrote" in capsys.readouterr().out
+
+
+def _multi_domain_report(tmp_path: Path) -> dict[str, object]:
+    path = tmp_path / "eval_domains.jsonl"
+    generate(DataConfig(seed=5, per_type=4, languages=("en",), domains=("support", "voice")), path)
+    return evaluate(load_examples(path), _predictor)
+
+
+def test_render_report_adds_domain_rows_only_for_multi_domain_reports(tmp_path: Path) -> None:
+    """Single-domain reports must not grow a row that just repeats `overall` (B-5)."""
+    single = render_report([ReportEntry(name="encoder", report=_evaluation_report(tmp_path))])
+    assert "| domain:support |" not in single
+    assert "Worst domain" not in single
+
+    multi = render_report([ReportEntry(name="encoder", report=_multi_domain_report(tmp_path))])
+    assert "| domain:support |" in multi
+    assert "| domain:voice |" in multi
+    assert "Worst domain (accuracy)" in multi

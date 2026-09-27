@@ -1,4 +1,4 @@
-"""Evaluation harness: accuracy, ECE, and latency per primitive and language.
+"""Evaluation harness: accuracy, ECE, and latency per primitive, language and domain.
 
 A ``predictor`` is any callable ``(state, question) -> Answer``; the harness converts JSONL
 records to primitives, times each prediction, and aggregates metrics (TRAIN-05). Public
@@ -28,7 +28,7 @@ from tachyone.primitives import (
     ScoreQuestion,
     State,
 )
-from training.generate_data import _perturb_state
+from training.generate_data import DEFAULT_DOMAIN, _perturb_state
 
 #: A predictor answers a single (state, question) pair.
 type Predictor = Callable[[State, Question], Answer]
@@ -36,7 +36,7 @@ type Predictor = Callable[[State, Question], Answer]
 
 @dataclass(frozen=True, slots=True)
 class EvalExample:
-    """One labeled record: primitive, state, question, target, language."""
+    """One labeled record: primitive, state, question, target, language, domain."""
 
     id: str
     type: str
@@ -44,6 +44,8 @@ class EvalExample:
     question: Question
     target: int | str
     lang: str
+    #: Domain the record came from; pre-B-5 records carry no ``domain`` field and are support.
+    domain: str = DEFAULT_DOMAIN
 
 
 def record_to_example(record: dict[str, Any]) -> EvalExample:
@@ -72,6 +74,7 @@ def record_to_example(record: dict[str, Any]) -> EvalExample:
         question=question,
         target=record["target"],
         lang=record["lang"],
+        domain=str(record.get("domain", DEFAULT_DOMAIN)),
     )
 
 
@@ -135,6 +138,7 @@ def _metrics(rows: list[tuple[bool, float, float]], bins: int) -> dict[str, Any]
 def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> dict[str, Any]:
     per_primitive: dict[str, list[tuple[bool, float, float]]] = {}
     per_language: dict[str, list[tuple[bool, float, float]]] = {}
+    per_domain: dict[str, list[tuple[bool, float, float]]] = {}
     overall: list[tuple[bool, float, float]] = []
     for example in examples:
         start = time.perf_counter()
@@ -144,12 +148,16 @@ def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> di
         row = (correct, conf, elapsed_ms)
         per_primitive.setdefault(example.type, []).append(row)
         per_language.setdefault(example.lang, []).append(row)
+        per_domain.setdefault(example.domain, []).append(row)
         overall.append(row)
     return {
         "bins": bins,
         "overall": _metrics(overall, bins),
         "per_primitive": {kind: _metrics(rows, bins) for kind, rows in per_primitive.items()},
         "per_language": {lang: _metrics(rows, bins) for lang, rows in per_language.items()},
+        # Single-domain datasets (the pre-B-5 ones) collapse to one entry, so the key is always
+        # present and the worst-domain gate in BACKLOG B-5 has something to read (B-5).
+        "per_domain": {domain: _metrics(rows, bins) for domain, rows in per_domain.items()},
     }
 
 
@@ -182,7 +190,7 @@ def evaluate(
     noise_rate: float = 0.0,
     noise_seed: int = 42,
 ) -> dict[str, Any]:
-    """Run ``predictor`` over ``examples`` and aggregate per-primitive/language metrics.
+    """Run ``predictor`` over ``examples`` and aggregate per-primitive/language/domain metrics.
 
     When ``noise_rate > 0`` a second, noisy view of the same examples is evaluated and returned
     under the ``"noisy"`` key, so clean accuracy and robustness are never conflated (B-4).

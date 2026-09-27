@@ -98,12 +98,111 @@ def email_questions() -> dict[str, Question]:
     }
 
 
+def orders_questions() -> dict[str, Question]:
+    """Route an order-related message and judge how urgent it is (domain `ecommerce`).
+
+    The criteria mirror ``training/data/domains/ecommerce.json`` so the released adapter scores
+    the same text it was trained on; keep the two in sync when a domain's content changes.
+    """
+    return {
+        "queue": ChoiceQuestion(
+            instructions="Which queue should handle this order?",
+            criteria={
+                "shipping": "tracking, delivery dates, couriers, address changes, and lost parcels",
+                "returns": "returns, exchanges, replacements, return labels, and damaged items",
+                "payments": "charges, cards, receipts, invoices, wallet credit, and tax on orders",
+                "catalog": (
+                    "product pages, sizes, stock, sellers, reviews, discount codes, and wishlists"
+                ),
+            },
+        ),
+        "urgency": ScoreQuestion(
+            instructions="How urgent is this order issue?",
+            criteria=["routine", "soon", "today", "immediately"],
+        ),
+        "refund_due": NoulQuestion(instructions="Does this message request a refund?"),
+    }
+
+
+def tools_questions() -> dict[str, Question]:
+    """Pick the next tool for an agent (domain `agent_tools`)."""
+    return {
+        "tool": ChoiceQuestion(
+            instructions="Which tool should the agent use next?",
+            criteria={
+                "search": (
+                    "web searches, documentation lookups, research steps, and reference answers"
+                ),
+                "code": "running scripts, tests, builds, refactors, and debugging steps",
+                "files": "reading or writing files, uploads, downloads, exports, and archives",
+                "other": (
+                    "everything else: summaries, translations, scheduling, drafts, and asking "
+                    "the user"
+                ),
+            },
+        ),
+        "urgency": ScoreQuestion(
+            instructions="How urgent is this step?",
+            criteria=["routine", "soon", "today", "blocking"],
+        ),
+        "needs_tool": NoulQuestion(instructions="Does this step require a tool?"),
+    }
+
+
+def docs_questions() -> dict[str, Question]:
+    """Classify an incoming document and say how urgent its handling is (domain `documents`)."""
+    return {
+        "doc_type": ChoiceQuestion(
+            instructions="How should this document be classified?",
+            criteria={
+                "invoice": "invoices, receipts, purchase orders, expense claims, and payment terms",
+                "contract": (
+                    "contracts, agreements, clauses, signatures, addenda, and renewal terms"
+                ),
+                "report": "reports, spreadsheets, decks, audits, forecasts, and analysis documents",
+                "other": (
+                    "everything else: resumes, policies, memos, press releases, and office notes"
+                ),
+            },
+        ),
+        "urgency": ScoreQuestion(
+            instructions="How urgent is this document request?",
+            criteria=["routine", "this week", "today", "immediately"],
+        ),
+        "needs_review": NoulQuestion(instructions="Does this document need a human review?"),
+    }
+
+
+def voice_questions() -> dict[str, Question]:
+    """Route a spoken command and say whether it is a command at all (domain `voice`)."""
+    return {
+        "device": ChoiceQuestion(
+            instructions="Which device group should handle this command?",
+            criteria={
+                "lights": "lamps, light scenes, brightness, strips, and porch or night lights",
+                "climate": "thermostats, temperature, fan speed, humidifiers, and air purifiers",
+                "media": "volume, playlists, radio, songs, podcasts, and speaker groups",
+                "other": "everything else: timers, reminders, lists, routines, locks, and cameras",
+            },
+        ),
+        "urgency": ScoreQuestion(
+            instructions="How urgent is this voice request?",
+            criteria=["casual", "soon", "now", "critical"],
+        ),
+        "is_command": NoulQuestion(instructions="Is this a request to change the device state?"),
+    }
+
+
 PRESETS: dict[str, Callable[[], dict[str, Question]]] = {
     "router": router_questions,
     "guard": guard_questions,
     "moderation": moderation_questions,
     "triage": triage_questions,
     "email": email_questions,
+    "orders": orders_questions,
+    "tools": tools_questions,
+    "docs": docs_questions,
+    "voice": voice_questions,
 }
 
 
@@ -118,10 +217,14 @@ def get_preset(name: str) -> dict[str, Question]:
 
 __all__ = [
     "PRESETS",
+    "docs_questions",
     "email_questions",
     "get_preset",
     "guard_questions",
     "moderation_questions",
+    "orders_questions",
     "router_questions",
+    "tools_questions",
     "triage_questions",
+    "voice_questions",
 ]

@@ -38,8 +38,9 @@ def load_data_config(path: str | Path) -> DataConfig:
     """Load a :class:`~training.generate_data.DataConfig` from JSON with strict keys."""
     data = _load_json(path)
     _reject_unknown(data, {field.name for field in fields(DataConfig)}, "data")
-    if "languages" in data:
-        data["languages"] = tuple(data["languages"])
+    for key in ("languages", "domains"):
+        if key in data:
+            data[key] = tuple(data[key])
     return DataConfig(**data)
 
 
