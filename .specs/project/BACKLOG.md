@@ -251,18 +251,18 @@ careful negative sampling. Treat as an experiment with a strict ablation gate. E
 
 ---
 
-## B-7 — Public-probe evaluation (MASSIVE / XNLI / typed-decisions) · Partially delivered (2026-09-26)
+## B-7 — Public-probe evaluation (MASSIVE / XNLI / typed-decisions) · Done (2026-09-27)
 
 **Why.** Every published number today comes from the deterministic **synthetic** held-out split
 (`benchmarks/report.md` says so explicitly), so OPS-06 and the M6 exit criterion "benchmark report
 comparable to MASSIVE / XNLI / typed-decisions" are only partially met. Public probes give an
 externally comparable number.
 
-**Status (2026-09-26 — external probe delivered, named probes still open).** `benchmarks/compare.py`
-runs an **evaluation-only** head-to-head on the public `pngwn/system-one-decisions` test split
-(9 task families: ag_news, banking77, go_emotions, mmlu, yelp_score, 4× tickets), with no training
-data change and no leak. Results, method and caveats are published in `docs/compare.md` §3.
-Findings worth carrying forward:
+**Status (2026-09-26 — external probe delivered).** `benchmarks/compare.py` runs an
+**evaluation-only** head-to-head on the public `pngwn/system-one-decisions` test split (9 task
+families: ag_news, banking77, go_emotions, mmlu, yelp_score, 4× tickets), with no training data
+change and no leak. Results, method and caveats are published in `docs/compare.md` §3. Findings
+worth carrying forward:
 
 - Tachyone (released English adapter) scores **0.229** there against **0.854** on its own records —
   domain coverage, not an architecture verdict; recorded in `docs/benchmarks.md` §Known
@@ -271,9 +271,32 @@ Findings worth carrying forward:
   ECE 0.046 vs 0.044, 537/576 rows, 8 of 9 per-task values identical), which is what makes the
   comparison usable as external evidence.
 
+**Status (done, 2026-09-27 — all three named probes published).** `benchmarks/probes.py` loads
+typed-decisions, MASSIVE and XNLI onto the harness row shape; `benchmarks.compare run --format
+probe --probe <name>` evaluates them with the same engines, metrics and temperature fit as
+everything else; `python -m benchmarks.probes render` composes the committed report
+**`benchmarks/probes.md`** (tables, licences, citations, chance levels, reproduction commands).
+Phase 1 ran with the released adapters through the language router (`--backend encoder`):
+
+| Probe | n | Accuracy | Chance | ECE raw | Notes |
+| --- | ---: | ---: | ---: | ---: | --- |
+| typed-decisions (`all/test`, 4 configs) | 2000 | **0.323** | 0.20–0.50 | 0.408 | best config 0.402 (`customer_service`, `security_incidents`), worst 0.218 (`invoice_processing`) |
+| MASSIVE (7 locales) | 3584 | **0.033** | 0.017 | 0.214 | per language 0.016 (`de`) … 0.047 (`en`) — at chance everywhere |
+| XNLI (`en`) | 5010 | **0.334** | 0.333 | 0.452 | exactly chance |
+
+- **XNLI licence verified as required**: **CC BY-NC 4.0**, read from
+  `facebookresearch/XNLI`'s `LICENSE` — *not* CC BY-SA as this entry guessed, and the HF card has
+  no tag at all. Publishing derived metrics (our scores) is fine; the corpus is never committed.
+- **Per-language accuracy/ECE for `B-1`** comes out of the MASSIVE run (`task` = language): all
+  seven languages are at chance on 60 intents, so these are public numbers for the *task*, not a
+  per-language quality verdict — the synthetic per-language table in `docs/benchmarks.md` remains
+  the in-domain one.
+- All three temperature fits landed on the grid ceiling (**T=20.0**), so `ECE cal` is bought by
+  flattening: `probes.md` publishes `Conf` and `Brier` next to it and says so (lesson L-007).
+
 **Remaining plan.**
 
-1. **New loader module `benchmarks/probes.py`** (keep `compare.py` focused on metrics): one
+1. [x] **New loader module `benchmarks/probes.py`** (keep `compare.py` focused on metrics): one
    function per dataset converting it to the harness's standard row shape
    (`state / task / question / options / answer_index`), so every engine, metric, temperature fit
    and the renderer are reused untouched. `compare.py` gains `--format probe --probe <name>
@@ -283,7 +306,7 @@ Findings worth carrying forward:
    | --- | --- | --- | --- | --- |
    | typed-decisions | `LocalLLaMA/typed-decisions` | **Apache-2.0** | 4 configs (`agent_trace_observability`, `customer_service`, `invoice_processing`, `security_incidents`) + `all`, n<1K each, **3.15 MB** total | already `noul`/`choice`/`score`; flatten multi-question rows to **one row per question** (deliberately conservative — it ignores the `choice` head's batching; say so) |
    | MASSIVE | `AmazonScience/massive` | **CC-BY-4.0** | 60 intents, 51 languages, `en` config tens of MB | `choice` over the 60 intent labels (max is 255 ✓), fixed `instructions` |
-   | XNLI | `facebook/xnli` | ⚠️ **verify `LICENSE` before publishing** (paper says CC BY-SA 4.0; the HF card has no license tag) | `en`: 5,010 test / 2,490 val, ~50 MB | `choice` over {entailment, neutral, contradiction}, `state` = premise + hypothesis; document the alternative `noul` formulation as a design decision |
+   | XNLI | `facebook/xnli` | **CC BY-NC 4.0** — verified 2026-09-27 in `facebookresearch/XNLI`'s `LICENSE` (the HF card has no tag and its Licensing Information section is a placeholder) | `en`: 5,010 test / 2,490 val, ~50 MB | `choice` over {entailment, neutral, contradiction}, `state` = premise + hypothesis; documented as a design decision against the alternative `noul` formulation |
 
    Bigger volume option after the three named probes: `tasksource/procedural-typed-decisions`
    (Apache-2.0, 100K–1M rows, answers **computed by rule** from the state rather than labeled by a
@@ -291,8 +314,9 @@ Findings worth carrying forward:
    LocalLLaMA one is the default because it is independent, Apache-2.0 and already in the wire's
    shape.
 
-2. **What to run.** Phase 1 (required by `OPS-06`): `tachyone` with both released adapters
-   (`munod/tachyone-en`, `munod/tachyone-multi`) on all three probes. Phase 2 (optional): the peer
+2. [x] **What to run.** Phase 1 (required by `OPS-06`) **done**: `tachyone` with both released
+   adapters (`munod/tachyone-en`, `munod/tachyone-multi`) on all three probes, routed per row by
+   language. Phase 2 (optional, not run): the peer
    scorer and the LLMs on **typed-decisions only** — MASSIVE's 60-option prompts are the case we
    already measured as impractical for autoregressive models (46 s per 52-option attempt).
 
@@ -300,23 +324,26 @@ Findings worth carrying forward:
    per-language accuracy/ECE, which is exactly what `B-1` needs to stop quoting synthetic
    per-language numbers.
 
-3. **Where results land.** Artifacts under `benchmarks/results/probe_*.json` (gitignored, each
+3. [x] **Where results land.** Artifacts under `benchmarks/results/probe_*.json` (gitignored, each
    recording the exact command), rendered table committed to **`benchmarks/probes.md`** (separate
    from `report.md`, which `benchmarks/report.py` regenerates wholesale), plus a "Public probes"
    section in `docs/benchmarks.md` with hardware, seed, and the citation/license of each dataset.
 
 **Acceptance.**
-- All three named probes published with the exact reproduction command, hardware and dataset
+- [x] All three named probes published with the exact reproduction command, hardware and dataset
   citations; both synthetic and probe numbers labeled side by side (no regression claim made on
-  either).
-- `OPS-06` moves to `Implemented`; the M6 exit criterion "benchmark report comparable to
-  MASSIVE/XNLI/typed-decisions" is met.
-- MASSIVE covers all six trained languages, with per-language accuracy/ECE published.
+  either) — `benchmarks/probes.md` (renderer: `python -m benchmarks.probes render`).
+- [x] `OPS-06` moves to `Implemented`; the M6 exit criterion "benchmark report comparable to
+  MASSIVE/XNLI/typed-decisions" is met (`docs/requirements/traceability.md`, `docs/roadmap.md`).
+- [x] MASSIVE covers all six trained languages **plus English**, with per-language accuracy/ECE
+  published (`task` = language, 512 rows each).
 
-**Risks / notes.** XNLI license to confirm before publishing derived tables; a 60-way `choice`
-may land near chance (1/60 = 0.017) — publish it anyway, that is the number; label mapping needs a
-test per probe. Evaluation-only: probe rows must never reach `training/` (that is what keeps the
-comparison comparable). Effort ~2–3 days, no GPU retrain, ~100 MB of downloads.
+**Risks / notes.** XNLI licence **confirmed: CC BY-NC 4.0** (see the table above); a 60-way
+`choice` did land near chance (0.033 vs 0.017) — published anyway, that is the number; label
+mapping has a test per probe (`tests/test_benchmark_probes.py`, 14 tests including the two
+`noul` questions that ship without `criteria`). Evaluation-only: probe rows never reach
+`training/` (that is what keeps the comparison comparable). Actual effort: one session, no GPU
+retrain, ~120 MB of downloads (MASSIVE is a 40 MB official tarball, not a `snapshot_download`).
 
 **Related.** `docs/benchmarks.md` (Known limitations), `docs/compare.md` §3,
 `benchmarks/README.md`, `OPS-06`, `docs/training.md` (§5), `NFR-D04`.

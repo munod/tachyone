@@ -90,7 +90,7 @@ changing the canonical contract.
 | OPS-02 | P1 integrations | Design | Done |
 | OPS-03 | P1 integrations | Design | Done |
 | OPS-04 | P2 packaging | Design | Done |
-| OPS-06 | P2 proof | Design | Done (numbers published) |
+| OPS-06 | P2 proof | Design | Done (synthetic report + 3 public probes) |
 | OPS-07 | P2 proof | Design | Done (weights published) |
 | OPS-08 | P2 proof | Design | Done |
 | EXT-01 | P1 integrations | Design | Done |

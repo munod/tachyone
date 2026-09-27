@@ -35,6 +35,20 @@ All notable changes to this project are documented here. The format is based on
   `tests/test_benchmark_compare.py` covers the metrics, the temperature fit, the row → wire
   mapping and the renderer. Results, method and limitations published in `docs/compare.md` §3;
   the run reproduces the peer's own model card (T 1.75, accuracy 0.705, ECE 0.046).
+- **The three public probes of `B-7` (MASSIVE / XNLI / typed-decisions), published as
+  `benchmarks/probes.md`.** `benchmarks/probes.py` maps each dataset onto the harness row shape —
+  typed-decisions keeps its native `noul`/`choice`/`score` wire with multi-question rows flattened
+  one-per-question, MASSIVE becomes 60-way `choice` with `task` = language (so the per-language
+  accuracy/ECE table `B-1` needed falls out of one run), XNLI becomes 3-way `choice` — and
+  `python -m benchmarks.compare run --format probe --probe <name>` evaluates them through the same
+  engines, metrics and per-dataset temperature fit. `python -m benchmarks.probes render`
+  regenerates the report with licences, citations, chance levels and the reproduction commands.
+  Measured on the RTX 3060 with the released adapters, evaluation only: **typed-decisions 0.323**
+  (chance 0.20–0.50), **MASSIVE 0.033** over seven locales (chance 0.017; per language
+  0.016–0.047), **XNLI 0.334** (chance 0.333) — all three temperature fits hit the grid ceiling, so
+  `Conf` and `Brier` are published next to `ECE cal`. XNLI's licence was verified against
+  `facebookresearch/XNLI`: **CC BY-NC 4.0**, and only derived metrics are published. 14 tests in
+  `tests/test_benchmark_probes.py`, one per probe's label mapping.
 
 ### Changed
 

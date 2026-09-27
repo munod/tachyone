@@ -40,7 +40,15 @@ unreadable/corrupt file, a non-numeric temperature — logs a WARNING naming the
 (stderr, since the package configures no logging) and then degrades to the uncalibrated baseline.
 A corrupt temperature value, which used to raise out of the loader, now warns instead of crashing.
 11 tests in `tests/test_encoder.py`; `docs/huggingface.md` §4 documents the message.
-Next: **B-5** waits on OD-6/OD-7, **B-7** on OD-8, and **B-6** remains an Idea.
+**B-7 (public probes) done**: `benchmarks/probes.py` loads typed-decisions / MASSIVE / XNLI onto the
+harness row shape and `python -m benchmarks.probes render` composes the committed
+`benchmarks/probes.md`. Released adapters, evaluation only: typed-decisions **0.323** (chance
+0.20–0.50), MASSIVE **0.033** across seven locales (chance 0.017; per-language 0.016–0.047, so the
+first *public* per-language accuracy/ECE exists), XNLI **0.334** (chance 0.333). All three fits hit
+the grid ceiling (T=20.0), so `Conf`/`Brier` are published beside `ECE cal` (L-007). XNLI's licence
+was **verified as CC BY-NC 4.0** upstream — not the CC BY-SA the plan guessed. `OPS-06` →
+Implemented, M6 exit criterion met.
+Next: **B-5** waits on OD-6/OD-7, and **B-6** remains an Idea.
 
 ## Milestone Status
 
@@ -382,6 +390,7 @@ calibration metric without the confidence it was bought with.
 | B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrained + measured on GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
 | B-10 | LLM prompt spells out the `answers` wrapper + actionable error (probe `JSON ok` 0.083 → 0.889) | 2026-09-26 | `fix(llm): spell out the answers wrapper in the system prompt` | ✅ |
 | B-8 | calibration assets that cannot be loaded now warn by name instead of degrading silently | 2026-09-27 | `fix(encoder): warn when a calibration asset cannot be loaded` | ✅ |
+| B-7 | public probes: `benchmarks/probes.py` loaders for typed-decisions/MASSIVE/XNLI + `benchmarks/probes.md` | 2026-09-27 | `feat(benchmarks): add the public probe loaders and report` | ✅ |
 | R-T1..T3 | multilingual LoRA rank 16 → 64 (accuracy 0.702 → 0.853, `es` ECE 0.170 → 0.038) | 2026-09-25 | `chore(training): raise multilingual LoRA rank to 64` | ✅ |
 
 ---
@@ -392,10 +401,11 @@ Canonical backlog: [`BACKLOG.md`](BACKLOG.md). **B-2** fast-path kernels are **d
 NFR-P01 met). **B-1** multilingual `choice`/`score` quality is **done**: localized data,
 per-language temperature, per-language reporting, the GPU retrain/publish step and the r=64 rank
 bump are all shipped and published. **B-3** and **B-4** are done and measured. **B-7** (public
-probes) is **partially delivered** (2026-09-26): the head-to-head harness answers a public
-nine-family probe and the results, method and limitations are published in `docs/compare.md` §3;
-MASSIVE / XNLI / typed-decisions remain (see OD-8). **B-5** is now **Ready** with measured
-evidence, and **B-10** (LLM prompt wrapper) is **Done** (2026-09-26): the wrapper is documented for
+probes) is **Done** (2026-09-27): the head-to-head harness answers a public nine-family probe
+(`docs/compare.md` §3), and `benchmarks/probes.md` now publishes typed-decisions / MASSIVE / XNLI
+with licences, citations and reproduction commands (OD-8 resolved — all three). **B-5** is
+**Ready** with measured evidence, and **B-10** (LLM prompt wrapper) is **Done** (2026-09-26): the
+wrapper is documented for
 all three primitives, the parser stayed strict, and the four LLM rows were re-run — probe
 `JSON ok` 0.083 → 0.889. **B-8** (calibration-asset hardening) is **Done** (2026-09-27). Carried-over
 ideas (provider registry, extra checkpoints, streaming, web
@@ -434,11 +444,11 @@ adapters with the rationale; revisit only with a new ADR and measured evidence (
       ≈ 5× steps ≈ **8–12 h** on the RTX 3060 at current settings. Options: full 5× (one long
       run), `per_type` ≈ 1,000/domain (~2–3 h, less data), or fewer epochs. Decide **before**
       launching; the budget is blocker B-002 / ADR-0005.
-- [ ] **OD-8:** OPEN (raised 2026-09-26) — **`B-7` probe scope.** All three probes named by
-      `OPS-06` (MASSIVE, XNLI, typed-decisions; ~2–3 days) or typed-decisions alone first
-      (3.15 MB, already in the wire shape; ~½ day)? Recommendation: all three, plus MASSIVE
-      across our six trained languages to give `B-1` public per-language numbers. Verify XNLI's
-      license before publishing derived tables. `B-10`'s strict-vs-tolerant question is
+- [x] **OD-8:** RESOLVED (2026-09-27) — **`B-7` probe scope: all three probes.** MASSIVE, XNLI and
+      typed-decisions were all implemented and published in `benchmarks/probes.md` (one session,
+      no retrain); MASSIVE also covers the six trained languages **plus English**. XNLI's licence
+      was verified before publishing: **CC BY-NC 4.0** (upstream `LICENSE`), and only derived
+      metrics are published. `B-10`'s strict-vs-tolerant question was already
       **resolved** (stay strict) — recorded in `BACKLOG.md` B-10.
 
 ---

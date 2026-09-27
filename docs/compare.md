@@ -245,7 +245,10 @@ split.
 #### Limitations, before quoting anything
 
 - **Our accuracy is in-sample synthetic** (`B-9`, lesson L-005): the eval split shares states with
-  training data. External evaluation on MASSIVE / XNLI / typed-decisions is still open as `B-7`.
+  training data. External evaluation on MASSIVE / XNLI / typed-decisions is now published in
+  [`benchmarks/probes.md`](https://github.com/munod/tachyone/blob/main/benchmarks/probes.md) —
+  0.323 / 0.033 / 0.334 against chance levels of 0.20–0.50 / 0.017 / 0.333, i.e. the same story
+  from the other side: domain coverage, not architecture.
 - **Each engine is at home in exactly one table.** Neither number generalizes; that is why both
   are published.
 - **Different `n` for the LLMs** (36 and 48 rows): a single failing question costs multiple

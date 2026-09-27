@@ -164,10 +164,51 @@ uv run python -m benchmarks.compare run --engine llm --format jsonl --per-task 1
   --out benchmarks/results/compare_home_llm_ling_after.json     # and ornith on 8082
 ```
 
+## Public probes (B-7) — `--probe`
+
+`--format probe` takes a dataset selected by `--probe`. The default `system-one-decisions` is the
+peer scorer's own distribution; `typed-decisions`, `massive` and `xnli` are loaded by
+`benchmarks/probes.py`, which maps each one onto the harness row shape (`state / task / question /
+options / answer_index`, plus `wire` where the dataset already speaks it) so every engine, metric,
+temperature fit and renderer is reused untouched.
+
+```bash
+# one-time downloads (they are gitignored under data/)
+uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('LocalLLaMA/typed-decisions', repo_type='dataset', local_dir='data/typed-decisions')"
+curl -L -o data/massive/raw/amazon-massive-dataset-1.1.tar.gz https://amazon-massive-nlu-dataset.s3.amazonaws.com/amazon-massive-dataset-1.1.tar.gz
+tar -xzf data/massive/raw/amazon-massive-dataset-1.1.tar.gz -C data/massive --wildcards '1.1/data/en-US.jsonl' '1.1/data/pt-PT.jsonl' '1.1/data/es-ES.jsonl' '1.1/data/fr-FR.jsonl' '1.1/data/de-DE.jsonl' '1.1/data/it-IT.jsonl' '1.1/data/nl-NL.jsonl'
+uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('facebook/xnli', repo_type='dataset', allow_patterns=['en/*', 'README.md'], local_dir='data/xnli')"
+
+OUT=benchmarks/results
+uv run python -m benchmarks.compare run --engine tachyone --format probe \
+  --probe typed-decisions --data data/typed-decisions --per-task 500 \
+  --out $OUT/probe_typed_decisions.json
+uv run python -m benchmarks.compare run --engine tachyone --format probe \
+  --probe massive --data data/massive --per-task 512 \
+  --languages en,pt,es,fr,de,it,nl --out $OUT/probe_massive.json
+uv run python -m benchmarks.compare run --engine tachyone --format probe \
+  --probe xnli --data data/xnli --per-task 6000 --out $OUT/probe_xnli.json
+
+# committed report: quality + performance + per-task accuracy/ECE, licences, citations, commands
+uv run python -m benchmarks.probes render --out benchmarks/probes.md \
+  --synthetic benchmarks/results/en.json $OUT/probe_*.json
+```
+
+Notes worth keeping:
+
+- **The temperature split is per dataset** — `--val-split` defaults to `train` for
+  typed-decisions, `dev` for MASSIVE and `validation` for XNLI, so the fit never touches the split
+  being reported. Override with `--val-split` if you want something else.
+- **`task` is per probe**: the dataset's config for typed-decisions, the **language** for MASSIVE
+  and XNLI — which is where the per-language accuracy/ECE table in `benchmarks/probes.md` comes
+  from.
+- **Probe rows never reach `training/`.** These loaders are evaluation-only; using any of this
+  data for training would turn the published number into an in-sample one.
+- Licences are verified against the upstream sources (XNLI's HF card has no licence tag; it is
+  **CC BY-NC 4.0** per `facebookresearch/XNLI`'s `LICENSE`).
+
 ## Not yet delivered
 
-- `probes.py` — MASSIVE / XNLI / typed-decisions loaders (design in `BACKLOG.md` **B-7**),
-  evaluation only.
 - `latency.py` / `throughput.py` — batch-size sweeps per backend.
 - `calibration.py` — ECE curves before/after temperature fitting.
 

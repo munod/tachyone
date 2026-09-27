@@ -99,11 +99,12 @@ calibration within RTX 3060 12GB budget.
 - `training/generate_data.py` synthetic JSONL; `training/finetune_rlcd.py`
 - `training/fit_calibration.py` temperature/ECE fitting
 
-**Evaluation** - DONE (harness) / PARTIAL (public probes)
+**Evaluation** - DONE (harness + public probes)
 - Accuracy/ECE/latency harness shipped (`training/evaluate.py`, `benchmarks/`)
 - Published 2026-09-26: external **head-to-head** on the public nine-family
   `pngwn/system-one-decisions` probe, both evaluation sets, `docs/compare.md` §3 (AD-011)
-- MASSIVE / XNLI / typed-decisions **still open** (`BACKLOG.md` B-7 · `STATE.md` OD-8)
+- Published 2026-09-27: the three named probes — MASSIVE (7 languages, per-language
+  accuracy/ECE), XNLI and typed-decisions — in `benchmarks/probes.md` (`BACKLOG.md` B-7)
 
 ---
 
@@ -128,10 +129,10 @@ calibration within RTX 3060 12GB budget.
 
 ### Features
 
-**Benchmarks & release** - DONE (synthetic report + head-to-head) / PARTIAL (named probes)
+**Benchmarks & release** - DONE (synthetic report + head-to-head + named probes)
 - `benchmarks/` publishes a reproducible synthetic report and, since 2026-09-26, the
-  multi-engine comparison (`benchmarks/compare.py`); MASSIVE / XNLI / typed-decisions remain
-  (`BACKLOG.md` B-7)
+  multi-engine comparison (`benchmarks/compare.py`); since 2026-09-27 the three named probes
+  (MASSIVE / XNLI / typed-decisions) via `benchmarks/probes.py` → `benchmarks/probes.md`
 - Docs site, model card, GitHub release
 
 ---

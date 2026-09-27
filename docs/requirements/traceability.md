@@ -71,7 +71,7 @@ All requirements are implemented as of `v0.3.0`; `NFR-C06`/`NFR-C07` (per-langua
 | OPS-03 | `integrations/langchain.py` | M5-T4 | Implemented |
 | OPS-04 | `docker/` | M5-T5 | Implemented |
 | OPS-05 | `.github/workflows/ci.yml` | M0-T4 | Implemented |
-| OPS-06 | `benchmarks/` | M4-T5, M6-T1 | Partial (synthetic report reproducible; public probes open — B-7) |
+| OPS-06 | `benchmarks/` | M4-T5, M6-T1 | Implemented (synthetic report + the three public probes in `benchmarks/probes.md`) |
 | OPS-07 | release artifacts | M6-T3 | Implemented |
 | OPS-08 | `telemetry.py` | M5-T6 | Implemented |
 

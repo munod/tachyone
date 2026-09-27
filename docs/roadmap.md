@@ -95,11 +95,12 @@ graph LR
 **Goal:** Public credibility.
 **Depends on:** M5.
 **Exit criteria:**
-- Benchmark report comparable to MASSIVE / XNLI / typed-decisions — **partially met
-  (2026-09-26)**: an external, public nine-family probe is now measured and published with the
-  method and its limitations in [`compare.md`](compare.md) §3 (it reproduces the peer model's own
-  card to three decimals); the three **named** probes are still open — `benchmarks.md` → Known
-  limitations, backlog `B-7`.
+- Benchmark report comparable to MASSIVE / XNLI / typed-decisions — **met (2026-09-27)**: the
+  three named probes are measured on public data through the same metric code and published with
+  licences, citations, chance levels and reproduction commands in
+  [`benchmarks/probes.md`](https://github.com/munod/tachyone/blob/main/benchmarks/probes.md)
+  (0.323 typed-decisions · 0.033 MASSIVE · 0.334 XNLI), alongside the head-to-head in
+  [`compare.md`](compare.md) §3, which reproduces the peer model's own card to three decimals.
 - Docs site published.
 - Hugging Face weights + model card and a GitHub release.
 
