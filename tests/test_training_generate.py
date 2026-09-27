@@ -370,3 +370,39 @@ def test_multi_domain_records_validate_as_primitives() -> None:
         )
         if record["type"] == "choice":
             assert record["target"] in record["criteria"]
+
+
+def test_per_domain_overrides_the_count_for_named_domains() -> None:
+    """Keeping the incumbent's volume while new domains are added (B-5, see DataConfig)."""
+    config = DataConfig(
+        seed=8, per_type=3, languages=("en",), domains=_FIVE, per_domain={"support": 7}
+    )
+    records = list(iter_records(config))
+    for domain in _FIVE:
+        expected = 7 if domain == "support" else 3
+        count = sum(1 for record in records if record["domain"] == domain)
+        assert count == expected * 3, domain
+
+
+def test_per_domain_cli_parses_and_rejects_malformed_overrides(tmp_path: Path) -> None:
+    out = tmp_path / "x.jsonl"
+    with pytest.raises(SystemExit, match="name=COUNT"):
+        main(["--per-domain", "support", "--out", str(out)])
+    with pytest.raises(SystemExit, match="name=COUNT"):
+        main(["--per-domain", "support=many", "--out", str(out)])
+    code = main(
+        [
+            "--per-type",
+            "2",
+            "--domains",
+            "support,voice",
+            "--per-domain",
+            "support=5",
+            "--out",
+            str(out),
+        ]
+    )
+    assert code == 0
+    records = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert sum(1 for r in records if r["domain"] == "support") == 15
+    assert sum(1 for r in records if r["domain"] == "voice") == 6

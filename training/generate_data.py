@@ -34,7 +34,7 @@ import json
 import random
 import unicodedata
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -144,6 +144,11 @@ class DataConfig:
     languages: tuple[str, ...] = DEFAULT_LANGUAGES
     #: Domains to emit; the default keeps the pre-B-5 output byte-identical.
     domains: tuple[str, ...] = DEFAULT_DOMAINS
+    #: Records per primitive for specific domains, overriding ``per_type``. Used to keep the
+    #: incumbent domain's volume intact while new domains are added: training `support` on a third
+    #: of its published records while four new domains compete for the same capacity cost 22
+    #: points of `support` accuracy (B-5, measured 2026-09-27).
+    per_domain: dict[str, int] = field(default_factory=dict)
     source: str = "synthetic"
     #: Fraction of records whose ``state`` gets one surface-noise edit (typos/accents/casing).
     #: ``0.0`` (default) reproduces the clean dataset byte-for-byte (B-4).
@@ -275,7 +280,7 @@ def _seed_base(seed: int, domain: str) -> str:
 
 
 def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
-    """Yield deterministic records: ``per_type`` of each primitive per domain, languages cycled.
+    """Yield deterministic records: ``per_type`` (or ``per_domain``) of each primitive per domain.
 
     Each record draws from its own RNG seeded by ``(seed[, domain], kind, index, language)``. A
     single shared RNG makes feature choices correlate with the cyclic label (option/tone) across
@@ -288,9 +293,10 @@ def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
     for domain_name in domains:
         domain = DomainData.load(domain_name)
         base = _seed_base(config.seed, domain_name)
+        count = config.per_domain.get(domain_name, config.per_type)
         for kind in ("noul", "choice", "score"):
             generator = _GENERATORS[kind]
-            for index in range(config.per_type):
+            for index in range(count):
                 language = languages[index % len(languages)]
                 rng = random.Random(f"{base}:{kind}:{index}:{language}")
                 record = generator(domain, index, language, rng)
@@ -335,6 +341,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=",".join(DEFAULT_DOMAINS),
         help="comma-separated domains from training/data/domains/ (default: support only)",
     )
+    parser.add_argument(
+        "--per-domain",
+        default="",
+        help="comma-separated name=per_type overrides, e.g. support=3000 (keeps the incumbent "
+        "domain's volume while --per-type sets the new ones)",
+    )
     parser.add_argument("--source", default="synthetic")
     parser.add_argument(
         "--noise-rate",
@@ -346,6 +358,17 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _parse_per_domain(raw: str) -> dict[str, int]:
+    """Parse ``name=COUNT,name=COUNT`` into the :attr:`DataConfig.per_domain` override."""
+    overrides: dict[str, int] = {}
+    for item in (part for part in raw.split(",") if part.strip()):
+        name, sep, value = item.partition("=")
+        if not sep or not name.strip() or not value.strip().isdigit():
+            raise SystemExit(f"--per-domain expects name=COUNT entries, got {item!r}")
+        overrides[name.strip()] = int(value)
+    return overrides
+
+
 def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(list(argv) if argv is not None else None)
     if not 0.0 <= args.noise_rate <= 1.0:
@@ -355,6 +378,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         per_type=args.per_type,
         languages=tuple(item for item in args.languages.split(",") if item),
         domains=tuple(item for item in args.domains.split(",") if item),
+        per_domain=_parse_per_domain(args.per_domain),
         source=args.source,
         noise_rate=args.noise_rate,
     )
