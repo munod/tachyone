@@ -180,7 +180,11 @@ scores 0.705 there. Domain coverage, not architecture, is the binding constraint
 | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
 | baseline (published) | 9,000 support | r=16 | 0.859 (support-only eval) | **0.859** | 0.478 (zero-shot) | 0.326 | support ✓ |
 | B-5a run 1 | 15,000 (support 3,000) | r=16 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ | 0.631 | both ✗ |
-| B-5a run 2 | 21,000 (support 9,000) | r=64 | *in flight* | — | — | — | — |
+| B-5a run 2 / 3 | 21,000 (support 9,000) | r=64 | *in flight* | — | — | — | — |
+
+> Runs 2 and 2b never finished: both were killed as a **silent process-group hangup** at ~60 min
+> with RAM 16.2/31 GB and VRAM 4.8/12 GB flat, no traceback and no `exit=` line (`STATE.md`
+> L-009). Run 3 is the same config launched with `setsid nohup` in its own session.
 
 Run 1 learned the new domains (`choice` 0.502 → 0.738 overall, per new domain 0.67–0.86) but paid
 for it with support. The cross table isolates *how*: support `score` **0.910 → 0.492** with the

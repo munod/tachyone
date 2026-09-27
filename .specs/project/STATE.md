@@ -67,7 +67,10 @@ table isolates it: support `score` 0.910 → **0.492** with level 3 never predic
 records → `medium`) and support `choice` 0.948 → 0.652, while support `noul` *improved*
 (0.718 → 0.744, at the B-11 ceiling) and new-domain `noul` fell (0.67–0.73 → 0.46–0.61). Two
 **candidate** causes, tested together by run 2: support ran on a third of its published volume while four new domains shared an r=16 LoRA, and
-the run under-fit. **Run 2 is in flight**: support restored to 3,000/type through the new
+the run under-fit. **Runs 2 and 2b were killed, not crashed**: both died at ~60 min with a silent
+process-group hangup — RAM 16.2/31 GB and VRAM 4.8/12 GB flat to the last sample, no traceback,
+no `exit=` line (L-009). **Run 3 is in flight** with the same config (`setsid nohup`, its own
+session): support restored to 3,000/type through the new
 `DataConfig.per_domain` (21,000 records) and the LoRA moved to r=64 / `lora_alpha` 128 — the same
 scaling as the multilingual fix (B-1).
 Next: the run-2 gates (support ≥ 0.85, worst new domain ≥ 0.70, per-domain ECE published), then
@@ -378,6 +381,21 @@ would move every published number) and track the fix + the re-measurement it for
 never from the loop index.
 **Prevents:** reading a data artifact as a capability gap, and tuning a model against a ceiling
 the labels impose.
+
+### L-009: A background training run must own its session, or it dies with the harness
+
+**Context:** B-5a run 2 and run 2b, both launched as background shells from the agent harness.
+**Problem:** both died **silently** at ~60–65 min: no traceback, no `exit=` line (the wrapper
+shell died with the child), no checkpoint, and no OOM — the sampler showed RAM 16.2 GB of 31 and
+VRAM 4.8 GB flat until the last sample, and `journalctl` shows no reboot or suspend. The whole
+process group took a hangup/kill from outside the training (a harness reap or restart looks
+exactly like this), while run 1, which happened to finish first, was unaffected.
+**Solution:** launch training with `setsid nohup … < /dev/null &` so it starts a **new session**
+(SID = its own PID) and cannot receive the parent's hangup; the detached script appends `exit=$?`
+to the log and touches a marker, and a *separate*, expendable watcher shell only waits for that
+marker. Sample RAM/VRAM every 15 s from inside the same detached script, so even a kill leaves
+evidence.
+**Prevents:** an hour of GPU time lost to a death with no traceback to diagnose.
 
 ---
 
