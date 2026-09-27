@@ -68,6 +68,7 @@ seed 1 (hash-verified), so the configs now match the data, and `data_en.json` /
 | run 1 | 15,000 (support 3,000) | r=16 / 32 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ |
 | run 3 | 21,000 (support 9,000) | r=64 / 32 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ |
 | **run 4** (fixed loop) | 21,000 (support 9,000) | r=16 / 32 | **0.732** | **0.655** ✗ | **0.690** (`ecommerce`) ✗ |
+| **run 5** (bigger choice head) | 21,000 (support 9,000) | r=16 / 128, 6 ep | **0.804** | **0.785** ✗ | **0.739** (`voice`) ✅ |
 
 Runs 2 and 2b never finished: both were killed by a **silent process-group hangup** at ~60 min
 (RAM 16.2/31 GB and VRAM 4.8/12 GB flat to the last sample, no traceback, no `exit=` line) —
@@ -94,10 +95,18 @@ label-noise ceiling (0.744) and `score` 0.894. Two cells still fail — support 
 the `cos(criterion, state)` term is weak it wins outright. Zeroing the choice head (same
 checkpoint, head written as zeros) drops `choice` 0.557 → 0.371 globally but leaves support
 **unchanged** — the shared low-rank head learned to help the four new domains and not support.
-**Run 5 is in flight** with that head's capacity and training time raised (`choice_rank` 32 → 128,
-epochs 4 → 6), everything else identical to run 4, plus per-epoch per-primitive train loss in the
-log so a plateau is visible without paying for a second run.
-Next: the run-5 gates (support ≥ 0.85, worst new domain ≥ 0.70, per-domain ECE published), then
+**Run 5 raised the head's capacity and training time (`choice_rank` 32 → 128, epochs 4 → 6,
+per-epoch per-primitive loss in the log) and cleared the second gate**: overall **0.804**,
+`choice` 0.557 → 0.789, worst new domain **`voice` 0.739 ≥ 0.70** (`agent_tools` 0.849,
+`ecommerce` 0.838, `documents` 0.810), `noul` 0.720 and `score` 0.905 at their ceilings,
+`val_loss` 0.369 → 0.253. **Only support remains: 0.785 vs 0.85**, and it is entirely
+`support/choice` **0.726** (needs ≈0.92; the support-only model posts 0.948). Three checks say it
+is under-fit rather than over-fit: `choice` train loss flat from epoch 2, the checkpoint scores
+**0.715 on the training records themselves** (eval 0.726), and the leak always goes into `other`
+— whose description names the other three options and overlaps the question, so the per-domain
+constant `cos(criterion, question)` keeps beating a state term the shared head never got enough
+capacity or gradient share to strengthen.
+Next: the run-6 decision (how to lift `support/choice` without giving back the new domains), then
 **B-5b** (multilingual); **B-6** remains an Idea.
 
 ## Milestone Status

@@ -182,7 +182,8 @@ scores 0.705 there. Domain coverage, not architecture, is the binding constraint
 | B-5a run 1 | 15,000 (support 3,000) | r=16 / 32 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ | 0.631* | both ✗ |
 | B-5a run 3 | 21,000 (support 9,000) | r=64 / 32 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ | 0.654* | both ✗ |
 | **B-5a run 4** (shuffled loop) | 21,000 (support 9,000) | r=16 / 32 | **0.732** | **0.655** ✗ | **0.690** (`ecommerce`, 0.010 short) ✗ | 0.369 | both ✗ |
-| B-5a run 5 | 21,000 (support 9,000) | r=16 / **128**, 6 epochs | *in flight* | — | — | — | — |
+| B-5a run 5 | 21,000 (support 9,000) | r=16 / **128**, 6 epochs | **0.804** | **0.785** ✗ | **0.739** (`voice`) ✅ | 0.253 | support ✗, new domains ✓ |
+| B-5a run 6 | *decision pending* | — | — | — | — | — | — |
 
 \* the `val_loss` column is **not** what it looked like — see the two loop bugs below. Runs 2 and
 2b never finished: both were killed as a **silent process-group hangup** at ~60 min with RAM
@@ -204,6 +205,25 @@ Two measurements localise it:
   0.371 globally but leaves support *unchanged* (0.655 → 0.655): the shared low-rank head has
   learned to help the four new domains and **not** support. Capacity/time of that head is what
   run 5 changes (`choice_rank` 32 → 128, epochs 4 → 6).
+
+**Run 5 moved every cell** (overall 0.732 → **0.804**, `choice` 0.557 → **0.789**, support 0.655 →
+**0.785**) and the **second gate now passes**: `voice` 0.739 ≥ 0.70 with every new domain above it
+(`agent_tools` 0.849, `ecommerce` 0.838, `documents` 0.810). `noul` (0.720) and `score` (0.905) sit
+at their ceilings, so the entire remaining gap is one cell again — **support `choice` 0.726**, which
+would need ≈ 0.92 for support to reach 0.85 (the support-only model posts 0.948).
+
+Three measurements say it is **under-fit, not over-fit**:
+
+- the per-epoch curve (`epoch N train_loss …`) shows `choice` bottoming at epoch 2 (0.049 → 0.046
+  flat) while `score` keeps falling (0.717 → 0.272), so `choice` is the term that stops improving;
+- the checkpoint scores **0.715 on the training records themselves** (eval 0.726 — the same), with
+  `billing → other` 101/250 and `sales → other` 58/250 in both;
+- the leak is always **into `other`**, whose description names the other three options *and*
+  overlaps the question text, so `cos(criterion, question)` — a per-domain constant — keeps
+  winning over a `cos(criterion, state)` that the shared head never had enough capacity or
+  gradient share to strengthen.
+
+`val_loss` fell 0.369 → **0.253** across the same change.
 
 Runs 1 and 3 each collapsed a *different* primitive (run 1 lost `support/score`: 0.910 → 0.492,
 level 3 never predicted; run 3 lost `noul` everywhere: 2499/2500 predicted 1, accuracy 0.244,
