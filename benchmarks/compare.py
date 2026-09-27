@@ -17,8 +17,10 @@ uses), with temperature fitted on the capped **validation** split and applied to
 
 Two evaluation sets, because a head-to-head on someone else's training data proves little:
 
-- ``--format probe`` (default) — ``pngwn/system-one-decisions``, the peer scorer's **own**
-  distribution (it trained on its train split; Tachyone is zero-shot there).
+- ``--format probe`` (default) — a public dataset chosen by ``--probe``:
+  ``system-one-decisions`` (default) is the peer scorer's **own** distribution (it trained on its
+  train split; Tachyone is zero-shot there), while ``typed-decisions``, ``massive`` and ``xnli``
+  are the public probes of BACKLOG **B-7**, loaded by ``benchmarks/probes.py``.
 - ``--format jsonl`` — Tachyone's eval records, where **we** are in-domain and the peer and the
   LLMs are visitors.
 
@@ -68,6 +70,24 @@ _ROOT = Path(__file__).resolve().parents[1]
 #: Rows per task family (``--per-task``); 64 matches the scorer's published evaluation.
 DEFAULT_PER_TASK = 64
 DEFAULT_WARMUP = 3
+#: Datasets ``--format probe`` accepts. The first is the peer scorer's own distribution; the
+#: other three are the public probes of BACKLOG B-7, loaded by ``benchmarks/probes.py``.
+PROBE_CHOICES = ("system-one-decisions", "typed-decisions", "massive", "xnli")
+#: Split used to fit temperature when ``--val-split`` is omitted: each dataset's own development
+#: split, so the fit never touches the split being reported.
+PROBE_VAL_SPLITS = {
+    "system-one-decisions": "val",
+    "typed-decisions": "train",
+    "massive": "dev",
+    "xnli": "validation",
+}
+#: Repositories the probes are read from (licences and citations: ``benchmarks/probes.py``).
+PROBE_REPOS = {
+    "system-one-decisions": "pngwn/system-one-decisions",
+    "typed-decisions": "LocalLLaMA/typed-decisions",
+    "massive": "AmazonScience/massive",
+    "xnli": "facebook/xnli",
+}
 #: 0.25 .. 19.75 in 0.05 steps. Their sweep stops at 6.0; a wider, still-symmetric grid avoids
 #: capping an over-confident engine at the boundary (Tachyone needs T > 6 on this probe).
 TEMPERATURE_GRID = [round(0.25 + index * 0.05, 2) for index in range(396)]
@@ -625,6 +645,27 @@ def _calibrated(
     ]
 
 
+def _probe_split(args: argparse.Namespace, *, validation: bool) -> str:
+    """Split to read: ``--split``/``--val-split`` when given, else the dataset's own default."""
+    if not validation:
+        return str(args.split) if args.split else "test"
+    if args.val_split:
+        return str(args.val_split)
+    return PROBE_VAL_SPLITS.get(str(args.probe), "val")
+
+
+def _probe_languages(args: argparse.Namespace) -> tuple[str, ...] | None:
+    """Language tags evaluated (recorded in the artifact), or ``None`` if not applicable."""
+    probe = str(args.probe)
+    if probe not in {"massive", "xnli"}:
+        return None
+    if args.languages:
+        return tuple(tag for tag in str(args.languages).split(",") if tag)
+    from benchmarks.probes import MASSIVE_LANGUAGES  # probes imports this module: keep it lazy
+
+    return MASSIVE_LANGUAGES if probe == "massive" else ("en",)
+
+
 def _select_rows(args: argparse.Namespace, *, validation: bool) -> list[dict[str, Any]] | None:
     """Rows for the reported split, or for the temperature-fitting split (``None`` if absent)."""
     if args.format == "jsonl":
@@ -632,10 +673,22 @@ def _select_rows(args: argparse.Namespace, *, validation: bool) -> list[dict[str
         if validation and path is None:
             return None
         return load_tachyone_records(Path(path), args.per_task, args.limit)
-    split = str(args.val_split) if validation else str(args.split)
+    split = _probe_split(args, validation=validation)
     if validation and not split:
         return None
-    return load_rows(args.data, split, args.per_task, args.limit)
+    probe = str(args.probe)
+    if probe == "system-one-decisions":
+        return load_rows(args.data, split, args.per_task, args.limit)
+    from benchmarks.probes import load_probe  # imported here: probes imports this module
+
+    return load_probe(
+        probe,
+        args.data,
+        split=split,
+        per_task=args.per_task,
+        limit=args.limit,
+        languages=_probe_languages(args),
+    )
 
 
 def run(args: argparse.Namespace) -> None:
@@ -673,16 +726,20 @@ def run(args: argparse.Namespace) -> None:
 
     total_seconds = sum(latencies) / 1000.0
     server_pid = _find_llm_server_pid(str(args.llm_base_url)) if args.engine == "llm" else None
+    is_probe = args.format == "probe"
+    languages = _probe_languages(args)
     artifact = {
         "engine": engine.name,
         "dataset": {
             "kind": args.format,
-            "repo": "pngwn/system-one-decisions" if args.format == "probe" else None,
+            "probe": str(args.probe) if is_probe else None,
+            "repo": PROBE_REPOS.get(str(args.probe)) if is_probe else None,
             "path": str(args.data),
-            "split": args.split,
-            "val_split": args.val_split if fit_on_val else None,
+            "split": _probe_split(args, validation=False),
+            "val_split": _probe_split(args, validation=True) if fit_on_val else None,
             "per_task": args.per_task,
             "limit": args.limit,
+            "languages": list(languages) if languages else None,
             "rows": len(rows),
             "warmup_excluded": min(args.warmup, len(rows)),
         },
@@ -850,8 +907,21 @@ def main(argv: list[str] | None = None) -> int:
         "--format",
         choices=["probe", "jsonl"],
         default="probe",
-        help="probe: pngwn/system-one-decisions (their distribution); "
+        help="probe: a public dataset selected by --probe; "
         "jsonl: Tachyone's own eval records (our distribution)",
+    )
+    run_parser.add_argument(
+        "--probe",
+        choices=list(PROBE_CHOICES),
+        default="system-one-decisions",
+        help="dataset behind --format probe: system-one-decisions is the peer scorer's own "
+        "distribution, the other three are the public probes of BACKLOG B-7",
+    )
+    run_parser.add_argument(
+        "--languages",
+        default=None,
+        help="massive: comma-separated language tags (default: English plus the six trained "
+        "multilingual languages); xnli: comma-separated codes (default: en)",
     )
     run_parser.add_argument(
         "--data",
@@ -859,9 +929,13 @@ def main(argv: list[str] | None = None) -> int:
         default=_ROOT / "data" / "system-one-decisions",
         help="probe: dataset directory; jsonl: the eval records file",
     )
-    run_parser.add_argument("--split", default="test", help="probe: split name")
     run_parser.add_argument(
-        "--val-split", default="val", help="probe: split used to fit temperature"
+        "--split", default=None, help="probe: split name (default: test for every dataset)"
+    )
+    run_parser.add_argument(
+        "--val-split",
+        default=None,
+        help="probe: split used to fit temperature (default: each dataset's own dev split)",
     )
     run_parser.add_argument(
         "--val-data", type=Path, default=None, help="jsonl: records used to fit temperature"
