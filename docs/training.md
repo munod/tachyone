@@ -37,27 +37,38 @@ Every stage is a committed script with a committed config and a fixed seed.
 - **Coverage:** per primitive, per language group, with hard negatives and boundary cases
   (near-ties, ambiguous labels, empty/very long inputs).
 - **Localization (B-1):** the `state`, `instructions`, `criteria`, `score` levels, and
-  `noul`/`score` entities are all authored per language (`training/data/lexicon.json`,
-  `phrases.json`, `team_descriptions.json`), so the multilingual checkpoint does not learn an
-  English template.
+  `noul`/`score` entities are all authored per language, so the multilingual checkpoint does not
+  learn an English template.
+- **Domains (B-5):** every domain lives in its own committed file,
+  `training/data/domains/<domain>.json`, holding its option labels, option terms and
+  descriptions, entities, phrase banks, `score` levels, `noul` criteria and per-primitive
+  instructions — one shape for every domain, per language. `--domains a,b,c` selects the domains
+  to emit (default `support`, the original four-team triage); `DataConfig.domains` is the field.
+  Two rules keep the existing datasets reproducible:
+  - `support` keeps the **legacy record seed** (`seed:kind:index:language`), so its records are
+    byte-identical whether generated alone or inside a five-domain run;
+  - the `domain` field is written only for non-default runs, so `data.json`, `data_multi.json`
+    and `data_noisy.json` regenerate byte-for-byte.
+  `tests/test_training_generate.py` pins both rules with golden hashes and checks each committed
+  data config against the dataset it documents.
 - **Input-noise augmentation (B-4):** `--noise-rate r` (config field `noise_rate`) applies one
   deterministic surface edit — char swap/delete, accent strip, casing flip, or terminal-punctuation
   drop — to `r` of records' `state` only (labels/questions untouched). `r=0` reproduces the clean
-  dataset byte-for-byte; each record draws from its own RNG (`(seed, kind, index, language, noise)`)
-  so noise stays independent of the cyclic label (L-003). Evaluate the noisy view separately: the
-  harness reports it under `report["noisy"]` when `--noise-rate` is passed.
+  dataset byte-for-byte; each record draws from its own RNG (`(seed[, domain], kind, index,
+  language, noise)`) so noise stays independent of the cyclic label (L-003). Evaluate the noisy
+  view separately: the harness reports it under `report["noisy"]` when `--noise-rate` is passed.
 
 ### JSONL record format
 
 ```json
 {"id": "noul-000001", "type": "noul", "state": "…", "instructions": "…", "criteria": {"true": "…", "false": "…"}, "target": 1, "lang": "en", "source": "synthetic"}
 {"id": "choice-000001", "type": "choice", "state": "…", "instructions": "…", "criteria": {"a": null, "b": "…"}, "target": "b", "lang": "pt", "source": "synthetic"}
-{"id": "score-000001", "type": "score", "state": "…", "instructions": "…", "criteria": ["poor","fair","good"], "target": 2, "lang": "es", "source": "synthetic"}
+{"id": "score-000001", "type": "score", "state": "…", "instructions": "…", "criteria": ["poor","fair","good"], "target": 2, "lang": "es", "source": "synthetic", "domain": "voice"}
 ```
 
 | Field | Meaning |
 | --- | --- |
-| `id` | Stable unique id |
+| `id` | Stable id, unique **within** a domain (a multi-domain run repeats ids across domains — pair it with `domain`) |
 | `type` | `noul` / `choice` / `score` |
 | `state` | The judged subject |
 | `instructions` | The atomic question |
@@ -65,6 +76,7 @@ Every stage is a committed script with a committed config and a fixed seed.
 | `target` | Label (`0/1`, option key, or level index) |
 | `lang` | Language tag for routing/stratification |
 | `source` | Provenance (`synthetic`, `public`, `human`) |
+| `domain` | Domain tag. Absent in single-domain `support` runs (byte-identity); present otherwise, and records without it evaluate as `support` |
 
 ### Data sources
 

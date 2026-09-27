@@ -229,7 +229,8 @@ projeto_tachyone/
 ### `cli.py`
 
 - **Purpose:** `tachyone "text" --preset triage --predict` and `--serve`.
-- **Interfaces:** presets `router`, `guard`, `moderation`, `triage`, `email`; flags `--predict`,
+- **Interfaces:** presets `router`, `guard`, `moderation`, `triage`, `email`, plus one per trained
+  domain (`orders`, `tools`, `docs`, `voice`); flags `--predict`,
   `--serve`, `--preset`, `--backend`, `--model`, `--threshold`, `--list-presets`.
 - **Dependencies:** argparse (stdlib); core.
 

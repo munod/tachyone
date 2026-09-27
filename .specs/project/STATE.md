@@ -48,7 +48,20 @@ first *public* per-language accuracy/ECE exists), XNLI **0.334** (chance 0.333).
 the grid ceiling (T=20.0), so `Conf`/`Brier` are published beside `ECE cal` (L-007). XNLI's licence
 was **verified as CC BY-NC 4.0** upstream — not the CC BY-SA the plan guessed. `OPS-06` →
 Implemented, M6 exit criterion met.
-Next: **B-5** waits on OD-6/OD-7, and **B-6** remains an Idea.
+**B-5a (multi-domain, English) in progress**: OD-6/OD-7 resolved (English first; `per_type` 1000/domain
+→ 15,000 records, the ~2–3 h option). The generator now reads committed per-domain content from
+`training/data/domains/<domain>.json` (five domains: `support`, `ecommerce`, `agent_tools`,
+`documents`, `voice`), the three legacy content files were merged into `domains/support.json`, and
+`training/evaluate.py` reports `per_domain` (rendered by `benchmarks/report.py`, which gates on the
+worst domain). **Byte-identity holds**: golden hashes and all five shipped datasets reproduce
+exactly, and `support` records are identical inside and outside a five-domain run. `data/` gains
+`train_en_domains.jsonl` (15,000) and `eval_en_domains.jsonl` (7,500 — its `support` half **is**
+`eval_en.jsonl`, so the published 0.859 stays the support gate); training on `checkpoints/en_domains`
+was launched 2026-09-27. Two data records corrected on the way: `data_multi.json` and
+`data_noisy.json` claimed seed 42 while the shipped data used seed 1 (hash-verified), so the
+configs now match the data and `data_en.json` / `data_eval_en.json` / `data_eval_multi.json` were
+added to document the datasets that had no config at all.
+Next: **B-5b** (multilingual) after the B-5a gates, and **B-6** remains an Idea.
 
 ## Milestone Status
 
@@ -336,6 +349,26 @@ peer's card (T 1.75 vs 1.75, acc 0.705 vs 0.707, ECE 0.046 vs 0.044, 8 of 9 per-
 **Prevents:** quoting a single-distribution benchmark as a quality verdict, and quoting a
 calibration metric without the confidence it was bought with.
 
+### L-008: A label drawn from the index is a label the text cannot support
+
+**Context:** B-5a, while authoring the new domains: English `noul` accuracy sits at 0.718 while
+`choice` is 0.948 (AD-009), and the multilingual per-language spread is wide (`nl` 0.663 vs
+`es` 0.956).
+**Problem:** `_noul_record` sets `positive = index % 2 == 0` and only then forces `False` when the
+tone is neutral, so `target = 1` iff *even index ∧ request tone*. Half of the request-toned states
+— which read "I need a refund today." — are labeled `false`. Measured on the shipped eval sets:
+English has 121 of 241 request-toned `noul` records labeled 0 (50% contradictory), and by language
+**0%** for `fr`/`it`/`pt` against 40% `de`, 51% `es`, 55% `nl`, because the per-language RNG
+happens to correlate tone with parity in some languages. The Bayes-optimal accuracy given the tone
+is 0.746 on `eval_en.jsonl`; the model scores 0.718. The per-language spread is the same artifact,
+not model quality.
+**Solution:** leave the rule alone for B-5 (its hard guarantee is byte-identity, and changing it
+would move every published number) and track the fix + the re-measurement it forces in
+`BACKLOG.md` **B-11**. When writing a generator, derive the target from the text just emitted,
+never from the loop index.
+**Prevents:** reading a data artifact as a capability gap, and tuning a model against a ceiling
+the labels impose.
+
 ---
 
 ## Quick Tasks Completed
@@ -436,14 +469,17 @@ adapters with the rationale; revisit only with a new ADR and measured evidence (
       afterwards behind the `fast` extra with graceful fallback. See ADR-0012.
 - [x] **OD-5:** RESOLVED (2026-09-24, M2) — ``/predict`` and ``/predict/batch`` mirror the
       canonical response shape and are additive; ``/v1/systemone`` is untouched. See `docs/adr/ADR-0009`.
-- [ ] **OD-6:** OPEN (raised 2026-09-26) — **`B-5` scope: English first or all 7 languages at
-      once?** Recommendation: `B-5a` English only (four new domain lexicons localized once),
-      `B-5b` multilingual afterwards — localization is the human cost and it multiplies by ~7.
-      Also confirm the five domains tabled in `BACKLOG.md` B-5. Blocks the start of `B-5`.
-- [ ] **OD-7:** OPEN (raised 2026-09-26) — **`B-5` data volume vs training budget.** 5× records
-      ≈ 5× steps ≈ **8–12 h** on the RTX 3060 at current settings. Options: full 5× (one long
-      run), `per_type` ≈ 1,000/domain (~2–3 h, less data), or fewer epochs. Decide **before**
-      launching; the budget is blocker B-002 / ADR-0005.
+- [x] **OD-6:** RESOLVED (2026-09-27) — **`B-5` scope: English first (`B-5a`), multilingual
+      afterwards.** Confirmed by the go-ahead for B-5a: four new domain lexicons localized once,
+      `B-5b` (the other languages) follows only once the refactor and the gates are proven in `en`.
+      The five domains tabled in `BACKLOG.md` B-5 are the ones implemented (`support`,
+      `ecommerce`, `agent_tools`, `documents`, `voice`).
+- [x] **OD-7:** RESOLVED (2026-09-27) — **`B-5` data volume: `per_type` 1000/domain.** 5 domains ×
+      3 primitives × 1000 = **15,000 records** (1.67× the 9,000 the published English adapter was
+      trained on), which is the ~2–3 h option rather than the 8–12 h full 5×. Config:
+      `training/configs/data_en_domains.json` (seed 1) for training and
+      `data_eval_en_domains.json` (seed 2, 7,500 rows) for evaluation; the fine-tune config keeps
+      the pinned `seed: 2` (AD-009).
 - [x] **OD-8:** RESOLVED (2026-09-27) — **`B-7` probe scope: all three probes.** MASSIVE, XNLI and
       typed-decisions were all implemented and published in `benchmarks/probes.md` (one session,
       no retrain); MASSIVE also covers the six trained languages **plus English**. XNLI's licence

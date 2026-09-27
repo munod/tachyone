@@ -231,6 +231,6 @@ These are Tachyone extensions and MUST NOT alter `/v1/systemone` output shape.
 | Hooks | Python API | `on_predict_start`, `on_predict_end`, `on_route`, `on_load`, `on_evict`, `on_error` |
 | `predict_batch` | `/predict/batch` (extension) | Batch several states in one call |
 | `return_details` | Backend protocol kwarg | Accepted for API stability; distributions are already canonical, so it is currently a **no-op** (no request flag or SDK argument exposes it) |
-| Presets | CLI/SDK | `router`, `guard`, `moderation`, `triage`, `email` |
+| Presets | CLI/SDK | `router`, `guard`, `moderation`, `triage`, `email`, `orders`, `tools`, `docs`, `voice` |
 
 See `docs/architecture.md` for the extension contracts and `docs/adr/ADR-0002-pluggable-backend-phasing.md`.

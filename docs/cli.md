@@ -15,7 +15,7 @@ Entry points (declared in `pyproject.toml`):
 ## Flags
 
 ```text
-usage: tachyone [-h] [--preset {email,guard,moderation,router,triage}]
+usage: tachyone [-h] [--preset {docs,email,guard,moderation,orders,router,tools,triage,voice}]
             [--questions QUESTIONS] [--predict] [--threshold THRESHOLD]
             [--url URL] [--backend {llm,encoder,onnx,fake}] [--model MODEL]
             [--list-presets] [--serve] [--version]
@@ -140,7 +140,7 @@ uv run tachyone "hello" --questions '{"g":{"type":"noul","instructions":"Is this
 ## Presets
 
 ```bash
-uv run tachyone --list-presets     # email  guard  moderation  router  triage
+uv run tachyone --list-presets     # docs  email  guard  moderation  orders  router  tools  triage  voice
 ```
 
 | Preset | Questions |

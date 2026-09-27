@@ -507,6 +507,50 @@ are not comparable before vs after; record both. Effort ~0.5 day.
 
 ---
 
+## B-11 · The `noul` target depends on the loop index, not on the text · Ready
+
+**Why.** `_noul_record` computes `positive = (index % 2 == 0)` and only then forces `False` when
+the tone is neutral, so `target = 1` iff *even index ∧ request tone*. Half of the request-toned
+states therefore carry a `false` label while reading like a request ("I need a refund today.").
+Measured on the shipped eval sets (2026-09-27, `STATE.md` L-008):
+
+| Set | request-toned `noul` records | of which labeled 0 |
+| --- | ---: | ---: |
+| `eval_en.jsonl` | 241 | 121 (**50%**) |
+| `eval_multi.jsonl` → `fr`, `it`, `pt` | ~40 each | **0** (0%) |
+| `eval_multi.jsonl` → `de`, `es`, `nl` | ~33–46 each | **40–55%** |
+
+Consequences: the Bayes-optimal accuracy given the tone is **0.746** on `eval_en.jsonl` and the
+published model scores **0.718** (so `noul` is label-bound, not model-bound), and the per-language
+spread (`nl` 0.663 vs `es` 0.956) tracks how much the per-language RNG happens to correlate tone
+with parity — a data artifact that reads like a capability gap.
+
+**Plan.**
+1. Decide the label rule: `target = 1 iff tone == "request"` — text-consistent and balanced
+   (~50/50, versus the current ~25% positive).
+2. **Decide the scope**: fix everything (all datasets regenerate, all published numbers move) or
+   only newly generated domains (then `support` keeps the legacy noise and the domains are not
+   labelled alike — the trade-off B-5a deliberately refused to hide inside a config flag).
+3. If everything is fixed: regenerate the train/eval sets, retrain English **and** multilingual,
+   refit calibration, and re-run `benchmarks/report.md`, `docs/compare.md` §3 and the three public
+   probes (`benchmarks/probes.md`) — the numbers cannot be compared before/after, so they are
+   republished as a set, like AD-009 did for the seed sweep.
+
+**Acceptance.**
+- No request-toned record carries label 0, and no neutral-toned record label 1 (a test asserts it).
+- The scope decision is recorded as an ADR and the affected datasets/checkpoints re-measured.
+- Per-language `noul` accuracy is reported next to the contradictory-label rate, so the two can
+  no longer be confused.
+
+**Risks / notes.** Cost: up to two retrains plus a full benchmark re-run (blocker B-002); the
+published numbers stay valid for the data that produced them, which is why this is a decision and
+not a bugfix. Effort ~2 days + GPU.
+
+**Related.** `STATE.md` L-008, AD-009 (the last time a re-measurement was published as a set),
+`training/generate_data.py::_noul_record`, `NFR-C06`.
+
+---
+
 ## Evaluated and not pursued (for now)
 
 These proposals were assessed against the frozen wire (ADR-0001) and the actual similarity-based
