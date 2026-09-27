@@ -60,20 +60,31 @@ exactly, and `support` records are identical inside and outside a five-domain ru
 on the way: `data_multi.json` and `data_noisy.json` claimed seed 42 while the shipped data used
 seed 1 (hash-verified), so the configs now match the data, and `data_en.json` /
 `data_eval_en.json` / `data_eval_multi.json` document the datasets that had no config at all.
-**Run 1 failed both gates (measured 2026-09-27)**: support 0.859 → **0.629**, worst new domain
-**0.578** (`voice`), overall 0.630 (the published checkpoint scores 0.478–0.537 zero-shot on the
-new domains), `val_loss` 0.631 against the published 0.326. The per-(domain, primitive) cross
-table isolates it: support `score` 0.910 → **0.492** with level 3 never predicted (127/127 `high`
-records → `medium`) and support `choice` 0.948 → 0.652, while support `noul` *improved*
-(0.718 → 0.744, at the B-11 ceiling) and new-domain `noul` fell (0.67–0.73 → 0.46–0.61). Two
-**candidate** causes, tested together by run 2: support ran on a third of its published volume while four new domains shared an r=16 LoRA, and
-the run under-fit. **Runs 2 and 2b were killed, not crashed**: both died at ~60 min with a silent
-process-group hangup — RAM 16.2/31 GB and VRAM 4.8/12 GB flat to the last sample, no traceback,
-no `exit=` line (L-009). **Run 3 is in flight** with the same config (`setsid nohup`, its own
-session): support restored to 3,000/type through the new
-`DataConfig.per_domain` (21,000 records) and the LoRA moved to r=64 / `lora_alpha` 128 — the same
-scaling as the multilingual fix (B-1).
-Next: the run-2 gates (support ≥ 0.85, worst new domain ≥ 0.70, per-domain ECE published), then
+**Runs 1 and 3 failed both gates** (measured 2026-09-27):
+
+| run | data | LoRA | overall | support | worst new domain |
+| --- | --- | --- | ---: | ---: | ---: |
+| baseline (published) | 9,000 support | r=16 | 0.859 | **0.859** | 0.478 (zero-shot) |
+| run 1 | 15,000 (support 3,000) | r=16 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ |
+| run 3 | 21,000 (support 9,000) | r=64 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ |
+
+Runs 2 and 2b never finished: both were killed by a **silent process-group hangup** at ~60 min
+(RAM 16.2/31 GB and VRAM 4.8/12 GB flat to the last sample, no traceback, no `exit=` line) —
+L-009 has the fix, and run 3 was the same config launched `setsid nohup` in its own session.
+The per-(domain, primitive) cross table — a script, because the reports have no such cell — shows
+each run collapsing a *different* primitive: run 1 lost support `score` (0.910 → 0.492, level 3
+never predicted: 127/127 `high` → `medium`), run 3 lost `noul` everywhere (2499/2500 predicted 1,
+accuracy 0.244) while `score` reached 0.886–0.908. Restoring support's volume and doubling the
+rank made things *worse*, so the diagnosis moved to the loop, where two real bugs were found:
+(1) `val_split` took the **tail of the file**, so on domain-ordered data the validation set is the
+last domain's tail — the published `val_loss` 0.326 was `support`/`score` alone and the column
+never measured overall fit; (2) with `batch 8 × grad_accum 4` **every optimizer step was 32
+consecutive records of one primitive and one domain** (file order) and every epoch ended on
+`score` — textbook multi-domain interference, invisible to the single-domain baseline. **Run 4 is
+in flight**: both fixed (`split_records()` + `shuffled()` in `training/finetune_rlcd.py`, 3 tests),
+LoRA back to r=16 (r=64 measured worse: 0.630 → 0.540), support volume kept at 3,000/type through
+`DataConfig.per_domain` (21,000 records).
+Next: the run-4 gates (support ≥ 0.85, worst new domain ≥ 0.70, per-domain ECE published), then
 **B-5b** (multilingual); **B-6** remains an Idea.
 
 ## Milestone Status

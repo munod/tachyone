@@ -178,24 +178,37 @@ scores 0.705 there. Domain coverage, not architecture, is the binding constraint
 
 | Run | Data | LoRA | overall | support | worst new domain | `val_loss` | Gates |
 | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
-| baseline (published) | 9,000 support | r=16 | 0.859 (support-only eval) | **0.859** | 0.478 (zero-shot) | 0.326 | support ✓ |
-| B-5a run 1 | 15,000 (support 3,000) | r=16 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ | 0.631 | both ✗ |
-| B-5a run 2 / 3 | 21,000 (support 9,000) | r=64 | *in flight* | — | — | — | — |
+| baseline (published) | 9,000 support | r=16 | 0.859 (support-only eval) | **0.859** | 0.478 (zero-shot) | 0.326* | support ✓ |
+| B-5a run 1 | 15,000 (support 3,000) | r=16 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ | 0.631* | both ✗ |
+| B-5a run 3 | 21,000 (support 9,000) | r=64 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ | 0.654* | both ✗ |
+| B-5a run 4 | 21,000 (support 9,000) | r=16 | *in flight* | — | — | — | — |
 
-> Runs 2 and 2b never finished: both were killed as a **silent process-group hangup** at ~60 min
-> with RAM 16.2/31 GB and VRAM 4.8/12 GB flat, no traceback and no `exit=` line (`STATE.md`
-> L-009). Run 3 is the same config launched with `setsid nohup` in its own session.
+\* the `val_loss` column is **not** what it looked like — see the two loop bugs below. Runs 2 and
+2b never finished: both were killed as a **silent process-group hangup** at ~60 min with RAM
+16.2/31 GB and VRAM 4.8/12 GB flat, no traceback and no `exit=` line (`STATE.md` L-009).
 
 Run 1 learned the new domains (`choice` 0.502 → 0.738 overall, per new domain 0.67–0.86) but paid
 for it with support. The cross table isolates *how*: support `score` **0.910 → 0.492** with the
 model never predicting level 3 (127/127 `high` records → `medium`) and support `choice`
 0.948 → 0.652, while support `noul` actually *improved* (0.718 → 0.744, right at the label-noise
-ceiling of B-11) and new-domain `noul` fell (0.67–0.73 → 0.46–0.61). Two **candidate** causes,
-both tested by run 2: `support` had shrunk to a third of its published volume (3,000 vs 9,000 records) while four
-new domains shared the same LoRA, and `val_loss` 0.631 against the published 0.326 says the run
-under-fit — hence support back to 3,000/type (`per_domain`) and LoRA r=16 → 64 with `lora_alpha`
-128, the same alpha/r scaling as the multilingual fix that took 0.702 → 0.853 when *that* task got
-broader (B-1).
+ceiling of B-11) and new-domain `noul` fell (0.67–0.73 → 0.46–0.61).
+
+Run 3 restored support's volume and doubled the LoRA rank, and got **worse**: `score` jumped to
+0.886–0.908 in four domains while `noul` collapsed to a constant — 2499/2500 records predicted 1
+(accuracy 0.244). The `noul` head can only emit `sigmoid(cos/T)` ∈ [0.31, 0.69] at the fitted
+T = 0.83, so every `cos > 0` became a positive. Each run collapsing a *different* primitive
+(run 1: `score`; run 3: `noul`) pointed at the training loop, and two bugs were found there:
+
+1. **`val_split` took the tail of the file.** Generated data is ordered domain → primitive, so a
+   multi-domain run's "validation" set is the tail of the *last* domain (`voice`) — and the
+   published `val_loss` 0.326 was `support`/`score` alone. That column never measured overall fit.
+2. **Every optimizer step was a single (domain, primitive) gradient.** `batch_size 8 ×
+   grad_accum 4` = 32 consecutive records of one primitive, and the file is domain-ordered, so
+   each step trained one domain and every epoch ended on `score` — the textbook recipe for
+   multi-domain interference. The published baseline never saw it because it has one domain.
+
+Both are fixed for run 4 (`split_records()` + `shuffled()` in `training/finetune_rlcd.py`, 3 tests)
+and the LoRA goes back to r=16: r=64 measured worse on every headline (0.630 → 0.540).
 
 **Plan.**
 
