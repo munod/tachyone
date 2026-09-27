@@ -25,9 +25,7 @@ and the noise-augmented adapter did not beat them (ECE 0.090 vs 0.033), so it is
 remain open. The r=64 multilingual adapter is republished to the
 Hub (`munod/tachyone-multi`, commit `599df58`); the English adapter was reseeded separately in B-9
 (AD-009: overall 0.859 / ECE 0.023).
-Next ready: **B-8** (hardening, unblocked) — **B-5** waits on OD-6/OD-7, **B-7** on OD-8, and
-**B-6** remains an Idea. **B-9 (English checkpoint)** was resolved by a seed sweep — see AD-009
-and L-006.
+**B-9 (English checkpoint)** was resolved by a seed sweep — see AD-009 and L-006.
 **B-10 (LLM prompt wrapper) done**: `_SYSTEM_PROMPT` spells out the `answers` wrapper for all three
 primitives with a complete example and bans the value errors observed; `build_answers` names the
 missing key and echoes the top-level keys it saw, staying strict (no inner-shape fallback). The
@@ -35,6 +33,14 @@ four LLM rows were re-run on the same servers/flags/rows: probe `JSON ok` 0.083 
 (`ling-tiny`) and 0.889 → **1.000** (`ornith-9b`), home 0.417 → **0.917** and 0.833 → **1.000**;
 four candidate prompts were gated on the **worst set** because a probe-only winner regressed home
 `noul` to 3/16. Before/after tables are in `docs/compare.md` §3.
+**B-8 (calibration-asset hardening) done**: `load_temperatures()` / `load_choice_head()` no longer
+swallow every exception. An asset that is absent because the adapter does not ship it stays silent;
+anything else — not cached under `TACHYONE_OFFLINE=1`, a mis-typed repo id, a network error, an
+unreadable/corrupt file, a non-numeric temperature — logs a WARNING naming the asset and the source
+(stderr, since the package configures no logging) and then degrades to the uncalibrated baseline.
+A corrupt temperature value, which used to raise out of the loader, now warns instead of crashing.
+11 tests in `tests/test_encoder.py`; `docs/huggingface.md` §4 documents the message.
+Next: **B-5** waits on OD-6/OD-7, **B-7** on OD-8, and **B-6** remains an Idea.
 
 ## Milestone Status
 
@@ -375,6 +381,7 @@ calibration metric without the confidence it was bought with.
 | B-3 | confidence thresholding / System-2 handoff (entropy/margin, `handoff.py`, CLI `--threshold`) | 2026-09-25 | `feat(handoff): add confidence threshold and handoff signal` | ✅ |
 | B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrained + measured on GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
 | B-10 | LLM prompt spells out the `answers` wrapper + actionable error (probe `JSON ok` 0.083 → 0.889) | 2026-09-26 | `fix(llm): spell out the answers wrapper in the system prompt` | ✅ |
+| B-8 | calibration assets that cannot be loaded now warn by name instead of degrading silently | 2026-09-27 | `fix(encoder): warn when a calibration asset cannot be loaded` | ✅ |
 | R-T1..T3 | multilingual LoRA rank 16 → 64 (accuracy 0.702 → 0.853, `es` ECE 0.170 → 0.038) | 2026-09-25 | `chore(training): raise multilingual LoRA rank to 64` | ✅ |
 
 ---
@@ -390,7 +397,8 @@ nine-family probe and the results, method and limitations are published in `docs
 MASSIVE / XNLI / typed-decisions remain (see OD-8). **B-5** is now **Ready** with measured
 evidence, and **B-10** (LLM prompt wrapper) is **Done** (2026-09-26): the wrapper is documented for
 all three primitives, the parser stayed strict, and the four LLM rows were re-run — probe
-`JSON ok` 0.083 → 0.889. Carried-over ideas (provider registry, extra checkpoints, streaming, web
+`JSON ok` 0.083 → 0.889. **B-8** (calibration-asset hardening) is **Done** (2026-09-27). Carried-over
+ideas (provider registry, extra checkpoints, streaming, web
 console, process items) are listed in the backlog too. Promote an item into `docs/tasks.md` when
 it is scheduled.
 

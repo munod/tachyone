@@ -125,6 +125,18 @@ TACHYONE_OFFLINE=1 uv run tachyone --predict --backend encoder "..."   # cache-o
     point at the directory layout `huggingface_hub` expects; if the cache is only partially
     populated, prefer a fresh warm-up run over `TACHYONE_OFFLINE=1`.
 
+    The encoder backend no longer degrades quietly in that situation (B-8). When an adapter asset
+    cannot be used — absent from a partially populated cache, or present but unreadable — it logs
+    a WARNING naming the asset and where it looked, then answers with the uncalibrated baseline:
+
+    ```text
+    tachyone: cannot load temperature_calibration.json from munod/tachyone-en
+    (LocalEntryNotFoundError: ...); continuing without it
+    ```
+
+    An adapter that simply does not ship `temperature_calibration.json` / `choice_head.json` in
+    normal (online) operation stays silent — that is a documented state, not a fault.
+
 ## 5. After a full-scale run
 
 - Refresh the metrics in `docs/model-card.md` and `benchmarks/report.md` from the new report.

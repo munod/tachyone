@@ -67,6 +67,16 @@ All notable changes to this project are documented here. The format is based on
   with the same servers, flags and rows: probe `JSON ok` **0.083 → 0.889** (`ling-tiny`) and
   **0.889 → 1.000** (`ornith-9b`), home **0.417 → 0.917** and **0.833 → 1.000**; accuracy/ECE are
   recorded before *and* after in `docs/compare.md` §3 because the prompt moves the distribution.
+- **A calibration asset that cannot be loaded no longer disappears without a trace (B-8).**
+  `load_temperatures()` / `load_choice_head()` caught every exception and returned the empty
+  baseline, so a partially populated cache under `TACHYONE_OFFLINE=1` — or a corrupt
+  `temperature_calibration.json` / `choice_head.json` — left the encoder answering *uncalibrated*
+  with no indication. They now log a WARNING naming the asset and the source (stderr) for anything
+  other than "this adapter does not ship that file": `LocalEntryNotFoundError` (a partial prefetch
+  looks exactly like this), a mis-typed adapter id, a network error, and files that are unreadable,
+  not a JSON object, hold a non-numeric temperature or an invalid scorer. A corrupt temperature
+  value, which used to raise out of the loader, now degrades with the same warning. Nothing raises
+  — the change is log-only by design. Message documented in `docs/huggingface.md` §4.
 - `benchmarks/report.py` split `--entry` on the **first** `=`, which broke on the report's own
   entry names (`english (... r=16 ...)`) with a misleading `FileNotFoundError`; it now splits on
   the last one.

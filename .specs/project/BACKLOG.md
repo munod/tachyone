@@ -323,7 +323,7 @@ comparison comparable). Effort ~2–3 days, no GPU retrain, ~100 MB of downloads
 
 ---
 
-## B-8 · Hardening — silent degradation when calibration assets fail to load · Ready
+## B-8 · Hardening — silent degradation when calibration assets fail to load · Done (2026-09-27)
 
 **Why.** `load_temperatures()` and `load_choice_head()` in `src/tachyone/backends/encoder.py` swallow
 every exception (`except Exception: return {} / None`). On a partially populated cache — the exact
@@ -333,22 +333,38 @@ do not reflect the calibrated model. Reported by the 2026-09-26 documentation re
 `TACHYONE_OFFLINE=1` run failed with `LocalEntryNotFoundError` because the Hub `refs/main` pointed at
 an empty snapshot.
 
-**Status (not started).** Documentation now describes the real prefetch step
-(`docs/huggingface.md`, `docs/adr/README.md`); the code path is unchanged.
+**Status (done, 2026-09-27).** Both loaders now resolve the asset through one `_adapter_asset()`
+helper and read it through `_read_asset_json()`, and every non-routine outcome logs a WARNING
+naming **the asset and the source** before the engine degrades:
+
+| Situation | Behaviour |
+| --- | --- |
+| adapter does not ship the file (online, hub says `EntryNotFoundError`) | silent — documented state |
+| local adapter dir without the file, online | silent — documented state |
+| `LocalEntryNotFoundError` (not cached; a partial prefetch looks exactly like this) | **warn** |
+| `RepositoryNotFoundError` (mis-typed adapter id) / `HfHubHTTPError` (network, 500) | **warn** |
+| file present but unreadable, not a JSON object, or a non-numeric temperature / broken scorer | **warn** |
+| any of the above under `TACHYONE_OFFLINE=1`, including a missing file in a local dir | **warn** |
+
+Warnings go through `logging.getLogger("tachyone.backends.encoder")`, which the package does not
+configure, so Python's last-resort handler prints them to **stderr**. Nothing raises: the baseline
+still answers (log-only, per the risk note below). The previously-raising path — a corrupt
+temperature value escaping `parse_temperature_report()` as an unhandled `ValueError` — now warns
+and degrades instead of crashing the backend.
 
 **Plan.**
-1. Distinguish "asset genuinely absent" (fine, documented) from "asset present but unreadable /
+1. [x] Distinguish "asset genuinely absent" (fine, documented) from "asset present but unreadable /
    cache corrupt" (a bug) and `log.warning` on the latter, naming the file and the repo.
-2. In `offline` mode, fail loudly (or at least warn on stderr) instead of degrading silently.
-3. Add a regression test with a seeded fake encoder that asserts the warning is emitted when
+2. [x] In `offline` mode, fail loudly (or at least warn on stderr) instead of degrading silently.
+3. [x] Add a regression test with a seeded fake encoder that asserts the warning is emitted when
    `temperature_calibration.json` / `choice_head.json` cannot be read.
 
 **Acceptance.**
-- A corrupt/partial cache produces a warning naming the missing asset; a clean first run does not.
-- `tests/test_encoder.py` covers both branches; no wire-shape change (contract suite untouched).
+- [x] A corrupt/partial cache produces a warning naming the missing asset; a clean first run does not.
+- [x] `tests/test_encoder.py` covers both branches; no wire-shape change (contract suite untouched).
 
 **Risks / notes.** Behaviour change is log-only; do not turn it into a hard failure for users who
-intentionally run without calibration. Effort ~0.5 day.
+intentionally run without calibration. Effort ~0.5 day (actual: one session, 11 tests).
 
 **Related.** `docs/huggingface.md` (§4), `docs/adr/README.md` (ADR-0010 note), `NFR-C05`.
 
