@@ -176,28 +176,39 @@ scores 0.705 there. Domain coverage, not architecture, is the binding constraint
 `per_domain` reporting and the byte-identity guarantee are **done** — see `STATE.md` and commit
 `d9a974d`. The measurements so far:
 
-| Run | Data | LoRA | overall | support | worst new domain | `val_loss` | Gates |
+| Run | Data | LoRA / head | overall | support | worst new domain | `val_loss` | Gates |
 | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
-| baseline (published) | 9,000 support | r=16 | 0.859 (support-only eval) | **0.859** | 0.478 (zero-shot) | 0.326* | support ✓ |
-| B-5a run 1 | 15,000 (support 3,000) | r=16 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ | 0.631* | both ✗ |
-| B-5a run 3 | 21,000 (support 9,000) | r=64 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ | 0.654* | both ✗ |
-| B-5a run 4 | 21,000 (support 9,000) | r=16 | *in flight* | — | — | — | — |
+| baseline (published) | 9,000 support | r=16 / 32 | 0.859 (support-only eval) | **0.859** | 0.478 (zero-shot) | 0.326* | support ✓ |
+| B-5a run 1 | 15,000 (support 3,000) | r=16 / 32 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ | 0.631* | both ✗ |
+| B-5a run 3 | 21,000 (support 9,000) | r=64 / 32 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ | 0.654* | both ✗ |
+| **B-5a run 4** (shuffled loop) | 21,000 (support 9,000) | r=16 / 32 | **0.732** | **0.655** ✗ | **0.690** (`ecommerce`, 0.010 short) ✗ | 0.369 | both ✗ |
+| B-5a run 5 | 21,000 (support 9,000) | r=16 / **128**, 6 epochs | *in flight* | — | — | — | — |
 
 \* the `val_loss` column is **not** what it looked like — see the two loop bugs below. Runs 2 and
 2b never finished: both were killed as a **silent process-group hangup** at ~60 min with RAM
 16.2/31 GB and VRAM 4.8/12 GB flat, no traceback and no `exit=` line (`STATE.md` L-009).
 
-Run 1 learned the new domains (`choice` 0.502 → 0.738 overall, per new domain 0.67–0.86) but paid
-for it with support. The cross table isolates *how*: support `score` **0.910 → 0.492** with the
-model never predicting level 3 (127/127 `high` records → `medium`) and support `choice`
-0.948 → 0.652, while support `noul` actually *improved* (0.718 → 0.744, right at the label-noise
-ceiling of B-11) and new-domain `noul` fell (0.67–0.73 → 0.46–0.61).
+**Run 4 fixed the loop and almost cleared the gates**: three of the four new domains pass
+(`agent_tools` 0.783, `voice` 0.782, `documents` 0.751), `noul` reached its label-noise ceiling
+(0.744) and `score` reached 0.894, with `val_loss` 0.369 against 0.631/0.654 before. The whole
+remaining gap is one cell of the cross table: **support `choice` 0.316** (published 0.948, chance
+0.25).
 
-Run 3 restored support's volume and doubled the LoRA rank, and got **worse**: `score` jumped to
-0.886–0.908 in four domains while `noul` collapsed to a constant — 2499/2500 records predicted 1
-(accuracy 0.244). The `noul` head can only emit `sigmoid(cos/T)` ∈ [0.31, 0.69] at the fitted
-T = 0.83, so every `cos > 0` became a positive. Each run collapsing a *different* primitive
-(run 1: `score`; run 3: `noul`) pointed at the training loop, and two bugs were found there:
+Two measurements localise it:
+
+- **The predictions are biased to the fourth option**: `other` 423/500 on `support`, `catalog`
+  357/500 on `ecommerce`, `other` 264/500 on `voice`. The scoring rule adds `cos(criterion,
+  question)`, a per-domain constant, so when the `cos(criterion, state)` term is too weak the
+  constant wins and every record falls to the same option.
+- **Zeroing the choice head** (same checkpoint, head written as zeros) drops `choice` 0.557 →
+  0.371 globally but leaves support *unchanged* (0.655 → 0.655): the shared low-rank head has
+  learned to help the four new domains and **not** support. Capacity/time of that head is what
+  run 5 changes (`choice_rank` 32 → 128, epochs 4 → 6).
+
+Runs 1 and 3 each collapsed a *different* primitive (run 1 lost `support/score`: 0.910 → 0.492,
+level 3 never predicted; run 3 lost `noul` everywhere: 2499/2500 predicted 1, accuracy 0.244,
+because the head can only emit `sigmoid(cos/T)` ∈ [0.31, 0.69] at the fitted T = 0.83), which
+pointed at the training loop rather than the data. Two real bugs were found there:
 
 1. **`val_split` took the tail of the file.** Generated data is ordered domain → primitive, so a
    multi-domain run's "validation" set is the tail of the *last* domain (`voice`) — and the

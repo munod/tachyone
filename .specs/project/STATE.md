@@ -62,11 +62,12 @@ seed 1 (hash-verified), so the configs now match the data, and `data_en.json` /
 `data_eval_en.json` / `data_eval_multi.json` document the datasets that had no config at all.
 **Runs 1 and 3 failed both gates** (measured 2026-09-27):
 
-| run | data | LoRA | overall | support | worst new domain |
+| run | data | LoRA / head | overall | support | worst new domain |
 | --- | --- | --- | ---: | ---: | ---: |
-| baseline (published) | 9,000 support | r=16 | 0.859 | **0.859** | 0.478 (zero-shot) |
-| run 1 | 15,000 (support 3,000) | r=16 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ |
-| run 3 | 21,000 (support 9,000) | r=64 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ |
+| baseline (published) | 9,000 support | r=16 / 32 | 0.859 | **0.859** | 0.478 (zero-shot) |
+| run 1 | 15,000 (support 3,000) | r=16 / 32 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ |
+| run 3 | 21,000 (support 9,000) | r=64 / 32 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ |
+| **run 4** (fixed loop) | 21,000 (support 9,000) | r=16 / 32 | **0.732** | **0.655** ✗ | **0.690** (`ecommerce`) ✗ |
 
 Runs 2 and 2b never finished: both were killed by a **silent process-group hangup** at ~60 min
 (RAM 16.2/31 GB and VRAM 4.8/12 GB flat to the last sample, no traceback, no `exit=` line) —
@@ -80,11 +81,23 @@ rank made things *worse*, so the diagnosis moved to the loop, where two real bug
 last domain's tail — the published `val_loss` 0.326 was `support`/`score` alone and the column
 never measured overall fit; (2) with `batch 8 × grad_accum 4` **every optimizer step was 32
 consecutive records of one primitive and one domain** (file order) and every epoch ended on
-`score` — textbook multi-domain interference, invisible to the single-domain baseline. **Run 4 is
-in flight**: both fixed (`split_records()` + `shuffled()` in `training/finetune_rlcd.py`, 3 tests),
-LoRA back to r=16 (r=64 measured worse: 0.630 → 0.540), support volume kept at 3,000/type through
-`DataConfig.per_domain` (21,000 records).
-Next: the run-4 gates (support ≥ 0.85, worst new domain ≥ 0.70, per-domain ECE published), then
+`score` — textbook multi-domain interference, invisible to the single-domain baseline. Both were
+fixed for run 4 (`split_records()` + `shuffled()` in `training/finetune_rlcd.py`, 3 tests), the
+LoRA went back to r=16 (r=64 measured worse: 0.630 → 0.540) and support kept its full volume
+(3,000/type through `DataConfig.per_domain`, 21,000 records).
+**Run 4 cleared most of the gap (0.732 overall, `val_loss` 0.369 against 0.631/0.654)**: three new
+domains now pass ≥ 0.70 (`agent_tools` 0.783, `voice` 0.782, `documents` 0.751), `noul` reached its
+label-noise ceiling (0.744) and `score` 0.894. Two cells still fail — support **0.655** and
+`ecommerce` **0.690** (0.010 short) — and both trace to **support `choice` 0.316** (published
+0.948, chance 0.25) beside `ecommerce` 0.432. The predictions are biased to the fourth option
+(`other` 423/500, `catalog` 357/500): `cos(criterion, question)` is a per-domain constant, so when
+the `cos(criterion, state)` term is weak it wins outright. Zeroing the choice head (same
+checkpoint, head written as zeros) drops `choice` 0.557 → 0.371 globally but leaves support
+**unchanged** — the shared low-rank head learned to help the four new domains and not support.
+**Run 5 is in flight** with that head's capacity and training time raised (`choice_rank` 32 → 128,
+epochs 4 → 6), everything else identical to run 4, plus per-epoch per-primitive train loss in the
+log so a plateau is visible without paying for a second run.
+Next: the run-5 gates (support ≥ 0.85, worst new domain ≥ 0.70, per-domain ECE published), then
 **B-5b** (multilingual); **B-6** remains an Idea.
 
 ## Milestone Status
