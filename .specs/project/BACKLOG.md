@@ -183,7 +183,7 @@ scores 0.705 there. Domain coverage, not architecture, is the binding constraint
 | B-5a run 3 | 21,000 (support 9,000) | r=64 / 32 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ | 0.654* | both ✗ |
 | **B-5a run 4** (shuffled loop) | 21,000 (support 9,000) | r=16 / 32 | **0.732** | **0.655** ✗ | **0.690** (`ecommerce`, 0.010 short) ✗ | 0.369 | both ✗ |
 | B-5a run 5 | 21,000 (support 9,000) | r=16 / **128**, 6 epochs | **0.804** | **0.785** ✗ | **0.739** (`voice`) ✅ | 0.253 | support ✗, new domains ✓ |
-| B-5a run 6 | *decision pending* | — | — | — | — | — | — |
+| B-5a run 6 | 21,000 (support 9,000) | r=16 / **256**, 8 epochs | 0.755 | **0.795** ✗ | 0.659 (`ecommerce`) ✗ | 0.281 | both ✗ |
 
 \* the `val_loss` column is **not** what it looked like — see the two loop bugs below. Runs 2 and
 2b never finished: both were killed as a **silent process-group hangup** at ~60 min with RAM
@@ -224,6 +224,20 @@ Three measurements say it is **under-fit, not over-fit**:
   gradient share to strengthen.
 
 `val_loss` fell 0.369 → **0.253** across the same change.
+
+**Run 6 (choice_rank 256, 8 epochs) made it worse** — overall 0.804 → 0.755 and it took the
+second gate back with it. Support only moved 0.785 → 0.795 (+0.010 for the whole change), while
+`ecommerce` fell 0.838 → 0.659 and `agent_tools` 0.849 → 0.705. The per-epoch curve explains the
+shape: at rank 256 the head sits at loss ≈0.75 for the first four epochs and only collapses to
+0.05 at epoch 5, so eight epochs spent half the run learning to use a head the smaller one already
+had.
+
+The confusion matrices show the leak **moving between domains rather than being fixed**: run 5
+leaks `billing → other` (82/125) and `sales → other` (48/125) on support, while run 6's support
+leaks `billing → sales` (88/125) instead — support lands at 0.726 and 0.738 — and it is
+`ecommerce` that develops a fourth-option leak (`returns → catalog` 117, `shipping → catalog` 91).
+That is run-to-run variance in *which* domain the shared head under-fits (L-006/AD-009 territory),
+not a monotone capacity effect: **run 5 remains the best measured run**.
 
 Runs 1 and 3 each collapsed a *different* primitive (run 1 lost `support/score`: 0.910 → 0.492,
 level 3 never predicted; run 3 lost `noul` everywhere: 2499/2500 predicted 1, accuracy 0.244,

@@ -69,6 +69,7 @@ seed 1 (hash-verified), so the configs now match the data, and `data_en.json` /
 | run 3 | 21,000 (support 9,000) | r=64 / 32 | 0.540 | **0.597** ✗ | 0.379 (`voice`) ✗ |
 | **run 4** (fixed loop) | 21,000 (support 9,000) | r=16 / 32 | **0.732** | **0.655** ✗ | **0.690** (`ecommerce`) ✗ |
 | **run 5** (bigger choice head) | 21,000 (support 9,000) | r=16 / 128, 6 ep | **0.804** | **0.785** ✗ | **0.739** (`voice`) ✅ |
+| **run 6** (rank 256, 8 ep) | 21,000 (support 9,000) | r=16 / 256, 8 ep | 0.755 | **0.795** ✗ | 0.659 (`ecommerce`) ✗ |
 
 Runs 2 and 2b never finished: both were killed by a **silent process-group hangup** at ~60 min
 (RAM 16.2/31 GB and VRAM 4.8/12 GB flat to the last sample, no traceback, no `exit=` line) —
