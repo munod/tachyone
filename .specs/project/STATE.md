@@ -583,3 +583,13 @@ all relative doc links resolve; 0 `.py` files created.
 ## Preferences
 
 **Model Guidance Shown:** never
+
+**Hugging Face token:** it is exported in `~/.zshrc`, and a non-interactive zsh reads only
+`~/.zshenv` — so shells started by a tool do not see it. Load it without printing it:
+
+```bash
+eval "$(grep -hE '^(export )?(HF_TOKEN|HF_HOME|HUGGING_FACE_HUB_TOKEN)=' ~/.zshrc)"
+```
+
+Verified authenticated as `munod` (2026-09-27); used it to refresh the model cards for `v0.4.0`.
+Never echo it, never commit it (rule 4).
