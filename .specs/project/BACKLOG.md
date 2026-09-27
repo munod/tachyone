@@ -157,7 +157,7 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · Ready (evidence measured 2026-09-26)
+## B-5 — Multi-domain coverage (5 domains) · In progress (B-5a, run 1 measured 2026-09-27)
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
@@ -170,6 +170,28 @@ on the four `tickets_*` families that nominally share its vocabulary (0.031–0.
 option spaces are 52 queues and 77 intents, not our four teams. A peer scorer trained on that data
 scores 0.705 there. Domain coverage, not architecture, is the binding constraint; full tables in
 `docs/compare.md` §3.
+
+**Status (B-5a in progress).** Scope and budget are settled (OD-6: English first; OD-7:
+`per_type` 1000/domain → 15,000 records, the ~2–3 h option). The refactor, the five domain files,
+`per_domain` reporting and the byte-identity guarantee are **done** — see `STATE.md` and commit
+`d9a974d`. The measurements so far:
+
+| Run | Data | LoRA | overall | support | worst new domain | `val_loss` | Gates |
+| --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| baseline (published) | 9,000 support | r=16 | 0.859 (support-only eval) | **0.859** | 0.478 (zero-shot) | 0.326 | support ✓ |
+| B-5a run 1 | 15,000 (support 3,000) | r=16 | 0.630 | **0.629** ✗ | 0.578 (`voice`) ✗ | 0.631 | both ✗ |
+| B-5a run 2 | 21,000 (support 9,000) | r=64 | *in flight* | — | — | — | — |
+
+Run 1 learned the new domains (`choice` 0.502 → 0.738 overall, per new domain 0.67–0.86) but paid
+for it with support. The cross table isolates *how*: support `score` **0.910 → 0.492** with the
+model never predicting level 3 (127/127 `high` records → `medium`) and support `choice`
+0.948 → 0.652, while support `noul` actually *improved* (0.718 → 0.744, right at the label-noise
+ceiling of B-11) and new-domain `noul` fell (0.67–0.73 → 0.46–0.61). Two **candidate** causes,
+both tested by run 2: `support` had shrunk to a third of its published volume (3,000 vs 9,000 records) while four
+new domains shared the same LoRA, and `val_loss` 0.631 against the published 0.326 says the run
+under-fit — hence support back to 3,000/type (`per_domain`) and LoRA r=16 → 64 with `lora_alpha`
+128, the same alpha/r scaling as the multilingual fix that took 0.702 → 0.853 when *that* task got
+broader (B-1).
 
 **Plan.**
 

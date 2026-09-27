@@ -55,13 +55,23 @@ Implemented, M6 exit criterion met.
 `training/evaluate.py` reports `per_domain` (rendered by `benchmarks/report.py`, which gates on the
 worst domain). **Byte-identity holds**: golden hashes and all five shipped datasets reproduce
 exactly, and `support` records are identical inside and outside a five-domain run. `data/` gains
-`train_en_domains.jsonl` (15,000) and `eval_en_domains.jsonl` (7,500 — its `support` half **is**
-`eval_en.jsonl`, so the published 0.859 stays the support gate); training on `checkpoints/en_domains`
-was launched 2026-09-27. Two data records corrected on the way: `data_multi.json` and
-`data_noisy.json` claimed seed 42 while the shipped data used seed 1 (hash-verified), so the
-configs now match the data and `data_en.json` / `data_eval_en.json` / `data_eval_multi.json` were
-added to document the datasets that had no config at all.
-Next: **B-5b** (multilingual) after the B-5a gates, and **B-6** remains an Idea.
+`train_en_domains.jsonl` and `eval_en_domains.jsonl` (7,500 — its `support` half **is**
+`eval_en.jsonl`, so the published 0.859 stays the support gate). Two data records were corrected
+on the way: `data_multi.json` and `data_noisy.json` claimed seed 42 while the shipped data used
+seed 1 (hash-verified), so the configs now match the data, and `data_en.json` /
+`data_eval_en.json` / `data_eval_multi.json` document the datasets that had no config at all.
+**Run 1 failed both gates (measured 2026-09-27)**: support 0.859 → **0.629**, worst new domain
+**0.578** (`voice`), overall 0.630 (the published checkpoint scores 0.478–0.537 zero-shot on the
+new domains), `val_loss` 0.631 against the published 0.326. The per-(domain, primitive) cross
+table isolates it: support `score` 0.910 → **0.492** with level 3 never predicted (127/127 `high`
+records → `medium`) and support `choice` 0.948 → 0.652, while support `noul` *improved*
+(0.718 → 0.744, at the B-11 ceiling) and new-domain `noul` fell (0.67–0.73 → 0.46–0.61). Two
+**candidate** causes, tested together by run 2: support ran on a third of its published volume while four new domains shared an r=16 LoRA, and
+the run under-fit. **Run 2 is in flight**: support restored to 3,000/type through the new
+`DataConfig.per_domain` (21,000 records) and the LoRA moved to r=64 / `lora_alpha` 128 — the same
+scaling as the multilingual fix (B-1).
+Next: the run-2 gates (support ≥ 0.85, worst new domain ≥ 0.70, per-domain ECE published), then
+**B-5b** (multilingual); **B-6** remains an Idea.
 
 ## Milestone Status
 
