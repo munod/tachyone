@@ -1,9 +1,9 @@
 {
   "batch_size": 8,
   "bf16": true,
-  "choice_rank": 128,
+  "choice_rank": 256,
   "data_path": "data/train_en_domains.jsonl",
-  "epochs": 6,
+  "epochs": 8,
   "grad_accum": 4,
   "gradient_checkpointing": true,
   "learning_rate": 0.0001,
