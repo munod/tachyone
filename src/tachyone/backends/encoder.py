@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import math
 import os
 from collections.abc import Callable, Mapping
@@ -427,6 +428,83 @@ def load_encoder(
     return encode
 
 
+#: Fitted temperatures shipped next to the adapter (per-primitive and per-language, B-1).
+TEMPERATURE_ASSET = "temperature_calibration.json"
+#: Trained ``choice`` scorer shipped next to the adapter (L-002).
+CHOICE_HEAD_ASSET = "choice_head.json"
+
+_log = logging.getLogger(__name__)
+
+
+def _asset_absent_from_repo(exc: Exception) -> bool:
+    """True only when the Hub said *this repo does not ship the asset* — silence is correct.
+
+    Anything else (an unpopulated cache under ``TACHYONE_OFFLINE=1``, a network error, a 500)
+    used to be swallowed too, which is the failure B-8 is about: the engine then runs without
+    temperature scaling and without the ``choice`` head, quietly reporting confident numbers
+    that do not reflect the calibrated model. ``LocalEntryNotFoundError`` is never "absent":
+    it means *not cached*, and a partially populated cache looks exactly like that.
+    """
+    names = {cls.__name__ for cls in type(exc).__mro__}
+    if "LocalEntryNotFoundError" in names:
+        return False
+    if "RepositoryNotFoundError" in names:  # a mis-typed adapter id, not a missing file
+        return False
+    return "EntryNotFoundError" in names
+
+
+def _warn_asset(asset: str, source: str, problem: str) -> None:
+    """Log (stderr, WARNING) that an adapter asset is unusable, naming both file and repo."""
+    _log.warning(
+        "tachyone: cannot load %s from %s (%s); continuing without it", asset, source, problem
+    )
+
+
+def _adapter_asset(adapter: str, asset: str, *, models_dir: str, offline: bool) -> Path | None:
+    """Locate ``asset`` in a local adapter dir or download it, warning when that is not routine."""
+    local = Path(os.path.expanduser(adapter))
+    if local.is_dir():
+        candidate = local / asset
+        if candidate.exists():
+            return candidate
+        if offline:
+            _warn_asset(
+                asset,
+                str(candidate),
+                "absent from the local adapter directory and TACHYONE_OFFLINE=1 "
+                "forbids fetching it",
+            )
+        return None  # a local adapter that does not ship the asset is a normal, documented case
+    try:
+        from huggingface_hub import hf_hub_download  # pyright: ignore[reportMissingImports]
+
+        return Path(
+            hf_hub_download(
+                repo_id=adapter,
+                filename=asset,
+                cache_dir=models_dir,
+                local_files_only=offline,
+            )
+        )
+    except Exception as exc:  # classified by _asset_absent_from_repo, never fatal
+        if not _asset_absent_from_repo(exc):
+            _warn_asset(asset, adapter, f"{type(exc).__name__}: {exc}")
+        return None
+
+
+def _read_asset_json(path: Path, asset: str) -> dict[str, Any] | None:
+    """Read a JSON object from ``path``, warning when the file exists but cannot be used."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        _warn_asset(asset, str(path), f"unreadable, {type(exc).__name__}: {exc}")
+        return None
+    if not isinstance(payload, dict):
+        _warn_asset(asset, str(path), f"expected a JSON object, found {type(payload).__name__}")
+        return None
+    return payload
+
+
 def load_temperatures(
     info: CheckpointInfo, *, models_dir: str, offline: bool = False
 ) -> dict[str, float]:
@@ -435,66 +513,47 @@ def load_temperatures(
     Keys are ``kind`` for the per-primitive fit and ``kind:lang`` for the per-language fit
     (B-1); :meth:`EncoderModel._temp` prefers the latter. A legacy per-primitive-only file still
     loads.
+
+    An adapter that does not ship the file is normal and stays silent; a file that exists but
+    cannot be read, parsed or interpreted — or that cannot be fetched offline — logs a WARNING
+    naming the asset and its source before the engine degrades to the uncalibrated baseline
+    (B-8).
     """
     if not info.adapter:
         return {}
-    source: Path | None = None
-    local = Path(os.path.expanduser(info.adapter))
-    if local.is_dir():
-        source = local / "temperature_calibration.json"
-    else:
-        try:
-            from huggingface_hub import hf_hub_download  # pyright: ignore[reportMissingImports]
-
-            downloaded = hf_hub_download(
-                repo_id=info.adapter,
-                filename="temperature_calibration.json",
-                cache_dir=models_dir,
-                local_files_only=offline,
-            )
-            source = Path(downloaded)
-        except Exception:
-            return {}
-    if source is None or not source.exists():
+    source = _adapter_asset(info.adapter, TEMPERATURE_ASSET, models_dir=models_dir, offline=offline)
+    if source is None:
+        return {}
+    report = _read_asset_json(source, TEMPERATURE_ASSET)
+    if report is None:
         return {}
     try:
-        report = json.loads(source.read_text(encoding="utf-8"))
-    except (ValueError, OSError):
+        return parse_temperature_report(report)
+    except (TypeError, ValueError) as exc:
+        _warn_asset(TEMPERATURE_ASSET, str(source), f"invalid temperature value, {exc}")
         return {}
-    return parse_temperature_report(report)
 
 
 def load_choice_head(
     info: CheckpointInfo, *, models_dir: str, offline: bool = False
 ) -> ChoiceScorer | None:
-    """Load a trained ``choice`` scorer from the adapter repo/dir, if present."""
+    """Load a trained ``choice`` scorer from the adapter repo/dir, if present.
+
+    Same contract as :func:`load_temperatures`: absent asset is silent, unusable asset warns
+    and the engine falls back to the similarity baseline (B-8).
+    """
     if not info.adapter:
         return None
-    source: Path | None = None
-    local = Path(os.path.expanduser(info.adapter))
-    if local.is_dir():
-        candidate = local / "choice_head.json"
-        if candidate.exists():
-            source = candidate
-    else:
-        try:
-            from huggingface_hub import hf_hub_download  # pyright: ignore[reportMissingImports]
-
-            source = Path(
-                hf_hub_download(
-                    repo_id=info.adapter,
-                    filename="choice_head.json",
-                    cache_dir=models_dir,
-                    local_files_only=offline,
-                )
-            )
-        except Exception:
-            return None
-    if source is None or not source.exists():
+    source = _adapter_asset(info.adapter, CHOICE_HEAD_ASSET, models_dir=models_dir, offline=offline)
+    if source is None:
+        return None
+    payload = _read_asset_json(source, CHOICE_HEAD_ASSET)
+    if payload is None:
         return None
     try:
-        return ChoiceScorer.from_dict(json.loads(source.read_text(encoding="utf-8")))
-    except (ValueError, KeyError, OSError):
+        return ChoiceScorer.from_dict(payload)
+    except (ValueError, KeyError, TypeError) as exc:
+        _warn_asset(CHOICE_HEAD_ASSET, str(source), f"invalid scorer, {type(exc).__name__}: {exc}")
         return None
 
 
@@ -601,7 +660,9 @@ def _fake_encode(texts: list[str]) -> list[list[float]]:
 
 
 __all__ = [
+    "CHOICE_HEAD_ASSET",
     "MODEL_IDS",
+    "TEMPERATURE_ASSET",
     "ChoiceScorer",
     "EncodeFn",
     "EncoderBackend",

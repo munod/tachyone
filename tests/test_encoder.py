@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -303,6 +304,154 @@ def test_load_choice_head_from_local_dir(tmp_path: Path) -> None:
 def test_load_choice_head_without_adapter_is_none() -> None:
     info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=None)
     assert load_choice_head(info, models_dir="/tmp") is None
+
+
+# --- B-8: an unusable calibration asset must be loud, an absent one must stay silent -------
+
+
+def _info(adapter: str | None) -> CheckpointInfo:
+    return CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=adapter)
+
+
+def _warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelname == "WARNING" and record.name == "tachyone.backends.encoder"
+    ]
+
+
+def test_clean_assets_load_without_a_warning(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    (tmp_path / "temperature_calibration.json").write_text(
+        json.dumps({"per_primitive": {"noul": {"temperature": 4.0}}}), encoding="utf-8"
+    )
+    (tmp_path / "choice_head.json").write_text(
+        json.dumps({"rank": 1, "w1": [[0.0] * 16], "w2": [[0.0] * 8]}), encoding="utf-8"
+    )
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_temperatures(info, models_dir=str(tmp_path)) == {"noul": 4.0}
+        assert isinstance(load_choice_head(info, models_dir=str(tmp_path)), ChoiceScorer)
+    assert _warnings(caplog) == []
+
+
+def test_local_adapter_without_assets_is_silent(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """An adapter that simply does not ship calibration is a documented, normal case."""
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_temperatures(info, models_dir=str(tmp_path)) == {}
+        assert load_choice_head(info, models_dir=str(tmp_path)) is None
+    assert _warnings(caplog) == []
+
+
+def test_unreadable_temperature_file_warns_naming_file_and_source(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    path = tmp_path / "temperature_calibration.json"
+    path.write_text("{not json", encoding="utf-8")
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_temperatures(info, models_dir=str(tmp_path)) == {}  # degraded, not fatal
+    messages = _warnings(caplog)
+    assert len(messages) == 1
+    assert "temperature_calibration.json" in messages[0]
+    assert str(path) in messages[0]
+    assert "continuing without it" in messages[0]
+
+
+def test_temperature_file_with_a_non_numeric_value_warns(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A structurally valid file with a corrupt value used to raise out of the loader."""
+    (tmp_path / "temperature_calibration.json").write_text(
+        json.dumps({"per_primitive": {"noul": {"temperature": "hot"}}}), encoding="utf-8"
+    )
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_temperatures(info, models_dir=str(tmp_path)) == {}
+    messages = _warnings(caplog)
+    assert len(messages) == 1
+    assert "temperature_calibration.json" in messages[0]
+
+
+def test_temperature_file_that_is_not_an_object_warns(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    (tmp_path / "temperature_calibration.json").write_text("[1, 2, 3]", encoding="utf-8")
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_temperatures(info, models_dir=str(tmp_path)) == {}
+    assert any("expected a JSON object" in message for message in _warnings(caplog))
+
+
+def test_corrupt_choice_head_warns_and_falls_back(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    (tmp_path / "choice_head.json").write_text(json.dumps({"w1": "oops"}), encoding="utf-8")
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_choice_head(info, models_dir=str(tmp_path)) is None
+    messages = _warnings(caplog)
+    assert len(messages) == 1
+    assert "choice_head.json" in messages[0]
+    assert str(tmp_path) in messages[0]
+
+
+def test_offline_local_adapter_without_assets_warns(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """TACHYONE_OFFLINE=1 plus an incomplete cache is the B-8 scenario: say it out loud."""
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_temperatures(info, models_dir=str(tmp_path), offline=True) == {}
+        assert load_choice_head(info, models_dir=str(tmp_path), offline=True) is None
+    messages = _warnings(caplog)
+    assert len(messages) == 2
+    assert "temperature_calibration.json" in messages[0]
+    assert "choice_head.json" in messages[1]
+    assert "TACHYONE_OFFLINE=1" in messages[0]
+
+
+@pytest.mark.parametrize(
+    ("error_name", "expects_warning"),
+    [
+        ("EntryNotFoundError", False),  # the repo does not ship the asset: silence is correct
+        ("LocalEntryNotFoundError", True),  # not cached: a partial prefetch looks like this
+        ("RepositoryNotFoundError", True),  # a mis-typed adapter id, not a missing file
+        ("HfHubHTTPError", True),  # network/500: degrading silently hides it
+    ],
+)
+def test_hub_download_failures_are_classified(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    error_name: str,
+    expects_warning: bool,
+) -> None:
+    import sys
+    import types
+
+    module = types.ModuleType("huggingface_hub")
+    error_type = type(error_name, (Exception,), {})
+
+    def _download(**kwargs: object) -> str:
+        raise error_type(f"{error_name} for {kwargs['filename']}")
+
+    module.hf_hub_download = _download  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "huggingface_hub", module)
+
+    info = _info("acme/tuned")  # a repo id, so the hub branch is taken
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_temperatures(info, models_dir="/tmp") == {}
+
+    messages = _warnings(caplog)
+    assert bool(messages) is expects_warning
+    if expects_warning:
+        assert "temperature_calibration.json" in messages[0]
+        assert "acme/tuned" in messages[0]
 
 
 def test_cuda_graph_encode_matches_eager_on_cuda() -> None:
