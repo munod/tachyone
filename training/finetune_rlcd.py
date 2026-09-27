@@ -290,6 +290,9 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
         model.train()  # type: ignore[attr-defined]
         optimizer.zero_grad(set_to_none=True)
         accumulations = 0
+        # per-primitive epoch loss kept as detached tensors: one sync per epoch, not per batch
+        epoch_loss: dict[str, Any] = dict.fromkeys(("noul", "choice", "score"), 0.0)
+        epoch_seen = dict.fromkeys(epoch_loss, 0)
         for kind in ("noul", "choice", "score"):
             # Mixed-domain data must not arrive domain by domain: every optimizer step would then
             # be one (domain, primitive) gradient (B-5, see `shuffled`).
@@ -297,6 +300,10 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
             for start in range(0, len(items), config.batch_size):
                 chunk = items[start : start + config.batch_size]
                 loss = batch_loss(kind, chunk) / config.grad_accum
+                # keep the per-primitive epoch loss as a detached tensor: one sync per epoch,
+                # not one per batch
+                epoch_loss[kind] = epoch_loss[kind] + loss.detach() * config.grad_accum * len(chunk)
+                epoch_seen[kind] += len(chunk)
                 loss.backward()
                 accumulations += 1
                 if accumulations % config.grad_accum == 0:
@@ -306,6 +313,12 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
         epochs_run += 1
+        # Train loss per primitive, every epoch: it costs nothing (the values are already computed)
+        # and it is the only way to see whether a primitive is still improving when the run ends.
+        means = " ".join(
+            f"{kind}={epoch_loss[kind] / max(1, epoch_seen[kind]):.4f}" for kind in epoch_loss
+        )
+        print(f"epoch {epochs_run}/{config.epochs} train_loss {means}", flush=True)
 
     output_dir = Path(config.out_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
