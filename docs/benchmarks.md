@@ -82,6 +82,43 @@ typed-decisions — the one dataset that already speaks our wire — reaches 0.3
 calibrated ECE is bought by flattening; `Conf` and `Brier` in `probes.md` expose it. This table is
 the measurement that `B-5` set out to improve.
 
+## Multi-domain experiment (B-5a) — 1 of 2 gates met (2026-09-27)
+
+Five domains trained into one adapter — `support`, `ecommerce`, `agent_tools`, `documents`,
+`voice` — English only, 21,000 records, evaluated on `data/eval_en_domains.jsonl` (7,500 rows;
+its `support` half is byte-identical to `eval_en.jsonl`, so the 0.859 above is the comparable
+support number). **Nothing was released:** the adapters on the Hub are still the support-only ones
+above, because the B-5 gate *no regression on support* did not clear. The full six-run curve, the
+per-(domain, primitive) cross tables and the diagnosis live in `.specs/project/BACKLOG.md` **B-5**.
+
+| Domain | released adapter (zero-shot) | best 5-domain run | Δ |
+| --- | ---: | ---: | ---: |
+| `support` | 0.859 | **0.785** | −0.074 |
+| `agent_tools` | 0.478 | **0.849** | +0.371 |
+| `documents` | 0.501 | **0.810** | +0.309 |
+| `ecommerce` | 0.537 | **0.838** | +0.301 |
+| `voice` | 0.513 | **0.739** | +0.226 |
+| **overall** | 0.578 | **0.804** | +0.226 |
+
+| Primitive | released | best run | ECE (best run) |
+| --- | ---: | ---: | ---: |
+| `choice` | 0.502 | 0.789 | 0.046 ✅ |
+| `noul` | 0.707 | 0.720 | 0.171 ❌ |
+| `score` | 0.524 | 0.905 | 0.048 ✅ |
+
+**Gates:** worst new domain ≥ 0.70 → **pass** (`voice` 0.739; `agent_tools` 0.849, `documents`
+0.810, `ecommerce` 0.838). Support ≥ 0.85 → **fail** (0.785, −0.065). Per-domain ECE is
+published: 0.082–0.116, **all above the 0.05 target** and declared as exceptions — one scalar
+temperature per primitive is fitted across five domains at once.
+
+What the six runs established: the binding constraint is neither capacity nor time.
+`choice_rank` 32 → 128 → 256 with 4 → 6 → 8 epochs moved support 0.655 → 0.785 → 0.795, while the
+*shared* low-rank `choice` head under-fits whichever domain it under-fits last — the
+fourth-option leak simply **moves between runs** (`billing → other` in run 5; `billing → sales` in
+run 6 while `ecommerce` grew `returns → catalog` 117). Closing the last 0.065 needs a structural
+decision (per-domain adapters, or two-stage training), which is an ADR rather than a
+hyper-parameter.
+
 ## Known limitations
 
 - Per-language ECE is above the `0.05` target for four of six languages (`nl` 0.104, `de` 0.063,

@@ -107,8 +107,22 @@ is under-fit rather than over-fit: `choice` train loss flat from epoch 2, the ch
 — whose description names the other three options and overlaps the question, so the per-domain
 constant `cos(criterion, question)` keeps beating a state term the shared head never got enough
 capacity or gradient share to strengthen.
-Next: the run-6 decision (how to lift `support/choice` without giving back the new domains), then
-**B-5b** (multilingual); **B-6** remains an Idea.
+**Run 6 tested the remaining capacity/time hypothesis (`choice_rank` 256, 8 epochs) and failed**:
+overall 0.804 → 0.755, support only 0.785 → 0.795, and it took the second gate back (`ecommerce`
+0.659). The confusion matrices say why: the fourth-option leak is not fixed, it **moves** — run 5
+leaks `billing → other` on support, run 6 fixes that and leaks `billing → sales` there while
+`ecommerce` grows `returns → catalog` 117. Support is 0.726 / 0.738 across the two, which is
+run-to-run variance in *which* domain the shared `choice` head under-fits (L-006 / AD-009
+territory), not a capacity curve — and seed 2 was already the winner of B-9's sweep.
+
+**B-5a closed at 1 of 2 gates (2026-09-27)**: worst new domain **0.739 ✓**, support **0.785 ✗**
+(needs 0.85). Run 5 is the designated artifact (`checkpoints/en_domains`,
+`benchmarks/results/en_domains_r5.json`) and its tables are published in `docs/benchmarks.md`;
+**nothing was republished** — the Hub adapters, the model card numbers and `benchmarks/report.md`
+still describe the support-only checkpoint, and `CHANGELOG` records the outcome under
+`[Unreleased]`. Closing the last 0.065 needs a structural decision (BACKLOG B-5 lists the three:
+per-domain adapters, two-stage training, or a different `choice` scoring rule — each an ADR), and
+**B-5b stays blocked** behind it. **B-6** remains an Idea.
 
 ## Milestone Status
 

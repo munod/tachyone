@@ -157,7 +157,7 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · In progress (B-5a, run 1 measured 2026-09-27)
+## B-5 — Multi-domain coverage (5 domains) · B-5a closed, **gates NOT met (1 of 2)**, 2026-09-27
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
@@ -290,12 +290,38 @@ and the LoRA goes back to r=16: r=64 measured worse on every headline (0.630 →
    **re-run the `B-7` probes** — the harness takes minutes and the before/after table on public
    data is the real payoff of this item.
 
-**Acceptance.**
-- Existing configs regenerate byte-identically (hash test in `tests/`).
-- Five domains with deterministic, localized, committed data; `B-5a` English first.
-- Per-domain accuracy/ECE published and gated on the worst domain; no regression on `support`.
-- Adapter republished; `benchmarks/report.md`, model card, README and CHANGELOG updated.
-- Probe before/after table published (`B-7` harness).
+**Acceptance (B-5a evaluated 2026-09-27).**
+- [x] Existing configs regenerate byte-identically (hash test in `tests/`, 3 golden hashes + a
+  config-vs-dataset check over the five shipped datasets).
+- [x] Five domains with deterministic, localized, committed data; `B-5a` English first.
+- [x] Per-domain accuracy/ECE published and gated on the worst domain — worst new domain **0.739**
+  (`voice`) ✓, per-domain ECE 0.082–0.116 published with the exceptions declared above the 0.05
+  target.
+- [ ] **No regression on `support` (English overall ≥ 0.85)** → **0.785** ✗ (best of six runs).
+- [ ] Adapter republished; `benchmarks/report.md`, model card, README and CHANGELOG updated →
+  deliberately **not done**: the released adapters are untouched and the card was refreshed only
+  for the `v0.4.0` version line.
+- [ ] Probe before/after table published (`B-7` harness) → **not done**: there is no adapter to
+  re-measure.
+
+**Verdict (2026-09-27): 1 of 2 gates.** Run 5 is the designated artifact —
+`checkpoints/en_domains`, `data/preds_en_domains_r5.jsonl`, `benchmarks/results/en_domains_r5.json`
+— and its numbers are the ones published in `docs/benchmarks.md`. Runs 1, 3, 4, 5 and 6 are kept
+as `_rN` so the curve can be re-read.
+
+**What would actually close the last 0.065 (each needs a decision before code):**
+
+1. **Per-domain adapters** (MoE of LoRA / adapter routing): gives support its own capacity so the
+   shared `choice` head stops trading one domain for another. This reopens the item listed under
+   *Evaluated and not pursued* — revisit only with a new ADR (the L-004 rule).
+2. **Two-stage training**: five domains first, then a short support-only polish phase, with the new
+   domains re-measured for forgetting. Also an ADR — it changes the recipe behind every published
+   number.
+3. **A different `choice` scoring rule**: the leak rides on the per-domain constant
+   `cos(criterion, question)`; removing or rebalancing it invalidates published numbers and forces
+   a full re-benchmark (the AD-009 pattern).
+
+**B-5b (the multilingual half) stays blocked** behind whichever of those is chosen.
 
 **Risks / notes.** Five domains in one LoRA of fixed capacity may dilute per-domain accuracy —
 that is what the worst-domain gate is for. Training time vs the 12 GB budget (ADR-0005). Tool/

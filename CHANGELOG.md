@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Documentation
+
+- **The `B-5a` multi-domain experiment finished with 1 of 2 gates met.** Five domains trained into
+  one adapter reach **0.804** overall against 0.578 for the released adapter zero-shot on the same
+  rows, and the worst new domain (`voice`, 0.739) clears its ≥ 0.70 gate — but `support` lands at
+  **0.785** against its ≥ 0.85 gate, so **nothing was released** and the published adapters remain
+  the support-only ones. `docs/benchmarks.md` carries both tables, the per-domain ECE (0.082–0.116,
+  all declared above the 0.05 target) and the gate verdicts; the six-run curve and the diagnosis —
+  capacity and epochs do not close the gap, the shared `choice` head's fourth-option leak simply
+  moves between runs — live in `.specs/project/BACKLOG.md` **B-5**.
+
 ## [0.4.0] - 2026-09-27
 
 ### Added
