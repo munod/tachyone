@@ -105,6 +105,38 @@ def test_build_answers_rejects_missing_question() -> None:
         build_answers(_QUESTIONS, {"answers": {"urgent": {"noul": 0.5}}})
 
 
+def test_system_prompt_documents_the_wrapper_for_every_primitive() -> None:
+    system = build_messages({"body": "hello"}, _QUESTIONS)[0]["content"]
+    # the outer wrapper is stated explicitly, not left to inference
+    assert '"answers"' in system
+    assert "only top-level key" in system
+    # and each primitive has a complete example inside that wrapper
+    assert '{"noul": <number 0..1>}' in system
+    assert '{"choice": "<option>", "probabilities": {"<option>": <number 0..1>}' in system
+    assert '{"score": <number>, "probabilities": {"<index>": <number 0..1>}' in system
+    # one end-to-end example tying question ids to their answer objects
+    assert '{"answers": {"q1": {"noul": 0.8}' in system
+
+
+def test_build_answers_rejects_the_inner_shape_with_an_actionable_message() -> None:
+    """A model that answers with the inner object fails loudly, naming the wrapper."""
+    inner = {
+        "team": {"choice": "billing", "probabilities": {"billing": 0.6, "technical": 0.4}},
+        "urgent": {"noul": 0.5},
+    }
+    with pytest.raises(ValueError) as excinfo:
+        build_answers(_QUESTIONS, inner)
+    message = str(excinfo.value)
+    assert "missing an 'answers' object" in message
+    assert '{"answers": {"<question id>": <answer>}}' in message
+    assert "'team'" in message and "'urgent'" in message
+
+
+def test_build_answers_rejects_a_non_object_answers_value() -> None:
+    with pytest.raises(ValueError, match="missing an 'answers' object"):
+        build_answers(_QUESTIONS, {"answers": []})
+
+
 @pytest.mark.asyncio
 async def test_predict_success() -> None:
     transport = _Queue(['{"answers": {"urgent": {"noul": 0.7}}}'])

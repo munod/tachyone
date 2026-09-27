@@ -35,16 +35,35 @@ from tachyone.wire import BackendError, Overloaded, RateLimited, Usage
 #: Sends an OpenAI chat-completions payload and returns the assistant message content.
 type Transport = Callable[[dict[str, Any]], Awaitable[str]]
 
+#: Fixed system prompt. Its wording is **measured, not decorative**: four variants were A/B'd on
+#: both benchmark sets (BACKLOG **B-10**) and this one wins on the *worst* set — probe 0.889 /
+#: home 0.917 against 0.917 / 0.729 for a probe-only winner that regressed home `noul` to 3/16.
+#: Rewording it means re-running the four LLM rows in `benchmarks/README.md` before the tables in
+#: `docs/compare.md` §3 can be touched.
 _SYSTEM_PROMPT = (
     "You answer typed decision questions about a STATE. "
     "Reply with a single JSON object and nothing else. "
-    'The shape is {"answers": {"<question id>": {"noul": <number 0..1>} } } for noul, '
-    '{"choice": "<option>", "probabilities": {"<option>": <number 0..1>}} for choice, and '
-    '{"score": <number>, "probabilities": {"<index>": <number 0..1>}} for score. '
-    "For noul return only noul. For choice include a probability for every option. "
-    "For score, score is the probability-weighted position on the levels and may fall "
-    "between levels; include a probability for every level index. "
-    "Probabilities must be non-negative and sum to 1."
+    'The response MUST be wrapped: its only top-level key is "answers", and that value maps '
+    "each question id given by the user to one answer object. "
+    'The shape is {"answers": {"<question id>": <answer object>}}. '
+    "Never return an answer object at the top level and never return a bare number. "
+    'For noul, the answer object is {"noul": <number 0..1>} with nothing else. '
+    "noul is a single decimal probability such as 0.73 — never a boolean (true/false), "
+    "never the criteria text, and never a choice/probabilities object. "
+    'For choice, it is {"choice": "<option>", "probabilities": {"<option>": <number 0..1>}} '
+    "with a probability for every option. "
+    'For score, it is {"score": <number>, "probabilities": {"<index>": <number 0..1>}} with a '
+    "probability for every level index; score is the probability-weighted position on the "
+    "levels and may fall between levels. "
+    "Example request: state plus questions q1 (noul), q2 (choice), q3 (score) → "
+    '{"answers": {"q1": {"noul": 0.8}, '
+    '"q2": {"choice": "billing", "probabilities": {"billing": 0.7, "technical": 0.3}}, '
+    '"q3": {"score": 1.5, "probabilities": {"0": 0.1, "1": 0.6, "2": 0.3}}}}. '
+    "Probabilities must be non-negative and sum to 1. "
+    "Reminder: noul is answered with a decimal number such as 0.73, never true or false. "
+    "Each value under a question id must be one of the three answer objects above — never a "
+    "bare string — and the key must be the question id exactly as the user message gives it, "
+    "never an option label."
 )
 
 
@@ -151,7 +170,12 @@ def build_answers(questions: dict[str, Question], payload: dict[str, Any]) -> di
     """Map a model JSON payload to validated answers, one per question id."""
     raw_answers = payload.get("answers")
     if not isinstance(raw_answers, dict):
-        raise ValueError("model output is missing an 'answers' object")
+        observed = ", ".join(repr(key) for key in payload) or "<nothing>"
+        raise ValueError(
+            "model output is missing an 'answers' object: the response must have the shape "
+            '{"answers": {"<question id>": <answer>}}, but the top-level keys observed were '
+            f"{observed}"
+        )
     answers: dict[str, Answer] = {}
     for question_id, question in questions.items():
         if question_id not in raw_answers:
