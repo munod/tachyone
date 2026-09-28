@@ -20,6 +20,7 @@ not edited in place to change its decision — supersede it with a new ADR inste
 | [ADR-0011](ADR-0011-no-telemetry.md) | No telemetry; opt-out variables reserved | Accepted | 2026-09-24 |
 | [ADR-0012](ADR-0012-onnx-before-fast-path.md) | Ship the ONNX backend before the TileLang fast path | Accepted | 2026-09-24 |
 | [ADR-0013](ADR-0013-rename-to-tachyone.md) | Rename the project from `jeba` to Tachyone | Accepted | 2026-09-26 |
+| [ADR-0014](ADR-0014-noul-label-from-text.md) | Fix the `noul` label everywhere and retrain | Accepted | 2026-09-27 |
 
 ## Implementation notes (post-acceptance)
 
