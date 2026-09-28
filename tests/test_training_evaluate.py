@@ -319,3 +319,19 @@ def test_noul_label_audit_does_not_judge_states_it_cannot_read() -> None:
     assert audit["unknown"] == 1
     assert audit["judged"] == 0
     assert audit["contradictory"] == 0
+
+
+@pytest.mark.parametrize(
+    "dataset",
+    ["data/eval_en.jsonl", "data/eval_multi.jsonl", "data/eval_en_domains.jsonl"],
+)
+def test_shipped_eval_sets_carry_no_contradictory_noul_labels(dataset: str) -> None:
+    """The B-11 acceptance, on the shipped eval sets themselves (they are gitignored: skipped
+    when absent, like the config-vs-dataset hash check)."""
+    path = Path(__file__).resolve().parents[1] / dataset
+    if not path.exists():
+        pytest.skip(f"{dataset} is gitignored and not present")
+    audit = noul_label_audit(load_examples(path))
+    assert audit["unknown"] == 0, "eval sets are clean; no state should be unreadable"
+    assert audit["contradictory"] == 0, audit
+    assert 0.40 < audit["positive_rate"] < 0.55, "text-consistent labels are balanced"
