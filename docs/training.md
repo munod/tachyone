@@ -165,11 +165,15 @@ Report per primitive and per language group:
 | Latency | p50 / p95, batch=1 and batched |
 | Throughput | requests/s vs batch size |
 | Coverage | Languages/scripts exercised |
+| `noul` accuracy per language | `report["noul_per_language"]` — that primitive's rows broken out per language, so it can be read against the label audit below (B-11) |
+| Contradictory-label rate | `report["noul_labels"]` — every `noul` label judged against its own text (request → 1, neutral/empty → 0); states no phrase bank explains (surface noise) count as `unknown` and are never judged |
 
-Public probes: **MASSIVE**, **XNLI**, **typed-decisions** — evaluation only and **not yet run**;
-what is published today is the external nine-family `pngwn/system-one-decisions` head-to-head
-(`docs/compare.md` §3, 2026-09-26). Committed reproduction commands cover the synthetic
-evaluation only (see `docs/benchmarks.md` → Known limitations).
+`benchmarks/report.py` renders the last two **in one table**, because the pre-B-11 generator made
+`de`/`es`/`nl` look weak when the labels, not the model, were the problem (L-008).
+
+Public probes: **MASSIVE**, **XNLI** and **typed-decisions** are published, with licences and
+reproduction commands, in [`benchmarks/probes.md`](https://github.com/munod/tachyone/blob/main/benchmarks/probes.md)
+(B-7); the external nine-family `pngwn/system-one-decisions` head-to-head is in `docs/compare.md` §3.
 
 ---
 
