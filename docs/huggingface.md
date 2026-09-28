@@ -11,9 +11,16 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> The multilingual adapter was republished at **LoRA rank 64** (commit `599df58`), lifting
-> multilingual overall accuracy 0.702 → 0.853 and `es` ECE 0.170 → 0.038; see
-> `benchmarks/report.md`.
+> **Latest revision: 2026-09-28 (B-11, ADR-0014)** — commits [`224c8a74`](https://huggingface.co/munod/tachyone-en/commit/224c8a746861b0882b83c92abea6dbd65f171af6)
+> (`tachyone-en`) and [`b7747756`](https://huggingface.co/munod/tachyone-multi/commit/b7747756f95bdd9f72c28c01d1d5751d130130e0)
+> (`tachyone-multi`). Both adapters were retrained on `noul` labels derived from the text and the
+> cards carry the new numbers: English **0.945** overall / **0.992** `noul`, multilingual **0.718**
+> / **0.832** (8 epochs). Every uploaded file was verified against the local build (sha256 match
+> on the adapter, temperature, choice head and `finetune_config`).
+>
+> The previous multilingual revision was published at **LoRA rank 64** (commit `599df58`); its
+> numbers (0.702 → 0.853, `es` ECE 0.170 → 0.038) were measured on the pre-B-11 labels and are
+> not comparable with the table above — see `.specs/project/BACKLOG.md` **B-11**.
 
 ## 0. Prerequisites
 

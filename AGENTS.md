@@ -11,7 +11,10 @@ serving, an SDK, a CLI, preset/schema helpers, an MCP stdio server, a LangChain 
 no-op telemetry guard. `training/` has the full data → LoRA/RLCD → calibration → evaluation
 pipeline; `benchmarks/` renders a reproducible report; `docs/` builds an mkdocs site. The RTX 3060
 training run is done and the adapters plus measured numbers are published (Releases `v0.2.0` and
-`v0.3.0`, Hub `munod/tachyone-en` / `munod/tachyone-multi`). Open quality work is tracked in
+`v0.3.0`, Hub `munod/tachyone-en` / `munod/tachyone-multi`).
+**Since 2026-09-28 (B-11 / ADR-0014) the `noul` labels are derived from the text and the whole
+measured surface was regenerated as one set — never quote a pre-B-11 number against a current one,
+and never derive a label from a loop index.** Open quality work is tracked in
 `.specs/project/BACKLOG.md` (worst: `nl` per-language ECE, and the public probes in **B-7**).
 Current state and blockers: `.specs/project/STATE.md`.
 

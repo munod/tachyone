@@ -414,9 +414,9 @@ Phase 1 ran with the released adapters through the language router (`--backend e
 
 | Probe | n | Accuracy | Chance | ECE raw | Notes |
 | --- | ---: | ---: | ---: | ---: | --- |
-| typed-decisions (`all/test`, 4 configs) | 2000 | **0.323** | 0.20–0.50 | 0.408 | best config 0.402 (`customer_service`, `security_incidents`), worst 0.218 (`invoice_processing`) |
-| MASSIVE (7 locales) | 3584 | **0.033** | 0.017 | 0.214 | per language 0.016 (`de`) … 0.047 (`en`) — at chance everywhere |
-| XNLI (`en`) | 5010 | **0.334** | 0.333 | 0.452 | exactly chance |
+| typed-decisions (`all/test`, 4 configs) | 2000 | **0.323** → **0.330** (B-11) | 0.20–0.50 | 0.408 → 0.498 | best config 0.412 (`security_incidents`), worst 0.250 (`agent_trace_observability`) |
+| MASSIVE (7 locales) | 3584 | **0.033** → **0.013** (B-11) | 0.017 | 0.214 → 0.136 | now *below* chance; per language 0.006 (`es`) … 0.023 (`nl`) — the multilingual `choice` regression seen from outside |
+| XNLI (`en`) | 5010 | **0.334** → **0.333** (B-11) | 0.333 | 0.452 → 0.269 | exactly chance, as before |
 
 - **XNLI licence verified as required**: **CC BY-NC 4.0**, read from
   `facebookresearch/XNLI`'s `LICENSE` — *not* CC BY-SA as this entry guessed, and the HF card has
@@ -641,7 +641,7 @@ are not comparable before vs after; record both. Effort ~0.5 day.
 
 ---
 
-## B-11 · The `noul` target depends on the loop index, not on the text · In progress (code + retrains done, publication pending)
+## B-11 · The `noul` target depends on the loop index, not on the text · **Done (2026-09-28)**
 
 **Why.** `_noul_record` computes `positive = (index % 2 == 0)` and only then forces `False` when
 the tone is neutral, so `target = 1` iff *even index ∧ request tone*. Half of the request-toned
@@ -710,11 +710,23 @@ Three things the sweep settled (L-006 first: run the control before blaming anyt
 **Published multilingual artifact: `checkpoints/multi_e8`** (promoted to `checkpoints/multi`;
 the 4-epoch first retrain is kept as `checkpoints/multi_r1b11` so the sweep can be re-read).
 
+**Published (2026-09-28).** Both adapters were republished to the Hub — `munod/tachyone-en`
+commit `224c8a74`, `munod/tachyone-multi` commit `b7747756`, every uploaded file verified against
+the local build by sha256 — and the measured surface moved with them: `benchmarks/report.md`,
+`benchmarks/probes.md`, `docs/benchmarks.md`, `docs/compare.md` §3, `docs/model-card.md`, README,
+the landing page and `docs/huggingface.md`. The fast path was re-measured on the new weights
+(2.72×, parity 0.000771, 0 flips), the B-5a artifact was re-judged (both gates pass), and the
+CHANGELOG entry sits under `[Unreleased]`.
+
 **Acceptance.**
-- No request-toned record carries label 0, and no neutral-toned record label 1 (a test asserts it).
-- The scope decision is recorded as an ADR and the affected datasets/checkpoints re-measured.
-- Per-language `noul` accuracy is reported next to the contradictory-label rate, so the two can
-  no longer be confused.
+- [x] No request-toned record carries label 0, and no neutral-toned record label 1 (a test asserts
+  it — over every domain × language, plus the three shipped eval sets).
+- [x] The scope decision is recorded as an ADR (`docs/adr/ADR-0014-noul-label-from-text.md`) and the
+  affected datasets/checkpoints re-measured (datasets regenerated, both adapters retrained, probes,
+  fast path, head-to-head and the B-5a artifact all re-run).
+- [x] Per-language `noul` accuracy is reported next to the contradictory-label rate, so the two can
+  no longer be confused (`report["noul_per_language"]` + `report["noul_labels"]`, rendered in one
+  table by `benchmarks/report.py` and in `docs/benchmarks.md`).
 
 **Risks / notes.** Cost: up to two retrains plus a full benchmark re-run (blocker B-002); the
 published numbers stay valid for the data that produced them, which is why this is a decision and

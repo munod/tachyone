@@ -1,7 +1,40 @@
 # State
 
-**Last Updated:** 2026-09-26
-**Current Work:** Post-M6 backlog. **B-2 (fast path) done**: `TACHYONE_FAST` wires
+**Last Updated:** 2026-09-28
+**Current Work:** Post-M6 backlog. **B-11 (`noul` labels from the text) done and published
+(2026-09-28, ADR-0014).** `_noul_record` no longer takes its label from the loop index: the rule
+is now `target = 1` iff the state was drawn from the `request` phrase bank (`neutral`/empty → 0),
+asserted against each state's own phrase bank across all five domains × seven languages **and**
+against the shipped eval sets. Only `noul.target` bytes moved (states, questions, `choice`/`score`
+byte-identical), so the seven datasets were regenerated and the golden hashes recaptured.
+`training/evaluate.py` now emits `report["noul_per_language"]` beside `report["noul_labels"]` —
+per-language `noul` accuracy next to the contradictory-label rate — and `benchmarks/report.py`
+renders both in one table. Measured outcome of the label fix, published as one set:
+
+| | pre-B-11 labels | on the corrected labels (old weights) | published (retrained) |
+| --- | ---: | ---: | ---: |
+| English | 0.859 (`noul` 0.718) | 0.935 (`noul` 0.946) | **0.945** (`noul` **0.992**) |
+| Multilingual | 0.853 (`noul` 0.960) | 0.714 (`noul` 0.614) | **0.718** (`noul` **0.832**, 8 epochs) |
+
+The English row is the fix proving itself (the old weights already read the text); the
+multilingual row needed a four-run sweep — a control (0.663 vs 0.657) showed the 4-epoch drop was
+systematic, 8 epochs recovered `score` (0.648 → 0.854) and won on overall **and** ECE (0.042 vs
+0.076), and `choice_rank` 128 overfit (train loss 0.085, eval 0.490). Its residual cost, `choice`
+0.468 against 0.674 for the old weights with `choice` labels never having moved, is published
+rather than hidden — and the external probes see it (MASSIVE 0.033 → **0.013**, below its 0.017
+chance; typed-decisions 0.323 → 0.330; XNLI 0.333). Also re-measured on the new adapters: fast
+path **2.72×** (9.19 → 3.37 ms, parity 0.000771, 0 flips), the head-to-head (table A Tachyone only
+0.229 → **0.241**; table B **all four engines re-scored** because the gold labels changed —
+Tachyone **0.953** at home vs peer 0.599), and **B-5a's run 5, which now passes both gates**
+(support 0.785 → **0.861 ≥ 0.85**, worst new domain 0.739 → **0.807 ≥ 0.70**; `choice`/`score`
+unchanged, so only `noul` moved 0.720 → 0.946). Both adapters were republished to the Hub
+(`224c8a74` / `b7747756`, sha256-verified file by file); CHANGELOG records it under
+`[Unreleased]`; new lesson **L-010** (a constant label is a shortcut the model wins with) and new
+backlog item **B-12** (the analogous `score` near-tie label, ceiling 0.922).
+**Everything below this paragraph was measured on pre-B-11 labels** and is kept as the record of
+how each milestone was measured at the time; the current numbers are the four cells above and the
+tables they link to.
+**B-2 (fast path) done**: `TACHYONE_FAST` wires
 `maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
 `benchmarks/fast_path.py` measures 2.68× p50 (10.27 → 3.83 ms) and 0 top-label flips, meeting
 NFR-P01/NFR-P07. **B-1 (multilingual quality)** landed, retrained on the RTX 3060, and the
@@ -123,6 +156,14 @@ still describe the support-only checkpoint, and `CHANGELOG` records the outcome 
 `[Unreleased]`. Closing the last 0.065 needs a structural decision (BACKLOG B-5 lists the three:
 per-domain adapters, two-stage training, or a different `choice` scoring rule — each an ADR), and
 **B-5b stays blocked** behind it. **B-6** remains an Idea.
+**Re-measured on the B-11 labels (2026-09-28): both gates pass** — support **0.861 ✓** (0.785 ✗
+before), worst new domain **0.807 ✓** (`voice`), overall 0.804 → **0.880**, because only `noul`
+moved (0.720 → 0.946) while `choice` 0.789 and `score` 0.905 are literally the same measurement
+(`benchmarks/results/en_domains_r5_postb11.json`). Two facts reframe the structural decision: the
+released support-only adapter now scores **0.945** on `support`, so run 5 clears the *absolute*
+gate while sitting 0.084 below the released one; and run 5 itself was **trained on pre-B-11
+labels**, so retraining it on corrected data is the cheap untried option that comes before any of
+the three (BACKLOG B-5 carries this).
 
 ## Milestone Status
 
@@ -430,6 +471,10 @@ never from the loop index.
 **Prevents:** reading a data artifact as a capability gap, and tuning a model against a ceiling
 the labels impose.
 
+> **Resolved by B-11 (2026-09-28)** — the label now comes from the emitted text (ADR-0014), the
+> audit that would have caught this ships in `training/evaluate.py`, and the per-language spread it
+> explained (`nl` vs `es`) is gone from the label side. The follow-on finding is **L-010**.
+
 ### L-009: A background training run must own its session, or it dies with the harness
 
 **Context:** B-5a run 2 and run 2b, both launched as background shells from the agent harness.
@@ -519,6 +564,7 @@ accuracy that a constant label pays for.
 | B-3 | confidence thresholding / System-2 handoff (entropy/margin, `handoff.py`, CLI `--threshold`) | 2026-09-25 | `feat(handoff): add confidence threshold and handoff signal` | ✅ |
 | B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrained + measured on GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
 | B-10 | LLM prompt spells out the `answers` wrapper + actionable error (probe `JSON ok` 0.083 → 0.889) | 2026-09-26 | `fix(llm): spell out the answers wrapper in the system prompt` | ✅ |
+| B-11 | `noul` labels from the emitted text: generator rule + acceptance tests + label audit, 7 datasets regenerated, both adapters retrained, whole measured surface republished (Hub `224c8a74` / `b7747756`) | 2026-09-28 | `fix(training): derive the noul label from the emitted text (B-11)` | ✅ |
 | B-8 | calibration assets that cannot be loaded now warn by name instead of degrading silently | 2026-09-27 | `fix(encoder): warn when a calibration asset cannot be loaded` | ✅ |
 | B-7 | public probes: `benchmarks/probes.py` loaders for typed-decisions/MASSIVE/XNLI + `benchmarks/probes.md` | 2026-09-27 | `feat(benchmarks): add the public probe loaders and report` | ✅ |
 | R-T1..T3 | multilingual LoRA rank 16 → 64 (accuracy 0.702 → 0.853, `es` ECE 0.170 → 0.038) | 2026-09-25 | `chore(training): raise multilingual LoRA rank to 64` | ✅ |
@@ -544,7 +590,10 @@ it is scheduled.
 
 **New backlog entries (2026-09-25):** **B-3** confidence thresholding / System-2 handoff (Ready),
 **B-4** input-noise robustness (Ready), **B-5** multi-domain coverage (Idea → Ready 2026-09-26),
-**B-6** contrastive pre-fine-tuning (Idea). **B-10** was added 2026-09-26. `BACKLOG.md` also
+**B-6** contrastive pre-fine-tuning (Idea). **B-10** was added 2026-09-26, **B-11** (the `noul`
+label rule) closed **Done** on 2026-09-28 and **B-12** (the analogous `score` near-tie label,
+measured ceiling 0.922) was added the same day as an Idea to be bundled with the next retrain.
+`BACKLOG.md` also
 records an **"Evaluated and not pursued (for now)"** section for `route`/`extract_span`/MoE
 adapters with the rationale; revisit only with a new ADR and measured evidence (see L-004).
 
@@ -627,5 +676,7 @@ all relative doc links resolve; 0 `.py` files created.
 eval "$(grep -hE '^(export )?(HF_TOKEN|HF_HOME|HUGGING_FACE_HUB_TOKEN)=' ~/.zshrc)"
 ```
 
-Verified authenticated as `munod` (2026-09-27); used it to refresh the model cards for `v0.4.0`.
+Verified authenticated as `munod` (2026-09-27); used it to refresh the model cards for `v0.4.0`
+and to publish the **B-11 revision** of both adapters (2026-09-28, commits `224c8a74` /
+`b7747756`, sha256-verified file by file).
 Never echo it, never commit it (rule 4).
