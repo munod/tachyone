@@ -35,7 +35,8 @@ Every stage is a committed script with a committed config and a fixed seed.
 - **Determinism:** same seed + config → byte-identical output.
 - **Streaming:** write JSONL incrementally; never hold the full dataset in memory.
 - **Coverage:** per primitive, per language group, with hard negatives and boundary cases
-  (near-ties, ambiguous labels, empty/very long inputs).
+  (empty and very long inputs). Labels are never ambiguous by construction: the near-tie /
+  index-parity devices that made a label unreadable from the text were removed in B-11/B-12.
 - **Localization (B-1):** the `state`, `instructions`, `criteria`, `score` levels, and
   `noul`/`score` entities are all authored per language, so the multilingual checkpoint does not
   learn an English template.
@@ -45,6 +46,14 @@ Every stage is a committed script with a committed config and a fixed seed.
   carry `0` — the old index-parity rule contradicted 50% of `eval_en.jsonl`'s request-toned rows
   and made `noul` accuracy label-bound (L-008). Only `noul.target` bytes move against the
   pre-B-11 datasets; states and questions are unchanged.
+- **`score` and `choice` labels come from the text too (B-12):** `score` takes the level of the
+  tone the state was written in — the old `index % 13` "near-tie" downgrade contradicted 7.8% of
+  rows and capped the primitive at ~0.888 whatever the model learned — and an **empty** `score`
+  state takes the middle level (no signal). `choice` takes the option the state names, and an
+  **empty** `choice` state answers to the domain's catch-all `other` (every committed domain
+  ships one; `ecommerce` gained it in B-12, which re-cycled its four options into five). The empty
+  boundary case therefore exists in all three primitives with a learnable default instead of an
+  index-derived label.
 - **Domains (B-5):** every domain lives in its own committed file,
   `training/data/domains/<domain>.json`, holding its option labels, option terms and
   descriptions, entities, phrase banks, `score` levels, `noul` criteria and per-primitive

@@ -25,6 +25,15 @@ Two rules keep the guarantee in BACKLOG B-5 ("existing configs produce byte-iden
    ``data.json``, ``data_multi.json`` and ``data_noisy.json`` regenerate byte-for-byte.
 
 ``tests/test_training_generate.py`` pins both rules with golden hashes.
+
+Label rules (B-11, B-12)
+------------------------
+Every label is recoverable from the **emitted text**: ``noul`` from its phrase bank (``request``
+→ 1, ``neutral``/empty → 0), ``score`` from the tone's level (an empty state → the middle level,
+since it carries no signal), and ``choice`` from the option the state names (an empty state → the
+domain's catch-all ``other``). No label is a function of the loop index: the two that were — the
+``noul`` parity rule and the ``score`` near-tie downgrade — capped accuracy at the label noise
+instead of at the model (L-008, L-010, ADR-0014, BACKLOG B-12).
 """
 
 from __future__ import annotations
@@ -65,6 +74,10 @@ def _load_domains() -> dict[str, dict[str, Any]]:
 DOMAINS: dict[str, dict[str, Any]] = _load_domains()
 
 _LEVEL_BY_TONE: dict[str, int] = {"calm": 0, "neutral": 1, "request": 2, "urgent": 3}
+
+#: Label an empty ``score`` state carries: the middle level. It carries no signal, so it is
+#: neither calm nor urgent — the same "absence reads as the default" rule as ``noul`` empty → 0.
+_EMPTY_SCORE_TARGET = 1
 
 #: One in this many ``choice`` records appends a hard-negative distractor from another option.
 #: Kept low: appended distractors make the label ambiguous (the target is the *first* option), so
@@ -223,6 +236,15 @@ def _noul_record(domain: DomainData, index: int, lang: str, rng: random.Random) 
     }
 
 
+def _default_option(options: tuple[str, ...]) -> str:
+    """The option an empty ``choice`` state answers to (B-12).
+
+    An empty input names no option, so the answer is the catch-all ``other`` — which every
+    committed domain ships — falling back to the first option if a domain ever ships none.
+    """
+    return "other" if "other" in options else options[0]
+
+
 def _choice_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
     # Cycle options deterministically (so every option, including the catch-all, is well
     # represented) and regularly pick a distractor term from a different option as a hard negative.
@@ -237,13 +259,17 @@ def _choice_record(domain: DomainData, index: int, lang: str, rng: random.Random
         distractor_phrase = rng.choice(domain.phrases(lang)["distractor"])
         state = f"{state} {distractor_phrase.format(distractor=distractor)}"
     state = _boundary_state(index, state)
+    # B-12: the label comes from the text, not the index. A non-empty state names its option (the
+    # drawn term, plus the distractor clause); the empty boundary state names none and answers to
+    # the catch-all instead of to `options[index % len(options)]`.
+    target = option if state else _default_option(options)
     return {
         "id": f"choice-{index:06d}",
         "type": "choice",
         "state": state,
         "instructions": domain.instructions(lang, "choice"),
         "criteria": domain.criteria(lang),
-        "target": option,
+        "target": target,
         "lang": lang,
     }
 
@@ -252,9 +278,10 @@ def _score_record(domain: DomainData, index: int, lang: str, rng: random.Random)
     entity = rng.choice(domain.entities(lang))
     tone = rng.choice(("calm", "neutral", "request", "urgent"))
     state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
-    target = _LEVEL_BY_TONE[tone]
-    if index % 13 == 0:  # ambiguous near-tie label
-        target = max(0, target - 1)
+    # B-11/B-12: the level comes from the tone the text was written in, and an empty state — which
+    # carries no tone at all — takes the middle level. The old `index % 13` "near-tie" downgrade
+    # contradicted 7.8% of rows and capped `score` at ~0.888 whatever the model learned.
+    target = _EMPTY_SCORE_TARGET if not state else _LEVEL_BY_TONE[tone]
     return {
         "id": f"score-{index:06d}",
         "type": "score",

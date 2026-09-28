@@ -6,7 +6,8 @@
     "shipping",
     "returns",
     "payments",
-    "catalog"
+    "catalog",
+    "other"
   ],
   "languages": {
     "en": {
@@ -49,6 +50,7 @@
       },
       "option_descriptions": {
         "catalog": "product pages, sizes, stock, sellers, reviews, discount codes, and wishlists",
+        "other": "everything else: product questions, store credit, gift cards, promo codes, and loyalty points",
         "payments": "charges, cards, receipts, invoices, wallet credit, and tax on orders",
         "returns": "returns, exchanges, replacements, return labels, and damaged items",
         "shipping": "tracking, delivery dates, couriers, address changes, and lost parcels"
@@ -63,6 +65,16 @@
           "discount code",
           "wishlist",
           "comparison chart"
+        ],
+        "other": [
+          "store credit",
+          "gift card",
+          "promo code",
+          "loyalty points",
+          "product question",
+          "size question",
+          "stock question",
+          "brand question"
         ],
         "payments": [
           "charge",

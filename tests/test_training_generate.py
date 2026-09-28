@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ from pydantic import TypeAdapter
 
 from tachyone.primitives import Question
 from training.generate_data import (
+    _LEVEL_BY_TONE,
     DEFAULT_DOMAIN,
     DOMAINS,
     DataConfig,
@@ -129,11 +131,11 @@ def test_noul_entities_are_localized() -> None:
     assert "asks for" not in noul["criteria"]["true"]
 
 
-def _state_tone(domain: DomainData, lang: str, state: str) -> set[str]:
+def _state_tone(domain: DomainData, lang: str, state: str, tones: Sequence[str]) -> set[str]:
     """Phrase banks the emitted ``state`` was built from, recovered from the text alone.
 
     ``_boundary_state`` keeps the phrase, repeats it (long input) or empties it, so the bank that
-    produced the state is a prefix question — no RNG replay, which is the point of B-11: the
+    produced the state is a prefix question — no RNG replay, which is the point of B-11/B-12: the
     label must be checkable against the text a reader would actually see.
     """
     if not state:
@@ -142,7 +144,7 @@ def _state_tone(domain: DomainData, lang: str, state: str) -> set[str]:
     entities = domain.entities(lang)
     return {
         tone
-        for tone in ("request", "neutral")
+        for tone in tones
         if any(
             state.startswith(phrase.format(entity=entity))
             for phrase in phrases[tone]
@@ -173,7 +175,7 @@ def test_noul_target_follows_the_text_not_the_loop_index() -> None:
         if not record["state"]:
             assert record["target"] == 0, record["id"]  # "" reads as no request
             continue
-        tones = _state_tone(domain, record["lang"], record["state"])
+        tones = _state_tone(domain, record["lang"], record["state"], ("request", "neutral"))
         assert len(tones) == 1, (record["id"], tones)  # the text is never ambiguous
         expected = 1 if tones == {"request"} else 0
         assert record["target"] == expected, (record["id"], record["state"], record["target"])
@@ -181,6 +183,54 @@ def test_noul_target_follows_the_text_not_the_loop_index() -> None:
     # Text-consistent labels are balanced (~47%: the empty-boundary states are all negative),
     # where the index-parity rule produced ~25% positives.
     assert 0.40 < positives / len(records) < 0.55
+
+
+def test_score_level_comes_from_the_text_not_the_index() -> None:
+    """B-12 acceptance: the level is the tone's; an empty state takes the middle level.
+
+    The old ``index % 13`` "near-tie" downgrade contradicted 7.8% of rows and capped `score` at
+    ~0.888 whatever the model learned; the empty boundary state inherited a tone it cannot read.
+    Both are gone — the index draws remain, they simply no longer move the label.
+    """
+    langs = ("en", "pt", "es", "fr", "de", "it", "nl")
+    domains = tuple(sorted(DOMAINS))
+    records = [
+        record
+        for record in iter_records(
+            DataConfig(seed=11, per_type=42, languages=langs, domains=domains)
+        )
+        if record["type"] == "score"
+    ]
+    assert records
+    tone_banks = ("calm", "neutral", "request", "urgent")
+    index_draws = 0
+    for record in records:
+        domain = DomainData.load(record["domain"])
+        if not record["state"]:
+            assert record["target"] == 1, record["id"]  # no signal -> the middle level
+            continue
+        banks = _state_tone(domain, record["lang"], record["state"], tone_banks)
+        assert len(banks) == 1, (record["id"], banks)  # the text names exactly one level
+        tone = banks.pop()
+        assert record["target"] == _LEVEL_BY_TONE[tone], (record["id"], tone, record["target"])
+        if int(record["id"].split("-")[1]) % 13 == 0:
+            index_draws += 1
+    assert index_draws > 0  # the near-tie draws still happen; they just carry the tone's level
+
+
+def test_choice_empty_states_answer_to_the_catch_all() -> None:
+    """B-12 acceptance: an empty `choice` state never carries an index-derived option."""
+    langs = ("en", "pt", "es", "fr", "de", "it", "nl")
+    domains = tuple(sorted(DOMAINS))
+    for name in domains:
+        assert "other" in DomainData.load(name).options, name  # every domain ships the catch-all
+    empties = 0
+    for record in iter_records(DataConfig(seed=11, per_type=42, languages=langs, domains=domains)):
+        if record["type"] != "choice" or record["state"]:
+            continue
+        empties += 1
+        assert record["target"] == "other", (record["id"], record["target"])
+    assert empties > 0  # the empty boundary case is still exercised
 
 
 def test_every_language_gets_equal_support() -> None:
@@ -298,13 +348,14 @@ def test_noise_cli_runs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
 #: sha256[:16] of ``iter_records`` for these configs. Captured **before** the B-5 refactor that
 #: moved every byte of content into ``training/data/domains/`` (which changed no byte, the hard
 #: guarantee from BACKLOG B-5: L-003/B-4 already cost days to a determinism assumption that did
-#: not hold), and **recaptured after B-11** fixed the `noul` label rule — only ``noul.target``
-#: bytes move; states, questions and every `choice`/`score` record are unchanged.
+#: not hold), and **recaptured after B-11** (only ``noul.target`` bytes moved) and again **after
+#: B-12** (``score`` loses the ``index % 13`` near-tie, ``choice``/``score`` empty states take
+#: their defaults, and ``ecommerce`` gains the ``other`` catch-all, which re-cycles its options).
 _GOLDEN_SINGLE_DOMAIN = {
-    "en": ("118e841d85e53743", DataConfig(seed=42, per_type=50, languages=("en",))),
-    "en_pt": ("43eddae2ff58cd01", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
+    "en": ("8181e7c4f9b56ddc", DataConfig(seed=42, per_type=50, languages=("en",))),
+    "en_pt": ("73a1752bfc4a7b7b", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
     "noisy": (
-        "dcd4b49c805e7976",
+        "03eff53b14b99b3c",
         DataConfig(seed=7, per_type=30, languages=("en", "pt", "de"), noise_rate=0.15),
     ),
 }
@@ -334,7 +385,8 @@ def _digest(config: DataConfig) -> str:
 @pytest.mark.parametrize("case", sorted(_GOLDEN_SINGLE_DOMAIN))
 def test_single_domain_output_is_byte_identical(case: str) -> None:
     """The config → bytes mapping is pinned: the B-5 refactor moved no byte, B-11 moved only
-    ``noul.target`` (see the recapture note above)."""
+    ``noul.target``, and B-12 moved ``score``/``choice`` labels (plus `ecommerce`'s re-cycling) —
+    see the recapture note above."""
     expected, config = _GOLDEN_SINGLE_DOMAIN[case]
     assert _digest(config) == expected
 
