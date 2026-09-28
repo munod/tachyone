@@ -130,3 +130,4 @@ nav:
       - ADR-0011 No telemetry: adr/ADR-0011-no-telemetry.md
       - ADR-0012 ONNX before fast path: adr/ADR-0012-onnx-before-fast-path.md
       - ADR-0013 Rename to Tachyone: adr/ADR-0013-rename-to-tachyone.md
+      - ADR-0014 Noul label from text: adr/ADR-0014-noul-label-from-text.md

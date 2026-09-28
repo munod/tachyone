@@ -226,10 +226,16 @@ def main(argv: Iterable[str] | None = None) -> int:
             "--adapter checkpoints/multi --max-len 1024 --out-predictions data/preds_multi.jsonl",
             "uv run python -m training.fit_calibration --calibration data/preds_multi.jsonl "
             "--out checkpoints/multi/temperature_calibration.json",
+            # B-11: both evaluates pin the local adapter (the Hub id would fetch a revision) and
+            # carry --noise-rate, without which the noisy view the report prints is not produced.
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en "
             "uv run python -m training.evaluate --data data/eval_en.jsonl "
-            "--out benchmarks/results/en_split.json --backend encoder",
+            "--out benchmarks/results/en_split.json --backend encoder --noise-rate 0.15 "
+            '--models-dir "$HOME/.cache/tachyone/models"',
+            "TACHYONE_ADAPTERS=tachyone-multi=checkpoints/multi "
             "uv run python -m training.evaluate --data data/eval_multi.jsonl "
-            "--out benchmarks/results/multi_split.json --backend encoder",
+            "--out benchmarks/results/multi_split.json --backend encoder --noise-rate 0.15 "
+            '--models-dir "$HOME/.cache/tachyone/models"',
             # B-5a: five domains, English, support keeping its published volume
             "uv run python -m training.generate_data --seed 1 --per-type 1000 --languages en "
             "--domains support,ecommerce,agent_tools,documents,voice --per-domain support=3000 "
