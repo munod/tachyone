@@ -130,3 +130,21 @@ def test_render_report_adds_domain_rows_only_for_multi_domain_reports(tmp_path: 
     assert "| domain:support |" in multi
     assert "| domain:voice |" in multi
     assert "Worst domain (accuracy)" in multi
+
+
+def test_render_report_puts_noul_accuracy_beside_the_label_audit(tmp_path: Path) -> None:
+    """B-11: per-language `noul` accuracy and the contradictory-label rate in one table."""
+    markdown = render_report([ReportEntry(name="encoder", report=_evaluation_report(tmp_path))])
+    assert "accuracy beside the label audit" in markdown
+    assert (
+        "| Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |"
+        in markdown
+    )
+    assert "| en |" in markdown
+    assert "(0.0%)" in markdown  # generated labels are not contradictory (B-11)
+
+
+def test_render_report_omits_the_noul_table_when_the_audit_is_absent() -> None:
+    """Reports produced before B-11 have no audit and must render unchanged."""
+    markdown = render_report([ReportEntry(name="old", report={"overall": {"n": 10}})])
+    assert "accuracy beside the label audit" not in markdown

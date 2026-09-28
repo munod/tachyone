@@ -28,7 +28,7 @@ from tachyone.primitives import (
     ScoreQuestion,
     State,
 )
-from training.generate_data import DEFAULT_DOMAIN, _perturb_state
+from training.generate_data import DEFAULT_DOMAIN, _perturb_state, noul_tone
 
 #: A predictor answers a single (state, question) pair.
 type Predictor = Callable[[State, Question], Answer]
@@ -139,6 +139,9 @@ def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> di
     per_primitive: dict[str, list[tuple[bool, float, float]]] = {}
     per_language: dict[str, list[tuple[bool, float, float]]] = {}
     per_domain: dict[str, list[tuple[bool, float, float]]] = {}
+    #: ``noul`` alone per language: the primitive whose labels B-11 had to fix, published next
+    #: to the contradictory-label rate so label noise and model error stay separable (L-008).
+    noul_per_language: dict[str, list[tuple[bool, float, float]]] = {}
     overall: list[tuple[bool, float, float]] = []
     for example in examples:
         start = time.perf_counter()
@@ -149,6 +152,8 @@ def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> di
         per_primitive.setdefault(example.type, []).append(row)
         per_language.setdefault(example.lang, []).append(row)
         per_domain.setdefault(example.domain, []).append(row)
+        if example.type == "noul":
+            noul_per_language.setdefault(example.lang, []).append(row)
         overall.append(row)
     return {
         "bins": bins,
@@ -158,6 +163,65 @@ def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> di
         # Single-domain datasets (the pre-B-5 ones) collapse to one entry, so the key is always
         # present and the worst-domain gate in BACKLOG B-5 has something to read (B-5).
         "per_domain": {domain: _metrics(rows, bins) for domain, rows in per_domain.items()},
+        "noul_per_language": {
+            lang: _metrics(rows, bins) for lang, rows in noul_per_language.items()
+        },
+    }
+
+
+_NOUL_TONE_KEYS = ("request", "neutral", "empty", "unknown")
+#: The label each recoverable tone demands; ``unknown`` states are not judged (B-11).
+_EXPECTED_TARGET = {"request": 1, "neutral": 0, "empty": 0}
+
+
+def noul_label_audit(examples: Sequence[EvalExample]) -> dict[str, Any]:
+    """Judge every ``noul`` label against the text it accompanies (B-11, L-008).
+
+    Published beside the per-language ``noul`` accuracy, so a contradictory label can no longer
+    be read as a model mistake: the old index-parity rule labelled half of ``eval_en.jsonl``'s
+    request-toned rows 0 and tracked the per-language RNG's tone/parity correlation (40-55% in
+    ``de``/``es``/``nl``). ``contradictory_rate`` is over *judged* records — states no phrase
+    bank explains (surface noise) count as ``unknown``, not as contradictions.
+    """
+    per_language: dict[str, dict[str, int]] = {}
+
+    def cell(lang: str) -> dict[str, int]:
+        row = per_language.setdefault(lang, {"n": 0, "positive": 0, "contradictory": 0})
+        for key in _NOUL_TONE_KEYS:
+            row.setdefault(key, 0)
+        return row
+
+    for example in examples:
+        if example.type != "noul":
+            continue
+        state = example.state
+        tone = (
+            noul_tone(example.domain, example.lang, state) if isinstance(state, str) else "unknown"
+        )
+        row = cell(example.lang)
+        row["n"] += 1
+        row[tone] += 1
+        target = int(example.target)
+        row["positive"] += target
+        expected = _EXPECTED_TARGET.get(tone)
+        if expected is not None and expected != target:
+            row["contradictory"] += 1
+
+    def finish(row: dict[str, int]) -> dict[str, Any]:
+        judged = row["n"] - row["unknown"]
+        out: dict[str, Any] = dict(row)
+        out["judged"] = judged
+        out["positive_rate"] = round(row["positive"] / row["n"], 4) if row["n"] else 0.0
+        out["contradictory_rate"] = round(row["contradictory"] / judged, 4) if judged else 0.0
+        return out
+
+    totals = {
+        key: sum(row[key] for row in per_language.values())
+        for key in ("n", "positive", "contradictory", *_NOUL_TONE_KEYS)
+    }
+    return {
+        **finish(totals),
+        "per_language": {lang: finish(row) for lang, row in sorted(per_language.items())},
     }
 
 
@@ -192,10 +256,15 @@ def evaluate(
 ) -> dict[str, Any]:
     """Run ``predictor`` over ``examples`` and aggregate per-primitive/language/domain metrics.
 
+    ``report["noul_labels"]`` audits the `noul` labels against their own text (B-11), and
+    ``report["noul_per_language"]`` reports that primitive per language — accuracy beside the
+    contradictory-label rate, so the two can no longer be confused (L-008).
+
     When ``noise_rate > 0`` a second, noisy view of the same examples is evaluated and returned
     under the ``"noisy"`` key, so clean accuracy and robustness are never conflated (B-4).
     """
     report = _run(examples, predictor, bins)
+    report["noul_labels"] = noul_label_audit(examples)
     if noise_rate > 0.0:
         report["noise_rate"] = noise_rate
         report["noisy"] = _run(

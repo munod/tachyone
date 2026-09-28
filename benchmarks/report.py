@@ -51,6 +51,36 @@ def _worst_language(report: dict[str, Any]) -> tuple[str, dict[str, Any]] | None
     return _worst(report.get("per_language") or {})
 
 
+def _noul_table(entry: ReportEntry) -> list[str]:
+    """``noul`` accuracy per language beside the label audit of the same rows (B-11).
+
+    Both columns come from one report, so a language can no longer look weak because its labels
+    were contradictory (L-008): the contradiction count sits next to the accuracy it would
+    otherwise be mistaken for. Absent when the report predates the audit.
+    """
+    metrics_by_lang = entry.report.get("noul_per_language") or {}
+    audit_rows = (entry.report.get("noul_labels") or {}).get("per_language") or {}
+    if not metrics_by_lang or not audit_rows:
+        return []
+    lines = [
+        "#### `noul` per language — accuracy beside the label audit",
+        "",
+        "| Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for lang in sorted(metrics_by_lang):
+        metrics = metrics_by_lang[lang]
+        row = audit_rows.get(lang, {})
+        lines.append(
+            f"| {lang} | {metrics.get('n', 0)} | {_fmt(metrics.get('accuracy', 0.0))} | "
+            f"{_fmt(metrics.get('ece', 0.0))} | {row.get('request', 0)} | {row.get('neutral', 0)} "
+            f"| {row.get('empty', 0)} | {row.get('unknown', 0)} | {row.get('contradictory', 0)} "
+            f"({row.get('contradictory_rate', 0.0):.1%}) |"
+        )
+    lines.append("")
+    return lines
+
+
 def _table(entry: ReportEntry) -> list[str]:
     lines = [
         f"### {entry.name}",
@@ -103,6 +133,7 @@ def _table(entry: ReportEntry) -> list[str]:
             f"ECE {_fmt(noisy_overall.get('ece', 0.0))}, "
             f"p50 {_fmt(latency.get('p50', 0.0))} ms.",
         ]
+    lines += _noul_table(entry)
     lines.append("")
     return lines
 

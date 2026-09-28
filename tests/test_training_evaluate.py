@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -21,6 +22,7 @@ from training.evaluate import (
     add_state_noise,
     evaluate,
     load_examples,
+    noul_label_audit,
     record_to_example,
     save_report,
 )
@@ -162,6 +164,7 @@ def test_evaluate_noise_rate_adds_noisy_view(tmp_path: Path) -> None:
         "per_primitive",
         "per_language",
         "per_domain",
+        "noul_per_language",
     }
     assert report["noisy"]["overall"]["n"] == report["overall"]["n"]
 
@@ -226,3 +229,93 @@ def test_records_without_a_domain_are_attributed_to_support(tmp_path: Path) -> N
     report = evaluate(examples, _perfect(examples))
     assert set(report["per_domain"]) == {"support"}
     assert report["per_domain"]["support"] == report["overall"]
+
+
+# ------------------------------------------------------------------ B-11: the `noul` label audit
+
+
+def test_noul_labels_audit_of_generated_data_is_clean(tmp_path: Path) -> None:
+    """B-11 acceptance: no request-toned record carries 0, no neutral-toned one carries 1.
+
+    Checked over two domains and four languages — the per-language spread (`de`/`nl`) is what
+    L-008 traced to label noise rather than model quality.
+    """
+    path = tmp_path / "eval.jsonl"
+    generate(
+        DataConfig(
+            seed=3,
+            per_type=30,
+            languages=("en", "pt", "de", "nl"),
+            domains=("support", "voice"),
+        ),
+        path,
+    )
+    examples = load_examples(path)
+    report = evaluate(examples, _perfect(examples))
+    audit = report["noul_labels"]
+    assert audit["n"] == sum(row["n"] for row in audit["per_language"].values())
+    assert audit["unknown"] == 0  # no surface noise in a clean dataset
+    assert audit["contradictory"] == 0
+    assert audit["contradictory_rate"] == 0.0
+    assert 0.4 < audit["positive_rate"] < 0.55  # text-consistent labels are balanced
+    # Accuracy for exactly those rows, per language, beside the audit (the acceptance asks for
+    # the two to be reported together so label noise cannot read as a capability gap).
+    assert set(report["noul_per_language"]) == set(audit["per_language"])
+    for lang, row in report["noul_per_language"].items():
+        assert row["n"] == audit["per_language"][lang]["n"]
+        assert row["accuracy"] == 1.0  # the perfect predictor nails the text-consistent labels
+
+
+def test_noul_label_audit_catches_a_flipped_target() -> None:
+    """The audit must be able to fail: it caught 50% of ``eval_en.jsonl`` before B-11."""
+    request = EvalExample(
+        id="a",
+        type="noul",
+        state="Please help me with my invoice.",
+        question=NoulQuestion(instructions="q?"),
+        target=0,  # contradicts the text
+        lang="en",
+    )
+    neutral = EvalExample(
+        id="b",
+        type="noul",
+        state="Just checking in about the invoice.",
+        question=NoulQuestion(instructions="q?"),
+        target=1,  # contradicts the text
+        lang="en",
+    )
+    empty = EvalExample(
+        id="c",
+        type="noul",
+        state="",
+        question=NoulQuestion(instructions="q?"),
+        target=1,  # an empty state reads as no request
+        lang="en",
+    )
+    audit = noul_label_audit([request, neutral, empty])
+    assert (audit["request"], audit["neutral"], audit["empty"]) == (1, 1, 1)
+    assert audit["contradictory"] == 3
+    assert audit["contradictory_rate"] == 1.0
+    # The corrected labels pass.
+    fixed = [
+        replace(request, target=1),
+        replace(neutral, target=0),
+        replace(empty, target=0),
+    ]
+    assert noul_label_audit(fixed)["contradictory"] == 0
+
+
+def test_noul_label_audit_does_not_judge_states_it_cannot_read() -> None:
+    """B-4's surface-noise edits are ``unknown``, never counted as contradictions."""
+    perturbed = EvalExample(
+        id="a",
+        type="noul",
+        state="Plese hlp me with my invoice",  # not any phrase in the bank
+        question=NoulQuestion(instructions="q?"),
+        target=0,
+        lang="en",
+    )
+    audit = noul_label_audit([perturbed])
+    assert audit["unknown"] == 1
+    assert audit["judged"] == 0
+    assert audit["contradictory"] == 0
