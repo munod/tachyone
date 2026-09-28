@@ -15,6 +15,7 @@ from training.generate_data import (
     DEFAULT_DOMAIN,
     DOMAINS,
     DataConfig,
+    DomainData,
     _line,
     generate,
     iter_records,
@@ -126,6 +127,60 @@ def test_noul_entities_are_localized() -> None:
     # The true-criterion uses the localized template, not the English one.
     assert noul["criteria"]["true"].startswith("solicita um ")
     assert "asks for" not in noul["criteria"]["true"]
+
+
+def _state_tone(domain: DomainData, lang: str, state: str) -> set[str]:
+    """Phrase banks the emitted ``state`` was built from, recovered from the text alone.
+
+    ``_boundary_state`` keeps the phrase, repeats it (long input) or empties it, so the bank that
+    produced the state is a prefix question — no RNG replay, which is the point of B-11: the
+    label must be checkable against the text a reader would actually see.
+    """
+    if not state:
+        return set()
+    phrases = domain.phrases(lang)
+    entities = domain.entities(lang)
+    return {
+        tone
+        for tone in ("request", "neutral")
+        if any(
+            state.startswith(phrase.format(entity=entity))
+            for phrase in phrases[tone]
+            for entity in entities
+        )
+    }
+
+
+def test_noul_target_follows_the_text_not_the_loop_index() -> None:
+    """B-11 acceptance: request-toned -> 1, neutral-toned -> 0, empty state -> 0.
+
+    Checked across every committed domain and language, which is where the old index-parity rule
+    showed up as 40-55% contradictory labels in `de`/`es`/`nl` (L-008).
+    """
+    langs = ("en", "pt", "es", "fr", "de", "it", "nl")
+    domains = tuple(sorted(DOMAINS))
+    records = [
+        record
+        for record in iter_records(
+            DataConfig(seed=9, per_type=42, languages=langs, domains=domains)
+        )
+        if record["type"] == "noul"
+    ]
+    assert records
+    positives = 0
+    for record in records:
+        domain = DomainData.load(record["domain"])
+        if not record["state"]:
+            assert record["target"] == 0, record["id"]  # "" reads as no request
+            continue
+        tones = _state_tone(domain, record["lang"], record["state"])
+        assert len(tones) == 1, (record["id"], tones)  # the text is never ambiguous
+        expected = 1 if tones == {"request"} else 0
+        assert record["target"] == expected, (record["id"], record["state"], record["target"])
+        positives += record["target"]
+    # Text-consistent labels are balanced (~47%: the empty-boundary states are all negative),
+    # where the index-parity rule produced ~25% positives.
+    assert 0.40 < positives / len(records) < 0.55
 
 
 def test_every_language_gets_equal_support() -> None:
@@ -240,15 +295,16 @@ def test_noise_cli_runs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
 
 
 # ------------------------------------------------------------------ B-5: domains
-#: sha256[:16] of ``iter_records`` for these configs, captured **before** the B-5 refactor that
-#: moved every byte of content into ``training/data/domains/``. This is the hard guarantee from
-#: BACKLOG B-5: existing configs must keep producing byte-identical output (L-003/B-4 already cost
-#: days to a determinism assumption that did not hold).
+#: sha256[:16] of ``iter_records`` for these configs. Captured **before** the B-5 refactor that
+#: moved every byte of content into ``training/data/domains/`` (which changed no byte, the hard
+#: guarantee from BACKLOG B-5: L-003/B-4 already cost days to a determinism assumption that did
+#: not hold), and **recaptured after B-11** fixed the `noul` label rule — only ``noul.target``
+#: bytes move; states, questions and every `choice`/`score` record are unchanged.
 _GOLDEN_SINGLE_DOMAIN = {
-    "en": ("dd788005b3fc5aef", DataConfig(seed=42, per_type=50, languages=("en",))),
-    "en_pt": ("ce219d4637a1e146", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
+    "en": ("118e841d85e53743", DataConfig(seed=42, per_type=50, languages=("en",))),
+    "en_pt": ("43eddae2ff58cd01", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
     "noisy": (
-        "8e2d8ab5c428ecb6",
+        "dcd4b49c805e7976",
         DataConfig(seed=7, per_type=30, languages=("en", "pt", "de"), noise_rate=0.15),
     ),
 }
@@ -275,7 +331,8 @@ def _digest(config: DataConfig) -> str:
 
 @pytest.mark.parametrize("case", sorted(_GOLDEN_SINGLE_DOMAIN))
 def test_single_domain_output_is_byte_identical(case: str) -> None:
-    """The B-5 guarantee: moving content into ``domains/`` changed no existing byte."""
+    """The config → bytes mapping is pinned: the B-5 refactor moved no byte, B-11 moved only
+    ``noul.target`` (see the recapture note above)."""
     expected, config = _GOLDEN_SINGLE_DOMAIN[case]
     assert _digest(config) == expected
 

@@ -39,6 +39,12 @@ Every stage is a committed script with a committed config and a fixed seed.
 - **Localization (B-1):** the `state`, `instructions`, `criteria`, `score` levels, and
   `noul`/`score` entities are all authored per language, so the multilingual checkpoint does not
   learn an English template.
+- **`noul` labels come from the text (B-11):** `target = 1` iff the emitted state was drawn from
+  the `request` phrase bank, `0` for the `neutral` bank and for the empty boundary state (which
+  reads as no request). The label never depends on the loop index, so no request-toned record can
+  carry `0` — the old index-parity rule contradicted 50% of `eval_en.jsonl`'s request-toned rows
+  and made `noul` accuracy label-bound (L-008). Only `noul.target` bytes move against the
+  pre-B-11 datasets; states and questions are unchanged.
 - **Domains (B-5):** every domain lives in its own committed file,
   `training/data/domains/<domain>.json`, holding its option labels, option terms and
   descriptions, entities, phrase banks, `score` levels, `noul` criteria and per-primitive

@@ -35,6 +35,7 @@ import random
 import unicodedata
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -198,12 +199,15 @@ def _boundary_state(index: int, base: str) -> str:
 
 def _noul_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
     entity = rng.choice(domain.entities(lang))
-    positive = (index % 2 == 0) if index else True
     tone = rng.choice(("request", "neutral"))
     state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
-    if positive and tone == "neutral":
-        positive = False
-    target = 1 if positive else 0
+    # B-11 (L-008): derive the label from the text just emitted, never from the loop index.
+    # A request-toned state is a positive example and a neutral-toned one is negative; the empty
+    # boundary state reads as neither, so it is negative too (deterministically, "" -> 0). The
+    # old rule (`index % 2` overridden by tone) labelled half of every request-toned set 0,
+    # capping `noul` accuracy at the label noise instead of the model (Bayes 0.746 on eval_en).
+    # Draw order is unchanged, so only `noul.target` bytes move against the previous datasets.
+    target = 1 if tone == "request" and state else 0
     instructions = domain.instructions(lang, "noul").format(entity=entity)
     criteria = {
         key: value.format(entity=entity) for key, value in domain.noul_criteria(lang).items()
@@ -267,6 +271,35 @@ _GENERATORS = {
     "choice": _choice_record,
     "score": _score_record,
 }
+
+
+@cache
+def _bank(domain: str, lang: str, tone: str) -> tuple[str, ...]:
+    """Formatted sentences of one phrase bank, cached (the audit checks every ``noul`` record)."""
+    data = DomainData.load(domain)
+    return tuple(
+        phrase.format(entity=entity)
+        for entity in data.entities(lang)
+        for phrase in data.phrases(lang)[tone]
+    )
+
+
+def noul_tone(domain: str, lang: str, state: str) -> str:
+    """Recover which phrase bank produced a ``noul`` state (B-11): ``request`` / ``neutral`` /
+    ``empty`` / ``unknown``.
+
+    ``_boundary_state`` keeps the chosen phrase, repeats it (long input) or empties it, so the
+    bank is recoverable as a prefix of the text. The audit uses it to judge a label against the
+    text a reader would see (L-008): ``request`` should carry 1, ``neutral`` and ``empty`` 0.
+    States no bank explains — surface-noise edits in the B-4 datasets — come back ``unknown``
+    and are deliberately not judged.
+    """
+    if not state:
+        return "empty"
+    for tone in ("request", "neutral"):
+        if any(state.startswith(phrase) for phrase in _bank(domain, lang, tone)):
+            return tone
+    return "unknown"
 
 
 def _seed_base(seed: int, domain: str) -> str:
