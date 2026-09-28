@@ -6,16 +6,61 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+
+- **`noul` labels are derived from the text, not from the loop index (B-11 / ADR-0014).**
+  `_noul_record` computed `target = 1 iff even index and request tone`, which contradicted **121
+  of the 241 request-toned rows in `eval_en`** and — because language is
+  `index % len(languages)` — left **every** `noul` label in `es`/`de`/`nl` at 0 while `pt`/`fr`/`it`
+  came out tone-consistent by accident (lesson L-010: a constant label is a shortcut the model
+  wins with). The rule is now `request` → 1, `neutral`/empty → 0, asserted against each state's
+  own phrase bank across all five committed domains and seven languages. Only `noul.target` bytes
+  move: states, questions and every `choice`/`score` record are byte-identical, the golden hashes
+  were recaptured, and the seven shipped datasets were regenerated.
+
+### Changed
+
+- **Both adapters retrained and the whole measured surface republished as one set** (AD-009
+  pattern; pre-B-11 numbers stay valid for the data that produced them and are not comparable
+  line-by-line):
+
+  | checkpoint | pre-B-11 labels | on the corrected labels | published |
+  | --- | ---: | ---: | ---: |
+  | English | 0.859 (`noul` 0.718) | 0.935 (old weights) | **0.945** (`noul` **0.992**) |
+  | Multilingual | 0.853 (`noul` 0.960) | 0.714 (old weights) | **0.718** (`noul` **0.832**, 8 epochs) |
+
+  The multilingual figure went through a four-run sweep (control proved the 4-epoch drop was
+  systematic, not L-006 variance; 8 epochs recovered `score` 0.648 → 0.854; `choice_rank` 128
+  overfit) and ships `choice` 0.468 against 0.674 for the old weights — a real cost of the
+  balanced `noul` task, published in `docs/benchmarks.md` and `BACKLOG.md` **B-11** rather than
+  hidden. Fast path re-measured on the new weights (9.19 → 3.37 ms, **2.72×**, parity 0.000771,
+  0 top-label flips); the three public probes re-run (typed-decisions 0.323 → **0.330**, XNLI
+  0.334 → **0.333**, MASSIVE 0.033 → **0.013**, below its 0.017 chance and tracking that same
+  `choice` regression); and the head-to-head re-run with **all four engines on table B**, since
+  the gold labels under it changed (Tachyone 0.854 → **0.953** at home, 0.229 → **0.241** on the
+  peer's probe).
+
+### Added
+
+- **Label audit beside the accuracy:** `training/evaluate.py` now emits `report["noul_per_language"]`
+  and `report["noul_labels"]` (per-language contradictory-label rate, judged against the same
+  phrase banks; unreadable states count as `unknown`, never as contradictions), and
+  `benchmarks/report.py` renders both in one table so label noise can no longer be read as a
+  capability gap. Acceptance tests cover the generator, the shipped eval sets and the renderer.
+- `docs/adr/ADR-0014-noul-label-from-text.md` (scope decision) and backlog **B-12** (the analogous
+  `score` near-tie label, measured at a 0.922 text-consistent ceiling).
+
 ### Documentation
 
-- **The `B-5a` multi-domain experiment finished with 1 of 2 gates met.** Five domains trained into
-  one adapter reach **0.804** overall against 0.578 for the released adapter zero-shot on the same
-  rows, and the worst new domain (`voice`, 0.739) clears its ≥ 0.70 gate — but `support` lands at
-  **0.785** against its ≥ 0.85 gate, so **nothing was released** and the published adapters remain
-  the support-only ones. `docs/benchmarks.md` carries both tables, the per-domain ECE (0.082–0.116,
-  all declared above the 0.05 target) and the gate verdicts; the six-run curve and the diagnosis —
-  capacity and epochs do not close the gap, the shared `choice` head's fourth-option leak simply
-  moves between runs — live in `.specs/project/BACKLOG.md` **B-5**.
+- **The `B-5a` multi-domain experiment finished with 1 of 2 gates met — and passes both when
+  re-measured on the B-11 labels (2026-09-28).** Five domains trained into
+  one adapter reach **0.880** overall on the corrected labels (0.804 before), with `support` at
+  **0.861 ≥ 0.85** ✓ (it was 0.785 ✗) and the worst new domain (`voice`) at **0.807 ≥ 0.70** ✓;
+  per-domain ECE drops 0.082–0.116 → 0.045–0.067. **Nothing was released** — the published adapters
+  are the support-only ones, and the retrained English adapter now scores 0.945 on `support`, so
+  the five-domain run clears the absolute gate while sitting 0.084 below it. `docs/benchmarks.md`
+  carries both tables and the gate verdicts; the six-run curve and the diagnosis live in
+  `.specs/project/BACKLOG.md` **B-5**.
 
 ## [0.4.0] - 2026-09-27
 
