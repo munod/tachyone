@@ -447,6 +447,27 @@ evidence.
 
 ---
 
+### L-010: A constant label is a shortcut the model wins with, and the spread it leaves looks like capability
+
+**Context:** B-11. The pre-B-11 `noul` rule was `target = 1 iff even index and request tone`, and
+the eval sets interleave language by `index % len(languages)` — so in `eval_multi.jsonl` the odd
+languages (`es`, `de`, `nl`) got **only label 0**, while the even ones (`pt`, `fr`, `it`) came out
+tone-consistent by accident. The published multilingual `noul` accuracy was **0.960** and the
+per-language spread (`nl` 0.663 vs `es` 0.956) read like a capability gap.
+**Problem:** measured against the corrected labels, the *same* weights score `noul` **0.614**
+(`de` 0.373, `nl` 0.217) — the multilingual model had learned language → label, not text → label.
+The English weights, trained on the same parity noise but with a single language (no shortcut to
+find), scored **0.946** on the corrected labels: they had to read the text. A high accuracy bought
+by a constant label is indistinguishable from a well-trained model until the labels are fixed.
+**Solution:** derive the label from the emitted text (ADR-0014); reconstruct the *old* rule over
+the regenerated states — the states are byte-identical, so the before side is recoverable — and
+publish both sides as one set; and audit the label distribution **per language** before believing
+a per-language spread (`training/evaluate.py` now emits `noul_labels` beside `noul_per_language`).
+**Prevents:** shipping a per-language "capability gap" that is a dataset artifact, and quoting an
+accuracy that a constant label pays for.
+
+---
+
 ## Quick Tasks Completed
 
 | #   | Description | Date | Commit | Status |
