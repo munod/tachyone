@@ -661,6 +661,44 @@ not a bugfix. Effort ~2 days + GPU.
 
 ---
 
+## B-12 · The `score` near-tie label also comes from the index · Idea
+
+**Why.** `_score_record` takes the level from the tone (`_LEVEL_BY_TONE`) and then, on
+`index % 13 == 0`, lowers it one level as an "ambiguous near-tie label". The downgrade is a
+property of the loop position, not of the text: **7.8%** of `score` records (39/500 in both
+`eval_en.jsonl` and `eval_multi.jsonl`) carry a level their sentence does not read as, so a model
+that reads the tone perfectly tops out at **12/13 = 0.922** — and the released checkpoints are
+sitting on that ceiling, not below it:
+
+| Set | `score` accuracy | text-consistent ceiling |
+| --- | ---: | ---: |
+| English (AD-009) | 0.910 | 0.922 |
+| multilingual r=64 | 0.916 | 0.922 |
+
+So `score` is label-bound exactly as `noul` was (L-008), only less visibly: the artifact caps the
+metric instead of splitting it per language. Measured 2026-09-27 against the regenerated datasets,
+whose `score` labels B-11 did **not** touch.
+
+**Plan (the B-11 shape).**
+1. Decide the rule: keep the near-tie but *author* it — mark the ambiguous phrases in the
+   committed domain data (or derive the downgrade from the phrase just emitted), so the label is
+   recoverable from the text; or drop the downgrade and keep the task unambiguous.
+2. Scope decision + ADR, the same question ADR-0014 answered for `noul`: every `score` label moves,
+   so datasets, checkpoints and published numbers move with it. **Bundle it with the next retrain**
+   rather than paying for a third one of its own.
+3. Publish the ceiling beside the accuracy, the way `noul_labels` now does, so it stays visible.
+
+**Acceptance.** No record whose text reads as level *k* carries *k-1* unless the text itself is one
+of the authored near-tie phrases; a test asserts it; ceiling and accuracy are reported together.
+
+**Risks / notes.** Same cost shape as B-11 (ADR + retrain + full re-benchmark, B-002), which is why
+this is an Idea and not scheduled.
+
+**Related.** `STATE.md` L-008, `docs/adr/ADR-0014-noul-label-from-text.md`,
+`training/generate_data.py::_score_record`.
+
+---
+
 ## Evaluated and not pursued (for now)
 
 These proposals were assessed against the frozen wire (ADR-0001) and the actual similarity-based

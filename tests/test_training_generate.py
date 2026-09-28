@@ -317,6 +317,8 @@ _SHIPPED = [
     ("data_multi.json", "data/train_multi.jsonl"),
     ("data_noisy.json", "data/train_multi_noisy.jsonl"),
     ("data_eval_multi.json", "data/eval_multi.jsonl"),
+    ("data_en_domains.json", "data/train_en_domains.jsonl"),
+    ("data_eval_en_domains.json", "data/eval_en_domains.jsonl"),
 ]
 
 _FIVE = ("support", "ecommerce", "agent_tools", "documents", "voice")
