@@ -19,10 +19,17 @@ pipeline_tag: text-classification
 
 # Tachyone (System One decision engine)
 
-> **Status: released (`v0.4.0`).** Trained on a single RTX 3060 12GB and published as LoRA
-> adapters ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
+> **Status: released (`v0.4.0`), revision 2026-09-28.** Trained on a single RTX 3060 12GB and
+> published as LoRA adapters ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
+>
+> **This revision is B-11 (ADR-0014):** every `noul` label is derived from the text it
+> accompanies (`request` → 1, `neutral`/empty → 0) instead of the loop index, so all datasets were
+> regenerated and both adapters retrained. The labels contradict nothing now — the audit shipped
+> with the evaluation reports **0 contradictory rows** — but that also means these numbers are
+> **not comparable with pre-B-11 measurements**: the old labels contradicted 121 of 241
+> request-toned English rows and left *every* `noul` label in `es`/`de`/`nl` at 0.
 
 ## Model details
 
@@ -66,26 +73,32 @@ latency per primitive and language).
 **Full-scale run (single RTX 3060 12GB):** 9,000 English / 18,000 multilingual train / 1,500 eval
 deterministic synthetic records (fully localized per language, a learnable `other` team with rich
 descriptions, per-record RNG, one-in-six distractor clauses), LoRA (r=16 English, r=64 multilingual)
-plus a dedicated low-rank `choice` head (r=32, near-identity init), 4 epochs, batch 16, bf16 +
+plus a dedicated low-rank `choice` head (r=32, near-identity init); 4 epochs for English and
+**8 for multilingual** (the 4-epoch run under-fit `score`: 0.648 → 0.854), batch 16, bf16 +
 gradient checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA r=16 + choice head) | 0.859 | 0.023 | 23.3 |
-| Multilingual (mmBERT-base + LoRA r=64 + choice head) | 0.853 | 0.038 | 13.3 |
+| English (ModernBERT-large + LoRA r=16 + choice head) | **0.945** | 0.034 | 23.4 |
+| Multilingual (mmBERT-base + LoRA r=64 + choice head) | **0.718** | 0.042 | 15.9 |
 
-Per primitive (English): `choice` 0.948, `noul` 0.718, `score` 0.910; (multilingual): `choice`
-0.684, `noul` 0.960, `score` 0.916. The localized, per-record-RNG data (B-1) lifted multilingual
-`choice` from 0.40 to 0.68 and English overall from 0.72 to 0.86. **Raising the multilingual LoRA
-rank from 16 to 64** (alpha 128) removed the cross-language capacity bottleneck: overall accuracy
-0.702 → 0.853 and `es` ECE 0.170 → 0.038 (`es` accuracy 0.472 → 0.956). Two of six languages now
-meet ECE ≤ 0.05 (`es` 0.038 and `pt` 0.024); `de` (0.063), `fr` (0.051), `it` (0.059) and `nl`
-(ECE 0.104, accuracy 0.663) remain above target (NFR-C06 partially open).
-The CUDA-graph fast path (`TACHYONE_FAST=1`) gives a 2.7× p50 speedup with 0 top-label flips.
+Per primitive (English): `choice` 0.960, `noul` 0.992, `score` 0.882; (multilingual): `choice`
+0.468, `noul` 0.832, `score` 0.854. **Label audit:** every `noul` row is judged against its own
+text — **0 contradictory** in both eval sets (positive rates 0.482 / 0.486), per language in
+`benchmarks/report.md`.
+
+The multilingual `choice` figure is the honest cost of the fix, and it is published rather than
+hidden: `choice` labels never changed, so trading ~0.20 of `choice` for ~0.22 of `noul` nets 0.718
+against **0.714 for the pre-B-11 weights on the same corrected eval** (and the external probes see
+the same trade — MASSIVE, a 60-way `choice` task, 0.033 → 0.013). Three of six languages meet
+ECE ≤ 0.05 (`pt` 0.025, `es` 0.040, `it` 0.044); `fr` 0.0502, `de` 0.101 and `nl` 0.110 remain
+above target (NFR-C06 partially open), and multilingual `noul` ECE (0.120) is declared with them.
+The CUDA-graph fast path (`TACHYONE_FAST=1`) gives a 2.72× p50 speedup (9.19 → 3.37 ms) with 0
+top-label flips.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
-states) English drops only 0.859 → 0.854 and multilingual (r=64) 0.853 → 0.847, so the released
-adapters are already robust to this noise model.
+states) English drops only 0.945 → 0.942 and multilingual 0.718 → 0.713, so the released
+adapters are robust to this noise model.
 
 Full tables and environment are in
 [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).

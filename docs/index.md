@@ -22,10 +22,10 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 **no code changes**.
 
 <div class="tachyone-metrics">
-<div class="tachyone-metric"><span class="tachyone-metric__value">3.83 ms</span><span class="tachyone-metric__label">p50 fast path (CUDA graphs, RTX 3060, mmBERT, batch=1)</span></div>
-<div class="tachyone-metric"><span class="tachyone-metric__value">85.3%</span><span class="tachyone-metric__label">multilingual overall accuracy</span></div>
-<div class="tachyone-metric"><span class="tachyone-metric__value">95.6%</span><span class="tachyone-metric__label">Spanish (<code>es</code>) overall accuracy</span></div>
-<div class="tachyone-metric"><span class="tachyone-metric__value">0.0044</span><span class="tachyone-metric__label">fast-path probability parity Δ (0 top-label flips)</span></div>
+<div class="tachyone-metric"><span class="tachyone-metric__value">3.37 ms</span><span class="tachyone-metric__label">p50 fast path (CUDA graphs, RTX 3060, mmBERT, batch=1)</span></div>
+<div class="tachyone-metric"><span class="tachyone-metric__value">94.5%</span><span class="tachyone-metric__label">English overall accuracy (held-out synthetic split)</span></div>
+<div class="tachyone-metric"><span class="tachyone-metric__value">99.2%</span><span class="tachyone-metric__label">English <code>noul</code> accuracy — labels derived from the text (B-11)</span></div>
+<div class="tachyone-metric"><span class="tachyone-metric__value">0.000771</span><span class="tachyone-metric__label">fast-path probability parity Δ (0 top-label flips)</span></div>
 </div>
 
 ## Why Tachyone
@@ -58,8 +58,10 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
     ---
 
     Strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature scaling, with
-    per-language ECE reported. The `ECE ≤ 0.05` target is met for two of the six multilingual
-    languages (`pt` 0.024 and `es` 0.038); `de`/`fr`/`it`/`nl` remain above it (worst `nl` 0.104).
+    per-language ECE reported. The `ECE ≤ 0.05` target is met for three of the six multilingual
+    languages (`pt` 0.025, `es` 0.040 and `it` 0.044); `de`/`fr`/`nl` remain above it (worst
+    `nl` 0.110). Every `noul` label is derived from the text it accompanies (B-11), and the
+    label audit published with the accuracy reports **0 contradictory rows**.
 
 - :material-compare:{ .lg .middle } **Decisions, not text**
 
@@ -151,21 +153,21 @@ Measured on a single RTX 3060 12GB (full tables and reproduction commands in the
 **Overall accuracy by language — multilingual checkpoint**
 
 <div class="tachyone-chart">
-<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:95.6%"></span></span><span class="tachyone-bar__value">95.6%</span></div>
-<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:88.5%"></span></span><span class="tachyone-bar__value">88.5%</span></div>
-<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:88.0%"></span></span><span class="tachyone-bar__value">88.0%</span></div>
-<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:87.1%"></span></span><span class="tachyone-bar__value">87.1%</span></div>
-<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:86.3%"></span></span><span class="tachyone-bar__value">86.3%</span></div>
-<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:66.3%"></span></span><span class="tachyone-bar__value">66.3%</span></div>
-<p class="tachyone-chart__caption">Held-out synthetic split; temperature fitted per (primitive, language). Calibrated ECE is in-sample. Multilingual LoRA at rank 64.</p>
+<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:81.0%"></span></span><span class="tachyone-bar__value">81.0%</span></div>
+<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:77.4%"></span></span><span class="tachyone-bar__value">77.4%</span></div>
+<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:75.1%"></span></span><span class="tachyone-bar__value">75.1%</span></div>
+<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:69.9%"></span></span><span class="tachyone-bar__value">69.9%</span></div>
+<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:68.7%"></span></span><span class="tachyone-bar__value">68.7%</span></div>
+<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:58.6%"></span></span><span class="tachyone-bar__value">58.6%</span></div>
+<p class="tachyone-chart__caption">Held-out synthetic split on the B-11 labels (derived from the text, 0 contradictory); temperature fitted per (primitive, language). Calibrated ECE is in-sample. Multilingual LoRA at rank 64, 8 epochs.</p>
 </div>
 
 **p50 latency — stock forward vs CUDA-graph fast path**
 
 <div class="tachyone-chart">
-<div class="tachyone-bar"><span>stock</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill tachyone-bar__fill--muted" style="width:85.6%"></span></span><span class="tachyone-bar__value">10.27 ms</span></div>
-<div class="tachyone-bar"><span>fast</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:31.9%"></span></span><span class="tachyone-bar__value">3.83 ms</span></div>
-<p class="tachyone-chart__caption">mmBERT + <code>checkpoints/multi</code>, batch=1. 2.68× p50 speedup; p95 11.05 → 4.12 ms.</p>
+<div class="tachyone-bar"><span>stock</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill tachyone-bar__fill--muted" style="width:76.6%"></span></span><span class="tachyone-bar__value">9.19 ms</span></div>
+<div class="tachyone-bar"><span>fast</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:28.1%"></span></span><span class="tachyone-bar__value">3.37 ms</span></div>
+<p class="tachyone-chart__caption">mmBERT + <code>checkpoints/multi</code>, batch=1, 189 states. 2.72× p50 speedup; p95 10.21 → 3.84 ms.</p>
 </div>
 
 ## How it compares
