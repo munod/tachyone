@@ -678,16 +678,37 @@ corrected eval sets **before** being replaced:
 | checkpoint | on pre-B-11 labels | on B-11 labels (old weights) | on B-11 labels (retrained) |
 | --- | ---: | ---: | ---: |
 | English | 0.859 (`noul` 0.718) | 0.935 (`noul` 0.946) | **0.945** (`noul` **0.992**) |
-| multilingual | 0.853 (`noul` 0.960) | 0.714 (`noul` 0.614) | 0.657 (`noul` 0.832) — **open** |
+| multilingual | 0.853 (`noul` 0.960) | 0.714 (`noul` 0.614) | **0.718** (`noul` **0.832**, 8 epochs) |
 
 The English row is the label fix proving itself: the old weights already read the text (0.946) and
-the retrain adds the rest (overall 0.945, `choice` 0.960). The multilingual retrain is the open
-thread: `noul` improved in **every** language — the language→label shortcut is gone
-(`de` 0.373 → 0.747, `es` 0.452 → 0.940, `nl` 0.217 → 0.663) — while `choice` collapsed to a
-uniform ~0.50 and `score` fell ~0.25 across all six, i.e. the shared trunk traded them away, or it
-is L-006 run-to-run variance (training did not collapse: `val_loss` 0.342, losses still descending
-at epoch 4). A control run of the identical config plus an 8-epoch variant are running before
-anything is published — L-006: run the control before blaming anything.
+the retrain adds the rest (overall 0.945, `choice` 0.960). The multilingual retrain needed a sweep
+— `noul` improved in **every** language (the language→label shortcut is gone: `de` 0.373 → 0.747,
+`es` 0.452 → 0.940, `nl` 0.217 → 0.663) while `choice` lost ~0.20 and `score` ~0.20 at the
+4-epoch setting:
+
+| run (multilingual) | overall | ECE | `noul` | `choice` | `score` | `val_loss` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| pre-B-11 weights | 0.714 | 0.076 | 0.614 | **0.674** | 0.854 | — |
+| retrain, 4 epochs (seed 42) | 0.657 | 0.051 | 0.832 | 0.490 | 0.648 | 0.342 |
+| **control** (identical config) | 0.663 | 0.059 | 0.832 | 0.496 | 0.660 | 0.340 |
+| **8 epochs — published** | **0.718** | **0.042** | **0.832** | 0.468 | **0.854** | 0.352 |
+| `choice_rank` 128, 8 epochs | 0.671 | 0.044 | 0.832 | 0.490 | 0.690 | 0.458 |
+
+Three things the sweep settled (L-006 first: run the control before blaming anything):
+
+1. **It is not variance.** The control lands 0.663 against run 1's 0.657 — 0.006 apart. The
+   4-epoch `choice`/`score` drop is systematic.
+2. **`score` was under-fit, not broken.** 8 epochs take it 0.648 → **0.854** (level with the
+   pre-B-11 weights) and overall to **0.718**, above 0.714 — with the best ECE of the table
+   (0.042 vs 0.076).
+3. **`choice` capacity buys nothing.** `choice_rank` 32 → 128 collapsed the *training* loss
+   (0.408 → **0.085**) while eval stayed at 0.490 and overall fell to 0.671 — pure overfit, the
+   same pattern as B-5a run 6. The residual `choice` cost (~0.20 against the old weights) is the
+   harder, balanced `noul` task sharing the trunk, not a head that is too small: it is the same
+   interference B-5 lists, and it is recorded here rather than papered over.
+
+**Published multilingual artifact: `checkpoints/multi_e8`** (promoted to `checkpoints/multi`;
+the 4-epoch first retrain is kept as `checkpoints/multi_r1b11` so the sweep can be re-read).
 
 **Acceptance.**
 - No request-toned record carries label 0, and no neutral-toned record label 1 (a test asserts it).
