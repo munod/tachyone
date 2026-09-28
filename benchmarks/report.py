@@ -217,7 +217,8 @@ def main(argv: Iterable[str] | None = None) -> int:
             "uv run python -m training.generate_data --seed 2 --per-type 500 "
             "--languages pt,es,fr,de,it,nl --out data/eval_multi.jsonl",
             "uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json",
-            "uv run python -m training.finetune_rlcd --config training/configs/finetune_multi.json",
+            "uv run python -m training.finetune_rlcd "
+            "--config training/configs/finetune_multi_b12.json",
             "uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en "
             "--out-predictions data/preds_en.jsonl",
             "uv run python -m training.fit_calibration --calibration data/preds_en.jsonl "

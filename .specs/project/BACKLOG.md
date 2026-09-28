@@ -737,7 +737,7 @@ not a bugfix. Effort ~2 days + GPU.
 
 ---
 
-## B-12 · The `score` near-tie label also comes from the index · Idea
+## B-12 · The `score` near-tie label also comes from the index · **In progress** (one cycle with the B-5 retrain)
 
 **Why.** `_score_record` takes the level from the tone (`_LEVEL_BY_TONE`) and then, on
 `index % 13 == 0`, lowers it one level as an "ambiguous near-tie label". The downgrade is a
@@ -753,7 +753,10 @@ sitting on that ceiling, not below it:
 
 So `score` is label-bound exactly as `noul` was (L-008), only less visibly: the artifact caps the
 metric instead of splitting it per language. Measured 2026-09-27 against the regenerated datasets,
-whose `score` labels B-11 did **not** touch.
+whose `score` labels B-11 did **not** touch. (That 0.922 counts the empty boundary states as if
+they were readable; counting them too — they inherit a tone the text never shows — the ceiling a
+perfect tone-reader actually reaches is **0.888**, which is where the released checkpoints sit:
+0.882 English, 0.854 multilingual.)
 
 **Plan (the B-11 shape).**
 1. Decide the rule: keep the near-tie but *author* it — mark the ambiguous phrases in the
@@ -764,11 +767,22 @@ whose `score` labels B-11 did **not** touch.
    rather than paying for a third one of its own.
 3. Publish the ceiling beside the accuracy, the way `noul_labels` now does, so it stays visible.
 
+**Scope grew before execution (2026-09-28) — recorded in ADR-0015.** Measuring the near-tie
+surfaced the *same* artifact one primitive over: the **empty boundary state** carries an
+index-derived label in `score` (the tone drawn before the state was emptied) and in `choice`
+(`options[index % len(options)]`) — 5.4% of every primitive's rows, worth ~4 points of `score`
+ceiling and ~1.4 of `choice`. `noul` already had its default from B-11 ("" → 0). And `ecommerce`,
+the one domain without a catch-all, blocked the `choice` default — it gained `other` as a fifth
+option. Decision: **drop** the near-tie (ambiguity the text cannot express is label noise) and give
+both empty states their defaults, in the same cycle as the B-5 retrain — `score` empty → middle
+level, `choice` empty → `other`.
+
 **Acceptance.** No record whose text reads as level *k* carries *k-1* unless the text itself is one
 of the authored near-tie phrases; a test asserts it; ceiling and accuracy are reported together.
 
 **Risks / notes.** Same cost shape as B-11 (ADR + retrain + full re-benchmark, B-002), which is why
-this is an Idea and not scheduled.
+it was written to be bundled — it is now executing inside the B-5 retrain cycle rather than as a
+third one of its own.
 
 **Related.** `STATE.md` L-008, `docs/adr/ADR-0014-noul-label-from-text.md`,
 `training/generate_data.py::_score_record`.

@@ -21,6 +21,7 @@ not edited in place to change its decision — supersede it with a new ADR inste
 | [ADR-0012](ADR-0012-onnx-before-fast-path.md) | Ship the ONNX backend before the TileLang fast path | Accepted | 2026-09-24 |
 | [ADR-0013](ADR-0013-rename-to-tachyone.md) | Rename the project from `jeba` to Tachyone | Accepted | 2026-09-26 |
 | [ADR-0014](ADR-0014-noul-label-from-text.md) | Fix the `noul` label everywhere and retrain | Accepted | 2026-09-27 |
+| [ADR-0015](ADR-0015-score-choice-labels-from-text.md) | `score` and `choice` labels come from the text | Accepted | 2026-09-28 |
 
 ## Implementation notes (post-acceptance)
 
@@ -51,6 +52,10 @@ drifted, the divergence is recorded here.
   (`huggingface_hub/constants.py`), but it is not a tachyone-controlled switch. For a documented,
   tachyone-level guarantee use `TACHYONE_OFFLINE=1`; see
   [`docs/huggingface.md`](../huggingface.md) for the prefetch step offline installs need first.
+- **ADR-0014 — the `score` near-tie follow-up.** The closing note said the `index % 13` near-tie
+  was "deliberately left alone and tracked separately". **It was tracked and then fixed**:
+  **ADR-0015** removed it (and gave the empty `choice`/`score` states their defaults), so
+  ADR-0014's own decision — labels from the text — now covers all three primitives.
 
 ## Template
 
