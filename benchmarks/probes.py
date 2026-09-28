@@ -513,6 +513,13 @@ def _synthetic_row(path: Path) -> list[str]:
 def render(paths: list[Path], out: Path, synthetic: Path | None) -> None:
     """Compose ``benchmarks/probes.md`` from probe artifacts (plus the synthetic row)."""
     artifacts = [json.loads(path.read_text(encoding="utf-8")) for path in paths]
+    # The reference figure comes from the artifact, not from a literal: B-11 republished every
+    # number as a set, and a hardcoded 0.859 would silently outlive the data behind it.
+    synthetic_accuracy = (
+        f"{json.loads(synthetic.read_text(encoding='utf-8'))['overall']['accuracy']:.3f}"
+        if synthetic
+        else "the synthetic score"
+    )
     by_probe: dict[str, list[dict[str, Any]]] = {}
     for artifact in artifacts:
         probe = str(artifact["dataset"].get("probe") or "")
@@ -540,8 +547,8 @@ def render(paths: list[Path], out: Path, synthetic: Path | None) -> None:
         "### How to read this page",
         "",
         "- **Judge each number against that probe's chance level**, stated in its section — not",
-        "  against the synthetic 0.859. Different tasks, different option counts, no shared",
-        "  distribution with the training data.",
+        f"  against the synthetic {synthetic_accuracy}. Different tasks, different option counts,",
+        "  no shared distribution with the training data.",
         "- **All three temperature fits landed on the grid ceiling (T=20.0).** That flattens the",
         "  distribution, so a low `ECE cal` is *bought* with confidence: read it next to `Conf`",
         "  and `Brier`, and treat `ECE raw` as what the adapter actually ships (same caveat as",

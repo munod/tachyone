@@ -294,8 +294,10 @@ def test_render_composes_probes_md_with_licences_and_reproduce_commands(tmp_path
     artifact = tmp_path / "probe_xnli.json"
     artifact.write_text(json.dumps(_artifact("tachyone (encoder)", "xnli", 5010)), encoding="utf-8")
     synthetic = tmp_path / "en.json"
+    # Deliberately not the published figure: the prose must track the artifact (B-11 republished
+    # every number as a set, so a literal would outlive the data behind it).
     synthetic.write_text(
-        json.dumps({"overall": {"accuracy": 0.859, "ece": 0.023, "n": 1500}}), encoding="utf-8"
+        json.dumps({"overall": {"accuracy": 0.912, "ece": 0.019, "n": 1500}}), encoding="utf-8"
     )
     out = tmp_path / "probes.md"
 
@@ -305,7 +307,8 @@ def test_render_composes_probes_md_with_licences_and_reproduce_commands(tmp_path
     assert text.startswith("# Public probes")
     assert "## `xnli` — facebook/xnli (CC BY-NC 4.0)" in text
     assert "facebookresearch/XNLI" in text  # where the licence was actually verified
-    assert "| in-sample synthetic eval" in text and "| 1500 | 0.859 | 0.023 |" in text
+    assert "| in-sample synthetic eval" in text and "| 1500 | 0.912 | 0.019 |" in text
+    assert "against the synthetic 0.912" in text  # prose reads the artifact too
     assert "benchmarks.compare run --engine tachyone" in text
     assert "#### Per task: accuracy and calibration" in text
     assert "**Chance level:** 0.333 (3 labels)" in text
