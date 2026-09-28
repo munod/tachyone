@@ -157,7 +157,7 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · B-5a closed, **gates NOT met (1 of 2)**, 2026-09-27
+## B-5 — Multi-domain coverage (5 domains) · B-5a closed 1 of 2 on pre-B-11 labels; **both gates pass re-measured on the B-11 labels** (2026-09-28)
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
@@ -297,7 +297,8 @@ and the LoRA goes back to r=16: r=64 measured worse on every headline (0.630 →
 - [x] Per-domain accuracy/ECE published and gated on the worst domain — worst new domain **0.739**
   (`voice`) ✓, per-domain ECE 0.082–0.116 published with the exceptions declared above the 0.05
   target.
-- [ ] **No regression on `support` (English overall ≥ 0.85)** → **0.785** ✗ (best of six runs).
+- [x] **No regression on `support` (English overall ≥ 0.85)** → **0.785** ✗ on the pre-B-11
+  labels (best of six runs); **0.861 ✓ re-measured on the B-11 labels** — see below.
 - [ ] Adapter republished; `benchmarks/report.md`, model card, README and CHANGELOG updated →
   deliberately **not done**: the released adapters are untouched and the card was refreshed only
   for the `v0.4.0` version line.
@@ -308,6 +309,29 @@ and the LoRA goes back to r=16: r=64 measured worse on every headline (0.630 →
 `checkpoints/en_domains`, `data/preds_en_domains_r5.jsonl`, `benchmarks/results/en_domains_r5.json`
 — and its numbers are the ones published in `docs/benchmarks.md`. Runs 1, 3, 4, 5 and 6 are kept
 as `_rN` so the curve can be re-read.
+
+**Re-measured on the B-11 labels (2026-09-28): both gates pass.** B-11 (ADR-0014) corrected the
+`noul` labels, moving 602 of the 2,500 `noul` rows in `eval_en_domains.jsonl` and nothing else —
+`choice` and `score` labels are untouched — so the *same* run-5 weights re-evaluate to overall
+**0.880** (`benchmarks/results/en_domains_r5_postb11.json`):
+
+| Gate | pre-B-11 labels | B-11 labels | verdict |
+| --- | ---: | ---: | --- |
+| `support` ≥ 0.85 | 0.785 ✗ | **0.861** ✓ | flipped |
+| worst new domain ≥ 0.70 | 0.739 (`voice`) ✓ | **0.807** (`voice`) ✓ | held |
+
+The entire delta is `noul`: run 5's `noul` 0.720 → **0.946**, while `choice` 0.789 and `score`
+0.905 are the *same measurement as before*, because those labels never moved. Per domain now:
+`agent_tools` 0.929, `ecommerce` 0.915, `documents` 0.887, `support` 0.861, `voice` 0.807;
+per-domain ECE 0.045–0.067 (was 0.082–0.116) — `agent_tools` 0.045 and `documents` 0.046 meet
+the 0.05 target, the other three stay declared exceptions.
+
+So the three structural options below are no longer what the *written* gate needs, but two facts
+change how they should be read: (a) the baseline moved — the B-11-retrained support-only adapter
+scores **0.945** on `eval_en`, so a five-domain adapter at **0.861** on support clears the
+absolute gate while sitting 0.084 below the released one; and (b) run 5 itself was **trained on
+pre-B-11 labels**, and retraining it on corrected data is the cheap untried option that should
+come before any of the three structural decisions.
 
 **What would actually close the last 0.065 (each needs a decision before code):**
 
@@ -617,7 +641,7 @@ are not comparable before vs after; record both. Effort ~0.5 day.
 
 ---
 
-## B-11 · The `noul` target depends on the loop index, not on the text · Ready
+## B-11 · The `noul` target depends on the loop index, not on the text · In progress (code + retrains done, publication pending)
 
 **Why.** `_noul_record` computes `positive = (index % 2 == 0)` and only then forces `False` when
 the tone is neutral, so `target = 1` iff *even index ∧ request tone*. Half of the request-toned
@@ -645,6 +669,25 @@ with parity — a data artifact that reads like a capability gap.
    refit calibration, and re-run `benchmarks/report.md`, `docs/compare.md` §3 and the three public
    probes (`benchmarks/probes.md`) — the numbers cannot be compared before/after, so they are
    republished as a set, like AD-009 did for the seed sweep.
+
+**Executed (2026-09-27 → 28).** Code (`c2cfd4c`, `619cb01`), ADR-0014, datasets regenerated — only
+`noul.target` moved (~24% of `noul` rows; zero bytes of `state`, questions, `choice`/`score`) —
+both adapters retrained, and per L-005 the pre-B-11 checkpoints were measured against the
+corrected eval sets **before** being replaced:
+
+| checkpoint | on pre-B-11 labels | on B-11 labels (old weights) | on B-11 labels (retrained) |
+| --- | ---: | ---: | ---: |
+| English | 0.859 (`noul` 0.718) | 0.935 (`noul` 0.946) | **0.945** (`noul` **0.992**) |
+| multilingual | 0.853 (`noul` 0.960) | 0.714 (`noul` 0.614) | 0.657 (`noul` 0.832) — **open** |
+
+The English row is the label fix proving itself: the old weights already read the text (0.946) and
+the retrain adds the rest (overall 0.945, `choice` 0.960). The multilingual retrain is the open
+thread: `noul` improved in **every** language — the language→label shortcut is gone
+(`de` 0.373 → 0.747, `es` 0.452 → 0.940, `nl` 0.217 → 0.663) — while `choice` collapsed to a
+uniform ~0.50 and `score` fell ~0.25 across all six, i.e. the shared trunk traded them away, or it
+is L-006 run-to-run variance (training did not collapse: `val_loss` 0.342, losses still descending
+at epoch 4). A control run of the identical config plus an 8-epoch variant are running before
+anything is published — L-006: run the control before blaming anything.
 
 **Acceptance.**
 - No request-toned record carries label 0, and no neutral-toned record label 1 (a test asserts it).
