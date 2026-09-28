@@ -118,6 +118,12 @@ results are published in `docs/compare.md` §3.
 
 - **Python 3.14 vs torch/transformers:** the system interpreter is 3.14, but torch/transformers
   do not support it yet. Always use the pinned 3.12 (see ADR-0003, blocker B-001).
+- **`TACHYONE_ADAPTERS` maps per *checkpoint id*, not per dataset.** Pointing both keys at one
+  directory (`tachyone-en=checkpoints/multi,...`) makes the router load the mmBERT adapter into
+  the ModernBERT-large trunk and the run dies with a `size mismatch` (768 vs 1024). Map only the
+  key that owns the adapter (`tachyone-multi=checkpoints/multi`), or map each key to its own
+  trunk — see `training/evaluate.py`'s `--models-dir` examples and the B-12 cycle log
+  (`/tmp/opencode/b12_train_attempt1.log`).
 - **Do not "fix" the wire to be nicer.** Field names, nesting, and error statuses are frozen
   for Jev compatibility (ADR-0001).
 - **Do not add a required network call** to the default path (ADR-0004).
