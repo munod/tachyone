@@ -118,14 +118,16 @@ graph LR
 
 ## Post-M6 — Backlog (delivered)
 
-The active backlog items shipped across `v0.2.0` and `v0.3.0`:
+The active backlog items shipped across `v0.2.0` and `v0.3.0` (figures are the ones measured at
+the time — **B-11** later restated every dataset-level number, see below):
 
 - **B-1 Multilingual `choice`/`score` quality** ✅ (`v0.2.0`) — localized per-language data,
   per-record RNG, per-`(primitive, language)` temperature fitting, runtime language detection, and
   per-language ECE reporting. Follow-up raised the multilingual LoRA rank to 64: overall accuracy
-  0.702 → 0.853 and `es` ECE 0.170 → 0.038 (2/6 languages ≤ 0.05 — `es`, `pt`; four open).
+  0.702 → 0.853 and `es` ECE 0.170 → 0.038 (pre-B-11 labels; 2/6 languages ≤ 0.05 — `es`, `pt`).
 - **B-2 Fast-path (TileLang/CUDA graphs)** ✅ (`v0.2.0`) — `TACHYONE_FAST=1` wires per-shape CUDA graphs
-  with bf16 weights and graceful fallback; measured 2.68× p50 (NFR-P01/P07 met).
+  with bf16 weights and graceful fallback; measured 2.68× p50 at the time, **2.72× re-measured on
+  the B-11 adapters** (NFR-P01/P07 met).
 - **B-3 Confidence thresholding / System-2 handoff** ✅ (`v0.3.0`) — `normalized_entropy`/`margin`
   and `assess`/`assess_response`; CLI `--threshold` appends a sibling `handoff` object (`CAL-06`).
 - **B-4 Input-noise robustness** ✅ (`v0.3.0`) — seeded `noise_rate` augmentation and a clean/noisy
@@ -134,15 +136,29 @@ The active backlog items shipped across `v0.2.0` and `v0.3.0`:
 Shipped in `v0.4.0`:
 
 - **B-7 Public probes** ✅ — `benchmarks/probes.py` loaders + `benchmarks/probes.md`:
-  typed-decisions 0.323, MASSIVE 0.033 across seven locales, XNLI 0.334, each against its own
-  chance level, with licences, citations and reproduction commands; `OPS-06` implemented.
+  typed-decisions, MASSIVE and XNLI against their own chance levels, with licences, citations and
+  reproduction commands; `OPS-06` implemented. **Re-run on the B-11 adapters (2026-09-28):**
+  0.323 → 0.330, 0.033 → **0.013** (below MASSIVE's 0.017 chance), 0.334 → 0.333.
 - **B-8 Calibration-asset hardening** ✅ — an adapter asset that cannot be loaded warns by name
   instead of degrading silently (`docs/huggingface.md` §4).
 - **B-10 LLM prompt wrapper** ✅ — the `answers` wrapper documented for all three primitives;
   probe `JSON ok` 0.083 → 0.889 with parsing kept strict.
-- **B-5a Multi-domain data** 🔄 — the generator is split per domain with byte-identical output for
-  existing configs, reports `per_domain`, and ships four new English domains plus presets; the
-  five-domain checkpoint is still in training (gates: support ≥ 0.85, worst new domain ≥ 0.70).
+- **B-5a Multi-domain data** ✅ — the generator is split per domain with byte-identical output for
+  existing configs, reports `per_domain`, and ships four new English domains plus presets. Six
+  runs; run 5 is the artifact. On the pre-B-11 labels it met 1 of 2 gates (support 0.785 ✗,
+  worst new domain 0.739 ✓) and released nothing; **re-measured on the B-11 labels both gates
+  pass** (support 0.861 ✓, voice 0.807 ✓) — `.specs/project/BACKLOG.md` **B-5**.
+
+Delivered 2026-09-28 (CHANGELOG `[Unreleased]`):
+
+- **B-11 `noul` labels from the text** ✅ (ADR-0014) — the label rule, the acceptance tests, the
+  label audit published beside the accuracy, seven datasets regenerated, both adapters retrained
+  and republished (Hub `224c8a74` / `b7747756`): English 0.859 → **0.945**, multilingual restated
+  at **0.718** (the old 0.853 was a language→label shortcut). Head-to-head, probes, fast path and
+  the B-5a artifact were all re-measured in the same pass.
+- **B-12 `score` near-tie label** 💡 (Idea) — `index % 13` downgrades 7.8% of `score` labels, a
+  0.922 text-consistent ceiling the released checkpoints already sit on; bundle with the next
+  retrain.
 
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
