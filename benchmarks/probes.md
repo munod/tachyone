@@ -13,7 +13,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 ### How to read this page
 
 - **Judge each number against that probe's chance level**, stated in its section — not
-  against the synthetic 0.945. Different tasks, different option counts,
+  against the synthetic 0.972. Different tasks, different option counts,
   no shared distribution with the training data.
 - **All three temperature fits landed on the grid ceiling (T=20.0).** That flattens the
   distribution, so a low `ECE cal` is *bought* with confidence: read it next to `Conf`
@@ -47,22 +47,22 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 2000 | 2000 | 0.330 | 0.498 | 0.066 | 0.700 | 0.393 |
+| tachyone (encoder) | 2000 | 2000 | 0.330 | 0.543 | 0.069 | 0.699 | 0.399 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 123.35 | 343.18 | 5.6 | 1.000 | 2560 | 1823 |
+| tachyone (encoder) | 122.01 | 341.68 | 5.6 | 1.000 | 2536 | 1823 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| agent_trace_observability | tachyone (encoder) | 500 | 0.250 | 0.537 | 0.095 | 0.345 |
-| customer_service | tachyone (encoder) | 500 | 0.370 | 0.470 | 0.041 | 0.357 |
-| invoice_processing | tachyone (encoder) | 500 | 0.288 | 0.572 | 0.216 | 0.458 |
-| security_incidents | tachyone (encoder) | 500 | 0.412 | 0.411 | 0.052 | 0.410 |
+| agent_trace_observability | tachyone (encoder) | 500 | 0.250 | 0.584 | 0.101 | 0.351 |
+| customer_service | tachyone (encoder) | 500 | 0.370 | 0.525 | 0.018 | 0.364 |
+| invoice_processing | tachyone (encoder) | 500 | 0.288 | 0.609 | 0.177 | 0.465 |
+| security_incidents | tachyone (encoder) | 500 | 0.412 | 0.455 | 0.045 | 0.416 |
 
 ## `massive` — AmazonScience/massive (CC-BY-4.0)
 
@@ -73,31 +73,31 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 ### tachyone (encoder)
 
-3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=18.15) · NVIDIA GeForce RTX 3060 · Python 3.12.13
+3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=20.0) · NVIDIA GeForce RTX 3060 · Python 3.12.13
 
 #### Quality
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 3584 | 3584 | 0.013 | 0.136 | 0.008 | 0.983 | 0.020 |
+| tachyone (encoder) | 3584 | 3584 | 0.011 | 0.192 | 0.010 | 0.983 | 0.021 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 96.80 | 191.47 | 8.2 | 1.000 | 3212 | 2951 |
+| tachyone (encoder) | 97.35 | 192.59 | 8.2 | 1.000 | 3157 | 2951 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| de | tachyone (encoder) | 512 | 0.014 | 0.106 | 0.006 | 0.020 |
-| en | tachyone (encoder) | 512 | 0.018 | 0.267 | 0.007 | 0.025 |
-| es | tachyone (encoder) | 512 | 0.006 | 0.134 | 0.013 | 0.019 |
-| fr | tachyone (encoder) | 512 | 0.010 | 0.068 | 0.008 | 0.018 |
-| it | tachyone (encoder) | 512 | 0.010 | 0.116 | 0.010 | 0.020 |
-| nl | tachyone (encoder) | 512 | 0.023 | 0.176 | 0.002 | 0.022 |
-| pt | tachyone (encoder) | 512 | 0.008 | 0.086 | 0.011 | 0.019 |
+| de | tachyone (encoder) | 512 | 0.010 | 0.092 | 0.009 | 0.019 |
+| en | tachyone (encoder) | 512 | 0.018 | 0.267 | 0.006 | 0.024 |
+| es | tachyone (encoder) | 512 | 0.010 | 0.406 | 0.014 | 0.024 |
+| fr | tachyone (encoder) | 512 | 0.006 | 0.147 | 0.013 | 0.019 |
+| it | tachyone (encoder) | 512 | 0.006 | 0.201 | 0.015 | 0.021 |
+| nl | tachyone (encoder) | 512 | 0.020 | 0.129 | 0.001 | 0.021 |
+| pt | tachyone (encoder) | 512 | 0.008 | 0.102 | 0.011 | 0.019 |
 
 ## `xnli` — facebook/xnli (CC BY-NC 4.0)
 
@@ -114,28 +114,28 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 5010 | 5010 | 0.333 | 0.269 | 0.021 | 0.670 | 0.354 |
+| tachyone (encoder) | 5010 | 5010 | 0.333 | 0.268 | 0.021 | 0.670 | 0.354 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 46.03 | 65.70 | 21.9 | 1.000 | 2993 | 2821 |
+| tachyone (encoder) | 47.28 | 67.18 | 21.4 | 1.000 | 2948 | 2821 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| en | tachyone (encoder) | 5010 | 0.333 | 0.269 | 0.021 | 0.354 |
+| en | tachyone (encoder) | 5010 | 0.333 | 0.268 | 0.021 | 0.354 |
 
 ## Synthetic vs public
 
 | Evaluation set | Nature | n | Accuracy | ECE |
 | --- | --- | ---: | ---: | ---: |
-| in-sample synthetic eval (`benchmarks/report.md`) | synthetic, shares states with training data | 1500 | 0.945 | 0.034 |
-| typed-decisions `test` | public, Apache-2.0 | 2000 | 0.330 | 0.498 |
-| massive `test` | public, CC-BY-4.0 | 3584 | 0.013 | 0.136 |
-| xnli `test` | public, CC BY-NC 4.0 | 5010 | 0.333 | 0.269 |
+| in-sample synthetic eval (`benchmarks/report.md`) | synthetic, shares states with training data | 1500 | 0.972 | 0.020 |
+| typed-decisions `test` | public, Apache-2.0 | 2000 | 0.330 | 0.543 |
+| massive `test` | public, CC-BY-4.0 | 3584 | 0.011 | 0.192 |
+| xnli `test` | public, CC BY-NC 4.0 | 5010 | 0.333 | 0.268 |
 
 Raw (uncalibrated) ECE is what the engine shipped with; see
 [`docs/compare.md`](../docs/compare.md#3-why-not-another-open-system-one-scorer) for why ECE alone is not a quality metric.
