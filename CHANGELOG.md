@@ -17,6 +17,17 @@ All notable changes to this project are documented here. The format is based on
   own phrase bank across all five committed domains and seven languages. Only `noul.target` bytes
   move: states, questions and every `choice`/`score` record are byte-identical, the golden hashes
   were recaptured, and the seven shipped datasets were regenerated.
+- **`score` and `choice` labels are derived from the text too (B-12 / ADR-0015).** `_score_record`
+  lowered the level one step on `index % 13 == 0` as an "ambiguous near-tie", contradicting **7.8%
+  of `score` rows** (39/500 in both eval sets) and capping the primitive at **0.888** — exactly
+  where the released checkpoints sat (0.882 English). The empty boundary state (5.4% of *every*
+  primitive) carried an index-derived label in `score` (the tone drawn before the state was
+  emptied) and in `choice` (`options[index % 4]`). Now `score` takes the tone's level with the
+  empty state at the middle level, `choice` takes the option the state names with the empty state
+  at the catch-all, and **`ecommerce` gained the `other` option** every other domain already
+  shipped (re-cycling its four options into five). Acceptance tests check each primitive against
+  its own phrase/option banks across five domains and seven languages; golden hashes recaptured;
+  seven datasets regenerated (`noul` untouched).
 
 ### Changed
 
@@ -39,6 +50,25 @@ All notable changes to this project are documented here. The format is based on
   `choice` regression); and the head-to-head re-run with **all four engines on table B**, since
   the gold labels under it changed (Tachyone 0.854 → **0.953** at home, 0.229 → **0.241** on the
   peer's probe).
+- **Everything re-measured again for B-12, and the published set re-chosen by merit.** Training on
+  the corrected labels makes `noul` and `score` trivially learnable (both hit **1.000** — they are
+  the same tone detector once the near-tie noise is gone) and the shared trunk pays for it in
+  `choice`, which is what the cycle measured: an English **control of the identical published
+  recipe landed at 0.841** (L-006), the five-domain retrain's `choice` collapsed to **0.303**
+  (train loss 0.027, eval at chance), while the multilingual retrain *won*. So the published
+  artifacts are the **best measured per adapter**:
+
+  | checkpoint | published | overall | on pre-fix labels |
+  | --- | --- | ---: | ---: |
+  | English | B-11 weights | **0.972** (`choice` 0.946, `score` 0.978) | 0.859 / 0.945 |
+  | Multilingual | B-12 retrain (8 epochs) | **0.743** (`choice` 0.468) | 0.853 / 0.718 |
+  | five-domain (B-5a) | run 5 weights | **0.879** — **support 0.886 ✓, worst new 0.815 ✓** | 0.785 ✗ / 0.861 ✓ |
+
+  Re-runs on the published set: fast path **2.65×** (8.97 → 3.39 ms, parity 0.000559, 0 flips),
+  probes 0.330 / **0.011** / 0.333, head-to-head table A **0.236** (peers untouched) and table B
+  **0.974** at home with all four engines re-scored on the B-12 gold labels. The B-5 gates now
+  pass on both label generations, and the "retrain run 5 on corrected labels" option was tried and
+  **lost to the B-11 weights by 0.111** — recorded in `docs/benchmarks.md` and `BACKLOG.md` **B-5**.
 
 ### Added
 
@@ -52,15 +82,16 @@ All notable changes to this project are documented here. The format is based on
 
 ### Documentation
 
-- **The `B-5a` multi-domain experiment finished with 1 of 2 gates met — and passes both when
-  re-measured on the B-11 labels (2026-09-28).** Five domains trained into
-  one adapter reach **0.880** overall on the corrected labels (0.804 before), with `support` at
-  **0.861 ≥ 0.85** ✓ (it was 0.785 ✗) and the worst new domain (`voice`) at **0.807 ≥ 0.70** ✓;
-  per-domain ECE drops 0.082–0.116 → 0.045–0.067. **Nothing was released** — the published adapters
-  are the support-only ones, and the retrained English adapter now scores 0.945 on `support`, so
-  the five-domain run clears the absolute gate while sitting 0.084 below it. `docs/benchmarks.md`
-  carries both tables and the gate verdicts; the six-run curve and the diagnosis live in
-  `.specs/project/BACKLOG.md` **B-5**.
+- **The `B-5a` multi-domain experiment passes both gates, and the "retrain it" option was tried
+  and measured (2026-09-29).** On the pre-B-11 labels run 5 scored 0.785 on `support` ✗; on the
+  B-11 labels the same weights reached **0.861 ✓**; on the **B-12 labels** they reach **0.879
+  overall with support 0.886 ✓ and the worst new domain `voice` 0.815 ✓**, per-domain ECE
+  0.036–0.080. Retraining run 5's recipe on the corrected labels — the "cheap untried option" the
+  previous entry named — **was run and lost**: `noul` and `score` both hit 1.000 while `choice`
+  collapsed to 0.303 and `support` fell to 0.763 ✗, so the designated artifact keeps its B-11
+  weights. **Nothing was released** — the published adapters are the support-only ones (English
+  0.972). `docs/benchmarks.md` carries both tables and the gate verdicts; the six-run curve and
+  the three structural options live in `.specs/project/BACKLOG.md` **B-5**.
 
 ## [0.4.0] - 2026-09-27
 
