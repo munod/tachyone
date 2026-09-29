@@ -21,10 +21,10 @@ licences, chance levels and reproduction commands in `benchmarks/probes.md`), **
 calibration-asset hardening** (an unusable adapter asset warns by name instead of degrading
 silently), **B-10's LLM prompt fix** (probe `JSON ok` 0.083 → 0.889 with parsing kept strict),
 the **B-5a multi-domain data refactor** (five committed domains, `per_domain` reporting and
-byte-identical output for every existing config — its two gates now pass when re-measured on the
-corrected labels), and **B-11**, which derives every `noul` label from the text it accompanies
-(ADR-0014: all datasets regenerated, both adapters retrained, and the label audit published with
-the accuracy). The wire
+byte-identical output for every existing config — both gates pass when re-measured on the
+corrected labels), and **B-11 + B-12**, which derive *every* label in all three primitives from
+the text it accompanies (ADR-0014 + ADR-0015: all datasets regenerated, both adapters republished,
+and the label audit published beside the accuracy). The wire
 contract, an OpenAI-compatible LLM backend, a local encoder
 (ModernBERT/mmBERT + LoRA), an ONNX backend, FastAPI serving, an SDK/CLI, MCP + LangChain
 integrations, a training pipeline, and a docs site all ship. LoRA adapters are published on the
@@ -118,17 +118,18 @@ graceful fallback.
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + LoRA r=16 + choice head) | **0.945** | 0.960 | 0.992 | 0.882 | 0.034 |
-  | Multilingual (mmBERT-base + LoRA r=64 + choice head, 8 epochs) | **0.718** | 0.468 | 0.832 | 0.854 | 0.042 |
+  | English (ModernBERT-large + LoRA r=16 + choice head) | **0.972** | 0.946 | 0.992 | 0.978 | 0.020 |
+  | Multilingual (mmBERT-base + LoRA r=64 + choice head, 8 epochs) | **0.743** | 0.468 | 0.892 | 0.870 | 0.089 |
 
-  Every `noul` label is derived from the text it accompanies (B-11 / ADR-0014), so label and model
-  agree by construction — the audit shipped beside these tables reports **0 contradictory rows**
-  (and the pre-B-11 `noul` labels contradicted 121 of 241 request-toned English rows, which is why
-  `noul` read 0.718 then and reads 0.992 now). The dedicated `choice` head (L-002) and localized
-  per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance); three of six
-  languages meet ECE ≤ 0.05 (`pt` 0.025, `es` 0.040, `it` 0.044), with `de`/`nl` open (NFR-C06).
-  The CUDA-graph fast path (`TACHYONE_FAST=1`) improves p50 9.2 → 3.4 ms with no top-label
-  changes.
+  Every label comes from the text it accompanies (B-11 + B-12 / ADR-0014 + ADR-0015): `noul` from
+  its phrase bank, `score` from the tone's level, `choice` from the option the state names, with
+  defaults for the empty boundary states — so the audit shipped beside these tables reports **0
+  contradictory rows** (the pre-B-11 labels contradicted 121 of 241 request-toned English rows, and
+  7.8% of `score` rows carried a "near-tie" the text never showed). The dedicated `choice` head
+  (L-002) and localized per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance);
+  **one of six** languages meets ECE ≤ 0.05 (`es` 0.045) — `pt`/`fr`/`de`/`nl`/`it` are above it
+  (NFR-C06). The CUDA-graph fast path (`TACHYONE_FAST=1`) improves p50 9.0 → 3.4 ms with no
+  top-label changes.
 
 ## Architecture at a glance
 

@@ -19,17 +19,24 @@ pipeline_tag: text-classification
 
 # Tachyone (System One decision engine)
 
-> **Status: released (`v0.4.0`), revision 2026-09-28.** Trained on a single RTX 3060 12GB and
+> **Status: released (`v0.4.0`), revision 2026-09-29.** Trained on a single RTX 3060 12GB and
 > published as LoRA adapters ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
 >
-> **This revision is B-11 (ADR-0014):** every `noul` label is derived from the text it
-> accompanies (`request` → 1, `neutral`/empty → 0) instead of the loop index, so all datasets were
-> regenerated and both adapters retrained. The labels contradict nothing now — the audit shipped
-> with the evaluation reports **0 contradictory rows** — but that also means these numbers are
-> **not comparable with pre-B-11 measurements**: the old labels contradicted 121 of 241
-> request-toned English rows and left *every* `noul` label in `es`/`de`/`nl` at 0.
+> **This revision is B-11 + B-12 (ADR-0014, ADR-0015): every label in all three primitives is
+> derived from the text it accompanies** — `noul` from its phrase bank (`request` → 1,
+> `neutral`/empty → 0), `score` from the tone's level (empty → middle), `choice` from the option
+> the state names (empty → the catch-all `other`). All datasets were regenerated and the label
+> audit published with the evaluation reports **0 contradictory rows**. These numbers are
+> **not comparable with pre-B-11/pre-B-12 measurements**: the old labels contradicted 121 of 241
+> request-toned English rows, left every `noul` label in `es`/`de`/`nl` at 0, and gave 7.8% of
+> `score` rows a "near-tie" the text never showed.
+>
+> **Provenance, stated plainly:** the English adapter carries the **B-11 weights** and the
+> multilingual adapter the **B-12 retrain** — each is the *best measured* checkpoint of its
+> recipe (training on the corrected labels makes `noul`+`score` trivial and costs `choice`; an
+> identical-recipe control landed 13 points lower, L-006).
 
 ## Model details
 
@@ -74,30 +81,30 @@ latency per primitive and language).
 deterministic synthetic records (fully localized per language, a learnable `other` team with rich
 descriptions, per-record RNG, one-in-six distractor clauses), LoRA (r=16 English, r=64 multilingual)
 plus a dedicated low-rank `choice` head (r=32, near-identity init); 4 epochs for English and
-**8 for multilingual** (the 4-epoch run under-fit `score`: 0.648 → 0.854), batch 16, bf16 +
-gradient checkpointing.
+**8 for multilingual**, batch 16, bf16 + gradient checkpointing.
 
 | Checkpoint | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- |
-| English (ModernBERT-large + LoRA r=16 + choice head) | **0.945** | 0.034 | 23.4 |
-| Multilingual (mmBERT-base + LoRA r=64 + choice head) | **0.718** | 0.042 | 15.9 |
+| English (ModernBERT-large + LoRA r=16 + choice head) | **0.972** | 0.020 | 23.1 |
+| Multilingual (mmBERT-base + LoRA r=64 + choice head) | **0.743** | 0.089 | 16.0 |
 
-Per primitive (English): `choice` 0.960, `noul` 0.992, `score` 0.882; (multilingual): `choice`
-0.468, `noul` 0.832, `score` 0.854. **Label audit:** every `noul` row is judged against its own
+Per primitive (English): `choice` 0.946, `noul` 0.992, `score` 0.978; (multilingual): `choice`
+0.468, `noul` 0.892, `score` 0.870. **Label audit:** every `noul` row is judged against its own
 text — **0 contradictory** in both eval sets (positive rates 0.482 / 0.486), per language in
 `benchmarks/report.md`.
 
-The multilingual `choice` figure is the honest cost of the fix, and it is published rather than
-hidden: `choice` labels never changed, so trading ~0.20 of `choice` for ~0.22 of `noul` nets 0.718
-against **0.714 for the pre-B-11 weights on the same corrected eval** (and the external probes see
-the same trade — MASSIVE, a 60-way `choice` task, 0.033 → 0.013). Three of six languages meet
-ECE ≤ 0.05 (`pt` 0.025, `es` 0.040, `it` 0.044); `fr` 0.0502, `de` 0.101 and `nl` 0.110 remain
-above target (NFR-C06 partially open), and multilingual `noul` ECE (0.120) is declared with them.
-The CUDA-graph fast path (`TACHYONE_FAST=1`) gives a 2.72× p50 speedup (9.19 → 3.37 ms) with 0
-top-label flips.
+`choice` is the weak primitive on the multilingual side (0.468) and it is a *training* trade, not
+a label problem: `choice` labels never changed, and retraining on the corrected labels makes
+`noul` (1.000) and `score` (0.998) trivial — the same tone detector — while the shared trunk
+starves `choice` (an identical-recipe English control landed at 0.841, the five-domain retrain's
+`choice` collapsed to 0.303). That is why the published English adapter keeps its B-11 weights
+(provenance stated in the header). One of six languages meets ECE ≤ 0.05 (`es` 0.045); `pt` 0.062,
+`fr` 0.101, `de` 0.118, `nl` 0.192 and `it` 0.197 remain above target (NFR-C06), and multilingual
+`choice`/`noul` ECE (0.099 / 0.108) is declared with them. The CUDA-graph fast path
+(`TACHYONE_FAST=1`) gives a 2.65× p50 speedup (8.97 → 3.39 ms) with 0 top-label flips.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
-states) English drops only 0.945 → 0.942 and multilingual 0.718 → 0.713, so the released
+states) English drops only 0.972 → 0.969 and multilingual 0.743 → 0.744, so the released
 adapters are robust to this noise model.
 
 Full tables and environment are in
