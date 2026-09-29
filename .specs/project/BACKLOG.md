@@ -157,7 +157,7 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · B-5a closed 1 of 2 on pre-B-11 labels; **both gates pass re-measured on the B-11 labels** (2026-09-28)
+## B-5 — Multi-domain coverage (5 domains) · B-5a **both gates pass on every label generation** (2026-09-29); retrain-on-corrected-labels tried and lost
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
@@ -327,11 +327,24 @@ per-domain ECE 0.045–0.067 (was 0.082–0.116) — `agent_tools` 0.045 and `do
 the 0.05 target, the other three stay declared exceptions.
 
 So the three structural options below are no longer what the *written* gate needs, but two facts
-change how they should be read: (a) the baseline moved — the B-11-retrained support-only adapter
-scores **0.945** on `eval_en`, so a five-domain adapter at **0.861** on support clears the
-absolute gate while sitting 0.084 below the released one; and (b) run 5 itself was **trained on
-pre-B-11 labels**, and retraining it on corrected data is the cheap untried option that should
+change how they should be read: (a) the baseline moved — the released support-only adapter now
+scores **0.972** on `eval_en`, so a five-domain adapter at **0.861** on support clears the
+absolute gate while sitting 0.111 below the released one; and (b) run 5 itself was **trained on
+pre-B-11 labels**, and retraining it on corrected data was the cheap untried option that should
 come before any of the three structural decisions.
+
+**Re-measured on the B-12 labels, and that cheap option was executed (2026-09-29).** The same
+run-5 weights now post **0.879 overall, support 0.886 ✓, worst new domain 0.815 ✓** (per-domain ECE
+0.036–0.080) — both gates pass on a *third* label generation, with `score` 0.905 → 0.946 and
+`choice` 0.745. The retrain-on-corrected-labels option **was run and lost**: `noul` and `score`
+both reached 1.000 while `choice` collapsed to **0.303** (train loss 0.027, eval at chance) and
+`support` fell to **0.763 ✗** — the corrected labels make the two tone tasks trivially learnable
+and the shared trunk starves the `choice` head (the same mechanism as the English control at
+0.841). The first attempt also ran the **wrong recipe**: the config file still carried run 6's
+settings (`choice_rank` 256, 8 epochs) instead of the designated run 5 (`128`, 6) and collapsed
+outright (0.338) — restored in `aedb064`, lesson L-011. So the artifact keeps its B-11 weights, the
+baseline is the released English adapter at **0.972**, and the structural decision below is the
+only option left: *both* cheap ones (relabel, retrain) are measured and closed.
 
 **What would actually close the last 0.065 (each needs a decision before code):**
 
@@ -737,7 +750,7 @@ not a bugfix. Effort ~2 days + GPU.
 
 ---
 
-## B-12 · The `score` near-tie label also comes from the index · **In progress** (one cycle with the B-5 retrain)
+## B-12 · The `score` near-tie label also comes from the index · **Done (2026-09-29)**
 
 **Why.** `_score_record` takes the level from the tone (`_LEVEL_BY_TONE`) and then, on
 `index % 13 == 0`, lowers it one level as an "ambiguous near-tie label". The downgrade is a
@@ -777,12 +790,38 @@ option. Decision: **drop** the near-tie (ambiguity the text cannot express is la
 both empty states their defaults, in the same cycle as the B-5 retrain — `score` empty → middle
 level, `choice` empty → `other`.
 
-**Acceptance.** No record whose text reads as level *k* carries *k-1* unless the text itself is one
-of the authored near-tie phrases; a test asserts it; ceiling and accuracy are reported together.
+**Acceptance.**
+- [x] No record whose text reads as level *k* carries *k−1* — the near-tie is gone and `score`
+  levels come from the tone's banks, empty states taking the middle level; asserted by a test
+  across all five domains × seven languages (`test_score_level_comes_from_the_text_not_the_index`).
+- [x] The scope decision is recorded as an ADR (**ADR-0015**) and the affected datasets and
+  checkpoints re-measured: seven datasets regenerated, all three checkpoints retrained, the whole
+  surface re-run (fast path, report, three probes, both head-to-head tables) and republished.
+- [x] Ceiling and accuracy reported together: the ceiling went 0.888 → **0.978** (same English
+  weights on corrected labels) and the B-12 retrain reaches **0.998**; multilingual `score`
+  0.854 → 0.870.
 
-**Risks / notes.** Same cost shape as B-11 (ADR + retrain + full re-benchmark, B-002), which is why
-it was written to be bundled — it is now executing inside the B-5 retrain cycle rather than as a
-third one of its own.
+**Executed (2026-09-28/29) — and what it taught.** Code (`38580da`), ADR-0015, seven datasets
+regenerated (golden hashes recaptured; `noul` untouched; `ecommerce`'s `choice` rows re-cycled
+4 → 5 options), then all three checkpoints retrained in one cycle. The cycle is why the **published
+set was re-chosen by merit**:
+
+| checkpoint | retrained on B-12 labels | published instead | why |
+| --- | ---: | ---: | --- |
+| English | 0.962 (`choice` 0.888) | **0.972** (B-11 weights, `choice` 0.946) | an identical-recipe **control landed 0.841** — L-006 variance |
+| multilingual | **0.743** (`choice` 0.468) | **0.743** | it won on merit *and* has clean provenance |
+| five-domain run 5 | 0.768 (`choice` **0.303**) | **0.879** (B-11 weights) | the retrain **lost the support gate** (0.763) |
+
+Mechanism, measured three times: once the near-tie noise is gone, `noul` and `score` become the
+*same* tone detector and both reach 1.000, and the shared trunk starves `choice` (train loss 0.027
+with eval at chance for five domains). One config bug was found on the way —
+`finetune_en_domains.json` still carried run 6's settings (`choice_rank` 256, 8 epochs) instead of
+the designated run 5 (`128`, 6), so the first domains retrain ran the wrong experiment and
+collapsed outright; restored in `aedb064` (lesson **L-011**).
+
+**Risks / notes.** Cost realized: one label fix, three retrains, one control, one wrong-recipe run
+and a full re-benchmark (B-002) — the bundling advice above was right, and B-5's "retrain on
+corrected labels" option is now *measured and closed* rather than open.
 
 **Related.** `STATE.md` L-008, `docs/adr/ADR-0014-noul-label-from-text.md`,
 `training/generate_data.py::_score_record`.

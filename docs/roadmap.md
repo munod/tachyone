@@ -156,9 +156,15 @@ Delivered 2026-09-28 (CHANGELOG `[Unreleased]`):
   and republished (Hub `224c8a74` / `b7747756`): English 0.859 → **0.945**, multilingual restated
   at **0.718** (the old 0.853 was a language→label shortcut). Head-to-head, probes, fast path and
   the B-5a artifact were all re-measured in the same pass.
-- **B-12 `score` near-tie label** 💡 (Idea) — `index % 13` downgrades 7.8% of `score` labels, a
-  0.922 text-consistent ceiling the released checkpoints already sit on; bundle with the next
-  retrain.
+- **B-12 `score`/`choice` labels from the text** ✅ (ADR-0015, 2026-09-29) — the `index % 13`
+  near-tie (7.8% of `score` rows, ceiling 0.888) and the index-derived labels of the empty
+  boundary states are gone; `score` empty → middle level, `choice` empty → the catch-all
+  (`ecommerce` gained `other` as a fifth option). Seven datasets regenerated, all three
+  checkpoints retrained, and the **published set re-chosen by merit**: English **0.972** (B-11
+  weights), multilingual **0.743** (B-12 retrain), five-domain run 5 **0.879** with **both gates
+  passing** (0.886 / 0.815) — the retrain-on-corrected-labels option was tried and lost
+  (`choice` 0.303, support 0.763), so B-5's structural decision is what remains. Fast path
+  2.65×, probes 0.330 / 0.011 / 0.333, head-to-head 0.236 / 0.974 re-measured in the same pass.
 
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 

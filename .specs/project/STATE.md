@@ -1,8 +1,41 @@
 # State
 
-**Last Updated:** 2026-09-28
-**Current Work:** Post-M6 backlog. **B-11 (`noul` labels from the text) done and published
-(2026-09-28, ADR-0014).** `_noul_record` no longer takes its label from the loop index: the rule
+**Last Updated:** 2026-09-29
+**Current Work:** Post-M6 backlog. **B-12 (`score`/`choice` labels from the text) done and the
+published set re-chosen by merit (2026-09-29, ADR-0015).** The `index % 13` "near-tie" (7.8% of
+`score` rows, capping the primitive at 0.888 where the released checkpoints sat) and the
+index-derived labels of the **empty boundary state** (5.4% of *every* primitive — `score` kept the
+tone drawn before the state was emptied, `choice` kept `options[index % 4]`) are gone: `score`
+takes the tone's level with empty → middle level, `choice` takes the option the state names with
+empty → catch-all, and `ecommerce` gained the `other` option every other domain shipped. Seven
+datasets regenerated (golden hashes recaptured, `noul` untouched), one acceptance test per
+primitive across five domains × seven languages, and — because `finetune_en_domains.json` still
+carried **run 6's** recipe instead of the designated run 5 — **all three checkpoints retrained in
+one cycle** (the wrong-recipe attempt collapsed at 0.338; config restored, lesson **L-011**).
+The cycle's finding, measured three times: once the near-tie noise is gone, `noul` and `score`
+become the *same tone detector* (both → **1.000**) and the shared trunk starves `choice` — English
+**control** of the identical recipe 0.841, five-domain retrain `choice` **0.303** with `support`
+**0.763 ✗**. So the published set is the **best measured checkpoint per adapter**:
+
+| checkpoint | published weights | on B-12 labels | on B-11 labels | on pre-B-11 labels |
+| --- | --- | ---: | ---: | ---: |
+| English | B-11 weights | **0.972** (`choice` 0.946, `score` 0.978) | 0.945 | 0.859 |
+| Multilingual | **B-12 retrain**, 8 epochs | **0.743** (`choice` 0.468) | 0.718 | 0.853 |
+| five-domain run 5 | B-11 weights | **0.879** — support **0.886 ✓**, worst new **0.815 ✓** | 0.861 / 0.807 ✓ | 0.785 ✗ / 0.739 ✓ |
+
+Everything else re-run on that set: fast path **2.65×** (8.97 → 3.39 ms, parity 0.000559,
+0 flips), probes 0.330 / **0.011** / 0.333, head-to-head table A **0.236** (peers untouched) and
+table B **0.974** at home with all four engines re-scored on the B-12 gold labels; every
+`noul` audit reports **0 contradictory rows**. Both adapters were republished to the Hub
+(**`796e6899`** / **`5f688052`**, every file sha256-verified against the local build) and
+`docs/huggingface.md`, the model card, README, landing page, `benchmarks/report.md`,
+`benchmarks/probes.md`, `docs/benchmarks.md` and `docs/compare.md` §3 all carry the new set.
+**B-5's two cheap options — relabel (B-11) and
+retrain (B-12) — are now measured and closed**; the structural decision (per-domain adapters /
+two-stage / scoring rule) is what remains, against a baseline of 0.972.
+
+**Previous cycle — B-11 (`noul` labels from the text), 2026-09-28, ADR-0014.** `_noul_record`
+no longer takes its label from the loop index: the rule
 is now `target = 1` iff the state was drawn from the `request` phrase bank (`neutral`/empty → 0),
 asserted against each state's own phrase bank across all five domains × seven languages **and**
 against the shipped eval sets. Only `noul.target` bytes moved (states, questions, `choice`/`score`
@@ -29,10 +62,12 @@ Tachyone **0.953** at home vs peer 0.599), and **B-5a's run 5, which now passes 
 (support 0.785 → **0.861 ≥ 0.85**, worst new domain 0.739 → **0.807 ≥ 0.70**; `choice`/`score`
 unchanged, so only `noul` moved 0.720 → 0.946). Both adapters were republished to the Hub
 (`224c8a74` / `b7747756`, sha256-verified file by file); CHANGELOG records it under
-`[Unreleased]`; new lesson **L-010** (a constant label is a shortcut the model wins with) and new
-backlog item **B-12** (the analogous `score` near-tie label, ceiling 0.922).
-**Everything below this paragraph was measured on pre-B-11 labels** and is kept as the record of
-how each milestone was measured at the time; the current numbers are the four cells above and the
+`[Unreleased]`; new lesson **L-010** (a constant label is a shortcut the model wins with) and
+backlog item **B-12** (the analogous `score` near-tie label) — which the cycle above closed the
+next day.
+**Everything below this paragraph was measured on pre-B-11 labels** (and the tables above on
+pre-B-12 ones) and is kept as the record of
+how each milestone was measured at the time; the current numbers are the three cells above and the
 tables they link to.
 **B-2 (fast path) done**: `TACHYONE_FAST` wires
 `maybe_accelerate` to a per-shape CUDA-graph forward (bf16 weights) with graceful fallback;
@@ -492,6 +527,26 @@ evidence.
 
 ---
 
+### L-011: The config file is not the artifact's recipe — the artifact is
+
+**Context:** B-12. Retraining the designated B-5a artifact (run 5: `choice_rank` 128, 6 epochs)
+from `training/configs/finetune_en_domains.json`.
+**Problem:** the config still carried **run 6's** settings (`choice_rank` 256, 8 epochs) — the
+last experiment of the series had edited it in place and nothing tied the file to the artifact it
+was supposed to produce. The retrain therefore ran a different, known-bad experiment and
+**collapsed outright**: identical per-epoch losses from epoch 6 to 8 (0.7572/0.7498 = constant
+output), eval at chance across all five domains, 0.338 overall — an hour and fifty minutes of GPU
+before the numbers said "wrong recipe". Nothing in the config said which run it described.
+**Solution:** before retraining an artifact, read `<artifact>/finetune_config.json` — the trainer
+writes exactly what it ran (hyper-parameters, seed, data path, record counts) and it is the ground
+truth for provenance; reconcile it with the config file, and when they disagree, fix the config
+(`aedb064`) so the file documents the artifact it produces. A collapsed run is diagnosed by the
+*shape* of the losses (identical across epochs), not by the final `val_loss` alone.
+**Prevents:** an hour-plus of GPU training the wrong experiment, and a published config that has
+silently stopped describing the published checkpoint.
+
+---
+
 ### L-010: A constant label is a shortcut the model wins with, and the spread it leaves looks like capability
 
 **Context:** B-11. The pre-B-11 `noul` rule was `target = 1 iff even index and request tone`, and
@@ -565,6 +620,7 @@ accuracy that a constant label pays for.
 | B-4 | input-noise robustness: seeded `noise_rate` + clean/noisy eval split (retrained + measured on GPU) | 2026-09-25 | `feat(training): add seeded input-noise augmentation` | ✅ |
 | B-10 | LLM prompt spells out the `answers` wrapper + actionable error (probe `JSON ok` 0.083 → 0.889) | 2026-09-26 | `fix(llm): spell out the answers wrapper in the system prompt` | ✅ |
 | B-11 | `noul` labels from the emitted text: generator rule + acceptance tests + label audit, 7 datasets regenerated, both adapters retrained, whole measured surface republished (Hub `224c8a74` / `b7747756`) | 2026-09-28 | `fix(training): derive the noul label from the emitted text (B-11)` | ✅ |
+| B-12 | `score`/`choice` labels from the emitted text (near-tie removed, empty-state defaults, `ecommerce` gains `other`), all three checkpoints retrained, published set re-chosen by merit (EN 0.972 / multi 0.743 / run 5 0.879 both gates) | 2026-09-29 | `fix(training): derive score and choice labels from the text too (B-12)` | ✅ |
 | B-8 | calibration assets that cannot be loaded now warn by name instead of degrading silently | 2026-09-27 | `fix(encoder): warn when a calibration asset cannot be loaded` | ✅ |
 | B-7 | public probes: `benchmarks/probes.py` loaders for typed-decisions/MASSIVE/XNLI + `benchmarks/probes.md` | 2026-09-27 | `feat(benchmarks): add the public probe loaders and report` | ✅ |
 | R-T1..T3 | multilingual LoRA rank 16 → 64 (accuracy 0.702 → 0.853, `es` ECE 0.170 → 0.038) | 2026-09-25 | `chore(training): raise multilingual LoRA rank to 64` | ✅ |
@@ -591,8 +647,9 @@ it is scheduled.
 **New backlog entries (2026-09-25):** **B-3** confidence thresholding / System-2 handoff (Ready),
 **B-4** input-noise robustness (Ready), **B-5** multi-domain coverage (Idea → Ready 2026-09-26),
 **B-6** contrastive pre-fine-tuning (Idea). **B-10** was added 2026-09-26, **B-11** (the `noul`
-label rule) closed **Done** on 2026-09-28 and **B-12** (the analogous `score` near-tie label,
-measured ceiling 0.922) was added the same day as an Idea to be bundled with the next retrain.
+label rule) closed **Done** on 2026-09-28 and **B-12** (the `score`/`choice` label rule, added
+2026-09-28) closed **Done** on 2026-09-29 after it swallowed the empty-boundary states and
+`ecommerce`'s missing catch-all too.
 `BACKLOG.md` also
 records an **"Evaluated and not pursued (for now)"** section for `route`/`extract_span`/MoE
 adapters with the rationale; revisit only with a new ADR and measured evidence (see L-004).
@@ -676,7 +733,8 @@ all relative doc links resolve; 0 `.py` files created.
 eval "$(grep -hE '^(export )?(HF_TOKEN|HF_HOME|HUGGING_FACE_HUB_TOKEN)=' ~/.zshrc)"
 ```
 
-Verified authenticated as `munod` (2026-09-27); used it to refresh the model cards for `v0.4.0`
-and to publish the **B-11 revision** of both adapters (2026-09-28, commits `224c8a74` /
-`b7747756`, sha256-verified file by file).
+Verified authenticated as `munod` (2026-09-27); used it to refresh the model cards for `v0.4.0`,
+to publish the **B-11 revision** of both adapters (2026-09-28, commits `224c8a74` / `b7747756`)
+and the **B-12 revision** (2026-09-29, commits `796e6899` / `5f688052`) — each time every uploaded
+file was sha256-verified against the local build.
 Never echo it, never commit it (rule 4).
