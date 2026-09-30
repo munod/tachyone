@@ -347,6 +347,9 @@ baseline is the released English adapter at **0.972**, and the structural decisi
 only option left: *both* cheap ones (relabel, retrain) are measured and closed.
 
 **What would actually close the last 0.065 (each needs a decision before code):**
+**→ Decided in [ADR-0016](../../docs/adr/ADR-0016-per-domain-choice-heads.md) (Accepted,
+2026-09-30): per-domain `choice` heads + a deterministic gate, with the scoring rule kept as
+the sequenced fallback.** The three options, for the record:
 
 1. **Per-domain adapters** (MoE of LoRA / adapter routing): gives support its own capacity so the
    shared `choice` head stops trading one domain for another. This reopens the item listed under

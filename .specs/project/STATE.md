@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-09-29
+**Last Updated:** 2026-09-30
 **Current Work:** Post-M6 backlog. **B-12 (`score`/`choice` labels from the text) done and the
 published set re-chosen by merit (2026-09-29, ADR-0015).** The `index % 13` "near-tie" (7.8% of
 `score` rows, capping the primitive at 0.888 where the released checkpoints sat) and the
@@ -33,6 +33,16 @@ table B **0.974** at home with all four engines re-scored on the B-12 gold label
 **B-5's two cheap options — relabel (B-11) and
 retrain (B-12) — are now measured and closed**; the structural decision (per-domain adapters /
 two-stage / scoring rule) is what remains, against a baseline of 0.972.
+
+**2026-09-30 — structural decision: `ADR-0016` (Accepted).** The chosen family is
+**per-domain `choice` heads + a deterministic gate** (caller hint → lexical signature → shared
+head fallback), trained in the existing run, with the asset `choice_head.json` growing to
+`{shared, domains}` and the legacy format loading as shared-only. The scoring-rule change is
+the sequenced fallback (it would move `choice` *and* `score`, i.e. the whole surface);
+two-stage training and per-domain LoRA adapters stay rejected per the ADR's alternatives
+section. First experiment decided: fit only the head bank on the frozen run-5 trunk to isolate
+the head axis before any joint retrain. **Execution deferred — not started 2026-09-30**; B-5's
+cycle gates get their numbers in `BACKLOG.md` when the cycle is scheduled.
 
 **Previous cycle — B-11 (`noul` labels from the text), 2026-09-28, ADR-0014.** `_noul_record`
 no longer takes its label from the loop index: the rule

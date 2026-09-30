@@ -132,3 +132,4 @@ nav:
       - ADR-0013 Rename to Tachyone: adr/ADR-0013-rename-to-tachyone.md
       - ADR-0014 Noul label from text: adr/ADR-0014-noul-label-from-text.md
       - ADR-0015 Score and choice labels: adr/ADR-0015-score-choice-labels-from-text.md
+      - ADR-0016 Per-domain choice heads: adr/ADR-0016-per-domain-choice-heads.md

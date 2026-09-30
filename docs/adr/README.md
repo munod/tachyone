@@ -22,6 +22,7 @@ not edited in place to change its decision — supersede it with a new ADR inste
 | [ADR-0013](ADR-0013-rename-to-tachyone.md) | Rename the project from `jeba` to Tachyone | Accepted | 2026-09-26 |
 | [ADR-0014](ADR-0014-noul-label-from-text.md) | Fix the `noul` label everywhere and retrain | Accepted | 2026-09-27 |
 | [ADR-0015](ADR-0015-score-choice-labels-from-text.md) | `score` and `choice` labels come from the text | Accepted | 2026-09-28 |
+| [ADR-0016](ADR-0016-per-domain-choice-heads.md) | Per-domain `choice` heads behind a deterministic gate | Accepted | 2026-09-30 |
 
 ## Implementation notes (post-acceptance)
 
