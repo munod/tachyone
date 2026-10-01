@@ -118,8 +118,14 @@ graceful fallback.
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + LoRA r=16 + choice head) | **0.972** | 0.946 | 0.992 | 0.978 | 0.020 |
+  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | **0.964** | **1.000** | 0.946 | 0.946 | 0.023 |
   | Multilingual (mmBERT-base + LoRA r=64 + choice head, 8 epochs) | **0.743** | 0.468 | 0.892 | 0.870 | 0.089 |
+
+  The English row is the support split (the multilingual row's own eval set); on the **five-domain**
+  eval the same adapter scores **0.964** overall with every domain ≥ 0.963, where the previous
+  support-only weights scored 0.879. Its `noul`/`score` on support moved 0.992/0.978 → 0.946/0.946
+  — the five-domain trunk trades those two for `choice` 0.946 → 1.000 and four new domains; the
+  whole trade-off is tabled in [`docs/benchmarks.md`](docs/benchmarks.md).
 
   Every label comes from the text it accompanies (B-11 + B-12 / ADR-0014 + ADR-0015): `noul` from
   its phrase bank, `score` from the tone's level, `choice` from the option the state names, with

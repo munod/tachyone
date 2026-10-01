@@ -36,28 +36,41 @@ English and five-domain adapters publish the **B-11 weights** (trained where `sc
 7.8% near-tie noise they now beat) and the multilingual adapter publishes the **B-12 retrain**
 (it wins on merit: 0.743 vs 0.739). Provenance is stated with every table.
 
-## English (ModernBERT-large + LoRA r=16 + choice head) — B-11 weights
+## English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) — B-5 artifact
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | **0.972** | 0.020 | 23.094 | 36.793 |
-| `choice` | 500 | 0.946 | 0.038 | 36.032 | 37.146 |
-| `noul` | 500 | **0.992** | 0.025 | 14.678 | 19.332 |
-| `score` | 500 | **0.978** | 0.016 | 22.841 | 26.442 |
+| overall | 1500 | **0.964** | 0.023 | 54.384 | 90.428 |
+| `choice` | 500 | **1.000** | 0.000 | 86.316 | 92.598 |
+| `noul` | 500 | 0.946 | 0.038 | 50.858 | 56.172 |
+| `score` | 500 | 0.946 | 0.030 | 53.668 | 58.860 |
 
-Noisy view (noise_rate 0.15): overall accuracy **0.969**, ECE **0.022**.
+Noisy view (noise_rate 0.15): overall accuracy **0.963**, ECE **0.024**.
+
+> **Latency re-measured 2026-10-01 on the L4 reference box.** These two columns are *not*
+> comparable with the 23 ms this table showed before — that was a different box, and today the
+> adapter it replaces measures **51.8 ms** p50 on the same path in the same session against these
+> **54.4 ms**, so the new artifact costs ≈ +5%, not 2.4×. Accuracy and ECE are machine-independent
+> and are what the comparison rests on.
 
 `noul` label audit of the same 500 rows: **0 contradictory** (241 request / 232 neutral / 27 empty,
-0 unreadable), positive rate 0.482. The whole history of this table in five rows — weights ×
+0 unreadable), positive rate 0.482. The whole history of this table in six rows — weights ×
 labels, because neither half is comparable on its own:
 
 | English checkpoint × labels | overall | `noul` | `choice` | `score` |
 | --- | ---: | ---: | ---: | ---: |
 | B-11 weights × pre-B-11 labels (what `v0.4.0` published) | 0.859 | 0.718 | 0.948 | 0.910 |
 | B-11 weights × B-11 labels (ADR-0014) | 0.945 | 0.992 | 0.960 | 0.882 |
-| **B-11 weights × B-12 labels — published** | **0.972** | 0.992 | **0.946** | 0.978 |
+| B-11 weights × B-12 labels (previous published) | 0.972 | 0.992 | 0.946 | 0.978 |
 | B-12 retrain × B-12 labels | 0.962 | 1.000 | 0.888 | 0.998 |
 | control — identical recipe, seed 2 | 0.841 | 1.000 | 0.732 | 0.792 |
+| **B-5 five-domain bank × B-12 labels — published** | **0.964** | 0.946 | **1.000** | 0.946 |
+
+**The trade this row makes, stated plainly.** The published English adapter is now the five-domain
+artifact: on this support-only split it **loses** 0.008 overall (`noul` 0.992 → 0.946,
+`score` 0.978 → 0.946) and **gains** `choice` 0.946 → 1.000 — and on the five-domain split it goes
+from 0.511 to 0.964 (see the multi-domain section below). Both halves are published; neither is
+hidden inside a single headline number.
 
 Two lessons are visible in it: the labels were the cap, not the model (`noul` 0.718 → 0.946 by
 relabeling alone, `score` 0.882 → 0.978 by the same weights on corrected labels); and the
@@ -107,17 +120,24 @@ than the 3 of 6 the B-11 cycle reported).
 ## Fast path (CUDA graphs)
 
 mmBERT + `checkpoints/multi`, 189 held-out states, batch=1; `TACHYONE_FAST=1` uses per-shape CUDA
-graphs with bf16-resident weights. Capture is warmed before timing. Re-measured 2026-09-29 on the
-B-12 adapters (`benchmarks/results/fast_path.json`).
+graphs with bf16-resident weights. Capture is warmed before timing. Re-measured 2026-10-01 on the
+L4 reference box (`benchmarks/results/fast_path.json`) — latency is box-bound (the columns before
+this date were the RTX 3060 build); the speedup ratio and the parity are not.
 
 | Path | p50 (ms) | p95 (ms) | Throughput b1 (items/s) | b4 | b16 |
 | --- | --- | --- | --- | --- | --- |
-| stock (fp32) | 8.972 | 10.082 | 98.8 | 148.4 | 60.3 |
-| fast (CUDA graphs, bf16) | 3.385 | 4.466 | 261.7 | 353.8 | 141.8 |
+| stock (fp32) | 14.381 | 16.549 | 68.8 | 158.4 | 76.2 |
+| fast (CUDA graphs, bf16) | 3.823 | 3.930 | 250.7 | 572.3 | 208.9 |
 
-**Parity:** max absolute answer-probability difference **0.000559** with **0 top-label flips** (16
+**Parity:** max absolute answer-probability difference **0.000372** with **0 top-label flips** (16
 questions); response shape unchanged. **NFR-P01** (p50 ≤ 20 ms, p95 ≤ 50 ms) is met by both paths,
-with a **2.65× p50 speedup** for the fast path.
+with a **3.76× p50 speedup** for the fast path (2.65× on the 3060 build).
+
+**The released B-5 artifact was checked in the same pass** (ModernBERT + the keyed bank,
+`benchmarks/results/fast_path_en.json`): **0 top-label flips**, max answer difference
+**0.000649**, **2.59×** p50 (17.63 → 6.81 ms). The gate and the per-domain heads run *after* the
+encode, so the CUDA-graph path neither sees nor perturbs them — which is what ADR-0016 predicted
+when it kept the head as plain JSON computed post-encode.
 
 ## Public probes (B-7)
 
@@ -144,49 +164,54 @@ are now very unsure off-domain (`Conf` 0.021 MASSIVE / 0.354 XNLI / 0.399 typed-
 `Brier` 0.983 / 0.670 / 0.699). The typed-decisions and XNLI fits still hit the grid ceiling
 (T=20.0). This table is the measurement that `B-5` set out to improve.
 
-## Multi-domain experiment (B-5a) — **both gates pass on the B-12 labels** (2026-09-29)
+## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 
 Five domains trained into one adapter — `support`, `ecommerce`, `agent_tools`, `documents`,
 `voice` — English only, 21,000 records, evaluated on `data/eval_en_domains.jsonl` (7,500 rows;
-its `support` half is the same records as `eval_en.jsonl`, so **0.972** above is the comparable
-support number). **Nothing was released:** the adapters on the Hub are the support-only ones above.
-The designated artifact is **run 5** (`choice_rank` 128, 6 epochs), measured here on the B-12
-labels:
+its `support` half is the same records as `eval_en.jsonl`, so **0.964** above is the comparable
+support number). **Released as `munod/tachyone-en` (2026-10-01):** run 5's trunk kept frozen and
+its `choice` head re-fitted as a **bank** — shared + five domain heads behind a deterministic gate
+(ADR-0016), 8 epochs at lr 1e-4 against the B-12-corrected labels.
 
-| Domain | released adapter (zero-shot) | run 5 (published) | Δ |
+| Domain | support-only (previous) | run 5 (unreleased) | **B-5 bank — published** |
 | --- | ---: | ---: | ---: |
-| `support` | 0.972 | **0.886** | −0.086 |
-| `agent_tools` | 0.328 | **0.935** | +0.607 |
-| `documents` | 0.359 | **0.915** | +0.556 |
-| `ecommerce` | 0.358 | **0.842** | +0.484 |
-| `voice` | 0.539 | **0.815** | +0.276 |
-| **overall** | 0.511 | **0.879** | +0.368 |
+| `support` | **0.972** | 0.886 | **0.964** |
+| `agent_tools` | 0.328 | 0.935 | **0.964** |
+| `documents` | 0.359 | 0.915 | **0.963** |
+| `ecommerce` | 0.358 | 0.842 | **0.964** |
+| `voice` | 0.539 | 0.815 | **0.963** |
+| **overall** | 0.511 | 0.879 | **0.964** |
 
-| Primitive | released | run 5 | ECE (run 5) |
-| --- | ---: | ---: | ---: |
-| `choice` | 0.452 | 0.745 | 0.055 ✅ |
-| `noul` | 0.697 | 0.946 | 0.042 ✅ |
-| `score` | 0.385 | 0.946 | 0.029 ✅ |
+| Primitive | support-only | run 5 | **B-5 bank** | ECE (bank) |
+| --- | ---: | ---: | ---: | ---: |
+| `choice` | 0.452 | 0.745 | **0.9996** | 0.0003 ✅ |
+| `noul` | 0.697 | 0.946 | 0.946 | 0.042 ✅ |
+| `score` | 0.385 | 0.946 | 0.946 | 0.029 ✅ |
 
-**Gates:** worst new domain ≥ 0.70 → **pass** (`voice` 0.815; `agent_tools` 0.935, `documents`
-0.915, `ecommerce` 0.842). Support ≥ 0.85 → **pass** (**0.886**, better than the 0.861 it scored
-on the B-11 labels). Per-domain ECE is 0.036–0.080: `agent_tools` 0.036 and `documents` 0.039 meet
-the 0.05 target, `support` 0.058, `voice` 0.066 and `ecommerce` 0.080 stay declared exceptions —
-one scalar temperature per primitive fitted across five domains at once.
+**Gates (ADR-0016 cycle, four arms on one harness).** Worst new domain ≥ 0.70 → **pass** (0.963).
+Support ≥ 0.85 → **pass** (0.964). Gap to the released adapter's `support` cell →
+**0.086 → 0.008**, i.e. 91% closed by moving the head alone. The gate's own number → **strict
+1.000, 0 fell to shared, 0 wrong domain** over 2,500 `choice` rows, and the oracle arm
+(`--head-hint domain`) is numerically identical — routing was never the bottleneck. Per-domain ECE
+**0.021–0.027: all five domains under the 0.05 target for the first time** (was 0.036–0.080 with
+three declared exceptions).
 
-**Why the artifact keeps its B-11 weights.** The B-12 cycle retrained run 5's recipe on the
-corrected labels and it *failed* the support gate (0.763): `noul` and `score` both hit **1.000**
-while `choice` collapsed to **0.303** (train loss 0.027, eval ~chance = the head memorised the
-training rows). The same trade showed up milder in English (control 0.841) and not at all in the
-multilingual run — it is the shared-trunk interference of B-5 seen from the other side, now that
-the two tone tasks are trivially learnable. Retraining on the corrected data is therefore **no
-longer** the cheap untried option; it was tried, measured, and lost to the B-11 weights by 0.111.
+**What actually closed it — read this before quoting the table.** Two arms were fitted on the
+*frozen* run-5 trunk from a single encode pass: a shared-head **control** and the **bank**. The
+control lands at 0.9633 overall against the bank's 0.9637 — **3 of 2,500 `choice` rows**. The gap
+closed because *one* head was re-fitted on the corrected labels, not because of per-domain capacity
+(lesson L-012): the control exists precisely to make the structural claim falsifiable, and it
+falsified it. What the bank adds is the forward-compatible asset format (B-5b's language keys
+reuse it unchanged) and a gate that measures 1.000 at no cost. On the 473 `choice` rows whose text
+never occurs in training the ranking holds — support-only weights 0.892 → control 0.992 → **bank
+0.998** — so the gain is not the eval/train row collision (81% of `choice` rows are byte-identical
+to a training row) buying a memorized answer.
 
 What the six original runs established still stands: the binding constraint on `choice` is neither
 capacity nor time — `choice_rank` 32 → 128 → 256 with 4 → 6 → 8 epochs moved support 0.655 →
 0.785 → 0.795 on the pre-B-11 labels while the fourth-option leak simply **moved between runs**.
-The full six-run curve, the per-(domain, primitive) cross tables and the three structural options
-live in `.specs/project/BACKLOG.md` **B-5**.
+The full six-run curve, the per-(domain, primitive) cross tables, the isolate's four arms and the
+three structural options live in `.specs/project/BACKLOG.md` **B-5**.
 
 ## Known limitations
 
@@ -194,10 +219,11 @@ live in `.specs/project/BACKLOG.md` **B-5**.
   `pt` 0.062, `fr` 0.101, `de` 0.118, `nl` 0.192 and `it` 0.197 are above it (NFR-C06). Multilingual
   `choice` ECE 0.099, `noul` ECE 0.108 — all declared.
 - **`choice` is the weak primitive everywhere multilingual** (0.468): the corrected labels made
-  `noul`/`score` easy and the shared trunk spends itself on them — the published English and
-  five-domain adapters are the *B-11* weights precisely because retraining on the corrected labels
-  cost `choice` (0.946 → 0.888, and 0.745 → 0.303 for five domains). The structural options are in
-  `BACKLOG.md` **B-5**; the multilingual `choice` head is backlog `B-1`.
+  `noul`/`score` easy and the shared trunk spends itself on them. The English side fixed its own
+  `choice` by **re-fitting the head on a frozen trunk** (0.745 → 0.9996) — but that fix cost
+  `noul`/`score` on support (0.992/0.978 → 0.946/0.946), which is why the published row now shows
+  both numbers instead of the best one. The multilingual `choice` fix is backlog `B-1`, and B-5b
+  (bank keys per language) reuses the asset format shipped here.
 - Calibrated ECE is measured in-sample on the held-out synthetic split. The public probes above
   are the opposite case — public distributions, evaluation-only, no shared states with training.
 - **Domain coverage is narrow.** Run against an external public probe (the peer scorer's own nine

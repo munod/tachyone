@@ -166,6 +166,19 @@ Delivered 2026-09-28 (CHANGELOG `[Unreleased]`):
   (`choice` 0.303, support 0.763), so B-5's structural decision is what remains. Fast path
   2.65×, probes 0.330 / 0.011 / 0.333, head-to-head 0.236 / 0.974 re-measured in the same pass.
 
+Delivered 2026-10-01 (CHANGELOG `[Unreleased]`):
+
+- **B-5 / ADR-0016: per-domain `choice` heads, published** ✅ — the keyed `choice_head.json` bank
+  with its deterministic gate, the additive `choice_head` request hint, the bank trainer, the
+  frozen-trunk fitter and the gate/oracle report row all shipped, and the four-arm isolate closed
+  **91% of the support gap** (0.886 → **0.964** against the released 0.972; worst new domain
+  0.963; gate strict **1.000**; per-domain ECE 0.021–0.027, all five under target). The
+  **five-domain artifact was released as `munod/tachyone-en`** — support goes 0.972 → 0.964
+  (`choice` 0.946 → **1.000**, `noul`/`score` −0.046/−0.032, both published) while the five-domain
+  split goes 0.511 → **0.964**. The isolate's own answer: the shared-head control trails the bank
+  by **3 of 2,500 `choice` rows**, so the labels closed the gap, not the per-domain capacity
+  (lesson L-012).
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

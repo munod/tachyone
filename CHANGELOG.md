@@ -63,7 +63,11 @@ All notable changes to this project are documented here. The format is based on
   the gap to the released adapter's `support` cell **0.086 → 0.008**. On the 473 `choice` rows
   whose text never occurs in training, 0.892 → 0.998. The shared-head control sits **3 of 2,500**
   rows behind the bank, so refitting the head on the corrected labels — not per-domain capacity —
-  closed the gap (lesson L-012). **No adapter has been republished**: which arm to ship is open.
+  closed the gap (lesson L-012). **Released as `munod/tachyone-en`** (revision recorded in
+  `docs/huggingface.md` §3): on the support split `choice` 0.946 → **1.000** while `noul`/`score`
+  move 0.992/0.978 → 0.946/0.946 and overall 0.972 → 0.964, and the five-domain split goes
+  0.511 → 0.964 (worst domain 0.328 → 0.963). Latency was re-measured on the L4 reference box and
+  is labelled as such wherever it appears — it is not comparable with the earlier columns.
 - **Both adapters retrained and the whole measured surface republished as one set** (AD-009
   pattern; pre-B-11 numbers stay valid for the data that produced them and are not comparable
   line-by-line):
