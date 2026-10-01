@@ -44,8 +44,8 @@ def _build_model(
         adapter=adapter_dir,
     )
     encode = load_encoder(info, models_dir=_DEFAULT_MODELS_DIR, device=device)
-    choice_scorer = load_choice_head(info, models_dir=_DEFAULT_MODELS_DIR)
-    return EncoderModel(encode, choice_scorer=choice_scorer)
+    choice_bank = load_choice_head(info, models_dir=_DEFAULT_MODELS_DIR)
+    return EncoderModel(encode, choice_bank=choice_bank)
 
 
 def _load_temperatures(path: str | None) -> dict[str, float]:

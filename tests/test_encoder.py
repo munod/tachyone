@@ -14,7 +14,9 @@ from pathlib import Path
 import pytest
 
 from tachyone.backends.encoder import (
+    ChoiceHeadBank,
     ChoiceScorer,
+    DomainChoiceHead,
     EncoderBackend,
     EncoderCheckpoint,
     EncoderModel,
@@ -26,6 +28,7 @@ from tachyone.backends.encoder import (
 from tachyone.primitives import (
     ChoiceAnswer,
     ChoiceQuestion,
+    JsonValue,
     NoulAnswer,
     NoulQuestion,
     Question,
@@ -267,10 +270,11 @@ def _random_scorer(rank: int = 2, hidden: int = 16, seed: int = 0) -> ChoiceScor
 
 def test_zero_choice_scorer_matches_baseline() -> None:
     question = _choice_question()
+    bank = ChoiceHeadBank(shared=_zero_scorer())
     base = EncoderModel(_encode).answer_state("please refund", {"q": question})["q"]
-    scored = EncoderModel(_encode, choice_scorer=_zero_scorer()).answer_state(
-        "please refund", {"q": question}
-    )["q"]
+    scored = EncoderModel(_encode, choice_bank=bank).answer_state("please refund", {"q": question})[
+        "q"
+    ]
     assert isinstance(base, ChoiceAnswer) and isinstance(scored, ChoiceAnswer)
     assert scored.probabilities == base.probabilities  # residual is exactly zero
 
@@ -281,7 +285,7 @@ def test_choice_scorer_changes_and_is_permutation_equivariant() -> None:
         instructions="Which team?",
         criteria={"sales": "pricing", "technical": "bugs", "billing": "invoices"},
     )
-    model = EncoderModel(_encode, choice_scorer=_random_scorer())
+    model = EncoderModel(_encode, choice_bank=ChoiceHeadBank(shared=_random_scorer()))
     scored = model.answer_state("outage now", {"q": forward})["q"]
     permuted = model.answer_state("outage now", {"q": reversed_question})["q"]
     baseline = EncoderModel(_encode).answer_state("outage now", {"q": forward})["q"]
@@ -294,16 +298,157 @@ def test_choice_scorer_changes_and_is_permutation_equivariant() -> None:
 
 
 def test_load_choice_head_from_local_dir(tmp_path: Path) -> None:
+    """The legacy single-scorer asset loads as a shared-only bank (ADR-0016 §2)."""
     (tmp_path / "choice_head.json").write_text(
         json.dumps({"rank": 1, "w1": [[0.0] * 16], "w2": [[0.0] * 8]}), encoding="utf-8"
     )
     info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=str(tmp_path))
-    assert isinstance(load_choice_head(info, models_dir=str(tmp_path)), ChoiceScorer)
+    bank = load_choice_head(info, models_dir=str(tmp_path))
+    assert isinstance(bank, ChoiceHeadBank)
+    assert isinstance(bank.shared, ChoiceScorer)
+    assert bank.domains == {}  # no gate keys: every question falls to shared, as before
 
 
 def test_load_choice_head_without_adapter_is_none() -> None:
     info = CheckpointInfo(id="x", languages=["*"], context=8, size_params=0, adapter=None)
     assert load_choice_head(info, models_dir="/tmp") is None
+
+
+def test_load_choice_head_keyed_asset(tmp_path: Path) -> None:
+    """The keyed `{shared, domains}` shape loads every shipped head and its signatures."""
+    scorer = {"rank": 1, "w1": [[0.5] * 16], "w2": [[0.5] * 8]}
+    (tmp_path / "choice_head.json").write_text(
+        json.dumps(
+            {
+                "shared": scorer,
+                "domains": {
+                    "support": {"head": scorer, "signatures": ["billing", "invoices"]},
+                    "voice": {"head": scorer, "signatures": ["thermostat", "lights"]},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    info = _info(str(tmp_path))
+    bank = load_choice_head(info, models_dir=str(tmp_path))
+    assert isinstance(bank, ChoiceHeadBank)
+    assert set(bank.domains) == {"support", "voice"}
+    assert bank.domains["support"].signatures == ("billing", "invoices")
+    assert isinstance(bank.shared, ChoiceScorer)
+
+
+# --- ADR-0016 gate: hint → lexical signature match → shared ----------------------------------
+
+
+def _domain_question(
+    instructions: str = "Where does this belong?",
+    criteria: dict[str, JsonValue | None] | None = None,
+) -> ChoiceQuestion:
+    return ChoiceQuestion(instructions=instructions, criteria=criteria or {"a": "x", "b": "y"})
+
+
+def _bank(**domains: tuple[str, ...]) -> ChoiceHeadBank:
+    """A bank whose domain heads are all the zero scorer (residual-free) with given signatures."""
+    return ChoiceHeadBank(
+        shared=_zero_scorer(),
+        domains={
+            name: DomainChoiceHead(head=_zero_scorer(), signatures=signatures)
+            for name, signatures in domains.items()
+        },
+    )
+
+
+def test_gate_hint_wins_when_the_asset_ships_that_head() -> None:
+    bank = _bank(support=("billing",), voice=("thermostat",))
+    question = _domain_question("Which team handles this? invoices billing")
+    assert bank.select_key(question) == "support"
+    assert bank.select_key(question, hint="voice") == "voice"  # caller overrides the gate
+
+
+def test_gate_unknown_hint_falls_through_to_the_lexical_rule() -> None:
+    bank = _bank(support=("billing",), voice=("thermostat",))
+    question = _domain_question("Which device? thermostat temperature")
+    assert bank.select_key(question, hint="nonexistent") == "voice"
+
+
+def test_gate_strictly_highest_signature_count_wins() -> None:
+    # "billing" + "invoices" + "refunds" all appear: support scores 3, voice 0.
+    bank = _bank(support=("billing", "invoices", "refunds"), voice=("thermostat",))
+    question = _domain_question("billing invoices refunds")
+    assert bank.select_key(question) == "support"
+    assert bank.select_key(question) is not None
+
+
+def test_gate_tie_or_no_match_falls_to_shared() -> None:
+    bank = _bank(support=("billing",), voice=("thermostat",))
+    # Both domains score 0 → ambiguity → shared.
+    assert bank.select_key(_domain_question("nothing relevant here")) is None
+    # Tie 1-1 → shared.
+    assert bank.select_key(_domain_question("billing thermostat")) is None
+    # Shared-only bank (legacy asset): always shared, no gate.
+    legacy = ChoiceHeadBank(shared=_zero_scorer())
+    assert legacy.select_key(_domain_question("billing invoices")) is None
+
+
+def test_gate_signature_matching_ignores_case_accents_and_punctuation() -> None:
+    bank = _bank(support=("duplicate charge",), voice=())
+    question = _domain_question("About my DUPLICATE-Charge… please")
+    assert bank.select_key(question) == "support"
+
+
+def test_gate_matches_on_labels_and_descriptions_of_the_question() -> None:
+    """The gate sees instructions + option labels + descriptions (ADR-0016 §2.2)."""
+    question = ChoiceQuestion(
+        instructions="Which queue?",
+        criteria={"shipping": "tracking, delivery dates", "returns": None},
+    )
+    bank = _bank(voice=("thermostat",), ecommerce=("shipping", "tracking"))
+    assert bank.select_key(question) == "ecommerce"
+
+
+def test_model_selects_one_head_per_choice_question() -> None:
+    """Two choice questions in one request each get their own domain head."""
+    support_question = ChoiceQuestion(
+        instructions="Which team handles this request?", criteria={"billing": "invoices"}
+    )
+    voice_question = ChoiceQuestion(
+        instructions="Which device group?", criteria={"climate": "thermostats"}
+    )
+    support_head = _random_scorer(seed=1)
+    voice_head = _random_scorer(seed=2)
+    bank = ChoiceHeadBank(
+        shared=_zero_scorer(),
+        domains={
+            "support": DomainChoiceHead(head=support_head, signatures=("billing", "invoices")),
+            "voice": DomainChoiceHead(head=voice_head, signatures=("thermostat", "climate")),
+        },
+    )
+    model = EncoderModel(_encode, choice_bank=bank)
+    answers = model.answer_state(
+        "state", {"a": support_question, "b": voice_question}, choice_head=None
+    )
+    # Compare against each head applied alone: the gate picked the matching head per question.
+    support_only = EncoderModel(
+        _encode, choice_bank=ChoiceHeadBank(shared=support_head)
+    ).answer_state("state", {"a": support_question})["a"]
+    voice_only = EncoderModel(_encode, choice_bank=ChoiceHeadBank(shared=voice_head)).answer_state(
+        "state", {"b": voice_question}
+    )["b"]
+    assert isinstance(answers["a"], ChoiceAnswer) and isinstance(support_only, ChoiceAnswer)
+    assert isinstance(answers["b"], ChoiceAnswer) and isinstance(voice_only, ChoiceAnswer)
+    assert answers["a"].probabilities == support_only.probabilities
+    assert answers["b"].probabilities == voice_only.probabilities
+
+
+def test_noul_and_score_ignore_the_head_bank() -> None:
+    bank = _bank(support=("billing",))
+    question = NoulQuestion(instructions="Is this a request?")
+    base = EncoderModel(_encode).answer_state("please refund", {"q": question})["q"]
+    with_bank = EncoderModel(_encode, choice_bank=bank).answer_state(
+        "please refund", {"q": question}
+    )["q"]
+    assert isinstance(base, NoulAnswer) and isinstance(with_bank, NoulAnswer)
+    assert with_bank.noul == base.noul
 
 
 # --- B-8: an unusable calibration asset must be loud, an absent one must stay silent -------
@@ -333,7 +478,7 @@ def test_clean_assets_load_without_a_warning(
     info = _info(str(tmp_path))
     with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
         assert load_temperatures(info, models_dir=str(tmp_path)) == {"noul": 4.0}
-        assert isinstance(load_choice_head(info, models_dir=str(tmp_path)), ChoiceScorer)
+        assert isinstance(load_choice_head(info, models_dir=str(tmp_path)), ChoiceHeadBank)
     assert _warnings(caplog) == []
 
 
@@ -399,6 +544,69 @@ def test_corrupt_choice_head_warns_and_falls_back(
     assert len(messages) == 1
     assert "choice_head.json" in messages[0]
     assert str(tmp_path) in messages[0]
+
+
+def test_corrupt_keyed_entry_degrades_only_itself(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """B-8 extended to the keyed form: one broken head must not take the bank down."""
+    good = {"rank": 1, "w1": [[0.0] * 16], "w2": [[0.0] * 8]}
+    (tmp_path / "choice_head.json").write_text(
+        json.dumps(
+            {
+                "shared": good,
+                "domains": {
+                    "support": {"head": good, "signatures": ["billing"]},
+                    "broken": {"head": {"w1": "oops"}, "signatures": ["x"]},
+                    "no_head": {"signatures": ["y"]},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        bank = load_choice_head(info, models_dir=str(tmp_path))
+    assert isinstance(bank, ChoiceHeadBank)
+    assert isinstance(bank.shared, ChoiceScorer)  # shared survives a broken domain
+    assert set(bank.domains) == {"support"}  # the two broken entries dropped, one warned each
+    messages = _warnings(caplog)
+    assert len(messages) == 2
+    assert all("choice_head.json" in message for message in messages)
+    assert any("'broken'" in message for message in messages)
+    assert any("'no_head'" in message for message in messages)
+
+
+def test_corrupt_keyed_shared_keeps_the_domain_heads(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    good = {"rank": 1, "w1": [[0.0] * 16], "w2": [[0.0] * 8]}
+    (tmp_path / "choice_head.json").write_text(
+        json.dumps(
+            {"shared": {"w1": "oops"}, "domains": {"voice": {"head": good, "signatures": ["x"]}}}
+        ),
+        encoding="utf-8",
+    )
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        bank = load_choice_head(info, models_dir=str(tmp_path))
+    assert isinstance(bank, ChoiceHeadBank)
+    assert bank.shared is None  # unmatched questions degrade to the baseline…
+    assert set(bank.domains) == {"voice"}  # …while the usable heads keep working
+    assert any("invalid shared head" in message for message in _warnings(caplog))
+
+
+def test_keyed_asset_with_nothing_usable_warns_and_returns_none(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    (tmp_path / "choice_head.json").write_text(
+        json.dumps({"shared": {"w1": "oops"}, "domains": {"x": {"head": {"w1": "oops"}}}}),
+        encoding="utf-8",
+    )
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_choice_head(info, models_dir=str(tmp_path)) is None
+    assert len(_warnings(caplog)) == 2
 
 
 def test_offline_local_adapter_without_assets_warns(

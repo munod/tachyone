@@ -15,7 +15,10 @@ import json
 import logging
 import math
 import os
-from collections.abc import Callable, Mapping
+import re
+import unicodedata
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
@@ -64,9 +67,9 @@ class EncoderCheckpointLike(Protocol):
     """What a loaded checkpoint must provide (the Agent's runner)."""
 
     def predict(
-        self, states: list[State], questions: dict[str, Question]
+        self, states: list[State], questions: dict[str, Question], *, choice_head: str | None = None
     ) -> list[dict[str, Answer]]:
-        """Answer every state against the same questions."""
+        """Answer every state against the same questions (optional ADR-0016 head hint)."""
         ...
 
 
@@ -162,6 +165,165 @@ class ChoiceScorer:
         return residual
 
 
+def _gate_tokens(text: str) -> tuple[str, ...]:
+    """Normalize signature/question text into comparison tokens (ADR-0016 §2.2).
+
+    Diacritics fold to their base letters and everything non-alphanumeric splits, so
+    ``"Réfunds"`` and ``"refunds"`` compare on equal footing. Pure string work: no
+    encode, no model, deterministic and offline (ROUTE-03).
+    """
+    folded = unicodedata.normalize("NFKD", str(text))
+    stripped = "".join(char for char in folded if not unicodedata.combining(char))
+    return tuple(re.findall(r"[a-z0-9]+", stripped.lower()))
+
+
+def _gate_prefixes(tokens: Sequence[str]) -> set[str]:
+    """Every prefix of every token, so one set lookup replaces a scan per signature term."""
+    prefixes: set[str] = set()
+    for token in tokens:
+        for size in range(1, len(token) + 1):
+            prefixes.add(token[:size])
+    return prefixes
+
+
+@dataclass(frozen=True, slots=True)
+class DomainChoiceHead:
+    """One domain-keyed head: its scorer plus the signature terms the gate matches."""
+
+    head: ChoiceScorer
+    signatures: tuple[str, ...] = ()
+
+
+class ChoiceHeadBank:
+    """Shared + per-domain ``choice`` heads behind a deterministic gate (ADR-0016).
+
+    The bank ships *inside* ``choice_head.json``: ``{shared, domains: {name: {head,
+    signatures}}}``. The legacy single-scorer format loads as a shared-only bank, so every
+    published adapter keeps answering exactly as before. The gate picks one head per
+    ``choice`` question, in priority order:
+
+    1. the caller's ``choice_head`` hint, honoured only when it names a shipped domain key;
+    2. the lexical signature gate — the strictly highest signature-match count wins;
+    3. no match or ambiguity → the shared head (bit-for-bit today's behaviour, and the
+       worst a wrong gate can do).
+
+    Signature terms are parsed into tokens once at load time; per question the gate builds
+    a prefix index of the question's tokens and counts matched entries — microseconds,
+    fully offline.
+    """
+
+    def __init__(
+        self,
+        shared: ChoiceScorer | None,
+        domains: Mapping[str, DomainChoiceHead] | None = None,
+    ) -> None:
+        self.shared = shared
+        self.domains: dict[str, DomainChoiceHead] = dict(domains or {})
+        self._terms: dict[str, tuple[tuple[str, ...], ...]] = {
+            name: tuple(
+                dict.fromkeys(  # dedupe signature terms, order-preserving
+                    tokens
+                    for tokens in (_gate_tokens(signature) for signature in head.signatures)
+                    if tokens
+                )
+            )
+            for name, head in self.domains.items()
+        }
+
+    @classmethod
+    def from_dict(
+        cls, data: Mapping[str, Any], *, warn: Callable[[str], None] | None = None
+    ) -> ChoiceHeadBank | None:
+        """Parse the keyed or legacy asset shape; ``None`` when nothing is usable.
+
+        A corrupt piece degrades only itself (B-8): a broken ``shared`` keeps the domain
+        heads, a broken domain keeps the others, a broken entry warns by name.
+        """
+
+        def _warn(message: str) -> None:
+            if warn is not None:
+                warn(message)
+
+        if "shared" in data or "domains" in data:
+            shared: ChoiceScorer | None = None
+            if "shared" in data:
+                try:
+                    shared = ChoiceScorer.from_dict(data["shared"])
+                except (ValueError, KeyError, TypeError) as exc:
+                    _warn(f"invalid shared head, {type(exc).__name__}: {exc}")
+            else:
+                _warn("keyed asset ships no 'shared' head; unmatched questions use the baseline")
+            raw_domains = data.get("domains", {})
+            if not isinstance(raw_domains, Mapping):
+                _warn(f"'domains' must be an object, found {type(raw_domains).__name__}")
+                raw_domains = {}
+            domains: dict[str, DomainChoiceHead] = {}
+            for name, entry in raw_domains.items():
+                if not isinstance(entry, Mapping) or "head" not in entry:
+                    _warn(f"domain {name!r} ships no usable head; dropping it")
+                    continue
+                try:
+                    head = ChoiceScorer.from_dict(entry["head"])
+                except (ValueError, KeyError, TypeError) as exc:
+                    _warn(f"domain {name!r}: invalid head, {type(exc).__name__}: {exc}")
+                    continue
+                signatures = entry.get("signatures")
+                if signatures is None:
+                    signatures = ()
+                elif not isinstance(signatures, (list, tuple)) or not all(
+                    isinstance(term, str) for term in signatures
+                ):
+                    _warn(f"domain {name!r}: invalid signatures; reachable only by the hint")
+                    signatures = ()
+                domains[str(name)] = DomainChoiceHead(head=head, signatures=tuple(signatures))
+            if shared is None and not domains:
+                return None
+            return cls(shared=shared, domains=domains)
+        try:
+            return cls(shared=ChoiceScorer.from_dict(data))
+        except (ValueError, KeyError, TypeError) as exc:
+            _warn(f"invalid scorer, {type(exc).__name__}: {exc}")
+            return None
+
+    def _score(self, question: ChoiceQuestion) -> dict[str, int]:
+        """Signature entries matched by the question's instructions, labels and descriptions."""
+        text = " ".join([_question_text(question), *_criterion_texts(question)])
+        tokens = _gate_tokens(text)
+        if not tokens:
+            return {}
+        prefixes = _gate_prefixes(tokens)
+        return {
+            name: sum(1 for entry in self._terms[name] if all(token in prefixes for token in entry))
+            for name in self.domains
+        }
+
+    def select_key(self, question: ChoiceQuestion, *, hint: str | None = None) -> str | None:
+        """The domain key the gate selects, or ``None`` for the shared head.
+
+        The hint wins when it names a shipped domain; an unknown hint falls through to the
+        lexical gate (ADR-0016 §2.1). A tie or a zero score means ambiguity → shared.
+        """
+        if hint is not None and hint in self.domains:
+            return hint
+        if not self.domains:
+            return None
+        scores = self._score(question)
+        if not scores:
+            return None
+        best = max(scores.values())
+        if best <= 0:
+            return None
+        winners = [name for name, score in scores.items() if score == best]
+        return winners[0] if len(winners) == 1 else None
+
+    def select(self, question: ChoiceQuestion, *, hint: str | None = None) -> ChoiceScorer | None:
+        """The scorer to apply (``None`` → no residual, i.e. the cosine baseline)."""
+        key = self.select_key(question, hint=hint)
+        if key is None:
+            return self.shared
+        return self.domains[key].head
+
+
 class EncoderModel:
     """Turns embeddings into typed answers with a similarity baseline."""
 
@@ -171,12 +333,17 @@ class EncoderModel:
         *,
         temperature: float = 1.0,
         temperatures: Mapping[str, float] | None = None,
-        choice_scorer: ChoiceScorer | None = None,
+        choice_bank: ChoiceHeadBank | None = None,
     ) -> None:
         self._encode = encode
         self._temperature = temperature
         self._temperatures = dict(temperatures or {})
-        self._choice_scorer = choice_scorer
+        self._choice_bank = choice_bank
+
+    @property
+    def choice_bank(self) -> ChoiceHeadBank | None:
+        """The loaded head bank (``None`` when the adapter ships no asset)."""
+        return self._choice_bank
 
     def _temp(self, kind: str, lang: str | None = None) -> float:
         """Temperature for ``kind``, preferring a per-language fit over the per-primitive one."""
@@ -187,7 +354,12 @@ class EncoderModel:
         return self._temperatures.get(kind, self._temperature)
 
     def answer_state(
-        self, state: State, questions: dict[str, Question], *, lang: str | None = None
+        self,
+        state: State,
+        questions: dict[str, Question],
+        *,
+        lang: str | None = None,
+        choice_head: str | None = None,
     ) -> dict[str, Answer]:
         state_embedding_text = state_text(state)
         if lang is None:
@@ -218,8 +390,14 @@ class EncoderModel:
                 for index in criterion_indices
             ]
             if isinstance(question, ChoiceQuestion):
-                if self._choice_scorer is not None:
-                    residual = self._choice_scorer.residual(
+                # One head per choice question: hint → lexical gate → shared (ADR-0016 §2).
+                scorer = (
+                    self._choice_bank.select(question, hint=choice_head)
+                    if self._choice_bank is not None
+                    else None
+                )
+                if scorer is not None:
+                    residual = scorer.residual(
                         state_embedding,
                         question_embedding,
                         [embeddings[index] for index in criterion_indices],
@@ -261,20 +439,22 @@ class EncoderCheckpoint:
         *,
         temperature: float = 1.0,
         temperatures: Mapping[str, float] | None = None,
-        choice_scorer: ChoiceScorer | None = None,
+        choice_bank: ChoiceHeadBank | None = None,
     ) -> None:
         self.info = info
         self.model = EncoderModel(
             encode,
             temperature=temperature,
             temperatures=temperatures,
-            choice_scorer=choice_scorer,
+            choice_bank=choice_bank,
         )
 
     def predict(
-        self, states: list[State], questions: dict[str, Question]
+        self, states: list[State], questions: dict[str, Question], *, choice_head: str | None = None
     ) -> list[dict[str, Answer]]:
-        return [self.model.answer_state(state, questions) for state in states]
+        return [
+            self.model.answer_state(state, questions, choice_head=choice_head) for state in states
+        ]
 
 
 def _resolve_device(torch: Any, device: str) -> str:
@@ -536,11 +716,14 @@ def load_temperatures(
 
 def load_choice_head(
     info: CheckpointInfo, *, models_dir: str, offline: bool = False
-) -> ChoiceScorer | None:
-    """Load a trained ``choice`` scorer from the adapter repo/dir, if present.
+) -> ChoiceHeadBank | None:
+    """Load the ``choice`` head bank from the adapter repo/dir, if present.
 
-    Same contract as :func:`load_temperatures`: absent asset is silent, unusable asset warns
-    and the engine falls back to the similarity baseline (B-8).
+    Accepts both ADR-0016 shapes: the keyed ``{shared, domains}`` bank and the legacy
+    single scorer (which loads as a shared-only bank, so every published adapter keeps
+    answering exactly as before). Same contract as :func:`load_temperatures`: absent asset
+    is silent, unusable asset warns by name and degrades — a corrupt entry drops only
+    itself, never the whole engine (B-8).
     """
     if not info.adapter:
         return None
@@ -550,11 +733,9 @@ def load_choice_head(
     payload = _read_asset_json(source, CHOICE_HEAD_ASSET)
     if payload is None:
         return None
-    try:
-        return ChoiceScorer.from_dict(payload)
-    except (ValueError, KeyError, TypeError) as exc:
-        _warn_asset(CHOICE_HEAD_ASSET, str(source), f"invalid scorer, {type(exc).__name__}: {exc}")
-        return None
+    return ChoiceHeadBank.from_dict(
+        payload, warn=lambda message: _warn_asset(CHOICE_HEAD_ASSET, str(source), message)
+    )
 
 
 def apply_adapters(router: Router, adapters: Mapping[str, str | None]) -> Router:
@@ -574,11 +755,11 @@ def load_checkpoint(
     offline: bool = False,
     fast: bool = False,
 ) -> EncoderCheckpoint:
-    """Load a full checkpoint: encoder (+ adapter), fitted temperatures, and choice scorer."""
+    """Load a full checkpoint: encoder (+ adapter), fitted temperatures, and choice head bank."""
     encode = load_encoder(info, models_dir=models_dir, device=device, offline=offline, fast=fast)
     temperatures = load_temperatures(info, models_dir=models_dir, offline=offline)
-    choice_scorer = load_choice_head(info, models_dir=models_dir, offline=offline)
-    return EncoderCheckpoint(info, encode, temperatures=temperatures, choice_scorer=choice_scorer)
+    choice_bank = load_choice_head(info, models_dir=models_dir, offline=offline)
+    return EncoderCheckpoint(info, encode, temperatures=temperatures, choice_bank=choice_bank)
 
 
 def _usage(state: State, questions: dict[str, Question]) -> Usage:
@@ -638,6 +819,7 @@ class EncoderBackend:
         state: State,
         model: str,
         return_details: bool = False,
+        choice_head: str | None = None,
     ) -> PredictionResult:
         if not questions:
             return PredictionResult(answers={}, usage=Usage(input_tokens=0, output_tokens=0))
@@ -645,7 +827,11 @@ class EncoderBackend:
             model if model in self._router.checkpoints else self._router.route(state).checkpoint_id
         )
         checkpoint = cast(EncoderCheckpointLike, self._router.get(checkpoint_id))
-        agent = Agent(checkpoint.predict, max_batch_size=self._max_batch_size, hooks=self._hooks)
+
+        def runner(states: list[State], shared: dict[str, Question]) -> list[dict[str, Answer]]:
+            return checkpoint.predict(states, shared, choice_head=choice_head)
+
+        agent = Agent(runner, max_batch_size=self._max_batch_size, hooks=self._hooks)
         answers = await asyncio.to_thread(agent.predict, state, questions)
         return PredictionResult(answers=answers, usage=_usage(state, questions))
 
@@ -663,7 +849,9 @@ __all__ = [
     "CHOICE_HEAD_ASSET",
     "MODEL_IDS",
     "TEMPERATURE_ASSET",
+    "ChoiceHeadBank",
     "ChoiceScorer",
+    "DomainChoiceHead",
     "EncodeFn",
     "EncoderBackend",
     "EncoderCheckpoint",
