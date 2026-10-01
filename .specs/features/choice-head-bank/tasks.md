@@ -105,7 +105,16 @@ per-domain accuracy).
 **Done when:** a bank report carries the gate row; the oracle arm runs from the same command
 shape.
 **Tests:** `tests/test_training_evaluate.py` / `tests/test_benchmark_report.py` · **Gate:** full.
-**Commit:** `feat(benchmarks): publish choice-gate accuracy beside per-domain accuracy`
+**Commit:** `9daf136 feat(evaluate): judge the choice gate beside per-domain accuracy` +
+`bd6eaf0 feat(benchmarks): publish choice-gate accuracy beside per-domain accuracy`
+**Status:** **Done (2026-10-01).** `report["choice_gate"]` carries strict / fell-to-shared /
+wrong-domain counts (overall and per domain) plus `answers_routed_by`; the oracle arm runs
+from the same command shape (`--head-hint domain`, or a shipped key, with the run failing
+fast on a typo — the *wire* hint keeps its ADR-0016 fall-through) and the renderer prints the
+gate row above the `noul` audit. Measured on the first 4,000 eval rows with the bank asset:
+**strict 1.000, 0 to shared, 0 wrong domain** over 1,500 `choice` records (the oracle arm
+gives the same accuracy, so on this slice the gate is not the bottleneck); the control arm's
+legacy asset ships no keys, so forcing a head on it exits with a message naming the adapter.
 
 ## B7: Run the isolate and record the numbers
 

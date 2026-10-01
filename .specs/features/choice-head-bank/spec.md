@@ -3,6 +3,10 @@
 **Phase:** Post-M6 (B-5 structural decision, `.specs/project/BACKLOG.md`)
 **Status:** In progress. ADR-0016 Accepted (2026-09-30): per-domain `choice` heads behind a
 deterministic gate, first experiment = fit only the bank on the frozen run-5 trunk.
+**B1–B6 done (2026-10-01)** — asset + gate, wire hint, bank training, the frozen-trunk fit
+(two loadable arms, `lr 1e-4` after `1e-3` destroyed the domain heads) and the gate/oracle
+report row. **Remaining: B7 (record the four arms' numbers, incl. a held-out-text split) and
+B8 (docs).**
 **Related docs:** `docs/adr/ADR-0016-per-domain-choice-heads.md`, `.specs/project/BACKLOG.md` B-5,
 `docs/protocol.md` (additive extensions), `AGENTS.md` hard rules 1–3.
 
@@ -19,20 +23,20 @@ Both cheap remedies (relabel = B-11/B-12, retrain = measured and lost) are spent
 
 ## Goals
 
-- [ ] **Bank asset:** `choice_head.json` grows to `{shared, domains: {name: {head, signatures}}}`;
+- [x] **Bank asset:** `choice_head.json` grows to `{shared, domains: {name: {head, signatures}}}`;
       the legacy single-scorer format loads as shared-only, so every published adapter keeps
       loading (B-8 warn-and-degrade extends to the keyed form).
-- [ ] **Deterministic gate:** exactly one head per `choice` question, priority order — caller hint
+- [x] **Deterministic gate:** exactly one head per `choice` question, priority order — caller hint
       (optional additive request field, honored only when the asset ships that key) → lexical
       signature match (pure Python, no encode, offline) → shared head. A wrong gate can at worst
       reproduce today's numbers.
-- [ ] **Training:** `finetune_rlcd.py` learns a bank — each record updates its own domain's head,
+- [x] **Training:** `finetune_rlcd.py` learns a bank — each record updates its own domain's head,
       the shared head keeps training on every record; records with no `domain` field train only
       the shared head, so legacy configs reproduce today's artifact exactly.
 - [ ] **First experiment (the isolate):** fit only the bank on the **frozen run-5 trunk** and
       measure whether the head-capacity / gradient-share axis closes the gap, before any joint
-      retrain is considered.
-- [ ] **Gate accuracy published beside per-domain accuracy** — the new failure mode (misrouting)
+      retrain is considered. *(fitted in B5 — B7 records the four arms' numbers)*
+- [x] **Gate accuracy published beside per-domain accuracy** — the new failure mode (misrouting)
       must be visible in every report that quotes the bank.
 
 ## Out of Scope
