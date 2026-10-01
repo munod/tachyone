@@ -89,9 +89,16 @@ class TachyoneClient:
         questions: dict[str, Question],
         *,
         model: str = "tachyone-latest",
+        choice_head: str | None = None,
     ) -> SystemOneResponse:
-        """Ask one or more typed questions and return the parsed response."""
-        request = SystemOneRequest(state=state, model=model, questions=questions)
+        """Ask one or more typed questions and return the parsed response.
+
+        ``choice_head`` is the optional ADR-0016 hint naming a choice-head bank entry;
+        the server honours it only when its adapter ships that key.
+        """
+        request = SystemOneRequest(
+            state=state, model=model, questions=questions, choice_head=choice_head
+        )
         data = json.dumps(request.model_dump(mode="json")).encode("utf-8")
         headers = {"content-type": "application/json"}
         if self._api_key:

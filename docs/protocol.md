@@ -44,6 +44,7 @@ Content-Type: application/json
 | `state` | `string \| object \| array` | Yes | The subject being judged. Passed to questions verbatim. |
 | `model` | `string` | Yes | Requested model id. Tachyone maps this to a backend/checkpoint. |
 | `questions` | `map<string, Question>` | Yes | Question id → question. Ids are echoed in `answers`. |
+| `choice_head` | `string` | No | **Tachyone extension (ADR-0016).** Names the choice-head bank entry to use. Honoured only when the loaded adapter ships that key; otherwise the gate decides (see [Additive extensions](#additive-extensions-non-canonical)). Never changes the response shape. |
 
 ---
 
@@ -228,6 +229,7 @@ These are Tachyone extensions and MUST NOT alter `/v1/systemone` output shape.
 | Extension | Surface | Purpose |
 | --- | --- | --- |
 | Router control | optional request field / extension endpoint | Force a checkpoint or language |
+| `choice_head` hint | optional request field, `--choice-head` (CLI), `choice_head=` (SDK) | Name the choice-head bank entry to use (ADR-0016); unknown names fall through to the lexical gate |
 | Hooks | Python API | `on_predict_start`, `on_predict_end`, `on_route`, `on_load`, `on_evict`, `on_error` |
 | `predict_batch` | `/predict/batch` (extension) | Batch several states in one call |
 | `return_details` | Backend protocol kwarg | Accepted for API stability; distributions are already canonical, so it is currently a **no-op** (no request flag or SDK argument exposes it) |

@@ -66,6 +66,7 @@ class _StubBackend:
         state: State,
         model: str,
         return_details: bool = False,
+        choice_head: str | None = None,
     ) -> PredictionResult:
         return PredictionResult(
             answers=dict(self._answers),

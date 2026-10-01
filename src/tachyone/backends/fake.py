@@ -86,6 +86,7 @@ class FakeBackend:
         state: State,
         model: str,
         return_details: bool = False,
+        choice_head: str | None = None,
     ) -> PredictionResult:
         answers = {question_id: answer_question(q) for question_id, q in questions.items()}
         usage = self._usage if self._usage is not None else estimate_usage(state, questions)
@@ -108,6 +109,7 @@ class ScriptedBackend:
         state: State,
         model: str,
         return_details: bool = False,
+        choice_head: str | None = None,
     ) -> PredictionResult:
         return PredictionResult(
             answers={question_id: self._answers[question_id] for question_id in questions},

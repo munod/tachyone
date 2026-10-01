@@ -45,6 +45,7 @@ class PredictRequest(_ExtensionBase):
     state: State
     questions: dict[str, Question]
     model: str = "tachyone-latest"
+    choice_head: str | None = None
 
 
 class BatchPredictRequest(_ExtensionBase):
@@ -97,7 +98,12 @@ def create_app(config: Config, backend: Backend) -> FastAPI:
     @app.post("/predict")
     async def predict(request: Request, body: PredictRequest) -> Any:
         _authorize(request, config.api_key)
-        validated = SystemOneRequest(state=body.state, model=body.model, questions=body.questions)
+        validated = SystemOneRequest(
+            state=body.state,
+            model=body.model,
+            questions=body.questions,
+            choice_head=body.choice_head,
+        )
         response = await answer(validated, backend)
         return response.model_dump(mode="json")
 
@@ -107,7 +113,10 @@ def create_app(config: Config, backend: Backend) -> FastAPI:
         results = []
         for item in body.requests:
             validated = SystemOneRequest(
-                state=item.state, model=item.model, questions=item.questions
+                state=item.state,
+                model=item.model,
+                questions=item.questions,
+                choice_head=item.choice_head,
             )
             results.append((await answer(validated, backend)).model_dump(mode="json"))
         return {"results": results}

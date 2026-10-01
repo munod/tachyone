@@ -46,6 +46,10 @@ class SystemOneRequest(_Base):
     state: State
     model: str
     questions: dict[str, Question]
+    #: Tachyone extension (ADR-0016): name the choice-head bank entry to use. Optional and
+    #: additive; honoured only when the loaded adapter ships that key, otherwise the gate
+    #: decides. Never changes the response shape.
+    choice_head: str | None = None
 
 
 class SystemOneResponse(_Base):
@@ -165,7 +169,10 @@ def _check_answers(questions: dict[str, Question], answers: dict[str, Answer]) -
 async def answer(request: SystemOneRequest, backend: Backend) -> SystemOneResponse:
     """Dispatch ``request`` to ``backend`` and return a validated wire response."""
     result: PredictionResult = await backend.predict(
-        request.questions, state=request.state, model=request.model
+        request.questions,
+        state=request.state,
+        model=request.model,
+        choice_head=request.choice_head,
     )
     _check_answers(request.questions, result.answers)
     return SystemOneResponse(

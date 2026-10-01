@@ -51,6 +51,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--model", default=_DEFAULT_MODEL, help="model id sent in the request")
     parser.add_argument(
+        "--choice-head",
+        help="name the choice-head bank entry to use (ADR-0016; requires --predict)",
+    )
+    parser.add_argument(
         "--list-presets", action="store_true", help="list available presets and exit"
     )
     parser.add_argument("--serve", action="store_true", help="start the HTTP server and exit")
@@ -94,6 +98,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--threshold requires --predict")
     if args.threshold is not None and not 0.0 <= args.threshold <= 1.0:
         parser.error("--threshold must be within [0, 1]")
+    if args.choice_head is not None and not args.predict:
+        parser.error("--choice-head requires --predict")
     if not args.predict:
         print(
             json.dumps(
@@ -111,13 +117,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.url:
         client = TachyoneClient(args.url, api_key=os.environ.get("TACHYONE_API_KEY"))
-        response = client.system_one(args.text, questions, model=args.model)
+        response = client.system_one(
+            args.text, questions, model=args.model, choice_head=args.choice_head
+        )
     else:
         config = Config.from_env()
         if args.backend:
             config = replace(config, backend=args.backend)
         backend = build_backend(config)
-        request = SystemOneRequest(state=args.text, model=args.model, questions=questions)
+        request = SystemOneRequest(
+            state=args.text,
+            model=args.model,
+            questions=questions,
+            choice_head=args.choice_head,
+        )
         response = asyncio.run(answer(request, backend))
 
     payload = response.model_dump(mode="json")

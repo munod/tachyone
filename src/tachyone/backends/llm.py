@@ -270,6 +270,7 @@ class LLMBackend:
         state: State,
         model: str,
         return_details: bool = False,
+        choice_head: str | None = None,
     ) -> PredictionResult:
         if not questions:
             return PredictionResult(answers={}, usage=Usage(input_tokens=0, output_tokens=0))

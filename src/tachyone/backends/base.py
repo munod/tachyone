@@ -37,8 +37,13 @@ class Backend(Protocol):
         state: State,
         model: str,
         return_details: bool = False,
+        choice_head: str | None = None,
     ) -> PredictionResult:
-        """Answer every question against ``state`` and report token usage."""
+        """Answer every question against ``state`` and report token usage.
+
+        ``choice_head`` is the optional ADR-0016 caller hint: backends without a head bank
+        ignore it, and the encoder backend honours it only when its asset ships that key.
+        """
         ...
 
 

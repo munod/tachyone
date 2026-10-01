@@ -97,3 +97,49 @@ async def test_noul_answer_carries_no_confidence() -> None:
     request = parse_request(_load("systemone_request_multi.json"))
     response = await answer(request, FakeBackend())
     assert "confidence" not in response.answers["is_urgent"].model_dump(mode="json")
+
+
+async def test_choice_head_hint_is_optional_and_additive() -> None:
+    """ADR-0016: the request field is optional, additive and never echoes into the response."""
+    payload = _load("systemone_request_multi.json")
+    assert "choice_head" not in payload  # the documented Jev shape does not carry it
+    without_hint = parse_request(payload)
+    assert without_hint.choice_head is None  # absent → gate decides (ADR-0016 §2.1)
+
+    payload["choice_head"] = "support"
+    with_hint = parse_request(payload)
+    assert with_hint.choice_head == "support"
+    assert with_hint.questions == without_hint.questions  # the hint changes nothing else
+
+    response = await answer(with_hint, FakeBackend())
+    dumped = response.model_dump(mode="json")
+    assert set(dumped) == {"model", "answers", "usage"}  # response shape stays frozen
+    assert "choice_head" not in dumped
+
+
+async def test_choice_head_hint_is_forwarded_to_the_backend() -> None:
+    """The wire carries the hint to the backend; an unknown name is a backend-level fallthrough."""
+    request = parse_request({**_load("systemone_request_multi.json"), "choice_head": "nope"})
+    recorded: list[str | None] = []
+
+    class _Recorder(FakeBackend):
+        async def predict(  # pyright: ignore[reportIncompatibleMethodOverride]
+            self,
+            questions: dict[str, Any],
+            *,
+            state: Any,
+            model: str,
+            return_details: bool = False,
+            choice_head: str | None = None,
+        ) -> Any:
+            recorded.append(choice_head)
+            return await super().predict(
+                questions,
+                state=state,
+                model=model,
+                return_details=return_details,
+                choice_head=choice_head,
+            )
+
+    await answer(request, _Recorder())
+    assert recorded == ["nope"]
