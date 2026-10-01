@@ -146,4 +146,14 @@ arm to publish* stays open. Numbers and artifacts: BACKLOG B-5; loop: `/tmp/open
 **Depends on:** B1–B7 · **Requirement:** release hygiene.
 **Done when:** every doc that names `choice_head.json` describes both formats.
 **Tests:** `tests/test_docs_site.py` · **Gate:** full.
-**Commit:** `docs: document the keyed choice-head bank and its gate`
+**Commit:** `78e5761 docs: document the keyed choice-head bank and its gate`
+**Status:** **Done (2026-10-01).** `docs/huggingface.md` §4 now carries both asset shapes, the
+gate's priority order and the B-8 warn-by-name contract; `docs/training.md` documents bank
+training, the fitter (with its `--dry-run` and fit commands) and the new `choice_gate` /
+`text_seen` report rows; `docs/architecture.md` records the additive `choice_head` keyword on the
+seam and the bank inside `encoder.py`; `CHANGELOG.md` `[Unreleased]` has an **Added** section for
+the feature and a **Changed** entry for the isolate's gates. `mkdocs build --strict` passes.
+
+**Cycle status:** **B1–B8 complete.** Open follow-ups: (1) **which arm to publish** (bank vs
+control) and therefore whether to republish the Hub adapter and refresh `benchmarks/report.md`,
+the model card and the probes; (2) `B-5b` (multilingual bank keys), unblocked by the format.
