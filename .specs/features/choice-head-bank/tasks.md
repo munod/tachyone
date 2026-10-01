@@ -154,6 +154,9 @@ training, the fitter (with its `--dry-run` and fit commands) and the new `choice
 seam and the bank inside `encoder.py`; `CHANGELOG.md` `[Unreleased]` has an **Added** section for
 the feature and a **Changed** entry for the isolate's gates. `mkdocs build --strict` passes.
 
-**Cycle status:** **B1–B8 complete.** Open follow-ups: (1) **which arm to publish** (bank vs
-control) and therefore whether to republish the Hub adapter and refresh `benchmarks/report.md`,
-the model card and the probes; (2) `B-5b` (multilingual bank keys), unblocked by the format.
+**Cycle status:** **B1–B8 complete and published (2026-10-01)** — the bank is `checkpoints/en` and
+`munod/tachyone-en` (`c00c174d`); docs, report, model card and CHANGELOG updated; fast path
+re-checked (0 flips). Open follow-ups: (1) re-run the **public probes** and the head-to-head
+`choice` cells against the new revision (`B-7` harness, acceptance item still unticked); (2) tag
+the GitHub release from `CHANGELOG.md` (`docs/release.md`); (3) **B-5b** (multilingual bank keys),
+unblocked by the format.

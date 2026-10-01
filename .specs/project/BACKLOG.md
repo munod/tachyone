@@ -157,7 +157,7 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · B-5a **both gates pass**, isolate closes 91% of the support gap (2026-10-01); which arm to publish is open
+## B-5 — Multi-domain coverage (5 domains) · B-5a **both gates pass**, isolate closes 91% of the support gap, **published as `munod/tachyone-en`** (2026-10-01); probes/head-to-head re-run open
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
@@ -299,11 +299,17 @@ and the LoRA goes back to r=16: r=64 measured worse on every headline (0.630 →
   target.
 - [x] **No regression on `support` (English overall ≥ 0.85)** → **0.785** ✗ on the pre-B-11
   labels (best of six runs); **0.861 ✓ re-measured on the B-11 labels** — see below.
-- [ ] Adapter republished; `benchmarks/report.md`, model card, README and CHANGELOG updated →
-  deliberately **not done**: the released adapters are untouched and the card was refreshed only
-  for the `v0.4.0` version line.
-- [ ] Probe before/after table published (`B-7` harness) → **not done**: there is no adapter to
-  re-measure.
+- [x] Adapter republished; `benchmarks/report.md`, model card, README and CHANGELOG updated →
+  **done 2026-10-01**: `munod/tachyone-en` commit [`c00c174d`](https://huggingface.co/munod/tachyone-en/commit/c00c174dde0208b186cb503abfa0e15bdde0400d)
+  (five-domain bank, all six files sha256-verified against the local build, stale
+  `finetune_config.json` deleted) and `munod/tachyone-multi` commit `d3f64cc0` (model card only);
+  `benchmarks/report.md` (three entries incl. the gate row), `docs/benchmarks.md`,
+  `docs/model-card.md`, `README.md`, `docs/roadmap.md`, `docs/huggingface.md` §3 and
+  `CHANGELOG.md` all carry the new set. Latency was re-measured on the L4 box and labelled
+  box-bound everywhere it appears.
+- [ ] Probe before/after table published (`B-7` harness) → **still open**: neither the public
+  probes nor the head-to-head `choice` cells have been re-run against the new revision (the
+  fast-path parity check *was* re-run: **0 flips**, `benchmarks/results/fast_path_en.json`).
 
 **Verdict (2026-09-27): 1 of 2 gates.** Run 5 is the designated artifact —
 `checkpoints/en_domains`, `data/preds_en_domains_r5.jsonl`, `benchmarks/results/en_domains_r5.json`
@@ -394,9 +400,11 @@ comparison cannot attribute to ADR-0016's mechanism (the arms were built so that
 *only* the structure). On the 473 `choice` rows whose text never occurs in training the ranking
 holds — baseline 0.892 → control 0.992 → **bank 0.998** — so the gain is not the eval/train row
 collision (81% of `choice` rows are byte-identical to a training row) buying a memorized
-answer. **Open:** which artifact to publish — the bank (format + gate ready for B-5b's language
-keys, three rows better) or the control (one head, simpler asset) — plus whether the structural
-hypothesis needs a fresh reading now that the measured axis was labels, not capacity.
+answer. **Open → resolved (2026-10-01):** which artifact to publish — the **bank** was chosen and
+published (ADR-0016's decided structure; it is never worse than the control, ships the gate that
+measures 1.000, and its format is what B-5b's language keys reuse), with the control kept
+comparable at `checkpoints/en_domains_bank_ctrl`. The structural hypothesis itself still wants a
+fresh reading: the measured axis was labels, not capacity (L-012).
 
 **Artifacts (all gitignored):** `benchmarks/results/en_domains_{r5_baseline,bank_ctrl,bank_gate,bank_oracle}.json`,
 `benchmarks/results/en_released_sameharness.json`, their `calibration_*.json`, and

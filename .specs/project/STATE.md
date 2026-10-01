@@ -15,6 +15,20 @@ capacity, so **which arm to publish (bank vs control) is open**. Full table, art
 reproduction in `.specs/project/BACKLOG.md` B-5; new lesson **L-012**. Remaining: **B8** (docs +
 changelog) and the publish/republish decision.
 
+**Published (2026-10-01).** The **bank** was chosen (ADR-0016's structure; never worse than the
+control, gate measured 1.000, format ready for B-5b), promoted to `checkpoints/en` with a
+calibration refitted on `eval_en`, and uploaded as **`munod/tachyone-en` commit `c00c174d`** (six
+files sha256-verified, stale `finetune_config.json` deleted) plus **`munod/tachyone-multi`
+`d3f64cc0`** (model card). `benchmarks/report.md` (three entries incl. the gate row),
+`docs/benchmarks.md`, `docs/model-card.md`, `README.md`, `docs/roadmap.md`,
+`docs/huggingface.md` §3 and `CHANGELOG.md` carry the new set; the fast path was re-checked
+(**0 flips**). The support trade is published, not summarized: **0.972 → 0.964** overall with
+`choice` **0.946 → 1.000** and `noul`/`score` **0.992/0.978 → 0.946/0.946**, while the five-domain
+split goes **0.511 → 0.964** (worst domain 0.328 → 0.963). Latency columns were re-measured on
+this L4 box and are labelled box-bound (the previous adapter measures 51.8 ms beside the new
+54.4 ms on the same path). **Open:** the public probes and the head-to-head `choice` cells have
+not been re-run against the new revision, and no GitHub release has been tagged.
+
 **Previous (2026-09-30):** Post-M6 backlog. **B-12 (`score`/`choice` labels from the text) done and the
 published set re-chosen by merit (2026-09-29, ADR-0015).** The `index % 13` "near-tie" (7.8% of
 `score` rows, capping the primitive at 0.888 where the released checkpoints sat) and the
