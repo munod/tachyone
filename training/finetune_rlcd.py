@@ -23,6 +23,42 @@ from training.rlcd import categorical_loss
 
 _TRAIN_HINT = "the train extra is required for fine-tuning: uv sync --extra train"
 
+
+def choice_head_modules(
+    torch: Any, *, hidden_size: int, rank: int, init_std: float, domains: Sequence[str]
+) -> tuple[Any, dict[str, Any]]:
+    """Build the shared head plus one head per domain (ADR-0016 §1).
+
+    The single definition of the head math, shared by the joint trainer and the frozen-trunk
+    fitter (`training/fit_choice_bank.py`) so the two can never drift apart. ``torch`` is
+    injected so this module stays importable without the ``train`` extra.
+
+    Creation order matters: the shared head draws first (legacy runs — ``domains`` empty —
+    therefore consume exactly the RNG the pre-bank trainer consumed) and domain heads draw
+    after it (L-011, ADR-0016 §1).
+    """
+
+    class ChoiceScorer(torch.nn.Module):
+        """Low-rank choice residual; small init keeps training at the cosine baseline at first."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.w1 = torch.nn.Linear(2 * hidden_size, rank, bias=False)
+            self.w2 = torch.nn.Linear(hidden_size, rank, bias=False)
+            torch.nn.init.normal_(self.w1.weight, std=init_std)
+            torch.nn.init.normal_(self.w2.weight, std=init_std)
+
+        def context(self, states: Any, questions: Any) -> Any:
+            return self.w1(torch.cat([states, questions], dim=-1))
+
+        def project(self, block: Any) -> Any:
+            return self.w2(block)
+
+    shared = ChoiceScorer()
+    domain_heads = {name: ChoiceScorer() for name in domains}
+    return shared, domain_heads
+
+
 #: Candidate attention/MLP projections, tried in order. ModernBERT uses Wqkv/Wo/Wi;
 #: BERT/mmBERT-style trunks use query/key/value/dense.
 _LORA_CANDIDATES: tuple[str, ...] = (
@@ -191,22 +227,6 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
 
     hidden_size = int(encoder.config.hidden_size)
 
-    class ChoiceScorer(torch.nn.Module):
-        """Low-rank choice residual; small init keeps training at the cosine baseline at first."""
-
-        def __init__(self) -> None:
-            super().__init__()
-            self.w1 = torch.nn.Linear(2 * hidden_size, config.choice_rank, bias=False)
-            self.w2 = torch.nn.Linear(hidden_size, config.choice_rank, bias=False)
-            torch.nn.init.normal_(self.w1.weight, std=config.choice_init_std)
-            torch.nn.init.normal_(self.w2.weight, std=config.choice_init_std)
-
-        def context(self, states: Any, questions: Any) -> Any:
-            return self.w1(torch.cat([states, questions], dim=-1))
-
-        def project(self, block: Any) -> Any:
-            return self.w2(block)
-
     records = list(read_records(config.data_path, limit=config.max_records))
     train_records, val_records = split_records(
         records, val_fraction=config.val_split, seed=config.seed
@@ -215,16 +235,22 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     for record in train_records:
         grouped[record["type"]].append(record)
 
+    # Fail before training, not after: signatures come from committed domain files (L-011).
     # ADR-0016 §1: the bank exists only when the *training* records carry `domain` fields, so
     # legacy single-domain configs keep the original RNG stream (shared head init draws at the
     # same point) and the original code path below — byte-identical artifacts (L-011). Domains
     # were already validated against the committed files in `run`.
     domains = choice_domains(grouped["choice"])
-    shared_head = ChoiceScorer().to(device)
-    domain_heads: dict[str, ChoiceScorer] = {
-        name: ChoiceScorer().to(device)
-        for name in domains  # drawn after shared: legacy untouched
-    }
+    shared_head, domain_heads = choice_head_modules(
+        torch,
+        hidden_size=hidden_size,
+        rank=config.choice_rank,
+        init_std=config.choice_init_std,
+        domains=domains,
+    )
+    shared_head = shared_head.to(device)
+    for name in domains:  # drawn after shared: legacy untouched
+        domain_heads[name] = domain_heads[name].to(device)
     log_temperature = torch.zeros((), requires_grad=True, device=device)
     domain_params = [parameter for name in domains for parameter in domain_heads[name].parameters()]
     optimizer = torch.optim.AdamW(
@@ -262,7 +288,7 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
         # field additionally trains its own domain head. Records without a domain never touch
         # a domain head, so a legacy config's gradient stream is unchanged.
         shared_context = shared_head.context(states, questions) if kind == "choice" else None
-        slots: dict[int, tuple[ChoiceScorer, Any]] = {}
+        slots: dict[int, tuple[Any, Any]] = {}
         if kind == "choice":
             contexts: dict[str, Any] = {}
             for index, record in enumerate(batch):
@@ -360,7 +386,7 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(output_dir))
 
-    def _scorer_dict(head: ChoiceScorer) -> dict[str, Any]:
+    def _scorer_dict(head: Any) -> dict[str, Any]:
         return {
             "rank": config.choice_rank,
             "w1": head.w1.weight.detach().cpu().tolist(),
