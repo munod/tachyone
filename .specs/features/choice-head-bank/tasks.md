@@ -78,7 +78,20 @@ validates config + data without torch.
 **Done when:** both dirs load through `training.predict` and answer through the gate.
 **Tests:** `tests/test_training_fit_choice_bank.py` (config, dry-run, arm outputs, determinism of
 the pure parts) · **Gate:** full.
-**Commit:** `feat(training): fit the choice-head bank on a frozen trunk`
+**Commit:** `447a306 feat(training): fit the choice-head bank on a frozen trunk` +
+`bc9f464 fix(training): fit the choice-head bank at the trainer's learning rate`
+**Status:** **Done (2026-10-01).** The isolate ran on the L4 (one encode pass over 7,000
+`choice` records ≈ 9 min, 2 arms × 8 epochs). `lr` first shipped at 1e-3 and **destroyed the
+domain heads** (combined loss 0.37 → 1.48, accuracy 0.77 → 0.30: an Adam step of 1e-3 is ~10%
+of the head weights' RMS and each domain head sees only ~1/5 of the batches) — at the
+trainer's **1e-4** both arms converge (control train/val 0.0042 / 0.0057, bank 0.0064 /
+0.0048) and the domain heads land at 0.89–0.95 on their own domains. Both dirs then load
+through `training.predict` and answer through the gate: on the first 4,000 eval rows the
+trunk posts `choice` 0.7713, the control **0.9980** and the bank **1.0000** (same harness,
+preliminary). **Measurement caveat for B7:** 81% of the eval `choice` rows are byte-identical
+to a training row (the generator's phrase pools collide across train/eval — it is true of the
+legacy support pair too), so B7 must publish a held-out-text split beside the headline rather
+than quote 1.0 as the isolate's answer.
 
 ## B6: Gate accuracy + oracle in the evaluation report
 
