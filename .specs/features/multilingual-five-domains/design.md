@@ -44,7 +44,7 @@ by the completeness test (strengthened to iterate `DEFAULT_LANGUAGES` instead of
 | config | shape | invariant |
 | --- | --- | --- |
 | `data_multi_domains.json` | domains ×5, langs ×6, `per_domain {support: 6000}`, `per_type 1000`, seed 1 | support records ≡ `train_multi.jsonl` ⊖ `domain` (legacy seed prefix rule, `_seed_base`) |
-| `data_eval_multi_domains.json` | domains ×5, langs ×6, `per_type 500`, seed 2 | support records ≡ `eval_multi.jsonl` ⊖ `domain` → the baseline's support cell **is** the published 0.743 anchor |
+| `data_eval_multi_domains.json` | domains ×5, langs ×6, `per_type 500`, seed 2 | support records ≡ `eval_multi.jsonl` ⊖ `domain` → the baseline's support cell measures the published support rows (anchor **0.8413** in the explicit-adapter harness; the routed 0.743 does not reproduce — L-013) |
 
 English configs and datasets are not touched; the existing 45 golden hashes and
 `test_committed_config_reproduces_its_shipped_dataset` prove it every gate.
@@ -84,6 +84,11 @@ intervention — the L-012 reading rule.
 
 The **baseline** (released `checkpoints/multi`) is re-measured in the same harness on the same
 rows before the arms are read; gate numbers are written to BACKLOG at that point.
+
+**Instrument rule (learned in B5B-4, L-013):** every number in this cycle comes from
+`training.predict` with the **explicit adapter** — never the routed runtime path, which answers
+13–15% of multilingual rows with `tachyone-en` (empty/short states) and therefore changes
+whenever *that* checkpoint is republished.
 
 ### 5. Report additions
 

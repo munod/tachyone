@@ -426,6 +426,44 @@ Reproduce: `bash /tmp/opencode/b7_run.sh` (the four-arm loop) — see the B-7 ta
 **B-5b (the multilingual half) is now unblocked** — the bank was chosen and published
 (2026-10-01), and its `{shared, domains}` format is exactly what B-5b's language keys reuse.
 
+**B-5b cycle — scheduled, baseline fixed (2026-10-01).** Spec/design/tasks at
+`.specs/features/multilingual-five-domains/` (four locked decisions in its `context.md`:
+bank keyed by **domain**, **baseline-first gates**, **30k volume** keeping support's 18k,
+**full B-5a publication pattern**). Landed so far: the four lexicons localized to the six
+training languages (`19de6b9`), the 30k/7.5k datasets with support halves byte-identical to
+`train_multi`/`eval_multi` (`367aa88`), and the `per_domain_language` report cell (`ea24e73`).
+**Gates were fixed from the released-multilingual baseline before any training** (B5B-4,
+`benchmarks/results/multi_domains_baseline.json` + `data/preds_multi_domains_baseline.jsonl`;
+released `checkpoints/multi` on `data/eval_multi_domains.jsonl` through `training.predict` —
+the explicit-adapter harness the arms will also use):
+
+| cell | baseline (released multi, explicit adapter) |
+| --- | ---: |
+| overall | **0.5609** (ECE 0.172) |
+| `support` | **0.8413** (ECE 0.027) ← the no-regression anchor |
+| `ecommerce` | 0.5647 |
+| `voice` | 0.5000 |
+| `documents` | 0.4607 |
+| `agent_tools` | **0.4380** (worst new domain, zero-shot) |
+| worst `domain/lang` cell | `agent_tools/nl` **0.3012** |
+| seen / unseen text | 0.5950 / 0.5097 |
+
+**Fixed gates:** `support` ≥ **0.8413** (same harness, same rows) · worst new domain ≥
+**0.70** (absolute, set in advance; baseline is 0.438 zero-shot) · per-domain ECE ≤ **0.05**
+with exceptions declared · gate strict published beside `per_domain` (oracle arm separates
+routing from head quality).
+
+**Anchor correction — the published 0.743 is a routed number and does not reproduce.**
+`training.evaluate --backend encoder` routes every record by detected language: on the
+multilingual rows **13.4% (`eval_multi`) / 14.8% (`eval_multi_domains`) fall through to
+`tachyone-en`** (Latin script detected as `en` or `None` — empty boundary states are 5.4%,
+short/loanword-heavy states the rest). Measured today on the same rows and adapter: routed
+**0.736** vs explicit **0.8413**. The published **0.743 ≠ today's 0.736** because
+`munod/tachyone-en` was republished as the B-5 bank adapter on 2026-10-01 — the routed
+harness silently answers with *whatever the English checkpoint is today*. Controls:
+`/tmp/opencode/control_eval_multi.json` (predict) and `control_eval_backend.json` (routed).
+**Rule (L-013): never gate one checkpoint's quality on a routed harness.**
+
 **Risks / notes.** Five domains in one LoRA of fixed capacity may dilute per-domain accuracy —
 that is what the worst-domain gate is for. Training time vs the 12 GB budget (ADR-0005). Tool/
 function selection largely overlaps the existing `choice` case, so it may add vocabulary rather

@@ -23,6 +23,18 @@ config-vs-dataset tests still pass (English byte-identity); one generated record
 (domain, language) read aloud as a localization spot-check.
 **Tests:** `tests/test_training_generate.py` (extended completeness) · **Gate:** full.
 **Commit:** `feat(training): localize the four new domain lexicons to the training languages`
+**Status:** **Done (2026-10-01), commit `19de6b9`.** Four domain files × 6 languages authored
+(2.9k inserted lines, `en` byte-preserved in all four, verified against `git show HEAD:`).
+Three review passes were needed: the first `voice` pass skipped read-aloud review and shipped
+visible agreement errors in all five languages (`el luces`, `du serrure`, `das Kamera`,
+`del scena luci`) — a dedicated revision applied the gender-normalization strategy (voice);
+a final consolidated pass rendered the **full template × filler cross product (14,082
+combinations, 0 flagged)** for `de`/`it`/`pt` after live spot-checks caught `meinem
+Rückerstattung`, `del mio fattura` and `da teste unitário`. Lesson: **read the generated
+records, not just the tables** — a table that parses and passes counts can still produce
+ungrammatical sentences in 40–50% of composed records. The residual (singular frames vs
+plural fillers, e.g. `This payment terms needs attention` in `en` itself) is the shipped
+parity class and is declared here. Completeness test now iterates `DEFAULT_LANGUAGES`.
 
 ## B5B-2: Multi five-domain dataset configs + byte-identity tests
 
@@ -37,6 +49,11 @@ modulo the `domain` key, counts, six-language interleave, English datasets untou
 **Done when:** both datasets reproduce from their configs and the two identity invariants hold.
 **Tests:** `tests/test_training_generate.py` (identity + counts) · **Gate:** full.
 **Commit:** `feat(training): add the multilingual five-domain datasets`
+**Status:** **Done (2026-10-01), commit `367aa88`.** Train 30,000 (support 18,000 +
+4 × 3,000) and eval 7,500 (1,500 per domain); both support halves equal the incumbent
+`train_multi`/`eval_multi` **byte-for-byte modulo `domain`** (asserted); all 90
+(domain, primitive, language) slices present (min 166 rows); `_SHIPPED` hash reproduction
+covers both configs.
 
 ## B5B-3: `per_domain_language` cross cell in the report `[P]`
 
@@ -49,6 +66,10 @@ renders the cross table worst-cell-first. Legacy no-domain reports unchanged.
 legacy report is byte-identical to before.
 **Tests:** `tests/test_training_evaluate.py`, `tests/test_benchmark_report.py` · **Gate:** full.
 **Commit:** `feat(evaluate): report accuracy and ECE per domain and language`
+**Status:** **Done (2026-10-01), commit `ea24e73`.** `report["per_domain_language"]` keys
+`domain/lang`, sorted, emitted **only when the set carries more than one domain** (legacy
+reports byte-identical — covered by tests); the renderer prints the cross table worst-cell
+first with a `Worst cell (accuracy)` line.
 
 ## B5B-4: Baseline measurement — fix the gates before training
 
@@ -57,12 +78,20 @@ legacy report is byte-identical to before.
 per-primitive / per-language / cross cell, calibration as shipped. Write
 `benchmarks/results/multi_domains_baseline.json`; record the fixed gate numbers (support ≥
 cell, worst new domain ≥ 0.70, per-domain ECE ≤ 0.05 w/ exceptions) in BACKLOG **B-5b** before
-any trained arm exists. Confirm the support cell reproduces the 0.743 anchor.
+any trained arm exists. The support cell is checked against `eval_multi`'s rows (identity
+proven by B5B-2's test), **not** against the published 0.743 — L-013: that is a routed number.
 **Where:** `benchmarks/results/multi_domains_baseline.json`, `.specs/project/BACKLOG.md`.
 **Depends on:** B5B-2 (eval set) · **Requirement:** B5B-04 (gates fixed first).
 **Done when:** the baseline JSON exists and BACKLOG quotes the gate numbers sourced from it.
 **Tests:** — (measurement) · **Gate:** full.
 **Commit:** `docs(specs): fix the B-5b gates from the released-multilingual baseline`
+**Status:** **Done (2026-10-01).** Baseline: overall **0.5609**, `support` **0.8413** (the
+no-regression anchor), worst new domain `agent_tools` **0.4380**, worst cell `agent_tools/nl`
+**0.3012**, seen/unseen 0.595/0.510. Gates fixed in BACKLOG B-5b before training. The
+anchor check exposed **L-013**: the published 0.743 comes from the routed harness, where
+13–15% of multilingual rows fall through to `tachyone-en` — controls
+(`/tmp/opencode/control_eval_multi.json` 0.8413 vs `control_eval_backend.json` 0.736) pinned
+the 0.743 → 0.736 drift on the 2026-10-01 English republish.
 
 ## B5B-5: Training config + the joint run
 

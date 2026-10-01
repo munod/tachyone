@@ -89,8 +89,10 @@ the published adapter was measured on (the AD-009 / B-5a pattern).
 1. WHEN `data/train_multi_domains.jsonl` is filtered to `domain == "support"` and the `domain`
    key is removed THEN the records SHALL equal `train_multi.jsonl` record-for-record.
 2. WHEN `data/eval_multi_domains.jsonl` is filtered the same way THEN the records SHALL equal
-   `eval_multi.jsonl` record-for-record (so the baseline's support cell reproduces the
-   published 0.743 anchor on the same harness).
+   `eval_multi.jsonl` record-for-record (the baseline's support cell is therefore measured on
+   exactly the rows the released adapter was published against; the same-harness anchor is
+   **0.8413** — the published 0.743 is a *routed* number that does not reproduce, BACKLOG B-5b /
+   L-013).
 3. WHEN counts are checked THEN train SHALL be 30,000 (support 18,000 + 4 × 3,000) and eval
    7,500 (1,500 per domain), six languages interleaved.
 4. WHEN any committed config is re-run THEN it SHALL reproduce its shipped dataset (existing

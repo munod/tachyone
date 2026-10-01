@@ -654,6 +654,29 @@ the intervention worked.
 
 ---
 
+### L-013: A routed evaluation measures the other checkpoint too
+
+**Context:** B5B-4, fixing the B-5b gates. The released multilingual adapter had to be
+measured on the new five-domain eval set, and the obvious anchor was the published overall
+**0.743**.
+**Problem:** two shipped harnesses disagree by **10.5 points** on identical rows and adapter:
+`training.evaluate --backend encoder` (the runtime path) gives **0.736**, `training.predict`
+(explicit adapter, the B-5a harness) gives **0.8413**. The runtime routes each record by
+detected language, and on multilingual rows **13–15% fall through to `tachyone-en`** — empty
+boundary states (5.4%, `detect_language` → `None`), short and loanword-heavy states detected
+as `en`. Those rows are answered by the English checkpoint, whose weights changed on
+2026-10-01 (the B-5 republish), which is why 0.743 no longer reproduces as 0.736: the number
+was always `85% multi + 15% whatever-en-is`, and the second factor silently moved.
+**Solution:** gate a checkpoint's quality only on an explicit-adapter harness (same
+instrument for baseline and arms), and treat routed numbers as *product-level* measurements
+that mix checkpoints by design. When a published number refuses to reproduce, diff the two
+harnesses record-by-record before blaming the weights, and record which checkpoint answered
+which rows.
+**Prevents:** publishing a gate the runtime does not deliver, "losing" 0.7 points to someone
+else's republish, and reading a routing artifact as a capability change.
+
+---
+
 ## Quick Tasks Completed
 
 | #   | Description | Date | Commit | Status |
