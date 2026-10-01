@@ -148,21 +148,27 @@ citations and the exact reproduction commands live in
 
 | Probe | Licence | n | Accuracy | Chance | ECE raw |
 | --- | --- | ---: | ---: | ---: | ---: |
-| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | 0.330 | 0.20–0.50 | 0.543 |
-| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | 0.011 | 0.017 | 0.192 |
-| XNLI (`en`) | CC BY-NC 4.0 | 5010 | 0.333 | 0.333 | 0.268 |
+| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.269** | 0.20–0.50 | 0.542 |
+| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | 0.011 | 0.017 | 0.354 |
+| XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.341** | 0.333 | 0.650 |
 
 Evaluation only — no probe row has ever reached `training/`. Read each number against its
-**chance** level and against the in-sample 0.972 above, not against the other rows: these are the
-released adapters zero-shot on tasks they were never trained for. **Re-run on the B-12 adapters
-(2026-09-29)**: typed-decisions 0.330 (best config 0.412, worst 0.250), XNLI exactly at chance
-0.333, and MASSIVE **0.011 against its 0.017 chance** (per language 0.006–0.018 over 60 intents).
-MASSIVE is a 60-way `choice` task and the multilingual `choice` head is the weakest cell of the
-in-domain table too (0.468) — the external probe and the internal one tell the same story.
-`ECE raw` is not comparable across these rows either: it moves with *confidence*, and the adapters
-are now very unsure off-domain (`Conf` 0.021 MASSIVE / 0.354 XNLI / 0.399 typed-decisions;
-`Brier` 0.983 / 0.670 / 0.699). The typed-decisions and XNLI fits still hit the grid ceiling
-(T=20.0). This table is the measurement that `B-5` set out to improve.
+**chance** level and against the in-sample 0.964 above, not against the other rows: these are the
+released adapters zero-shot on tasks they were never trained for.
+
+**Re-run on the B-5 artifact (2026-10-01, right after `munod/tachyone-en` `c00c174d`).** The
+multilingual adapter did not move; the English head did. Accuracy is flat-to-slightly-down and
+still near chance: typed-decisions **0.330 → 0.269** (best config 0.412 → 0.344, worst 0.250 →
+0.188), XNLI **0.333 → 0.341** (its chance is 0.333), MASSIVE **unchanged at 0.011 against the
+0.017 chance** (per language 0.004–0.039 over 60 intents). What visibly moved is **confidence**:
+`Conf` 0.399 → 0.811 (typed-decisions), 0.354 → **0.991** (XNLI) and 0.021 → 0.365 (MASSIVE), so
+`ECE raw` goes 0.543 → 0.542, 0.268 → **0.650** and 0.192 → **0.354**, `Brier` 0.699 → 1.188,
+0.670 → 1.304 and 0.983 → 1.272 — while all three temperature fits still pin T=20.0 and can no
+longer buy it back (`ECE cal` 0.069 → 0.170, 0.021 → 0.294, 0.010 → 0.016). The B-5 head was
+fitted to be sharply right *in* domain; *off* domain it is now sharply confident. That is the same
+trade the in-domain table buys, published here instead of absorbed — MASSIVE is still the 60-way
+`choice` task whose weakest cell is the multilingual `choice` head (0.468), so the external probe
+and the internal one still tell the same story.
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 

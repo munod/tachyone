@@ -553,14 +553,17 @@ def render(paths: list[Path], out: Path, synthetic: Path | None) -> None:
         "  distribution, so a low `ECE cal` is *bought* with confidence: read it next to `Conf`",
         "  and `Brier`, and treat `ECE raw` as what the adapter actually ships (same caveat as",
         "  [`docs/compare.md` §3](../docs/compare.md#3-why-not-another-open-system-one-scorer)).",
-        "- **These are the released adapters, zero-shot**, trained on support tickets with four",
-        "  team labels. Broadening what they know is `B-5`; these numbers are the evidence for it.",
+        "- **These are the released adapters, zero-shot.** The English one now covers five"
+        " domains (B-5 shipped it on 2026-10-01); the multilingual one is still trained on support"
+        " tickets with four team labels. None of these rows was ever in `training/`.",
         "",
         "## Method",
         "",
         "| | |",
         "| --- | --- |",
-        "| Hardware | single RTX 3060 12GB · Python 3.12 · stock encoder forward (no `fast`) |",
+        "| Hardware | one GPU per run, recorded in each artifact's `environment.gpu` — the"
+        " 2026-10-01 re-run was a **single NVIDIA L4**, the 2026-09-29 numbers an RTX 3060 ·"
+        " Python 3.12 · stock encoder forward (no `fast`) |",
         "| Engine | `encoder` backend through `tachyone.wire.answer`, released adapters "
         "(`munod/tachyone-en`, `munod/tachyone-multi`) selected per row by the language router |",
         "| Metrics | one implementation of accuracy / 10-bin ECE / Brier; a failed answer counts "

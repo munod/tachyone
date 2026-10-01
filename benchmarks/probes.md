@@ -13,20 +13,19 @@ reached `training/`, which is exactly what makes the numbers mean something.
 ### How to read this page
 
 - **Judge each number against that probe's chance level**, stated in its section — not
-  against the synthetic 0.972. Different tasks, different option counts,
+  against the synthetic 0.964. Different tasks, different option counts,
   no shared distribution with the training data.
 - **All three temperature fits landed on the grid ceiling (T=20.0).** That flattens the
   distribution, so a low `ECE cal` is *bought* with confidence: read it next to `Conf`
   and `Brier`, and treat `ECE raw` as what the adapter actually ships (same caveat as
   [`docs/compare.md` §3](../docs/compare.md#3-why-not-another-open-system-one-scorer)).
-- **These are the released adapters, zero-shot**, trained on support tickets with four
-  team labels. Broadening what they know is `B-5`; these numbers are the evidence for it.
+- **These are the released adapters, zero-shot.** The English one now covers five domains (B-5 shipped it on 2026-10-01); the multilingual one is still trained on support tickets with four team labels. None of these rows was ever in `training/`.
 
 ## Method
 
 | | |
 | --- | --- |
-| Hardware | single RTX 3060 12GB · Python 3.12 · stock encoder forward (no `fast`) |
+| Hardware | one GPU per run, recorded in each artifact's `environment.gpu` — the 2026-10-01 re-run was a **single NVIDIA L4**, the 2026-09-29 numbers an RTX 3060 · Python 3.12 · stock encoder forward (no `fast`) |
 | Engine | `encoder` backend through `tachyone.wire.answer`, released adapters (`munod/tachyone-en`, `munod/tachyone-multi`) selected per row by the language router |
 | Metrics | one implementation of accuracy / 10-bin ECE / Brier; a failed answer counts as **wrong** |
 | Temperature | fitted per probe on that probe's own development split, never on the split being reported |
@@ -41,28 +40,28 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 ### tachyone (encoder)
 
-2000 rows · `test` split · 500 per task · temperature fitted on train (capped) (T=20.0) · NVIDIA GeForce RTX 3060 · Python 3.12.13
+2000 rows · `test` split · 500 per task · temperature fitted on train (capped) (T=20.0) · NVIDIA L4 · Python 3.12.3
 
 #### Quality
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 2000 | 2000 | 0.330 | 0.543 | 0.069 | 0.699 | 0.399 |
+| tachyone (encoder) | 2000 | 2000 | 0.269 | 0.542 | 0.170 | 0.743 | 0.437 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 122.01 | 341.68 | 5.6 | 1.000 | 2536 | 1823 |
+| tachyone (encoder) | 119.32 | 291.00 | 6.8 | 1.000 | 2518 | 1831 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| agent_trace_observability | tachyone (encoder) | 500 | 0.250 | 0.584 | 0.101 | 0.351 |
-| customer_service | tachyone (encoder) | 500 | 0.370 | 0.525 | 0.018 | 0.364 |
-| invoice_processing | tachyone (encoder) | 500 | 0.288 | 0.609 | 0.177 | 0.465 |
-| security_incidents | tachyone (encoder) | 500 | 0.412 | 0.455 | 0.045 | 0.416 |
+| agent_trace_observability | tachyone (encoder) | 500 | 0.216 | 0.701 | 0.229 | 0.445 |
+| customer_service | tachyone (encoder) | 500 | 0.344 | 0.480 | 0.101 | 0.381 |
+| invoice_processing | tachyone (encoder) | 500 | 0.188 | 0.578 | 0.295 | 0.478 |
+| security_incidents | tachyone (encoder) | 500 | 0.328 | 0.415 | 0.116 | 0.444 |
 
 ## `massive` — AmazonScience/massive (CC-BY-4.0)
 
@@ -73,31 +72,31 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 ### tachyone (encoder)
 
-3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=20.0) · NVIDIA GeForce RTX 3060 · Python 3.12.13
+3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=20.0) · NVIDIA L4 · Python 3.12.3
 
 #### Quality
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 3584 | 3584 | 0.011 | 0.192 | 0.010 | 0.983 | 0.021 |
+| tachyone (encoder) | 3584 | 3584 | 0.011 | 0.354 | 0.016 | 0.984 | 0.027 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 97.35 | 192.59 | 8.2 | 1.000 | 3157 | 2951 |
+| tachyone (encoder) | 129.89 | 456.47 | 4.2 | 1.000 | 3094 | 2960 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| de | tachyone (encoder) | 512 | 0.010 | 0.092 | 0.009 | 0.019 |
-| en | tachyone (encoder) | 512 | 0.018 | 0.267 | 0.006 | 0.024 |
-| es | tachyone (encoder) | 512 | 0.010 | 0.406 | 0.014 | 0.024 |
-| fr | tachyone (encoder) | 512 | 0.006 | 0.147 | 0.013 | 0.019 |
-| it | tachyone (encoder) | 512 | 0.006 | 0.201 | 0.015 | 0.021 |
-| nl | tachyone (encoder) | 512 | 0.020 | 0.129 | 0.001 | 0.021 |
-| pt | tachyone (encoder) | 512 | 0.008 | 0.102 | 0.011 | 0.019 |
+| de | tachyone (encoder) | 512 | 0.004 | 0.234 | 0.020 | 0.024 |
+| en | tachyone (encoder) | 512 | 0.039 | 0.724 | 0.005 | 0.044 |
+| es | tachyone (encoder) | 512 | 0.010 | 0.446 | 0.015 | 0.025 |
+| fr | tachyone (encoder) | 512 | 0.006 | 0.194 | 0.015 | 0.021 |
+| it | tachyone (encoder) | 512 | 0.006 | 0.321 | 0.019 | 0.025 |
+| nl | tachyone (encoder) | 512 | 0.006 | 0.372 | 0.023 | 0.029 |
+| pt | tachyone (encoder) | 512 | 0.004 | 0.186 | 0.018 | 0.022 |
 
 ## `xnli` — facebook/xnli (CC BY-NC 4.0)
 
@@ -108,34 +107,34 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 ### tachyone (encoder)
 
-5010 rows · `test` split · 6000 per task · temperature fitted on validation (capped) (T=20.0) · NVIDIA GeForce RTX 3060 · Python 3.12.13
+5010 rows · `test` split · 6000 per task · temperature fitted on validation (capped) (T=20.0) · NVIDIA L4 · Python 3.12.3
 
 #### Quality
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 5010 | 5010 | 0.333 | 0.268 | 0.021 | 0.670 | 0.354 |
+| tachyone (encoder) | 5010 | 5010 | 0.341 | 0.650 | 0.294 | 0.804 | 0.636 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 47.28 | 67.18 | 21.4 | 1.000 | 2948 | 2821 |
+| tachyone (encoder) | 58.58 | 69.12 | 16.7 | 1.000 | 2982 | 2829 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| en | tachyone (encoder) | 5010 | 0.333 | 0.268 | 0.021 | 0.354 |
+| en | tachyone (encoder) | 5010 | 0.341 | 0.650 | 0.294 | 0.636 |
 
 ## Synthetic vs public
 
 | Evaluation set | Nature | n | Accuracy | ECE |
 | --- | --- | ---: | ---: | ---: |
-| in-sample synthetic eval (`benchmarks/report.md`) | synthetic, shares states with training data | 1500 | 0.972 | 0.020 |
-| typed-decisions `test` | public, Apache-2.0 | 2000 | 0.330 | 0.543 |
-| massive `test` | public, CC-BY-4.0 | 3584 | 0.011 | 0.192 |
-| xnli `test` | public, CC BY-NC 4.0 | 5010 | 0.333 | 0.268 |
+| in-sample synthetic eval (`benchmarks/report.md`) | synthetic, shares states with training data | 1500 | 0.964 | 0.023 |
+| typed-decisions `test` | public, Apache-2.0 | 2000 | 0.269 | 0.542 |
+| massive `test` | public, CC-BY-4.0 | 3584 | 0.011 | 0.354 |
+| xnli `test` | public, CC BY-NC 4.0 | 5010 | 0.341 | 0.650 |
 
 Raw (uncalibrated) ECE is what the engine shipped with; see
 [`docs/compare.md`](../docs/compare.md#3-why-not-another-open-system-one-scorer) for why ECE alone is not a quality metric.
