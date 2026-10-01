@@ -26,8 +26,9 @@ files sha256-verified, stale `finetune_config.json` deleted) plus **`munod/tachy
 `choice` **0.946 → 1.000** and `noul`/`score` **0.992/0.978 → 0.946/0.946**, while the five-domain
 split goes **0.511 → 0.964** (worst domain 0.328 → 0.963). Latency columns were re-measured on
 this L4 box and are labelled box-bound (the previous adapter measures 51.8 ms beside the new
-54.4 ms on the same path). **Open:** only the GitHub release tag — the public probes and the
-head-to-head `choice` cells were re-run against the new revision the same day, both recorded below.
+54.4 ms on the same path). **Then open, now closed:** only the GitHub release tag — the public
+probes and the head-to-head `choice` cells were re-run against the new revision the same day
+(both recorded below), and **`v0.5.0`** was tagged, pushed and published with them.
 
 **Probes re-run (2026-10-01).** The three public probes were re-measured against `c00c174d` and
 `benchmarks/probes.md` re-rendered (previous artifacts kept as `probe_*_preb5.json`):
@@ -42,7 +43,12 @@ Tachyone with the peers and the gold labels untouched (artifacts `compare_tachyo
 `compare_home_tachyone_b5.json`, rendered as `compare_table_{a,b}_b5.md`): their turf **0.236 →
 0.233** (`ECE raw` 0.337 → 0.561, `Conf` 0.268 → 0.355 — confident off-domain), our turf **0.974 →
 0.958** with `choice` **1.000** and `noul`/`score` 1.000/0.984 → 0.938/0.938, per-task cells and
-method rows updated. **Only the GitHub release tag remains open.**
+method rows updated. **Released (2026-10-01): `v0.5.0`** — cut from `[Unreleased]`, versions
+bumped (`pyproject` / `uv.lock` / `__init__`), lock checked, full gates green **including e2e**
+(544 passed), tag pushed to `origin` (remote resolves `v0.5.0 → 7b2658e9`), all five CI checks
+green (lint/types/tests · docs build · offline install · **GitHub Pages deployed**) and the GitHub
+release published as *Latest* with the CHANGELOG section as its notes. **Nothing open in this
+cycle;** the next items are `B-5b` (multilingual bank keys) and `B-1` (multilingual `choice`).
 
 **Previous (2026-09-30):** Post-M6 backlog. **B-12 (`score`/`choice` labels from the text) done and the
 published set re-chosen by merit (2026-09-29, ADR-0015).** The `index % 13` "near-tie" (7.8% of
