@@ -276,14 +276,14 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     def batch_loss(kind: str, batch: list[dict[str, Any]]) -> Any:
         temperature = torch.exp(log_temperature) + 1e-3
         states = encode([record["state"] for record in batch])
-        questions = encode([_question_text(record) for record in batch])
+        questions = encode([question_text(record) for record in batch])
         if kind == "noul":
             similarity = F.cosine_similarity(questions, states, dim=-1)
             probabilities = torch.sigmoid(similarity / temperature)
             targets = torch.tensor([float(record["target"]) for record in batch], device=device)
             return ((probabilities - targets) ** 2).mean()
-        criterion_texts = [text for record in batch for text in _criterion_texts(record)]
-        criteria = encode(criterion_texts)
+        criterion_rows = [text for record in batch for text in criterion_texts(record)]
+        criteria = encode(criterion_rows)
         # ADR-0016 §1: every choice record trains the shared head; one carrying a `domain`
         # field additionally trains its own domain head. Records without a domain never touch
         # a domain head, so a legacy config's gradient stream is unchanged.
@@ -300,7 +300,7 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
         total = torch.zeros((), device=device)
         offset = 0
         for index, record in enumerate(batch):
-            count = len(_criterion_texts(record))
+            count = len(criterion_texts(record))
             block = criteria[offset : offset + count]
             offset += count
             state = states[index].expand(count, -1)
@@ -312,7 +312,7 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
             target_index = (
                 int(record["target"])
                 if isinstance(record["target"], int)
-                else _choice_index(record)
+                else choice_target_index(record)
             )
             one_hot = torch.zeros(count, device=device)
             one_hot[target_index] = 1.0
@@ -386,22 +386,15 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(output_dir))
 
-    def _scorer_dict(head: Any) -> dict[str, Any]:
-        return {
-            "rank": config.choice_rank,
-            "w1": head.w1.weight.detach().cpu().tolist(),
-            "w2": head.w2.weight.detach().cpu().tolist(),
-        }
-
     languages = tuple(sorted({str(record["lang"]) for record in train_records}))
     bank_payload = choice_head_payload(
-        shared=_scorer_dict(shared_head),
+        shared=scorer_payload(shared_head, rank=config.choice_rank),
         # Keyed bank (ADR-0016 §1): shared + one head per training domain, each carrying the
         # signature terms the runtime gate matches questions against. With no domains the
         # payload is the legacy single-scorer shape — byte-identical to what this writer
         # always produced, so existing configs reproduce today's artifact.
         domains={
-            name: _scorer_dict(domain_heads[name])
+            name: scorer_payload(domain_heads[name], rank=config.choice_rank)
             for name in domains  # sorted, deterministic
         },
         languages=languages,
@@ -434,7 +427,8 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     return report
 
 
-def _question_text(record: dict[str, Any]) -> str:
+def question_text(record: dict[str, Any]) -> str:
+    """The text the encoder sees as the question: instructions, JSON-encoded when not a string."""
     instructions = record["instructions"]
     if isinstance(instructions, str):
         return instructions
@@ -467,6 +461,20 @@ def require_committed_domains(domains: Iterable[str]) -> tuple[str, ...]:
     return tuple(domains)
 
 
+def scorer_payload(head: Any, *, rank: int) -> dict[str, Any]:
+    """The ``choice_head.json`` scorer dict ``{rank, w1, w2}`` (the L-002 asset shape).
+
+    The single definition of the asset's bytes, shared by the joint trainer and the
+    frozen-trunk fitter (``training/fit_choice_bank.py``) so neither can drift from the
+    runtime's :class:`tachyone.backends.encoder.ChoiceScorer`.
+    """
+    return {
+        "rank": rank,
+        "w1": head.w1.weight.detach().cpu().tolist(),
+        "w2": head.w2.weight.detach().cpu().tolist(),
+    }
+
+
 def choice_head_payload(
     shared: dict[str, Any],
     domains: Mapping[str, dict[str, Any]],
@@ -493,7 +501,8 @@ def choice_head_payload(
     }
 
 
-def _criterion_texts(record: dict[str, Any]) -> list[str]:
+def criterion_texts(record: dict[str, Any]) -> list[str]:
+    """One text per option/level, matching what the runtime encoder feeds the heads."""
     criteria = record["criteria"]
     if isinstance(criteria, dict):
         return [
@@ -503,7 +512,8 @@ def _criterion_texts(record: dict[str, Any]) -> list[str]:
     return [str(level) for level in criteria]
 
 
-def _choice_index(record: dict[str, Any]) -> int:
+def choice_target_index(record: dict[str, Any]) -> int:
+    """Index of the target option for a record whose ``target`` names its key (not its index)."""
     keys = list(record["criteria"])
     return keys.index(record["target"])
 
