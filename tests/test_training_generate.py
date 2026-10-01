@@ -372,6 +372,8 @@ _SHIPPED = [
     ("data_eval_multi.json", "data/eval_multi.jsonl"),
     ("data_en_domains.json", "data/train_en_domains.jsonl"),
     ("data_eval_en_domains.json", "data/eval_en_domains.jsonl"),
+    ("data_multi_domains.json", "data/train_multi_domains.jsonl"),
+    ("data_eval_multi_domains.json", "data/eval_multi_domains.jsonl"),
 ]
 
 _FIVE = ("support", "ecommerce", "agent_tools", "documents", "voice")
@@ -429,6 +431,64 @@ def test_support_records_are_identical_inside_and_outside_a_multi_domain_run() -
         if record["domain"] == DEFAULT_DOMAIN
     ]
     assert multi == solo
+
+
+_MULTI_LANGS = ("pt", "es", "fr", "de", "it", "nl")
+
+
+def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def test_multilingual_five_domain_datasets_preserve_the_incumbent() -> None:
+    """B5B-02: the no-regression gate needs the incumbent rows byte-identical (modulo ``domain``).
+
+    ``train_multi_domains``' support half must equal ``train_multi`` and its eval half must
+    equal ``eval_multi`` once the ``domain`` key is removed — the same invariant the English
+    pair guarantees, so the released multilingual adapter's support cell stays comparable on
+    identical rows (AD-009 / B-5a pattern).
+    """
+    paths = [
+        _ROOT / "data/train_multi_domains.jsonl",
+        _ROOT / "data/train_multi.jsonl",
+        _ROOT / "data/eval_multi_domains.jsonl",
+        _ROOT / "data/eval_multi.jsonl",
+    ]
+    if not all(path.exists() for path in paths):
+        pytest.skip("gitignored datasets not present")
+    train_multi, train_solo, eval_multi, eval_solo = (_load_jsonl(path) for path in paths)
+
+    # Counts: support keeps its 18k incumbent volume, four new domains add 3k each (30k total);
+    # eval mirrors the English split at 1,500 per domain (7,500 total).
+    train_domains: dict[str, int] = {}
+    for record in train_multi:
+        train_domains[record["domain"]] = train_domains.get(record["domain"], 0) + 1
+    assert train_domains == {"support": 18000, **dict.fromkeys(_FIVE[1:], 3000)}
+    eval_domains: dict[str, int] = {}
+    for record in eval_multi:
+        eval_domains[record["domain"]] = eval_domains.get(record["domain"], 0) + 1
+    assert eval_domains == dict.fromkeys(_FIVE, 1500)
+
+    # Every (domain, primitive) slice interleaves all six training languages.
+    langs = {record["lang"] for record in train_multi}
+    assert langs == set(_MULTI_LANGS)
+    for domain in _FIVE:
+        for kind in ("noul", "choice", "score"):
+            slice_langs = {
+                record["lang"]
+                for record in train_multi
+                if record["domain"] == domain and record["type"] == kind
+            }
+            assert slice_langs == set(_MULTI_LANGS), (domain, kind)
+
+    # The incumbent's rows are preserved exactly, only the ``domain`` key is added.
+    strip = lambda records: [  # noqa: E731 - one-line helper mirroring the en-pair test
+        {k: v for k, v in record.items() if k != "domain"} for record in records
+    ]
+    train_support = strip([r for r in train_multi if r["domain"] == DEFAULT_DOMAIN])
+    eval_support = strip([r for r in eval_multi if r["domain"] == DEFAULT_DOMAIN])
+    assert train_support == train_solo
+    assert eval_support == eval_solo
 
 
 def test_single_domain_run_writes_no_domain_field() -> None:
