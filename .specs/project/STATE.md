@@ -12,8 +12,8 @@ gap to the released adapter's `support` cell **0.086 → 0.008**. The number tha
 **the shared-head control (0.9633) sits 3 of 2,500 `choice` rows behind the full bank (0.9637)**
 — the axis that closed the gap was refitting the head on B-12-corrected labels, not per-domain
 capacity, so **which arm to publish (bank vs control) is open**. Full table, artifacts and
-reproduction in `.specs/project/BACKLOG.md` B-5; new lesson **L-012**. Remaining: **B8** (docs +
-changelog) and the publish/republish decision.
+reproduction in `.specs/project/BACKLOG.md` B-5; new lesson **L-012**. Remaining at that point:
+**B8** (docs + changelog) and the publish/republish decision — both closed the same day (below).
 
 **Published (2026-10-01).** The **bank** was chosen (ADR-0016's structure; never worse than the
 control, gate measured 1.000, format ready for B-5b), promoted to `checkpoints/en` with a
@@ -249,7 +249,8 @@ territory), not a capacity curve — and seed 2 was already the winner of B-9's 
 still describe the support-only checkpoint, and `CHANGELOG` records the outcome under
 `[Unreleased]`. Closing the last 0.065 needs a structural decision (BACKLOG B-5 lists the three:
 per-domain adapters, two-stage training, or a different `choice` scoring rule — each an ADR), and
-**B-5b stays blocked** behind it. **B-6** remains an Idea.
+**B-5b stays blocked** behind it (**resolved 2026-10-01**: the bank was chosen and published,
+B-5b is unblocked — see ADR-0016 and BACKLOG B-5). **B-6** remains an Idea.
 **Re-measured on the B-11 labels (2026-09-28): both gates pass** — support **0.861 ✓** (0.785 ✗
 before), worst new domain **0.807 ✓** (`voice`), overall 0.804 → **0.880**, because only `noul`
 moved (0.720 → 0.946) while `choice` 0.789 and `score` 0.905 are literally the same measurement

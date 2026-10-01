@@ -157,7 +157,7 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · B-5a **both gates pass**, isolate closes 91% of the support gap, **published as `munod/tachyone-en`** (2026-10-01); probes/head-to-head re-run open
+## B-5 — Multi-domain coverage (5 domains) · **Done** — B-5a both gates pass, isolate closes 91% of the support gap, **published as `munod/tachyone-en` `c00c174d`**, probes + head-to-head re-run, **`v0.5.0` released** (2026-10-01)
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
@@ -423,7 +423,8 @@ fresh reading: the measured axis was labels, not capacity (L-012).
 Reproduce: `bash /tmp/opencode/b7_run.sh` (the four-arm loop) — see the B-7 task in
 `.specs/features/choice-head-bank/tasks.md`.
 
-**B-5b (the multilingual half) stays blocked** behind whichever of those is chosen.
+**B-5b (the multilingual half) is now unblocked** — the bank was chosen and published
+(2026-10-01), and its `{shared, domains}` format is exactly what B-5b's language keys reuse.
 
 **Risks / notes.** Five domains in one LoRA of fixed capacity may dilute per-domain accuracy —
 that is what the worst-domain gate is for. Training time vs the 12 GB budget (ADR-0005). Tool/
