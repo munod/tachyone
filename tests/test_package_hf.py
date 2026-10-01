@@ -22,6 +22,16 @@ def _fake_adapter(tmp_path: Path) -> Path:
     return adapter
 
 
+def test_package_ships_the_bank_fit_recipe_when_the_asset_has_one(tmp_path: Path) -> None:
+    """An artifact carries its own recipe (L-011) — the Hub copy must not drop it."""
+    adapter = _fake_adapter(tmp_path)
+    (adapter / "choice_bank_fit.json").write_text(json.dumps({"arm": "bank"}), encoding="utf-8")
+    (adapter / "choice_head.json").write_text(json.dumps({"shared": {}}), encoding="utf-8")
+    out = package(adapter, tmp_path / "hf-bank", checkpoint_name="en")
+    assert json.loads((out / "choice_bank_fit.json").read_text(encoding="utf-8"))["arm"] == "bank"
+    assert (out / "choice_head.json").exists()
+
+
 def test_package_assembles_hf_layout(tmp_path: Path) -> None:
     adapter = _fake_adapter(tmp_path)
     out = package(adapter, tmp_path / "hf-en", checkpoint_name="en")

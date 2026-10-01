@@ -18,6 +18,9 @@ _ADAPTER_FILES: tuple[str, ...] = (
     "adapter_model.safetensors",
     "adapter_model.bin",
     "finetune_config.json",
+    # The bank fit carries its own recipe (L-011): hyper-parameters, seed, record counts and
+    # which trunk it froze, so the published asset says what produced it.
+    "choice_bank_fit.json",
     "choice_head.json",
 )
 
