@@ -4,11 +4,11 @@
 
 ```json
 {
-  "git_commit": "aedb0641aa9b57f3d93e3e11d62f6d05ee6c7aec",
+  "git_commit": "f041ca6c09140004c3a6d30b8740ed8c6ecf6c60",
   "peft": "0.21.0",
-  "platform": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44",
+  "platform": "Linux-6.8.0-142-generic-x86_64-with-glibc2.39",
   "pydantic": "2.13.5",
-  "python": "3.12.13",
+  "python": "3.12.3",
   "tachyone": "0.4.0",
   "torch": "2.14.0+cu130",
   "transformers": "5.17.0"
@@ -36,6 +36,8 @@ uv run python -m training.finetune_rlcd --config training/configs/finetune_en_do
 uv run python -m training.predict --data data/eval_en_domains.jsonl --adapter checkpoints/en_domains --out-predictions data/preds_en_domains.jsonl
 uv run python -m training.fit_calibration --calibration data/preds_en_domains.jsonl --out checkpoints/en_domains/temperature_calibration.json
 TACHYONE_ADAPTERS=tachyone-en=checkpoints/en_domains uv run python -m training.evaluate --data data/eval_en_domains.jsonl --out benchmarks/results/en_domains.json --backend encoder
+uv run python -m training.fit_choice_bank --config training/configs/fit_bank_en_domains.json
+uv run python -m training.predict --data data/eval_en_domains.jsonl --adapter checkpoints/en_domains_bank --train-data data/train_en_domains.jsonl --out-predictions data/preds_en_domains_bank_gate.jsonl --out-report benchmarks/results/en_domains_bank_gate.json
 uv run python -m benchmarks.report --entry encoder=benchmarks/results/en_split.json --out benchmarks/report.md
 ```
 
@@ -45,20 +47,59 @@ uv run python -m benchmarks.report --entry encoder=benchmarks/results/en_split.j
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.972 | 0.020 | 23.094 | 36.793 |
-| choice | 500 | 0.946 | 0.038 | 36.032 | 37.146 |
-| noul | 500 | 0.992 | 0.025 | 14.678 | 19.332 |
-| score | 500 | 0.978 | 0.016 | 22.841 | 26.442 |
-| lang:en | 1500 | 0.972 | 0.020 | 23.094 | 36.793 |
+| overall | 1500 | 0.964 | 0.023 | 54.384 | 90.428 |
+| choice | 500 | 1.000 | 0.000 | 86.316 | 92.598 |
+| noul | 500 | 0.946 | 0.038 | 50.858 | 56.172 |
+| score | 500 | 0.946 | 0.030 | 53.668 | 58.860 |
+| lang:en | 1500 | 0.964 | 0.023 | 54.384 | 90.428 |
 
-Worst language (accuracy): `en` — accuracy 0.972, ECE 0.020.
+Worst language (accuracy): `en` — accuracy 0.964, ECE 0.023.
 
-Noisy view (noise_rate 0.15) — overall: accuracy 0.969, ECE 0.022, p50 23.270 ms.
+Noisy view (noise_rate 0.15) — overall: accuracy 0.963, ECE 0.024, p50 54.492 ms.
 #### `noul` per language — accuracy beside the label audit
 
 | Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| en | 500 | 0.992 | 0.025 | 241 | 232 | 27 | 0 | 0 (0.0%) |
+| en | 500 | 0.946 | 0.038 | 241 | 232 | 27 | 0 | 0 (0.0%) |
+
+
+### english five-domain (B-5 choice-head bank, frozen trunk)
+
+| Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
+| --- | --- | --- | --- | --- | --- |
+| overall | 7500 | 0.964 | 0.024 | 22.967 | 61.658 |
+| choice | 2500 | 1.000 | 0.000 | 55.607 | 63.104 |
+| noul | 2500 | 0.946 | 0.042 | 21.024 | 22.745 |
+| score | 2500 | 0.946 | 0.029 | 22.949 | 24.857 |
+| lang:en | 7500 | 0.964 | 0.024 | 22.967 | 61.658 |
+| domain:agent_tools | 1500 | 0.964 | 0.023 | 22.932 | 57.589 |
+| domain:documents | 1500 | 0.963 | 0.026 | 23.021 | 59.264 |
+| domain:ecommerce | 1500 | 0.964 | 0.027 | 23.030 | 64.439 |
+| domain:support | 1500 | 0.964 | 0.023 | 22.871 | 57.404 |
+| domain:voice | 1500 | 0.963 | 0.021 | 22.959 | 57.385 |
+
+Worst language (accuracy): `en` — accuracy 0.964, ECE 0.024.
+
+Worst domain (accuracy): `documents` — accuracy 0.963, ECE 0.026.
+#### `choice` gate
+
+Answers routed by `gate` — strict accuracy 1.000, fell to shared 0, wrong domain 0 of n=2500.
+
+| Domain | n | Strict accuracy | Fell to shared | Wrong domain |
+| --- | --- | --- | --- | --- |
+| agent_tools | 500 | 1.000 | 0 | 0 |
+| documents | 500 | 1.000 | 0 | 0 |
+| ecommerce | 500 | 1.000 | 0 | 0 |
+| support | 500 | 1.000 | 0 | 0 |
+| voice | 500 | 1.000 | 0 | 0 |
+
+Input text seen in training: n=6709, accuracy 0.961 — never seen: n=791, accuracy 0.991.
+
+#### `noul` per language — accuracy beside the label audit
+
+| Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| en | 2500 | 0.946 | 0.042 | 1176 | 1189 | 135 | 0 | 0 (0.0%) |
 
 
 ### multilingual (mmBERT-base + LoRA r=64 + choice head)

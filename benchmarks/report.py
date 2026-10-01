@@ -309,6 +309,13 @@ def main(argv: Iterable[str] | None = None) -> int:
             "uv run python -m training.evaluate "
             "--data data/eval_en_domains.jsonl --out benchmarks/results/en_domains.json "
             "--backend encoder",
+            # B-5: five-domain bank, fitted on a frozen trunk and evaluated through the gate
+            "uv run python -m training.fit_choice_bank "
+            "--config training/configs/fit_bank_en_domains.json",
+            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
+            "--adapter checkpoints/en_domains_bank --train-data data/train_en_domains.jsonl "
+            "--out-predictions data/preds_en_domains_bank_gate.jsonl "
+            "--out-report benchmarks/results/en_domains_bank_gate.json",
             "uv run python -m benchmarks.report "
             "--entry encoder=benchmarks/results/en_split.json --out benchmarks/report.md",
         ],
