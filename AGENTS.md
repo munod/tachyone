@@ -128,6 +128,10 @@ results are published in `docs/compare.md` §3.
   for Jev compatibility (ADR-0001).
 - **Do not add a required network call** to the default path (ADR-0004).
 - **RTX 3060 12GB** is the training envelope: LoRA/QLoRA only, no full fine-tuning (ADR-0005).
+- **`uv sync` resets the installed extras.** Any plain `uv sync` — including
+  `uv sync --group docs` before `mkdocs build --strict` — uninstalls them, which shows up as
+  torch/fastapi tests *silently skipping* and as pyright `reportMissingImports` errors rather
+  than a failure. Restore the working set with `uv sync --extra serve --extra train`.
 - **Decisions OD-1..OD-5** are all **resolved** — see `.specs/project/STATE.md` for each one
   and the ADR that records it. Do not silently reopen them in code; raise them first.
 
