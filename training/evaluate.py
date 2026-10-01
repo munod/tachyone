@@ -30,8 +30,13 @@ from tachyone.primitives import (
 )
 from training.generate_data import DEFAULT_DOMAIN, _perturb_state, noul_tone
 
-#: A predictor answers a single (state, question) pair.
-type Predictor = Callable[[State, Question], Answer]
+#: A predictor answers a single (state, question) pair. When the caller asks for an explicit
+#: head (B6, ADR-0016 §2.1) it is also called with a keyword-only ``head_hint``, so a predictor
+#: that does not take one keeps working as long as no hint is requested.
+type Predictor = Callable[..., Answer]
+
+#: A gate answers which bank key a ``choice`` record is routed to (``None`` → the shared head).
+type GateFn = Callable[[EvalExample], str | None]
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,7 +140,21 @@ def _metrics(rows: list[tuple[bool, float, float]], bins: int) -> dict[str, Any]
     }
 
 
-def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> dict[str, Any]:
+def record_hint(example: EvalExample, head_hint: str) -> str:
+    """Resolve a requested head hint for one record: ``domain`` is the oracle (its own head).
+
+    Any other value is a literal head key (B6) — one rule, shared by the report's predictions
+    and its gate row, so the two can never disagree about which head answered.
+    """
+    return example.domain if head_hint == "domain" else head_hint
+
+
+def _run(
+    examples: Sequence[EvalExample],
+    predictor: Predictor,
+    bins: int,
+    head_hint: str | None = None,
+) -> dict[str, Any]:
     per_primitive: dict[str, list[tuple[bool, float, float]]] = {}
     per_language: dict[str, list[tuple[bool, float, float]]] = {}
     per_domain: dict[str, list[tuple[bool, float, float]]] = {}
@@ -145,7 +164,14 @@ def _run(examples: Sequence[EvalExample], predictor: Predictor, bins: int) -> di
     overall: list[tuple[bool, float, float]] = []
     for example in examples:
         start = time.perf_counter()
-        answer = predictor(example.state, example.question)
+        # ``domain`` is the oracle arm: each record is forced onto its own domain's head, so
+        # head quality separates from gate quality (B6). Any other value is a literal key.
+        if head_hint is None:
+            answer = predictor(example.state, example.question)
+        else:
+            answer = predictor(
+                example.state, example.question, head_hint=record_hint(example, head_hint)
+            )
         elapsed_ms = (time.perf_counter() - start) * 1000
         _, conf, correct = _predicted_and_confidence(example, answer)
         row = (correct, conf, elapsed_ms)
@@ -246,6 +272,48 @@ def add_state_noise(
     return noisy
 
 
+def choice_gate_report(examples: Sequence[EvalExample], gate: GateFn) -> dict[str, Any]:
+    """Judge the gate against each record's own domain (ADR-0016's new failure mode).
+
+    Published beside ``per_domain`` so a misrouted question can never be mistaken for a weak
+    head: ``strict`` is a right routing, ``fell_to_shared`` is the ADR's designed fallback
+    (the worst it can do is today's numbers) and ``wrong_domain`` is the only harmful
+    outcome — that question answered with *another* domain's head. Reports of a run without a
+    bank simply omit the whole row.
+    """
+
+    def blank() -> dict[str, Any]:
+        return {"n": 0, "strict": 0, "fell_to_shared": 0, "wrong_domain": 0}
+
+    totals = blank()
+    per_domain: dict[str, dict[str, Any]] = {}
+    for example in examples:
+        if example.type != "choice":
+            continue
+        row = per_domain.setdefault(example.domain, blank())
+        selected = gate(example)
+        for cell in (totals, row):
+            cell["n"] += 1
+            if selected is None:
+                cell["fell_to_shared"] += 1
+            elif selected == example.domain:
+                cell["strict"] += 1
+            else:
+                cell["wrong_domain"] += 1
+
+    def finish(row: dict[str, Any]) -> dict[str, Any]:
+        count = row["n"]
+        return {
+            **row,
+            "strict_accuracy": row["strict"] / count if count else 0.0,
+        }
+
+    return {
+        **finish(totals),
+        "per_domain": {domain: finish(row) for domain, row in sorted(per_domain.items())},
+    }
+
+
 def evaluate(
     examples: Sequence[EvalExample],
     predictor: Predictor,
@@ -253,6 +321,8 @@ def evaluate(
     bins: int = 10,
     noise_rate: float = 0.0,
     noise_seed: int = 42,
+    choice_gate: GateFn | None = None,
+    head_hint: str | None = None,
 ) -> dict[str, Any]:
     """Run ``predictor`` over ``examples`` and aggregate per-primitive/language/domain metrics.
 
@@ -260,15 +330,25 @@ def evaluate(
     ``report["noul_per_language"]`` reports that primitive per language — accuracy beside the
     contradictory-label rate, so the two can no longer be confused (L-008).
 
+    When ``choice_gate`` is given — i.e. the loaded asset ships a bank — ``report["choice_gate"]``
+    judges that gate beside the per-domain numbers it could otherwise hide behind, together with
+    ``answers_routed_by``: ``"gate"`` (the default), ``"domain"`` (the oracle arm: every record
+    forced onto its own head) or a literal head key (B6, ADR-0016 §2.1).
+
     When ``noise_rate > 0`` a second, noisy view of the same examples is evaluated and returned
     under the ``"noisy"`` key, so clean accuracy and robustness are never conflated (B-4).
     """
-    report = _run(examples, predictor, bins)
+    report = _run(examples, predictor, bins, head_hint)
     report["noul_labels"] = noul_label_audit(examples)
+    if choice_gate is not None:
+        report["choice_gate"] = {
+            **choice_gate_report(examples, choice_gate),
+            "answers_routed_by": head_hint or "gate",
+        }
     if noise_rate > 0.0:
         report["noise_rate"] = noise_rate
         report["noisy"] = _run(
-            add_state_noise(examples, noise_rate, seed=noise_seed), predictor, bins
+            add_state_noise(examples, noise_rate, seed=noise_seed), predictor, bins, head_hint
         )
     return report
 

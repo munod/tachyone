@@ -20,9 +20,11 @@ from tachyone.primitives import (
 from training.evaluate import (
     EvalExample,
     add_state_noise,
+    choice_gate_report,
     evaluate,
     load_examples,
     noul_label_audit,
+    record_hint,
     record_to_example,
     save_report,
 )
@@ -43,8 +45,8 @@ def _perfect(examples: list[EvalExample]):
     """Predict the known target with full confidence, keyed by question identity."""
     by_question = {id(example.question): example.target for example in examples}
 
-    def predictor(state: object, question: Question) -> Answer:
-        del state
+    def predictor(state: object, question: Question, *, head_hint: str | None = None) -> Answer:
+        del state, head_hint  # a perfect predictor needs no head, hint or not (B6)
         target = by_question[id(question)]
         if isinstance(question, NoulQuestion):
             return NoulAnswer(noul=1.0 if target == 1 else 0.0)
@@ -335,3 +337,115 @@ def test_shipped_eval_sets_carry_no_contradictory_noul_labels(dataset: str) -> N
     assert audit["unknown"] == 0, "eval sets are clean; no state should be unreadable"
     assert audit["contradictory"] == 0, audit
     assert 0.40 < audit["positive_rate"] < 0.55, "text-consistent labels are balanced"
+
+
+# --- B6: the choice gate beside the per-domain numbers it routes (ADR-0016) ---------------
+
+
+def _choice(example_id: str, domain: str, *, target: str = "billing") -> EvalExample:
+    return EvalExample(
+        id=example_id,
+        type="choice",
+        state="my card was charged twice",
+        question=ChoiceQuestion.model_validate(
+            {
+                "type": "choice",
+                "instructions": "Which team should handle this request?",
+                "criteria": {"billing": "payments and refunds", "technical": "bugs and outages"},
+            }
+        ),
+        target=target,
+        lang="en",
+        domain=domain,
+    )
+
+
+def test_choice_gate_report_separates_the_fallback_from_misrouting() -> None:
+    """Falling back to shared is today's behaviour; only a wrong domain is harmful."""
+    examples = [
+        _choice("a", "support"),
+        _choice("b", "support"),
+        _choice("c", "voice"),
+        _choice("d", "voice"),
+    ]
+    selected = {"a": "support", "b": None, "c": "support", "d": "voice"}
+    report = choice_gate_report(examples, lambda example: selected[example.id])
+
+    assert (report["n"], report["strict"], report["fell_to_shared"], report["wrong_domain"]) == (
+        4,
+        2,
+        1,
+        1,
+    )
+    assert report["strict_accuracy"] == pytest.approx(0.5)
+    assert report["per_domain"]["support"] == {
+        "n": 2,
+        "strict": 1,
+        "fell_to_shared": 1,
+        "wrong_domain": 0,
+        "strict_accuracy": pytest.approx(0.5),
+    }
+    assert report["per_domain"]["voice"]["wrong_domain"] == 1
+
+
+def test_choice_gate_report_judges_choice_records_only() -> None:
+    examples = [
+        _choice("a", "support"),
+        EvalExample(
+            id="n",
+            type="noul",
+            state="please refund this",
+            question=NoulQuestion(instructions="q?"),
+            target=1,
+            lang="en",
+            domain="voice",
+        ),
+    ]
+    report = choice_gate_report(examples, lambda example: example.domain)
+    assert report["n"] == 1
+    assert report["strict_accuracy"] == 1.0
+    assert set(report["per_domain"]) == {"support"}
+
+
+def test_evaluate_attaches_the_gate_and_names_who_routed(tmp_path: Path) -> None:
+    examples = [_choice("a", "support"), _choice("b", "voice")]
+
+    def gate(example: EvalExample) -> str | None:
+        return example.domain  # the perfect gate
+
+    with_gate = evaluate(examples, _perfect(examples), choice_gate=gate)
+    assert with_gate["choice_gate"]["strict_accuracy"] == 1.0
+    assert with_gate["choice_gate"]["answers_routed_by"] == "gate"
+
+    oracle = evaluate(examples, _perfect(examples), choice_gate=gate, head_hint="domain")
+    assert oracle["choice_gate"]["answers_routed_by"] == "domain"
+    assert oracle["overall"]["accuracy"] == pytest.approx(1.0)
+
+    assert "choice_gate" not in evaluate(examples, _perfect(examples))  # no bank: no row
+
+
+def test_head_hint_reaches_the_predictor_per_record() -> None:
+    """The oracle resolves to each record's own domain; a literal key is passed through."""
+    examples = [_choice("a", "support"), _choice("b", "voice")]
+    seen: list[str | None] = []
+
+    def predictor(state: object, question: Question, *, head_hint: str | None = None) -> Answer:
+        seen.append(head_hint)
+        return _perfect(examples)(state, question)
+
+    evaluate(examples, predictor, head_hint="domain")
+    assert seen == [example.domain for example in examples]
+
+    seen.clear()
+    evaluate(examples, predictor, head_hint="voice")
+    assert seen == ["voice", "voice"]
+
+    seen.clear()
+    evaluate(examples, predictor)  # no hint: the gate decides, nothing is forced
+    assert seen == [None, None]
+
+
+def test_record_hint_is_one_rule_for_the_oracle() -> None:
+    example = _choice("a", "support")
+    assert record_hint(example, "domain") == example.domain
+    assert record_hint(example, "voice") == "voice"

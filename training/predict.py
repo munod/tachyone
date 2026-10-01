@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -20,13 +20,21 @@ from tachyone.calibration import apply_temperature, confidence, parse_temperatur
 from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
+    ChoiceQuestion,
     NoulAnswer,
     Question,
     ScoreAnswer,
     State,
 )
 from tachyone.router import CheckpointInfo, detect_language, detect_script, state_text
-from training.evaluate import EvalExample, evaluate, load_examples, save_report
+from training.evaluate import (
+    EvalExample,
+    GateFn,
+    evaluate,
+    load_examples,
+    record_hint,
+    save_report,
+)
 
 _DEFAULT_MODELS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "tachyone", "models")
 
@@ -110,16 +118,52 @@ def _prediction_row(example: EvalExample, answer: Answer) -> dict[str, Any]:
 
 
 def build_predictor(model: EncoderModel, temperatures: dict[str, float]):
-    def predict(state: State, question: Question) -> Answer:
+    def predict(state: State, question: Question, *, head_hint: str | None = None) -> Answer:
         text = state_text(state)
         lang = detect_language(text, detect_script(text))
-        answer = model.answer_state(state, {"q": question}, lang=lang)["q"]
+        answer = model.answer_state(state, {"q": question}, lang=lang, choice_head=head_hint)["q"]
         temperature = temperatures.get(
             f"{question.type}:{lang}", temperatures.get(question.type, 1.0)
         )
         return _apply_temperature(question.type, answer, temperature)
 
     return predict
+
+
+def build_gate(model: EncoderModel) -> GateFn | None:
+    """The loaded bank's lexical gate, or ``None`` when the asset ships no bank (B6).
+
+    The gate is judged on its own: ``select_key`` is what routes a question whether or not the
+    run also forces a hint, so one report can carry both the arm's accuracy and the asset's
+    routing quality (ADR-0016 consequences).
+    """
+    bank = model.choice_bank
+    if bank is None:
+        return None
+
+    def gate(example: EvalExample) -> str | None:
+        if example.type != "choice" or not isinstance(example.question, ChoiceQuestion):
+            return None
+        return bank.select_key(example.question)
+
+    return gate
+
+
+def resolve_head_hint(value: str | None, shipped: Iterable[str]) -> str | None:
+    """Validate ``--head-hint`` before a run: ``domain`` (the oracle) or a shipped key.
+
+    The *wire* hint falls through when it names nothing the asset ships (ADR-0016 §2.1); the
+    evaluation CLI fails fast instead — a typo'd arm would otherwise publish a whole run
+    labelled as forced when nothing was.
+    """
+    if value is None or value == "domain":
+        return value
+    keys = sorted(shipped)
+    if value in keys:
+        return value
+    raise SystemExit(
+        f"unknown head hint {value!r}; this asset ships: {', '.join(keys) or '(no bank keys)'}"
+    )
 
 
 def run(
@@ -133,9 +177,16 @@ def run(
     temperature_path: str | None = None,
     out_report: str | Path | None = None,
     out_predictions: str | Path | None = None,
+    head_hint: str | None = None,
 ) -> dict[str, Any]:
     examples = load_examples(records_path, limit=limit)
     model = _build_model(model_id, adapter_dir, device=device, max_len=max_len)
+    bank_keys = model.choice_bank.domains if model.choice_bank is not None else ()
+    hint = resolve_head_hint(head_hint, bank_keys)
+    if hint is not None and not bank_keys:
+        raise SystemExit(
+            f"--head-hint {hint!r} needs an adapter that ships a choice-head bank: {adapter_dir}"
+        )
     predictor = build_predictor(model, _load_temperatures(temperature_path))
 
     if out_predictions:
@@ -143,10 +194,14 @@ def run(
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8") as handle:
             for example in examples:
-                answer = predictor(example.state, example.question)
+                answer = predictor(
+                    example.state,
+                    example.question,
+                    head_hint=None if hint is None else record_hint(example, hint),
+                )
                 handle.write(json.dumps(_prediction_row(example, answer), sort_keys=True) + "\n")
 
-    report = evaluate(examples, predictor)
+    report = evaluate(examples, predictor, choice_gate=build_gate(model), head_hint=hint)
     if out_report:
         save_report(report, out_report)
     return report
@@ -167,6 +222,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", default=None, help="fitted temperature report JSON")
     parser.add_argument("--out-report", default=None, help="evaluation report JSON")
     parser.add_argument("--out-predictions", default=None, help="predictions JSONL for calibration")
+    parser.add_argument(
+        "--head-hint",
+        default=None,
+        metavar="domain|KEY",
+        help="'domain' forces each record onto its own domain head (the oracle arm), a key "
+        "forces that head for every record, and omitting it lets the asset's gate decide (B6)",
+    )
     return parser
 
 
@@ -183,6 +245,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         temperature_path=args.temperature,
         out_report=args.out_report,
         out_predictions=args.out_predictions,
+        head_hint=args.head_hint,
     )
     print(json.dumps(report["overall"], indent=2, sort_keys=True))
     return 0
