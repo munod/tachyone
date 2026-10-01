@@ -1,7 +1,21 @@
 # State
 
-**Last Updated:** 2026-09-30
-**Current Work:** Post-M6 backlog. **B-12 (`score`/`choice` labels from the text) done and the
+**Last Updated:** 2026-10-01
+**Current Work:** Post-M6 backlog. **B-5's structural decision (ADR-0016) executed and measured —
+the isolate closes 91% of the support gap (2026-10-01).** The per-domain `choice`-head bank, its
+deterministic gate, the additive `choice_head` request hint, the bank trainer and the frozen-trunk
+fitter shipped (`.specs/features/choice-head-bank`, tasks B1–B7), and the isolate ran against a
+**frozen run-5 trunk**: baseline **0.879 → 0.964** overall, `support` **0.964 ≥ 0.85**, worst new
+domain **0.963 ≥ 0.70**, gate **strict 1.000 / 0 to shared / 0 wrong domain** over 2,500 `choice`
+rows, per-domain ECE **0.021–0.027** (all five under the 0.05 target for the first time), and the
+gap to the released adapter's `support` cell **0.086 → 0.008**. The number that matters most:
+**the shared-head control (0.9633) sits 3 of 2,500 `choice` rows behind the full bank (0.9637)**
+— the axis that closed the gap was refitting the head on B-12-corrected labels, not per-domain
+capacity, so **which arm to publish (bank vs control) is open**. Full table, artifacts and
+reproduction in `.specs/project/BACKLOG.md` B-5; new lesson **L-012**. Remaining: **B8** (docs +
+changelog) and the publish/republish decision.
+
+**Previous (2026-09-30):** Post-M6 backlog. **B-12 (`score`/`choice` labels from the text) done and the
 published set re-chosen by merit (2026-09-29, ADR-0015).** The `index % 13` "near-tie" (7.8% of
 `score` rows, capping the primitive at 0.888 where the released checkpoints sat) and the
 index-derived labels of the **empty boundary state** (5.4% of *every* primitive — `score` kept the
@@ -578,6 +592,27 @@ accuracy that a constant label pays for.
 
 ---
 
+### L-012: Arms that share the fixed factor cannot attribute the gain to it
+
+**Context:** ADR-0016's first experiment — fit *only* the `choice` heads on a frozen run-5 trunk,
+with a shared-head **control** arm beside the per-domain bank, to isolate the head-capacity /
+gradient-share axis before any joint retrain.
+**Problem:** both arms beat the baseline by **+0.085 overall** while differing from *each other*
+by **3 of 2,500 `choice` rows** (0.9633 vs 0.9637). The design isolated the *structure* correctly
+— control vs treatment is the estimate, and it says ≈ nothing — but both arms also re-learned the
+head on B-12-corrected labels, which the baseline's head never saw (it was trained jointly with
+the trunk *before* B-12). So the large delta is shared by both arms and cannot be credited to the
+structural hypothesis that motivated the run: quoting "per-domain heads closed the gap" would have
+been false, and only the control arm makes that claim falsifiable.
+**Solution:** make the control differ from the treatment by **exactly one factor**, read
+*treatment vs control* as that factor's effect, and report *treatment vs baseline* separately as
+what the whole intervention bought. When the baseline also differs in data vintage or optimization
+history, say so in the same table (L-006 / L-008 discipline: name what moved).
+**Prevents:** publishing a structural ADR's mechanism as proven when the measurement only proves
+the intervention worked.
+
+---
+
 ## Quick Tasks Completed
 
 | #   | Description | Date | Commit | Status |
@@ -634,6 +669,7 @@ accuracy that a constant label pays for.
 | B-8 | calibration assets that cannot be loaded now warn by name instead of degrading silently | 2026-09-27 | `fix(encoder): warn when a calibration asset cannot be loaded` | ✅ |
 | B-7 | public probes: `benchmarks/probes.py` loaders for typed-decisions/MASSIVE/XNLI + `benchmarks/probes.md` | 2026-09-27 | `feat(benchmarks): add the public probe loaders and report` | ✅ |
 | R-T1..T3 | multilingual LoRA rank 16 → 64 (accuracy 0.702 → 0.853, `es` ECE 0.170 → 0.038) | 2026-09-25 | `chore(training): raise multilingual LoRA rank to 64` | ✅ |
+| B1..B7 | ADR-0016 choice-head bank: keyed asset + gate, `choice_head` hint, bank training, frozen-trunk fitter, gate/oracle report, four-arm isolate (support 0.886 → **0.964**, gate strict **1.000**) | 2026-10-01 | see `.specs/features/choice-head-bank/tasks.md` | ✅ |
 
 ---
 

@@ -125,7 +125,17 @@ refit calibration for the arms before quoting ECE. Record per-domain/per-primiti
 **Depends on:** B5, B6 · **Requirement:** B-5 cycle gates.
 **Done when:** the four arms are one comparable set; STATE/BACKLOG quote only same-harness numbers.
 **Tests:** — (measurement) · **Gate:** full.
-**Commit:** `docs(specs): record the ADR-0016 isolate in STATE and the B-5 gates`
+**Commit:** `d4580b2 feat(evaluate): split accuracy by whether the row's input text was trained on` +
+`docs(specs): record the ADR-0016 isolate in STATE and the B-5 gates`
+**Status:** **Done (2026-10-01).** Four arms + the released reference on **one harness**
+(`training.predict`, all 7,500 rows, calibration refit per arm, and a new `--train-data` split so
+the 81% train/eval row collision cannot hide behind a headline). Baseline 0.879 → **0.964**
+overall; `support` **0.964 ≥ 0.85 ✓**; worst new domain **0.963 ≥ 0.70 ✓**; gate **strict 1.000 /
+0 shared / 0 wrong**; per-domain ECE **0.021–0.027** (all five under 0.05); gap to the released
+adapter's `support` cell **0.086 → 0.008 (91% closed)**; on the 473 never-seen `choice` rows
+0.892 → **0.998**. **The isolate's real answer: the shared-head control (0.9633) is 3 rows
+behind the bank (0.9637)** — labels, not per-domain capacity, closed the gap (L-012), so *which
+arm to publish* stays open. Numbers and artifacts: BACKLOG B-5; loop: `/tmp/opencode/b7_run.sh`.
 
 ## B8: Docs + changelog
 

@@ -157,7 +157,7 @@ retrain.
 
 ---
 
-## B-5 — Multi-domain coverage (5 domains) · B-5a **both gates pass on every label generation** (2026-09-29); retrain-on-corrected-labels tried and lost
+## B-5 — Multi-domain coverage (5 domains) · B-5a **both gates pass**, isolate closes 91% of the support gap (2026-10-01); which arm to publish is open
 
 **Why.** Today the generator's `choice` criteria are hard-coded to four support teams
 (`_TEAMS`, `team_descriptions.json`) with a support-triage lexicon. Broadening to distinct
@@ -360,6 +360,49 @@ the sequenced fallback.** The three options, for the record:
 3. **A different `choice` scoring rule**: the leak rides on the per-domain constant
    `cos(criterion, question)`; removing or rebalancing it invalidates published numbers and forces
    a full re-benchmark (the AD-009 pattern).
+
+**The isolate ran and closed it (2026-10-01, ADR-0016 §5 first experiment).** Only the head
+moved: the run-5 trunk stayed frozen, the 7,000 `choice` records were encoded **once**, and two
+arms were fitted from that cache (`training/fit_choice_bank.py`, 8 epochs, lr **1e-4** — the
+first config's 1e-3 destroyed the domain heads, 0.37 → 1.48 loss, and is recorded in the B-5
+task). Four arms plus the released reference, one harness (`training.predict`, all 7,500 rows,
+`--train-data` for the seen-text split, calibration refit per arm):
+
+| arm | overall | `choice` | support | worst new domain | per-domain ECE |
+| --- | ---: | ---: | ---: | ---: | --- |
+| run-5 as shipped (baseline) | 0.879 | 0.745 | 0.886 | 0.815 (`voice`) | 0.036–0.080 |
+| **shared head refit** (control) | 0.963 | 0.998 | **0.964 ✓** | **0.962 ✓** (`ecommerce`) | 0.022–0.027 |
+| **bank + gate** | **0.964** | **0.9996** | **0.964 ✓** | **0.963 ✓** (`documents`) | 0.021–0.027 |
+| bank + oracle (`--head-hint domain`) | 0.964 | 0.9996 | 0.964 | 0.963 (`documents`) | 0.021–0.027 |
+| released `tachyone-en` (reference) | 0.511 | 0.452 | **0.972** | 0.328 (`agent_tools`) | 0.110–0.368 |
+
+**Verdict — every ADR-0016 / B-5 gate passes:** `support` **0.964 ≥ 0.85**, worst new domain
+**0.963 ≥ 0.70**, and the gap to the released adapter **shrank 0.086 → 0.008** (support cell
+0.964 against its 0.972, i.e. **91% of the gap closed by moving the head alone**, with the trunk
+untouched). The gate's own number — the ADR's required publication — is **strict 1.000, 0 fell
+to shared, 0 wrong domain** over 2,500 `choice` rows, and the oracle arm is numerically
+identical, so routing is not the bottleneck. Per-domain ECE **0.021–0.027 clears the 0.05
+target in all five domains for the first time** (was 0.036–0.080 with three declared
+exceptions). `noul`/`score` are unchanged at 0.946 in every arm, exactly as the ADR promised:
+only `choice` cells moved.
+
+**What the isolate actually proved — read before quoting the table.** The shared-head control
+(0.9633) is **3 of 2,500 `choice` rows** behind the full bank (0.9637): per-domain *capacity*
+is not what closed the 0.086. What closed it is refitting **one** head on the frozen trunk with
+the B-12-corrected labels — a change both arms share, and therefore one the control-vs-bank
+comparison cannot attribute to ADR-0016's mechanism (the arms were built so that difference is
+*only* the structure). On the 473 `choice` rows whose text never occurs in training the ranking
+holds — baseline 0.892 → control 0.992 → **bank 0.998** — so the gain is not the eval/train row
+collision (81% of `choice` rows are byte-identical to a training row) buying a memorized
+answer. **Open:** which artifact to publish — the bank (format + gate ready for B-5b's language
+keys, three rows better) or the control (one head, simpler asset) — plus whether the structural
+hypothesis needs a fresh reading now that the measured axis was labels, not capacity.
+
+**Artifacts (all gitignored):** `benchmarks/results/en_domains_{r5_baseline,bank_ctrl,bank_gate,bank_oracle}.json`,
+`benchmarks/results/en_released_sameharness.json`, their `calibration_*.json`, and
+`data/preds_en_domains_{r5_baseline,bank_ctrl,bank_gate,bank_oracle}.jsonl`.
+Reproduce: `bash /tmp/opencode/b7_run.sh` (the four-arm loop) — see the B-7 task in
+`.specs/features/choice-head-bank/tasks.md`.
 
 **B-5b (the multilingual half) stays blocked** behind whichever of those is chosen.
 
