@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -148,3 +149,59 @@ def test_render_report_omits_the_noul_table_when_the_audit_is_absent() -> None:
     """Reports produced before B-11 have no audit and must render unchanged."""
     markdown = render_report([ReportEntry(name="old", report={"overall": {"n": 10}})])
     assert "accuracy beside the label audit" not in markdown
+
+
+# --- B6: the gate row beside the per-domain numbers it routes (ADR-0016) ------------------
+
+
+def _report_with_choice_gate(tmp_path: Path) -> dict[str, Any]:
+    report = _multi_domain_report(tmp_path)
+    report["choice_gate"] = {
+        "n": 8,
+        "strict": 6,
+        "fell_to_shared": 1,
+        "wrong_domain": 1,
+        "strict_accuracy": 0.75,
+        "answers_routed_by": "gate",
+        "per_domain": {
+            "support": {
+                "n": 4,
+                "strict": 4,
+                "fell_to_shared": 0,
+                "wrong_domain": 0,
+                "strict_accuracy": 1.0,
+            },
+            "voice": {
+                "n": 4,
+                "strict": 2,
+                "fell_to_shared": 1,
+                "wrong_domain": 1,
+                "strict_accuracy": 0.5,
+            },
+        },
+    }
+    return report
+
+
+def test_render_report_publishes_the_choice_gate(tmp_path: Path) -> None:
+    markdown = render_report([ReportEntry(name="bank", report=_report_with_choice_gate(tmp_path))])
+    assert "#### `choice` gate" in markdown
+    assert "Answers routed by `gate`" in markdown
+    assert "strict accuracy 0.750" in markdown
+    assert "fell to shared 1" in markdown
+    assert "wrong domain 1" in markdown
+    assert "| support | 4 | 1.000 | 0 | 0 |" in markdown
+    assert "| voice | 4 | 0.500 | 1 | 1 |" in markdown
+
+
+def test_render_report_names_the_oracle_when_the_hint_routed_the_answers(tmp_path: Path) -> None:
+    report = _report_with_choice_gate(tmp_path)
+    report["choice_gate"]["answers_routed_by"] = "domain"
+    markdown = render_report([ReportEntry(name="bank", report=report)])
+    assert "Answers routed by `domain`" in markdown
+
+
+def test_render_report_omits_the_gate_row_when_the_asset_ships_no_bank(tmp_path: Path) -> None:
+    """Every pre-ADR-0016 report renders exactly as before."""
+    markdown = render_report([ReportEntry(name="encoder", report=_evaluation_report(tmp_path))])
+    assert "#### `choice` gate" not in markdown

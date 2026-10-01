@@ -81,6 +81,37 @@ def _noul_table(entry: ReportEntry) -> list[str]:
     return lines
 
 
+def _gate_table(entry: ReportEntry) -> list[str]:
+    """The `choice` gate beside the per-domain rows it routes (ADR-0016 consequences).
+
+    A wrong gate can at worst fall back to the shared head, so the two harmless/ harmful
+    outcomes are counted separately: ``fell to shared`` is today's behaviour, ``wrong domain``
+    is a question answered with another domain's head. Absent when the report's asset ships
+    no bank — which is every pre-ADR-0016 report.
+    """
+    gate = entry.report.get("choice_gate")
+    if not isinstance(gate, Mapping) or not gate.get("n"):
+        return []
+    lines = [
+        "#### `choice` gate",
+        "",
+        f"Answers routed by `{gate.get('answers_routed_by', 'gate')}` — strict accuracy "
+        f"{_fmt(float(gate.get('strict_accuracy', 0.0)))}, fell to shared "
+        f"{gate.get('fell_to_shared', 0)}, wrong domain {gate.get('wrong_domain', 0)} "
+        f"of n={gate.get('n', 0)}.",
+        "",
+        "| Domain | n | Strict accuracy | Fell to shared | Wrong domain |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for domain, row in sorted((gate.get("per_domain") or {}).items()):
+        lines.append(
+            f"| {domain} | {row.get('n', 0)} | {_fmt(float(row.get('strict_accuracy', 0.0)))} | "
+            f"{row.get('fell_to_shared', 0)} | {row.get('wrong_domain', 0)} |"
+        )
+    lines.append("")
+    return lines
+
+
 def _table(entry: ReportEntry) -> list[str]:
     lines = [
         f"### {entry.name}",
@@ -133,6 +164,7 @@ def _table(entry: ReportEntry) -> list[str]:
             f"ECE {_fmt(noisy_overall.get('ece', 0.0))}, "
             f"p50 {_fmt(latency.get('p50', 0.0))} ms.",
         ]
+    lines += _gate_table(entry)
     lines += _noul_table(entry)
     lines.append("")
     return lines
