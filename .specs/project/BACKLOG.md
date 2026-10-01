@@ -307,9 +307,15 @@ and the LoRA goes back to r=16: r=64 measured worse on every headline (0.630 →
   `docs/model-card.md`, `README.md`, `docs/roadmap.md`, `docs/huggingface.md` §3 and
   `CHANGELOG.md` all carry the new set. Latency was re-measured on the L4 box and labelled
   box-bound everywhere it appears.
-- [ ] Probe before/after table published (`B-7` harness) → **still open**: neither the public
-  probes nor the head-to-head `choice` cells have been re-run against the new revision (the
-  fast-path parity check *was* re-run: **0 flips**, `benchmarks/results/fast_path_en.json`).
+- [x] Probe before/after table published (`B-7` harness) → **done 2026-10-01 for the probes**:
+  all three re-run against the new revision (artifacts `benchmarks/results/probe_*_preb5.json`
+  keep the previous ones) and `benchmarks/probes.md` re-rendered — typed-decisions **0.330 → 0.269**,
+  XNLI **0.333 → 0.341**, MASSIVE flat at 0.011, with `Conf` 0.399 → 0.811 / 0.354 → 0.991 /
+  0.021 → 0.365 and `ECE raw` 0.268 → 0.650 on XNLI (the head is sharp in-domain and confident
+  off-domain; published, not absorbed). Fast-path parity also re-run: **0 flips**.
+- [ ] Head-to-head `choice` cells re-run against the new revision → **still open**: neither
+  `docs/compare.md` table has been re-scored with the new adapter (its §3 prose still quotes the
+  B-12 probe row).
 
 **Verdict (2026-09-27): 1 of 2 gates.** Run 5 is the designated artifact —
 `checkpoints/en_domains`, `data/preds_en_domains_r5.jsonl`, `benchmarks/results/en_domains_r5.json`

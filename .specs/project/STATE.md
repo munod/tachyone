@@ -29,6 +29,15 @@ this L4 box and are labelled box-bound (the previous adapter measures 51.8 ms be
 54.4 ms on the same path). **Open:** the public probes and the head-to-head `choice` cells have
 not been re-run against the new revision, and no GitHub release has been tagged.
 
+**Probes re-run (2026-10-01).** The three public probes were re-measured against `c00c174d` and
+`benchmarks/probes.md` re-rendered (previous artifacts kept as `probe_*_preb5.json`):
+typed-decisions **0.330 → 0.269** (best config 0.412 → 0.344), XNLI **0.333 → 0.341**, MASSIVE
+flat at **0.011** (chance 0.017). Accuracy is flat and near chance; what moved is **confidence**
+off-domain — `Conf` 0.399 → 0.811, 0.354 → **0.991**, 0.021 → 0.365, so `ECE raw` worsens to
+0.650 on XNLI while every fit still pins T=20.0. The B-5 head is sharp in domain and confident out
+of it; `docs/benchmarks.md` § Public probes and the CHANGELOG both say so. **Still open:** the
+head-to-head `choice` cells (`docs/compare.md` §3) and the GitHub release tag.
+
 **Previous (2026-09-30):** Post-M6 backlog. **B-12 (`score`/`choice` labels from the text) done and the
 published set re-chosen by merit (2026-09-29, ADR-0015).** The `index % 13` "near-tie" (7.8% of
 `score` rows, capping the primitive at 0.888 where the released checkpoints sat) and the

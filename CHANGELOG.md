@@ -67,7 +67,11 @@ All notable changes to this project are documented here. The format is based on
   `docs/huggingface.md` §3): on the support split `choice` 0.946 → **1.000** while `noul`/`score`
   move 0.992/0.978 → 0.946/0.946 and overall 0.972 → 0.964, and the five-domain split goes
   0.511 → 0.964 (worst domain 0.328 → 0.963). Latency was re-measured on the L4 reference box and
-  is labelled as such wherever it appears — it is not comparable with the earlier columns.
+  is labelled as such wherever it appears — it is not comparable with the earlier columns. The
+  three public probes were re-run against the new revision (`benchmarks/probes.md`):
+  typed-decisions 0.330 → **0.269**, XNLI 0.333 → **0.341**, MASSIVE unchanged at 0.011, and the
+  off-domain confidence the new head carries is published beside them (`Conf` up to 0.991,
+  `ECE raw` 0.268 → 0.650 on XNLI).
 - **Both adapters retrained and the whole measured surface republished as one set** (AD-009
   pattern; pre-B-11 numbers stay valid for the data that produced them and are not comparable
   line-by-line):
