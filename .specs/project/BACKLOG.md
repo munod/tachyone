@@ -313,9 +313,14 @@ and the LoRA goes back to r=16: r=64 measured worse on every headline (0.630 →
   XNLI **0.333 → 0.341**, MASSIVE flat at 0.011, with `Conf` 0.399 → 0.811 / 0.354 → 0.991 /
   0.021 → 0.365 and `ECE raw` 0.268 → 0.650 on XNLI (the head is sharp in-domain and confident
   off-domain; published, not absorbed). Fast-path parity also re-run: **0 flips**.
-- [ ] Head-to-head `choice` cells re-run against the new revision → **still open**: neither
-  `docs/compare.md` table has been re-scored with the new adapter (its §3 prose still quotes the
-  B-12 probe row).
+- [x] Head-to-head `choice` cells re-run against the new revision → **done 2026-10-01**: only
+  Tachyone's engine was re-scored (peers and gold labels untouched, same rows / same metric code),
+  artifacts `compare_tachyone_b5.json` + `compare_home_tachyone_b5.json` rendered as
+  `compare_table_{a,b}_b5.md`. Table A (their turf) **0.236 → 0.233** with `ECE raw` 0.337 → 0.561
+  and `Conf` 0.268 → 0.355 (the B-5 head is confident off-domain); table B (our turf) **0.974 →
+  0.958** with `choice` 0.938 → **1.000** and `noul`/`score` 1.000/0.984 → 0.938/0.938 — the same
+  support trade `docs/benchmarks.md` publishes. `docs/compare.md` §3 carries the tables, the
+  per-task cells and the method rows.
 
 **Verdict (2026-09-27): 1 of 2 gates.** Run 5 is the designated artifact —
 `checkpoints/en_domains`, `data/preds_en_domains_r5.jsonl`, `benchmarks/results/en_domains_r5.json`

@@ -71,7 +71,9 @@ All notable changes to this project are documented here. The format is based on
   three public probes were re-run against the new revision (`benchmarks/probes.md`):
   typed-decisions 0.330 → **0.269**, XNLI 0.333 → **0.341**, MASSIVE unchanged at 0.011, and the
   off-domain confidence the new head carries is published beside them (`Conf` up to 0.991,
-  `ECE raw` 0.268 → 0.650 on XNLI).
+  `ECE raw` 0.268 → 0.650 on XNLI). The head-to-head was re-scored with the same discipline —
+  Tachyone only, peers and gold labels untouched: their turf **0.236 → 0.233**, our turf **0.974
+  → 0.958** (`choice` **1.000**, `noul`/`score` 1.000/0.984 → 0.938/0.938).
 - **Both adapters retrained and the whole measured surface republished as one set** (AD-009
   pattern; pre-B-11 numbers stay valid for the data that produced them and are not comparable
   line-by-line):
