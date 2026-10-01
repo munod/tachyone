@@ -112,6 +112,28 @@ def _gate_table(entry: ReportEntry) -> list[str]:
     return lines
 
 
+def _text_seen_note(entry: ReportEntry) -> list[str]:
+    """Accuracy split by whether the row's input text also occurs in training (B7).
+
+    The shipped eval sets collide with their training sets on most rows, so this is the only
+    line that says how much of the headline accuracy is generalization rather than recall.
+    Absent when the run did not pass a training set — every report produced before B7.
+    """
+    split = entry.report.get("text_seen")
+    if not isinstance(split, Mapping):
+        return []
+    seen = split.get("seen") or {}
+    unseen = split.get("unseen") or {}
+    if not isinstance(seen, Mapping) or not isinstance(unseen, Mapping):
+        return []
+    return [
+        f"Input text seen in training: n={seen.get('n', 0)}, "
+        f"accuracy {_fmt(float(seen.get('accuracy', 0.0)))} — never seen: "
+        f"n={unseen.get('n', 0)}, accuracy {_fmt(float(unseen.get('accuracy', 0.0)))}.",
+        "",
+    ]
+
+
 def _table(entry: ReportEntry) -> list[str]:
     lines = [
         f"### {entry.name}",
@@ -165,6 +187,7 @@ def _table(entry: ReportEntry) -> list[str]:
             f"p50 {_fmt(latency.get('p50', 0.0))} ms.",
         ]
     lines += _gate_table(entry)
+    lines += _text_seen_note(entry)
     lines += _noul_table(entry)
     lines.append("")
     return lines

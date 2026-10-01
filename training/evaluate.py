@@ -8,10 +8,11 @@ probes (MASSIVE/XNLI/typed-decisions) can feed the same harness for reproducible
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import time
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
@@ -149,11 +150,34 @@ def record_hint(example: EvalExample, head_hint: str) -> str:
     return example.domain if head_hint == "domain" else head_hint
 
 
+def input_signature(example: EvalExample) -> str:
+    """Fingerprint of a record's **input** text — state, instructions and criteria, no label.
+
+    The shipped eval sets collide with their training sets on most rows (the generator draws
+    from phrase pools shared by both), so a report that quotes one accuracy mixes memorization
+    with generalization. Splitting on this fingerprint says how much of each (B7): two records
+    that a model cannot tell apart must fingerprint alike, which is why the label is excluded —
+    the same text with a different label is a *contradiction*, not a different question.
+    """
+    payload = json.dumps(
+        {
+            "state": example.state,
+            "instructions": example.question.instructions,
+            "criteria": example.question.criteria,
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+        default=str,
+    )
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()
+
+
 def _run(
     examples: Sequence[EvalExample],
     predictor: Predictor,
     bins: int,
     head_hint: str | None = None,
+    seen_inputs: Collection[str] | None = None,
 ) -> dict[str, Any]:
     per_primitive: dict[str, list[tuple[bool, float, float]]] = {}
     per_language: dict[str, list[tuple[bool, float, float]]] = {}
@@ -162,6 +186,8 @@ def _run(
     #: to the contradictory-label rate so label noise and model error stay separable (L-008).
     noul_per_language: dict[str, list[tuple[bool, float, float]]] = {}
     overall: list[tuple[bool, float, float]] = []
+    #: Accuracy split by whether the row's input text also occurs in training (B7).
+    text_seen: dict[str, list[tuple[bool, float, float]]] = {"seen": [], "unseen": []}
     for example in examples:
         start = time.perf_counter()
         # ``domain`` is the oracle arm: each record is forced onto its own domain's head, so
@@ -180,8 +206,11 @@ def _run(
         per_domain.setdefault(example.domain, []).append(row)
         if example.type == "noul":
             noul_per_language.setdefault(example.lang, []).append(row)
+        if seen_inputs is not None:
+            bucket = "seen" if input_signature(example) in seen_inputs else "unseen"
+            text_seen[bucket].append(row)
         overall.append(row)
-    return {
+    report = {
         "bins": bins,
         "overall": _metrics(overall, bins),
         "per_primitive": {kind: _metrics(rows, bins) for kind, rows in per_primitive.items()},
@@ -193,6 +222,9 @@ def _run(
             lang: _metrics(rows, bins) for lang, rows in noul_per_language.items()
         },
     }
+    if seen_inputs is not None:
+        report["text_seen"] = {bucket: _metrics(rows, bins) for bucket, rows in text_seen.items()}
+    return report
 
 
 _NOUL_TONE_KEYS = ("request", "neutral", "empty", "unknown")
@@ -323,6 +355,7 @@ def evaluate(
     noise_seed: int = 42,
     choice_gate: GateFn | None = None,
     head_hint: str | None = None,
+    seen_inputs: Collection[str] | None = None,
 ) -> dict[str, Any]:
     """Run ``predictor`` over ``examples`` and aggregate per-primitive/language/domain metrics.
 
@@ -337,8 +370,13 @@ def evaluate(
 
     When ``noise_rate > 0`` a second, noisy view of the same examples is evaluated and returned
     under the ``"noisy"`` key, so clean accuracy and robustness are never conflated (B-4).
+
+    When ``seen_inputs`` — the :func:`input_signature` of a training set — is given,
+    ``report["text_seen"]`` splits accuracy by whether the row's input text occurred in
+    training, so a benchmark whose eval rows collide with its training rows can quote the
+    generalization side on its own (B7).
     """
-    report = _run(examples, predictor, bins, head_hint)
+    report = _run(examples, predictor, bins, head_hint, seen_inputs)
     report["noul_labels"] = noul_label_audit(examples)
     if choice_gate is not None:
         report["choice_gate"] = {
@@ -348,7 +386,11 @@ def evaluate(
     if noise_rate > 0.0:
         report["noise_rate"] = noise_rate
         report["noisy"] = _run(
-            add_state_noise(examples, noise_rate, seed=noise_seed), predictor, bins, head_hint
+            add_state_noise(examples, noise_rate, seed=noise_seed),
+            predictor,
+            bins,
+            head_hint,
+            seen_inputs,
         )
     return report
 

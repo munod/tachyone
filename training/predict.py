@@ -31,6 +31,7 @@ from training.evaluate import (
     EvalExample,
     GateFn,
     evaluate,
+    input_signature,
     load_examples,
     record_hint,
     save_report,
@@ -178,6 +179,7 @@ def run(
     out_report: str | Path | None = None,
     out_predictions: str | Path | None = None,
     head_hint: str | None = None,
+    train_data: str | Path | None = None,
 ) -> dict[str, Any]:
     examples = load_examples(records_path, limit=limit)
     model = _build_model(model_id, adapter_dir, device=device, max_len=max_len)
@@ -201,7 +203,18 @@ def run(
                 )
                 handle.write(json.dumps(_prediction_row(example, answer), sort_keys=True) + "\n")
 
-    report = evaluate(examples, predictor, choice_gate=build_gate(model), head_hint=hint)
+    # The eval sets collide with their training sets on most rows, so accuracy is also split
+    # by whether the row's input text occurred in training (B7) — same harness for every arm.
+    seen_inputs = (
+        {input_signature(example) for example in load_examples(train_data)} if train_data else None
+    )
+    report = evaluate(
+        examples,
+        predictor,
+        choice_gate=build_gate(model),
+        head_hint=hint,
+        seen_inputs=seen_inputs,
+    )
     if out_report:
         save_report(report, out_report)
     return report
@@ -229,6 +242,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="'domain' forces each record onto its own domain head (the oracle arm), a key "
         "forces that head for every record, and omitting it lets the asset's gate decide (B6)",
     )
+    parser.add_argument(
+        "--train-data",
+        default=None,
+        help="training records JSONL: splits accuracy into report['text_seen'] by whether "
+        "each row's input text occurs in it (B7)",
+    )
     return parser
 
 
@@ -246,6 +265,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         out_report=args.out_report,
         out_predictions=args.out_predictions,
         head_hint=args.head_hint,
+        train_data=args.train_data,
     )
     print(json.dumps(report["overall"], indent=2, sort_keys=True))
     return 0

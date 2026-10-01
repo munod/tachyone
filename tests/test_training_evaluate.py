@@ -22,6 +22,7 @@ from training.evaluate import (
     add_state_noise,
     choice_gate_report,
     evaluate,
+    input_signature,
     load_examples,
     noul_label_audit,
     record_hint,
@@ -342,11 +343,17 @@ def test_shipped_eval_sets_carry_no_contradictory_noul_labels(dataset: str) -> N
 # --- B6: the choice gate beside the per-domain numbers it routes (ADR-0016) ---------------
 
 
-def _choice(example_id: str, domain: str, *, target: str = "billing") -> EvalExample:
+def _choice(
+    example_id: str,
+    domain: str,
+    *,
+    target: str = "billing",
+    state: str = "my card was charged twice",
+) -> EvalExample:
     return EvalExample(
         id=example_id,
         type="choice",
-        state="my card was charged twice",
+        state=state,
         question=ChoiceQuestion.model_validate(
             {
                 "type": "choice",
@@ -449,3 +456,35 @@ def test_record_hint_is_one_rule_for_the_oracle() -> None:
     example = _choice("a", "support")
     assert record_hint(example, "domain") == example.domain
     assert record_hint(example, "voice") == "voice"
+
+
+# --- B7: accuracy split by whether the row's input text occurred in training --------------
+
+
+def test_input_signature_ignores_the_label_but_not_the_text() -> None:
+    """The label is excluded on purpose: same evidence = same fingerprint (B7)."""
+    base = _choice("a", "support")
+    same_text = replace(base, id="b", target="technical")  # same input, different label
+    other_text = _choice("c", "support", state="the parcel never arrived")
+    assert input_signature(base) == input_signature(same_text)
+    assert input_signature(base) != input_signature(other_text)
+    # The domain is metadata, not text: nothing a model sees distinguishes these two.
+    assert input_signature(base) == input_signature(_choice("d", "voice"))
+
+
+def test_evaluate_splits_accuracy_by_seen_input_text() -> None:
+    examples = [
+        _choice("a", "support"),
+        _choice("b", "voice", state="the thermostat never turns on"),
+    ]
+    seen = {input_signature(examples[0])}
+    report = evaluate(examples, _perfect(examples), seen_inputs=seen)
+
+    split = report["text_seen"]
+    assert split["seen"]["n"] == 1
+    assert split["seen"]["accuracy"] == pytest.approx(1.0)
+    assert split["unseen"]["n"] == 1
+    assert split["unseen"]["accuracy"] == pytest.approx(1.0)
+
+    # Without a training set to compare against, no row is claimed to be memorized.
+    assert "text_seen" not in evaluate(examples, _perfect(examples))

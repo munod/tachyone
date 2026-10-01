@@ -205,3 +205,21 @@ def test_render_report_omits_the_gate_row_when_the_asset_ships_no_bank(tmp_path:
     """Every pre-ADR-0016 report renders exactly as before."""
     markdown = render_report([ReportEntry(name="encoder", report=_evaluation_report(tmp_path))])
     assert "#### `choice` gate" not in markdown
+
+
+def test_render_report_splits_accuracy_by_seen_input_text(tmp_path: Path) -> None:
+    report = _evaluation_report(tmp_path)
+    report["text_seen"] = {
+        "seen": {"n": 10, "accuracy": 0.9, "ece": 0.0},
+        "unseen": {"n": 5, "accuracy": 0.6, "ece": 0.0},
+    }
+    markdown = render_report([ReportEntry(name="encoder", report=report)])
+    assert (
+        "Input text seen in training: n=10, accuracy 0.900 — never seen: n=5, accuracy 0.600."
+        in markdown
+    )
+
+
+def test_render_report_omits_the_seen_text_note_without_a_training_set(tmp_path: Path) -> None:
+    markdown = render_report([ReportEntry(name="encoder", report=_evaluation_report(tmp_path))])
+    assert "Input text seen in training" not in markdown
