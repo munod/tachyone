@@ -6,6 +6,30 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Per-domain `choice` heads behind a deterministic gate (ADR-0016).** `choice_head.json` grows
+  to `{shared, domains: {name: {head, signatures}}}`; the legacy single-scorer shape loads as a
+  shared-only bank, so every published adapter answers bit-for-bit as before. Exactly one head
+  per `choice` question — caller hint → lexical signature match (pure Python, no encode, offline)
+  → shared head — so a wrong gate can at worst reproduce today's numbers, and a corrupt entry
+  warns by name (file + key) and drops only itself (B-8).
+- **Optional `choice_head` request hint**, additive and contract-tested in the same commit
+  (`docs/protocol.md` extension table, CLI `--choice-head`,
+  SDK `system_one(..., choice_head=)`); the backend seam gained `choice_head=` as a keyword with
+  a default, and the canonical response shape is untouched.
+- **The bank trainer and the frozen-trunk fitter.** `training/finetune_rlcd.py` learns a shared
+  head plus one per domain when the records carry `domain` (records without it — every legacy
+  config — still write the legacy asset byte-identically); `training/fit_choice_bank.py` fits a
+  shared-head **control** and the **bank** against a *frozen* trunk from a single encode pass and
+  writes two loadable adapter dirs, each carrying its own `choice_bank_fit.json` recipe (L-011),
+  with `--dry-run` to validate config and data without torch.
+- **Gate and integrity rows in the evaluation report.** `report["choice_gate"]` (strict /
+  fell-to-shared / wrong-domain, overall and per domain, plus `answers_routed_by`) beside
+  `per_domain`; `training/predict --head-hint domain` runs the oracle arm; `--train-data` adds
+  `report["text_seen"]`, splitting accuracy by whether the row's input text occurs in training;
+  `benchmarks/report.py` renders both.
+
 ### Fixed
 
 - **`noul` labels are derived from the text, not from the loop index (B-11 / ADR-0014).**
@@ -31,6 +55,15 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **The B-5 / ADR-0016 isolate was run and every gate now passes with margin** (four arms on one
+  harness; `benchmarks/results/en_domains_*.json`, numbers in `.specs/project/BACKLOG.md` B-5):
+  five-domain accuracy **0.879 → 0.964**, `support` **0.964 ≥ 0.85**, worst new domain
+  **0.963 ≥ 0.70**, gate strict **1.000** (0 to shared, 0 wrong domain) over 2,500 `choice` rows,
+  per-domain ECE **0.021–0.027** — all five domains under the 0.05 target for the first time — and
+  the gap to the released adapter's `support` cell **0.086 → 0.008**. On the 473 `choice` rows
+  whose text never occurs in training, 0.892 → 0.998. The shared-head control sits **3 of 2,500**
+  rows behind the bank, so refitting the head on the corrected labels — not per-domain capacity —
+  closed the gap (lesson L-012). **No adapter has been republished**: which arm to ship is open.
 - **Both adapters retrained and the whole measured surface republished as one set** (AD-009
   pattern; pre-B-11 numbers stay valid for the data that produced them and are not comparable
   line-by-line):

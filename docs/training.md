@@ -113,6 +113,52 @@ task heads, within 12GB VRAM.
 - Three heads: `noul` (binary logit), `choice` (logits over options), `score` (logits over levels).
 - Heads are trained jointly; the trunk is shared.
 
+### The `choice` head: shared, or a per-domain bank (ADR-0016)
+
+`choice` is the one primitive with a trained scorer (`ChoiceScorer`: a low-rank residual on top of
+the cosine base). Since ADR-0016 the trainer can learn **a bank**: when the training records carry
+a `domain` field, every `choice` record updates **its own domain's head *and* the shared head**,
+the shared head keeps training on all records as the fallback, and inference picks exactly one
+head per question through a deterministic gate (hint → lexical signature → shared).
+
+- The asset grows to `{shared, domains: {name: {head, signatures}}}`; each head ships the
+  committed option labels, terms and descriptions from `training/data/domains/<name>.json` as its
+  signatures, so the runtime gate matches questions without the data files.
+- Records **without** a `domain` field — every legacy single-domain config — train only the shared
+  head and write the plain `{rank, w1, w2}` shape **byte-identically** to the pre-ADR-0016 writer
+  (same init order, same RNG stream), so existing configs reproduce today's artifact.
+- Config knobs are unchanged: `choice_rank` / `choice_init_std` apply to every head in the bank,
+  and `domains` are validated against the committed files before training starts (L-011).
+
+### The frozen-trunk isolate (`training/fit_choice_bank.py`)
+
+To test whether the **head** axis — not the trunk — is what a five-domain checkpoint is missing,
+the fitter freezes an existing trunk, encodes every `choice` record **once** through the runtime
+encoder, and fits two arms from that single cache:
+
+| arm | asset written | question it answers |
+| --- | --- | --- |
+| control | shared head only, refit | "would *any* refit do this?" |
+| bank | shared + one head per domain, warm-started from the trunk's own head | "does per-domain capacity add anything?" |
+
+Both arms write a loadable adapter dir — the trunk's adapter files copied bit-for-bit plus their
+own `choice_head.json` and a `choice_bank_fit.json` recipe (the artifact carries its own recipe:
+hyper-parameters, seed, record counts — L-011).
+
+```bash
+# validate config + data without torch:
+uv run python -m training.fit_choice_bank --config training/configs/fit_bank_en_domains.json --dry-run
+# fit both arms (one encode pass, ~10 min on an L4):
+uv run python -m training.fit_choice_bank --config training/configs/fit_bank_en_domains.json
+```
+
+The measured outcome — four arms on one harness — is in `.specs/project/BACKLOG.md` **B-5**:
+refitting only the head took five-domain accuracy 0.879 → **0.964** on a frozen trunk, but the
+**control sits 3 of 2,500 `choice` rows behind the bank**, so the corrected labels, not
+per-domain capacity, closed the gap (lesson L-012). Keep the trainer's learning rate (**1e-4**):
+at 1e-3 an Adam step is ~10% of these heads' weight RMS and the domain heads — which see only
+~1/5 of the batches — degrade while the shared head still looks fine.
+
 ### Parameter-efficient training
 
 | Technique | Why |
@@ -176,6 +222,13 @@ Report per primitive and per language group:
 | Coverage | Languages/scripts exercised |
 | `noul` accuracy per language | `report["noul_per_language"]` — that primitive's rows broken out per language, so it can be read against the label audit below (B-11) |
 | Contradictory-label rate | `report["noul_labels"]` — every `noul` label judged against its own text (request → 1, neutral/empty → 0); states no phrase bank explains (surface noise) count as `unknown` and are never judged |
+| `choice` gate accuracy | `report["choice_gate"]` — how often the bank's gate picked the record's **own** domain, with `fell_to_shared` (the designed fallback) and `wrong_domain` (the only harmful outcome) counted separately, per domain (ADR-0016). Present only when the loaded asset ships a bank |
+| Seen-text split | `report["text_seen"]` — accuracy on rows whose **input text** occurs in the training set versus rows it never does, from `--train-data`. The shipped eval sets collide with their training rows on most `choice` rows, so this is the only line that separates memorization from generalization |
+
+`training/predict --head-hint domain` runs the **oracle arm** — every record forced onto its own
+domain head — so head quality separates from gate quality; `--head-hint <key>` forces one head,
+and a typo exits before the run instead of publishing an unforced arm as forced (the *wire* hint
+keeps its ADR-0016 fall-through).
 
 `benchmarks/report.py` renders the last two **in one table**, because the pre-B-11 generator made
 `de`/`es`/`nl` look weak when the labels, not the model, were the problem (L-008).

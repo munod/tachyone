@@ -151,6 +151,32 @@ TACHYONE_OFFLINE=1 uv run tachyone --predict --backend encoder "..."   # cache-o
     An adapter that simply does not ship `temperature_calibration.json` / `choice_head.json` in
     normal (online) operation stays silent — that is a documented state, not a fault.
 
+### The `choice_head.json` asset has two shapes (ADR-0016)
+
+Next to the weights, an adapter ships a `choice` scorer. Since ADR-0016 that file is either:
+
+| Shape | Content | Loads as |
+| --- | --- | --- |
+| **legacy** (everything published so far) | `{rank, w1, w2}` — one shared scorer | a shared-only bank: every `choice` question answers exactly as before |
+| **keyed** (the per-domain bank) | `{shared, domains: {name: {head, signatures}}}` | the shared head **plus** one head per domain, routed by the gate |
+
+The gate picks exactly one head per `choice` question, in priority order: the optional
+`choice_head` request field (honoured only when the asset ships that key), then a lexical
+signature match against the question's instructions and option labels — pure Python, no encode,
+offline — and falls back to the shared head when nothing matches or the scores tie. A wrong gate
+can therefore *at worst* reproduce today's numbers. A **corrupt** entry follows the B-8 contract:
+it warns by name (file + key) and drops only itself — a broken `shared` keeps the domain heads, a
+broken domain keeps the others.
+
+```bash
+# the gate's own accuracy, beside the per-domain rows it routes (B-6):
+uv run python -m training.predict --data data/eval_en_domains.jsonl \
+  --adapter checkpoints/en_domains_bank --out-report report.json
+```
+
+No migration: `load_choice_head` accepts both shapes, and an adapter that ships no bank at all
+remains a normal, silent state.
+
 ## 5. After a full-scale run
 
 - Refresh the metrics in `docs/model-card.md` and `benchmarks/report.md` from the new report.

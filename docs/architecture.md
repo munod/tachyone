@@ -157,8 +157,12 @@ projeto_tachyone/
 - **Purpose:** Stable interface every engine implements.
 - **Location:** `src/tachyone/backends/base.py`
 - **Interfaces:**
-  - `class Backend(Protocol):` `async def predict(self, questions, *, state, model, return_details=False) -> PredictionResult`
+  - `class Backend(Protocol):` `async def predict(self, questions, *, state, model, return_details=False, choice_head=None) -> PredictionResult`
   - `PredictionResult(answers: dict[str, Answer], usage: Usage)`
+  - **`choice_head: str | None`** — the optional ADR-0016 caller hint, added as a keyword with a
+    default: backends without a head bank ignore it, the encoder honours it only when its asset
+    ships that key, and the response shape is untouched (hard rules 1 and 3; the field and its
+    contract test landed in the same commit).
 - **Dependencies:** `primitives`.
 - **Boundary:** The only thing `wire.py` couples to. Swap implementations freely.
 
@@ -179,6 +183,11 @@ projeto_tachyone/
   - `Agent.predict_batch(states, questions, *, sort_by_length=True)`
   - `Agent.preload(checkpoints)`, `Agent.unload(checkpoint)`
   - `EncoderBackend` implements `Backend`.
+  - `ChoiceHeadBank` + the deterministic gate: the keyed `choice_head.json`
+    (`{shared, domains: {name: {head, signatures}}}`) parsed by `load_choice_head`, picking one
+    head per `choice` question — caller hint → lexical signature match (pure Python, no encode,
+    offline) → shared head (ADR-0016). The legacy single-scorer shape loads as a shared-only
+    bank, so published adapters answer bit-for-bit as before.
 - **Dependencies:** torch/transformers, `router`, `calibration`, `agent`.
 - **Reuses:** `router.py` for checkpoint choice; `calibration.py` for confidence.
 
