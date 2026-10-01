@@ -149,6 +149,33 @@ def _domain(name: str) -> DomainData:
     return DomainData.load(name)
 
 
+def domain_signatures(name: str, languages: Iterable[str] = ("en",)) -> tuple[str, ...]:
+    """Signature terms the ADR-0016 gate matches a question against for ``name``.
+
+    The union of the domain's option labels, option terms and option descriptions for
+    ``languages`` — the same committed content ``training/data/domains/<name>.json`` already
+    ships, so the gate's vocabulary is reviewable in the repo rather than learned. Order and
+    duplicates are made deterministic (first occurrence wins) so the shipped asset is
+    reproducible.
+    """
+    domain = DomainData.load(name)
+    seen: dict[str, None] = {}
+
+    def add(text: str) -> None:
+        stripped = text.strip()
+        if stripped:
+            seen.setdefault(stripped, None)
+
+    for option in domain.options:
+        add(option)
+    for lang in languages:
+        for option in domain.options:
+            for term in domain.option_terms(lang, option):
+                add(term)
+            add(domain.option_description(lang, option))
+    return tuple(seen)
+
+
 @dataclass(frozen=True, slots=True)
 class DataConfig:
     """Inputs to a data-generation run."""

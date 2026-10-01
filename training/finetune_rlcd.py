@@ -13,11 +13,12 @@ import argparse
 import json
 import math
 import random
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Any
 
+from training.generate_data import DOMAINS, domain_signatures
 from training.rlcd import categorical_loss
 
 _TRAIN_HINT = "the train extra is required for fine-tuning: uv sync --extra train"
@@ -206,13 +207,6 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
         def project(self, block: Any) -> Any:
             return self.w2(block)
 
-    choice_scorer = ChoiceScorer().to(device)
-    log_temperature = torch.zeros((), requires_grad=True, device=device)
-    optimizer = torch.optim.AdamW(
-        [*model.parameters(), *choice_scorer.parameters(), log_temperature],
-        lr=config.learning_rate,
-    )
-
     records = list(read_records(config.data_path, limit=config.max_records))
     train_records, val_records = split_records(
         records, val_fraction=config.val_split, seed=config.seed
@@ -220,6 +214,28 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     grouped: dict[str, list[dict[str, Any]]] = {kind: [] for kind in ("noul", "choice", "score")}
     for record in train_records:
         grouped[record["type"]].append(record)
+
+    # ADR-0016 §1: the bank exists only when the *training* records carry `domain` fields, so
+    # legacy single-domain configs keep the original RNG stream (shared head init draws at the
+    # same point) and the original code path below — byte-identical artifacts (L-011). Domains
+    # were already validated against the committed files in `run`.
+    domains = choice_domains(grouped["choice"])
+    shared_head = ChoiceScorer().to(device)
+    domain_heads: dict[str, ChoiceScorer] = {
+        name: ChoiceScorer().to(device)
+        for name in domains  # drawn after shared: legacy untouched
+    }
+    log_temperature = torch.zeros((), requires_grad=True, device=device)
+    domain_params = [parameter for name in domains for parameter in domain_heads[name].parameters()]
+    optimizer = torch.optim.AdamW(
+        [
+            *model.parameters(),
+            *shared_head.parameters(),
+            *domain_params,
+            log_temperature,
+        ],
+        lr=config.learning_rate,
+    )
 
     def encode(texts: list[str]) -> Any:
         batch = tokenizer(
@@ -242,9 +258,19 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
             return ((probabilities - targets) ** 2).mean()
         criterion_texts = [text for record in batch for text in _criterion_texts(record)]
         criteria = encode(criterion_texts)
-        choice_context = None
+        # ADR-0016 §1: every choice record trains the shared head; one carrying a `domain`
+        # field additionally trains its own domain head. Records without a domain never touch
+        # a domain head, so a legacy config's gradient stream is unchanged.
+        shared_context = shared_head.context(states, questions) if kind == "choice" else None
+        slots: dict[int, tuple[ChoiceScorer, Any]] = {}
         if kind == "choice":
-            choice_context = choice_scorer.context(states, questions)
+            contexts: dict[str, Any] = {}
+            for index, record in enumerate(batch):
+                name = record.get("domain")
+                if isinstance(name, str) and name in domain_heads:
+                    if name not in contexts:
+                        contexts[name] = domain_heads[name].context(states, questions)
+                    slots[index] = (domain_heads[name], contexts[name][index])
         total = torch.zeros((), device=device)
         offset = 0
         for index, record in enumerate(batch):
@@ -253,22 +279,32 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
             offset += count
             state = states[index].expand(count, -1)
             question = questions[index].expand(count, -1)
-            logits = (
+            base = (
                 F.cosine_similarity(block, state, dim=-1)
                 + F.cosine_similarity(block, question, dim=-1)
             ) / temperature
-            if choice_context is not None:
-                residual = (choice_context[index] * choice_scorer.project(block)).sum(dim=-1)
-                logits = logits + residual / math.sqrt(config.choice_rank)
-            probabilities = torch.softmax(logits, dim=0)
             target_index = (
                 int(record["target"])
                 if isinstance(record["target"], int)
                 else _choice_index(record)
             )
-            one_hot = torch.zeros_like(probabilities)
+            one_hot = torch.zeros(count, device=device)
             one_hot[target_index] = 1.0
-            total = total + ((probabilities - one_hot) ** 2).sum()
+            if shared_context is not None:
+                residual = (shared_context[index] * shared_head.project(block)).sum(dim=-1)
+                probabilities = torch.softmax(
+                    base + residual / math.sqrt(config.choice_rank), dim=0
+                )
+                total = total + ((probabilities - one_hot) ** 2).sum()
+            slot = slots.get(index)
+            if slot is not None:
+                head, context_row = slot
+                residual = (context_row * head.project(block)).sum(dim=-1)
+                scaled = base + residual / math.sqrt(config.choice_rank)
+                total = total + ((torch.softmax(scaled, dim=0) - one_hot) ** 2).sum()
+            if kind == "score":
+                probabilities = torch.softmax(base, dim=0)
+                total = total + ((probabilities - one_hot) ** 2).sum()
         return total / len(batch)
 
     def evaluate_loss(items: list[dict[str, Any]]) -> float:
@@ -323,15 +359,29 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     output_dir = Path(config.out_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(output_dir))
+
+    def _scorer_dict(head: ChoiceScorer) -> dict[str, Any]:
+        return {
+            "rank": config.choice_rank,
+            "w1": head.w1.weight.detach().cpu().tolist(),
+            "w2": head.w2.weight.detach().cpu().tolist(),
+        }
+
+    languages = tuple(sorted({str(record["lang"]) for record in train_records}))
+    bank_payload = choice_head_payload(
+        shared=_scorer_dict(shared_head),
+        # Keyed bank (ADR-0016 §1): shared + one head per training domain, each carrying the
+        # signature terms the runtime gate matches questions against. With no domains the
+        # payload is the legacy single-scorer shape — byte-identical to what this writer
+        # always produced, so existing configs reproduce today's artifact.
+        domains={
+            name: _scorer_dict(domain_heads[name])
+            for name in domains  # sorted, deterministic
+        },
+        languages=languages,
+    )
     (output_dir / "choice_head.json").write_text(
-        json.dumps(
-            {
-                "rank": config.choice_rank,
-                "w1": choice_scorer.w1.weight.detach().cpu().tolist(),
-                "w2": choice_scorer.w2.weight.detach().cpu().tolist(),
-            },
-            sort_keys=True,
-        ),
+        json.dumps(bank_payload, sort_keys=True),
         encoding="utf-8",
     )
     (output_dir / "finetune_config.json").write_text(
@@ -365,6 +415,58 @@ def _question_text(record: dict[str, Any]) -> str:
     return json.dumps(instructions, ensure_ascii=False)
 
 
+def choice_domains(records: Iterable[dict[str, Any]]) -> tuple[str, ...]:
+    """Sorted domain keys carried by ``choice`` records (ADR-0016 §1).
+
+    Empty for data without ``domain`` fields — the legacy single-domain case, where the run
+    trains and ships only the shared head.
+    """
+    return tuple(
+        sorted(
+            {
+                str(record["domain"])
+                for record in records
+                if record.get("domain") is not None and record.get("type") == "choice"
+            }
+        )
+    )
+
+
+def require_committed_domains(domains: Iterable[str]) -> tuple[str, ...]:
+    """Fail fast (before training, L-011) when records name a domain with no committed file."""
+    unknown = [name for name in domains if name not in DOMAINS]
+    if unknown:
+        known = ", ".join(sorted(DOMAINS))
+        raise SystemExit(f"unknown domain(s): {', '.join(unknown)}; committed domains: {known}")
+    return tuple(domains)
+
+
+def choice_head_payload(
+    shared: dict[str, Any],
+    domains: Mapping[str, dict[str, Any]],
+    languages: Sequence[str] = (),
+) -> dict[str, Any]:
+    """Build the ``choice_head.json`` payload: keyed bank when domains exist, else legacy.
+
+    With no ``domains`` the payload *is* the shared scorer dict, so a run over data without
+    ``domain`` fields writes byte-identically to the pre-ADR-0016 writer (ADR-0016 §1).
+    With domains, each head ships its signature terms so the runtime gate can match
+    questions without the committed data files (ADR-0016 §2.2).
+    """
+    if not domains:
+        return shared
+    return {
+        "shared": shared,
+        "domains": {
+            name: {
+                "head": head,
+                "signatures": list(domain_signatures(name, languages)),
+            }
+            for name, head in sorted(domains.items())
+        },
+    }
+
+
 def _criterion_texts(record: dict[str, Any]) -> list[str]:
     criteria = record["criteria"]
     if isinstance(criteria, dict):
@@ -386,6 +488,11 @@ def run(config: FinetuneConfig, *, dry_run: bool = False) -> dict[str, Any]:
         "config": config.to_dict(),
         "dataset": summarize_dataset(config.data_path),
     }
+    # Resolve and validate the bank's domain keys before anything else — including
+    # `--dry-run`, whose whole job is to catch a bad config/data cheaply (L-011).
+    domains = choice_domains(read_records(config.data_path, limit=config.max_records))
+    require_committed_domains(domains)
+    report["choice_domains"] = list(domains)
     if dry_run:
         report["mode"] = "dry-run"
         return report

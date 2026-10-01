@@ -10,8 +10,11 @@ import pytest
 
 from training.finetune_rlcd import (
     FinetuneConfig,
+    choice_domains,
+    choice_head_payload,
     load_config,
     read_records,
+    require_committed_domains,
     run,
     shuffled,
     split_records,
@@ -24,6 +27,48 @@ def _dataset(tmp_path: Path) -> Path:
     path = tmp_path / "data.jsonl"
     generate(DataConfig(seed=1, per_type=6, languages=("en", "pt")), path)
     return path
+
+
+def _scorer_dict(value: float = 0.5) -> dict[str, object]:
+    return {"rank": 1, "w1": [[value] * 4], "w2": [[value] * 2]}
+
+
+def test_choice_domains_reads_choice_records_only() -> None:
+    records = [
+        {"type": "choice", "domain": "voice"},
+        {"type": "choice", "domain": "support"},
+        {"type": "noul", "domain": "telepathy"},  # other primitives do not create heads
+        {"type": "choice"},  # legacy records carry no domain field
+    ]
+    assert choice_domains(records) == ("support", "voice")  # sorted, deterministic
+    assert choice_domains([{"type": "choice"}]) == ()  # legacy single-domain data
+
+
+def test_require_committed_domains_fails_fast_with_the_known_list() -> None:
+    assert require_committed_domains(["support", "voice"]) == ("support", "voice")
+    with pytest.raises(SystemExit, match=r"telepathy.*committed domains"):
+        require_committed_domains(["support", "telepathy"])
+
+
+def test_choice_head_payload_is_legacy_without_domains() -> None:
+    """No domains → the payload IS the scorer dict: byte-identical to the old writer."""
+    shared = _scorer_dict()
+    assert choice_head_payload(shared, {}) == shared
+
+
+def test_choice_head_payload_ships_head_and_signatures_per_domain() -> None:
+    shared = _scorer_dict()
+    payload = choice_head_payload(
+        shared,
+        {"voice": _scorer_dict(0.1), "support": _scorer_dict(0.2)},
+        languages=("en",),
+    )
+    assert payload["shared"] == shared
+    assert list(payload["domains"]) == ["support", "voice"]  # sorted, reproducible
+    voice = payload["domains"]["voice"]
+    assert voice["head"] == _scorer_dict(0.1)
+    assert "thermostat" in voice["signatures"]  # committed vocabulary, not learned
+    assert len(voice["signatures"]) == len(set(voice["signatures"]))
 
 
 def test_config_roundtrip() -> None:
@@ -62,6 +107,38 @@ def test_dry_run_returns_report(tmp_path: Path) -> None:
     assert report["mode"] == "dry-run"
     assert report["dataset"]["total"] == 18
     assert report["config"]["seed"] == 42
+    assert report["choice_domains"] == []  # legacy data: shared head only
+
+
+def test_dry_run_validates_domain_keys_early(tmp_path: Path) -> None:
+    """The cheap validation path also checks the bank keys (L-011: fail before training)."""
+    data = tmp_path / "domains.jsonl"
+    generate(
+        DataConfig(seed=1, per_type=3, languages=("en",), domains=("support", "voice")),
+        data,
+    )
+    report = run(FinetuneConfig(data_path=str(data)), dry_run=True)
+    assert report["choice_domains"] == ["support", "voice"]
+
+    bad = tmp_path / "bad.jsonl"
+    bad.write_text(
+        json.dumps(
+            {
+                "id": "choice-0",
+                "type": "choice",
+                "lang": "en",
+                "domain": "telepathy",
+                "state": "x",
+                "instructions": "Which?",
+                "criteria": {"a": None},
+                "target": "a",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit, match="telepathy"):
+        run(FinetuneConfig(data_path=str(bad)), dry_run=True)
 
 
 def test_train_without_extra_raises(tmp_path: Path) -> None:

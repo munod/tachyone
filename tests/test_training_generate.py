@@ -19,6 +19,7 @@ from training.generate_data import (
     DataConfig,
     DomainData,
     _line,
+    domain_signatures,
     generate,
     iter_records,
     main,
@@ -443,6 +444,29 @@ def test_single_domain_run_writes_no_domain_field() -> None:
 def test_unknown_domain_is_rejected_with_the_committed_list() -> None:
     with pytest.raises(SystemExit, match="committed domains"):
         list(iter_records(DataConfig(domains=("telepathy",), per_type=1, languages=("en",))))
+
+
+def test_domain_signatures_carry_labels_terms_and_descriptions() -> None:
+    """The ADR-0016 gate matches on exactly the committed vocabulary, nothing learned."""
+    signatures = domain_signatures("support", ("en",))
+    spec = DOMAINS["support"]
+    options = tuple(spec["options"])
+    english = spec["languages"]["en"]
+    assert set(options) <= set(signatures)  # option labels
+    assert "refund" in signatures  # an option term
+    assert english["option_descriptions"]["billing"] in signatures  # a description
+    # Deterministic and duplicate-free: the shipped asset must be reproducible.
+    assert signatures == domain_signatures("support", ("en",))
+    assert len(signatures) == len(set(signatures))
+
+
+def test_domain_signatures_accumulate_languages_and_reject_unknown_domains() -> None:
+    english = set(domain_signatures("support", ("en",)))
+    both = set(domain_signatures("support", ("en", "de")))
+    assert english <= both  # adding a language only adds terms
+    assert len(both) > len(english)  # support ships a German table (measured, not assumed)
+    with pytest.raises(SystemExit, match="committed domains"):
+        domain_signatures("telepathy", ("en",))
 
 
 def test_every_committed_domain_file_is_complete() -> None:
