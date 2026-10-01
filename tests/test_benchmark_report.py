@@ -121,6 +121,42 @@ def _multi_domain_report(tmp_path: Path) -> dict[str, object]:
     return evaluate(load_examples(path), _predictor)
 
 
+def _multi_language_domain_report(tmp_path: Path) -> dict[str, object]:
+    path = tmp_path / "eval_multi_lang_domains.jsonl"
+    generate(
+        DataConfig(seed=5, per_type=4, languages=("en", "pt"), domains=("support", "voice")),
+        path,
+    )
+    return evaluate(load_examples(path), _predictor)
+
+
+def test_render_report_publishes_the_domain_language_cross_table(tmp_path: Path) -> None:
+    """B5B-03: worst cell first, so the worst-cell gate has one line to read (B-5b)."""
+    markdown = render_report(
+        [ReportEntry(name="encoder", report=_multi_language_domain_report(tmp_path))]
+    )
+    assert "#### domain x language" in markdown
+    for cell in ("support/en", "support/pt", "voice/en", "voice/pt"):
+        assert f"| {cell} |" in markdown
+    assert "Worst cell (accuracy)" in markdown
+    # Worst cell first: data rows (cells carry a "/", the header does not) sort by accuracy.
+    table_body = markdown.split("#### domain x language", 1)[1].split("Worst cell", 1)[0]
+    rows = [
+        line
+        for line in table_body.splitlines()
+        if line.startswith("| ") and "/" in line.split("|")[1]
+    ]
+    assert len(rows) == 4
+    accuracies = [float(line.split("|")[3]) for line in rows]
+    assert accuracies == sorted(accuracies)
+
+
+def test_render_report_omits_the_cross_table_for_single_domain_reports(tmp_path: Path) -> None:
+    markdown = render_report([ReportEntry(name="encoder", report=_evaluation_report(tmp_path))])
+    assert "domain x language" not in markdown
+    assert "Worst cell" not in markdown
+
+
 def test_render_report_adds_domain_rows_only_for_multi_domain_reports(tmp_path: Path) -> None:
     """Single-domain reports must not grow a row that just repeats `overall` (B-5)."""
     single = render_report([ReportEntry(name="encoder", report=_evaluation_report(tmp_path))])

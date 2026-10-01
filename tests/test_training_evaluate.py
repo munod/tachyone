@@ -234,6 +234,35 @@ def test_records_without_a_domain_are_attributed_to_support(tmp_path: Path) -> N
     assert report["per_domain"]["support"] == report["overall"]
 
 
+def test_evaluate_reports_domain_language_cells_for_multi_domain_sets(tmp_path: Path) -> None:
+    """B5B-03: the worst-cell gate needs domain x language in one cell (B-5b)."""
+    path = tmp_path / "eval.jsonl"
+    generate(
+        DataConfig(seed=13, per_type=4, languages=("en", "pt"), domains=("support", "voice")),
+        path,
+    )
+    examples = load_examples(path)
+    report = evaluate(examples, _perfect(examples))
+    cross = report["per_domain_language"]
+    assert set(cross) == {
+        f"{domain}/{lang}" for domain in ("support", "voice") for lang in ("en", "pt")
+    }
+    assert all(cell["n"] == 6 for cell in cross.values())  # 12 records/domain ÷ 2 languages
+    assert all(cell["accuracy"] == 1.0 for cell in cross.values())
+    # Sorted, deterministic key order so a re-render diffs cleanly.
+    assert list(cross) == sorted(cross)
+
+
+def test_single_domain_reports_carry_no_domain_language_cells(tmp_path: Path) -> None:
+    """A legacy (one-domain) report stays byte-identical — the cross cell never appears."""
+    path = tmp_path / "eval.jsonl"
+    generate(DataConfig(seed=13, per_type=3, languages=("en", "pt")), path)
+    examples = load_examples(path)
+    report = evaluate(examples, _perfect(examples))
+    assert "per_domain_language" not in report
+    assert set(report["per_domain"]) == {"support"}
+
+
 # ------------------------------------------------------------------ B-11: the `noul` label audit
 
 

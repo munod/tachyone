@@ -182,6 +182,11 @@ def _run(
     per_primitive: dict[str, list[tuple[bool, float, float]]] = {}
     per_language: dict[str, list[tuple[bool, float, float]]] = {}
     per_domain: dict[str, list[tuple[bool, float, float]]] = {}
+    #: ``domain/lang`` cells: the project gates on the worst cell, never the average, and on a
+    #: multilingual five-domain set neither ``per_domain`` nor ``per_language`` alone can show
+    #: it (B-5b). Only emitted when the set actually carries more than one domain, so legacy
+    #: single-domain reports stay byte-identical.
+    per_domain_language: dict[str, list[tuple[bool, float, float]]] = {}
     #: ``noul`` alone per language: the primitive whose labels B-11 had to fix, published next
     #: to the contradictory-label rate so label noise and model error stay separable (L-008).
     noul_per_language: dict[str, list[tuple[bool, float, float]]] = {}
@@ -204,6 +209,7 @@ def _run(
         per_primitive.setdefault(example.type, []).append(row)
         per_language.setdefault(example.lang, []).append(row)
         per_domain.setdefault(example.domain, []).append(row)
+        per_domain_language.setdefault(f"{example.domain}/{example.lang}", []).append(row)
         if example.type == "noul":
             noul_per_language.setdefault(example.lang, []).append(row)
         if seen_inputs is not None:
@@ -222,6 +228,10 @@ def _run(
             lang: _metrics(rows, bins) for lang, rows in noul_per_language.items()
         },
     }
+    if len(per_domain) > 1:
+        report["per_domain_language"] = {
+            cell: _metrics(rows, bins) for cell, rows in sorted(per_domain_language.items())
+        }
     if seen_inputs is not None:
         report["text_seen"] = {bucket: _metrics(rows, bins) for bucket, rows in text_seen.items()}
     return report

@@ -112,6 +112,41 @@ def _gate_table(entry: ReportEntry) -> list[str]:
     return lines
 
 
+def _cross_table(entry: ReportEntry) -> list[str]:
+    """Accuracy/ECE per ``domain/language`` cell, worst cell first (B-5b).
+
+    ``per_domain`` hides the language spread inside a domain and ``per_language`` hides the
+    domain spread inside a language; the project's worst-cell gate needs both at once. Absent
+    when the report predates B5B-3 or the eval set carried a single domain.
+    """
+    cross = entry.report.get("per_domain_language")
+    if not isinstance(cross, Mapping) or not cross:
+        return []
+    worst = _worst(cross)
+    lines = [
+        "#### domain x language",
+        "",
+        "| Cell | n | Accuracy | ECE |",
+        "| --- | --- | --- | --- |",
+    ]
+    for cell, metrics in sorted(
+        cross.items(), key=lambda item: (item[1].get("accuracy", 0.0), item[0])
+    ):
+        lines.append(
+            f"| {cell} | {metrics.get('n', 0)} | {_fmt(metrics.get('accuracy', 0.0))} | "
+            f"{_fmt(metrics.get('ece', 0.0))} |"
+        )
+    lines.append("")
+    if worst is not None:
+        cell, metrics = worst
+        lines += [
+            f"Worst cell (accuracy): `{cell}` — accuracy {_fmt(metrics.get('accuracy', 0.0))}, "
+            f"ECE {_fmt(metrics.get('ece', 0.0))}.",
+            "",
+        ]
+    return lines
+
+
 def _text_seen_note(entry: ReportEntry) -> list[str]:
     """Accuracy split by whether the row's input text also occurs in training (B7).
 
@@ -186,6 +221,7 @@ def _table(entry: ReportEntry) -> list[str]:
             f"ECE {_fmt(noisy_overall.get('ece', 0.0))}, "
             f"p50 {_fmt(latency.get('p50', 0.0))} ms.",
         ]
+    lines += _cross_table(entry)
     lines += _gate_table(entry)
     lines += _text_seen_note(entry)
     lines += _noul_table(entry)
