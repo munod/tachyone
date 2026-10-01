@@ -120,6 +120,14 @@ accuracy, 10-bin ECE and Brier on a single RTX 3060 12GB. It runs on **two** eva
 because a benchmark run on someone else's training data measures domain coverage as much as it
 measures the engine — quoting only one of these tables would mislead in either direction.
 
+> **Quality rows re-scored 2026-10-01** against the published B-5 adapter (`munod/tachyone-en`
+> `c00c174d`): same rows, same metric code, only Tachyone's engine changed. The peer and LLM rows
+> are their own untouched artifacts — their models and the gold labels have not moved since B-12,
+> so re-running them would only re-measure run-to-run variance. The **performance** tables stay on
+> the original single-box measurement for all four engines; Tachyone's latency re-checked on the
+> L4 reference box reads **25.0 ms** p50 at home and **75.1 ms** on the 576-row probe (up to 77
+> options), so no latency figure here is quoted across boxes.
+
 #### A. Their distribution — `pngwn/system-one-decisions` test split, 64 rows per task family
 
 They trained on this data; Tachyone and both LLMs are zero-shot here.
@@ -129,7 +137,7 @@ They trained on this data; Tachyone and both LLMs are zero-shot here.
 | llm (ling-tiny) | 36 | 32 | 0.333 | 0.231 | 0.150 | 0.736 | 0.384 |
 | llm (ornith-9b) | 36 | 36 | 0.611 | 0.242 | 0.263 | 0.641 | 0.513 |
 | systemone-qwen3.5-4b | 576 | 576 | 0.705 | 0.134 | 0.046 | 0.373 | 0.746 |
-| **tachyone (encoder)** | 576 | 576 | 0.236 | 0.337 | 0.039 | 0.767 | 0.268 |
+| **tachyone (encoder)** | 576 | 576 | **0.233** | 0.561 | 0.131 | 0.816 | 0.355 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -142,18 +150,22 @@ Accuracy by task family (calibrated):
 
 | Task family | ling-tiny | ornith-9b | systemone | **tachyone** |
 | --- | ---: | ---: | ---: | ---: |
-| ag_news | 0.500 | 1.000 | 0.922 | 0.344 |
-| banking77 | 0.000 | 0.750 | 0.891 | 0.047 |
-| go_emotions | 0.750 | 0.500 | 0.859 | 0.359 |
-| mmlu | 0.500 | 0.750 | 0.688 | 0.203 |
-| tickets_language | 0.500 | 1.000 | 0.891 | 0.562 |
-| tickets_priority | 0.000 | 0.500 | 0.469 | 0.078 |
-| tickets_queue | 0.250 | 0.000 | 0.234 | 0.031 |
-| tickets_type | 0.500 | 0.750 | 0.750 | 0.297 |
-| yelp_score | 0.000 | 0.250 | 0.641 | 0.203 |
+| ag_news | 0.500 | 1.000 | 0.922 | 0.312 |
+| banking77 | 0.000 | 0.750 | 0.891 | 0.000 |
+| go_emotions | 0.750 | 0.500 | 0.859 | 0.453 |
+| mmlu | 0.500 | 0.750 | 0.688 | 0.234 |
+| tickets_language | 0.500 | 1.000 | 0.891 | 0.391 |
+| tickets_priority | 0.000 | 0.500 | 0.469 | 0.297 |
+| tickets_queue | 0.250 | 0.000 | 0.234 | 0.000 |
+| tickets_type | 0.500 | 0.750 | 0.750 | 0.156 |
+| yelp_score | 0.000 | 0.250 | 0.641 | 0.250 |
 
-The Tachyone row was re-run on the B-12 adapters (2026-09-29): 0.229 → 0.241 → **0.236**, with
-the peers untouched — nothing about *their* data or *their* weights moved.
+The Tachyone row was re-run on the B-12 adapters (2026-09-29: 0.229 → 0.241 → **0.236**) and
+again on the **B-5 adapter (2026-10-01: 0.233)** — the per-task cells move with it (its `choice`
+head now fits five synthetic domains, so it is *less* comfortable on the peer's 52-queue /
+77-intent option spaces: `banking77` 0.047 → 0.000, `tickets_queue` 0.031 → 0.000, while
+`tickets_priority` 0.078 → 0.297 and `go_emotions` 0.359 → 0.453). The peers were never re-run —
+nothing about *their* data or *their* weights moves.
 
 #### B. Tachyone's distribution — our English support records, 64 rows per primitive
 
@@ -172,7 +184,7 @@ validation rows for the temperature fit.
 | llm (ling-tiny) | 48 | 42 | 0.438 | 0.171 | 0.069 | 0.606 | 0.471 |
 | llm (ornith-9b) | 48 | 48 | 0.771 | 0.101 | 0.290 | 0.490 | 0.481 |
 | systemone-qwen3.5-4b | 192 | 192 | 0.604 | 0.130 | 0.099 | 0.512 | 0.590 |
-| **tachyone (encoder)** | 192 | 192 | 0.974 | 0.025 | 0.017 | 0.041 | 0.967 |
+| **tachyone (encoder)** | 192 | 192 | **0.958** | 0.026 | 0.026 | 0.037 | 0.979 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -185,15 +197,18 @@ Accuracy by primitive (calibrated):
 
 | Primitive | ling-tiny | ornith-9b | systemone | **tachyone** |
 | --- | ---: | ---: | ---: | ---: |
-| choice | 0.438 | 0.875 | 0.688 | 0.938 |
-| noul | 0.625 | 0.938 | 0.609 | 1.000 |
-| score | 0.250 | 0.500 | 0.516 | 0.984 |
+| choice | 0.438 | 0.875 | 0.688 | **1.000** |
+| noul | 0.625 | 0.938 | 0.609 | 0.938 |
+| score | 0.250 | 0.500 | 0.516 | 0.938 |
 
 #### How to read these two tables
 
-- **Each engine wins at home.** 0.705 vs 0.236 on their data; 0.974 vs 0.604 on ours. That gap is
-  domain coverage — it says the released adapters are narrow (support tickets, 4 teams), not that
-  one architecture beats the other. Broadening the training data is tracked as `B-5`.
+- **Each engine wins at home.** 0.705 vs **0.233** on their data; **0.958** vs 0.604 on ours. That
+  gap is domain coverage — it says the adapters are narrow, not that one architecture beats the
+  other. Tachyone's own home number also moved **down** when the released adapter became the
+  five-domain one: `choice` 0.938 → **1.000** while `noul`/`score` went 1.000/0.984 → 0.938/0.938
+  (the same trade, on support, that `docs/benchmarks.md` tables in full — this turf is the
+  support-only split, so the four new domains it bought are not visible here).
 - **Tachyone is faster and smaller on *both* turfs:** 4.7× the peer's throughput on their rows
   (73.9 vs 350.2 ms p50) and 5.0× on ours (22.8 vs 114.1 ms), with **5× less VRAM** (1.7 vs
   8.5 GiB) and a 1.6 GB footprint against 8.9 GB. Option count drives the peer's cost (its p95 is
@@ -207,10 +222,12 @@ Accuracy by primitive (calibrated):
   respectable (0.611 / 0.771) — at 3.3–6.8 s p50, i.e. **20–29× slower than the peer and
   93–145× slower than Tachyone**.
 - **Calibration has to be read with confidence.** Tachyone ships well-calibrated on its own turf
-  (ECE raw **0.025**). Off-domain its confidence carries no signal: raw ECE **0.337**, the fit
-  pushes T into the 20.0 ceiling of the grid, and mean confidence collapses to **0.268**. A table
-  quoting only `ECE cal` (0.039) would look *better* than the peer's 0.046 while being useless —
-  `Brier` (0.767 vs 0.373) and `Conf` expose it. **ECE alone is not a quality metric.**
+  (ECE raw **0.026**). Off-domain the B-5 head carries no signal but plenty of conviction: raw ECE
+  **0.561**, the fit still pushes T into the 20.0 ceiling of the grid, and mean confidence *rises*
+  to **0.355** — the five-domain head was fitted to be sharp in domain and is now sharply wrong out
+  of it (before B-5 it simply collapsed to 0.268). A table quoting only `ECE cal` (0.131) would
+  still look *better* than the peer's 0.046 while being useless — `Brier` (0.816 vs 0.373) and
+  `Conf` expose it. **ECE alone is not a quality metric.**
 
 #### What the prompt fix (`B-10`) changed
 
@@ -243,9 +260,9 @@ residual `0.889` / `0.917`.
 
 | | |
 | --- | --- |
-| Hardware | single RTX 3060 12GB · Python 3.12 · torch 2.14.0+cu130 · transformers 5.17.0 |
-| Tachyone | `encoder` backend, **stock** forward (the `fast` extra is not installed here), driven through `tachyone.wire.answer`, **B-12 adapters** (`checkpoints/en` = B-11 weights, `checkpoints/multi` = B-12 retrain; ADR-0014 + ADR-0015) |
-| Labels | the gold labels under table B are the **B-12 corrected** labels (every primitive derived from the text); all four engines were re-run on them 2026-09-29, because mixing label sets would break the "same rows" rule |
+| Hardware | quality rows re-scored **2026-10-01 on the L4 reference box** (Tachyone only); performance rows are the original **single RTX 3060 12GB** run for all four engines · Python 3.12 · torch 2.14.0+cu130 · transformers 5.17.0 |
+| Tachyone | `encoder` backend, **stock** forward (the `fast` extra is not installed here), driven through `tachyone.wire.answer`, **B-5 adapter** for English (`checkpoints/en` = five-domain choice-head bank, `c00c174d` on the Hub; before that B-11 weights) and the B-12 multilingual retrain (ADR-0014/0015/0016) |
+| Labels | the gold labels under table B are the **B-12 corrected** labels (every primitive derived from the text); all four engines were re-run on them 2026-09-29, because mixing label sets would break the "same rows" rule. They have not moved since — only Tachyone's engine was re-scored on 2026-10-01 |
 | Peer scorer | Qwen3.5-4B-Base + its published adapter, bf16, `max_len=384`, option batch 4, scored by **its own** `system_one.py` imported from a local download — no third-party code is vendored in this repository |
 | LLMs | `llama-server` (Q4_K_M, `--temp 0 --seed 42`) behind Tachyone's `llm` backend, `TACHYONE_LLM_RETRIES=1` (two attempts per question), system prompt as of the `B-10` fix |
 | Temperature | fitted per engine on the capped **validation** split (grid 0.25–20.00, step 0.05; their card used 0.25–6.0) and applied to test |
@@ -255,14 +272,16 @@ residual `0.889` / `0.917`.
 run reproduces: temperature **1.75** (card 1.75), accuracy **0.705** (card 0.707), ECE
 **0.046** (card 0.044), 537 validation / 576 test rows, and **8 of 9** per-task accuracies
 identical to the card (`mmlu` 0.688 vs 0.703 is the only deviation). Tachyone's row likewise
-reproduces ours: 0.974 on the 192-row subset against 0.972 on the full 1,500-row split.
+reproduces ours: **0.958** on the 192-row subset against **0.964** on the full 1,500-row split
+(both re-measured 2026-10-01 against the released B-5 adapter).
 
 #### Limitations, before quoting anything
 
 - **Our accuracy is in-sample synthetic** (`B-9`, lesson L-005): the eval split shares states with
   training data. External evaluation on MASSIVE / XNLI / typed-decisions is now published in
   [`benchmarks/probes.md`](https://github.com/munod/tachyone/blob/main/benchmarks/probes.md) —
-  0.330 / 0.011 / 0.333 against chance levels of 0.20–0.50 / 0.017 / 0.333, i.e. the same story
+  **0.269 / 0.011 / 0.341** against chance levels of 0.20–0.50 / 0.017 / 0.333 (re-run 2026-10-01
+  against the B-5 adapter; before it, 0.330 / 0.011 / 0.333), i.e. the same story
   from the other side: domain coverage, not architecture (and MASSIVE's 0.011 — *below* its
   0.017 chance — is the multilingual `choice` weakness of 0.468 seen from outside).
 - **Each engine is at home in exactly one table.** Neither number generalizes; that is why both
