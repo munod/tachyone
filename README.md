@@ -12,7 +12,7 @@ Tachyone answers atomic structured questions — `choice`, `score`, and `noul` �
 values with probabilities and calibrated confidence. Point an existing Jev client at a Tachyone
 server and it works unchanged; run the local encoder backend for fully offline inference.
 
-**Status: `v0.4.0` released.** All milestones M0–M6 are complete, plus the post-M6
+**Status: `v0.5.0` released.** All milestones M0–M6 are complete, plus the post-M6
 **B-1 multilingual quality** work (localized data, per-`(primitive, language)` temperature, and a
 multilingual LoRA raised to rank 64), **B-2 fast path** (per-shape CUDA graphs with bf16 weights),
 **B-3 confidence thresholding / System-2 handoff**, and **B-4
@@ -24,7 +24,11 @@ the **B-5a multi-domain data refactor** (five committed domains, `per_domain` re
 byte-identical output for every existing config — both gates pass when re-measured on the
 corrected labels), and **B-11 + B-12**, which derive *every* label in all three primitives from
 the text it accompanies (ADR-0014 + ADR-0015: all datasets regenerated, both adapters republished,
-and the label audit published beside the accuracy). The wire
+and the label audit published beside the accuracy), and **B-5 / ADR-0016**, which ships the
+per-domain `choice`-head bank and its deterministic gate, the optional `choice_head` request hint,
+the frozen-trunk bank fitter, and republished `tachyone-en` as the **five-domain** adapter
+(`choice` 1.000 and every domain ≥ 0.963, with the support `noul`/`score` trade published beside
+it rather than summarized). The wire
 contract, an OpenAI-compatible LLM backend, a local encoder
 (ModernBERT/mmBERT + LoRA), an ONNX backend, FastAPI serving, an SDK/CLI, MCP + LangChain
 integrations, a training pipeline, and a docs site all ship. LoRA adapters are published on the

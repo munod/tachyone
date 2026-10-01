@@ -6,7 +6,7 @@ hide:
 
 <div class="tachyone-hero">
 <img class="tachyone-hero__logo" src="assets/logo-wordmark.svg" alt="Tachyone — System 1 inference engine">
-<span class="tachyone-hero__eyebrow">v0.4.0 · Apache-2.0 · local-first</span>
+<span class="tachyone-hero__eyebrow">v0.5.0 · Apache-2.0 · local-first</span>
 <h1 class="tachyone-hero__title">Ultra-fast, non-autoregressive encoder engine for structured intent and choice classification.</h1>
 <p class="tachyone-hero__sub"><strong>LLMs generate text. Tachyone produces calibrated decisions.</strong><br>
 3.83&nbsp;ms p50 latency · non-generative (no hallucinated labels) · calibrated confidence · local-first on consumer GPUs.</p>

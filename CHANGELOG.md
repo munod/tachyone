@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-01
+
 ### Added
 
 - **Per-domain `choice` heads behind a deterministic gate (ADR-0016).** `choice_head.json` grows
@@ -29,6 +31,13 @@ All notable changes to this project are documented here. The format is based on
   `per_domain`; `training/predict --head-hint domain` runs the oracle arm; `--train-data` adds
   `report["text_seen"]`, splitting accuracy by whether the row's input text occurs in training;
   `benchmarks/report.py` renders both.
+- **Label audit beside the accuracy:** `training/evaluate.py` now emits `report["noul_per_language"]`
+  and `report["noul_labels"]` (per-language contradictory-label rate, judged against the same
+  phrase banks; unreadable states count as `unknown`, never as contradictions), and
+  `benchmarks/report.py` renders both in one table so label noise can no longer be read as a
+  capability gap. Acceptance tests cover the generator, the shipped eval sets and the renderer.
+- `docs/adr/ADR-0014-noul-label-from-text.md` (scope decision) and backlog **B-12** (the analogous
+  `score` near-tie label, measured at a 0.922 text-consistent ceiling).
 
 ### Fixed
 
@@ -112,16 +121,6 @@ All notable changes to this project are documented here. The format is based on
   **0.974** at home with all four engines re-scored on the B-12 gold labels. The B-5 gates now
   pass on both label generations, and the "retrain run 5 on corrected labels" option was tried and
   **lost to the B-11 weights by 0.111** — recorded in `docs/benchmarks.md` and `BACKLOG.md` **B-5**.
-
-### Added
-
-- **Label audit beside the accuracy:** `training/evaluate.py` now emits `report["noul_per_language"]`
-  and `report["noul_labels"]` (per-language contradictory-label rate, judged against the same
-  phrase banks; unreadable states count as `unknown`, never as contradictions), and
-  `benchmarks/report.py` renders both in one table so label noise can no longer be read as a
-  capability gap. Acceptance tests cover the generator, the shipped eval sets and the renderer.
-- `docs/adr/ADR-0014-noul-label-from-text.md` (scope decision) and backlog **B-12** (the analogous
-  `score` near-tie label, measured at a 0.922 text-consistent ceiling).
 
 ### Documentation
 
@@ -387,7 +386,9 @@ TypeSafe Jev `/v1/systemone` wire protocol as a drop-in.
 
 Specification baseline (documentation only, no code).
 
-[Unreleased]: https://github.com/munod/tachyone/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/munod/tachyone/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/munod/tachyone/releases/tag/v0.5.0
+[0.4.0]: https://github.com/munod/tachyone/releases/tag/v0.4.0
 [0.3.0]: https://github.com/munod/tachyone/releases/tag/v0.3.0
 [0.2.0]: https://github.com/munod/tachyone/releases/tag/v0.2.0
 [0.1.1]: https://github.com/munod/tachyone/releases/tag/v0.1.1
