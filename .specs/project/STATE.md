@@ -29,6 +29,11 @@ this L4 box and are labelled box-bound (the previous adapter measures 51.8 ms be
 54.4 ms on the same path). **Then open, now closed:** only the GitHub release tag — the public
 probes and the head-to-head `choice` cells were re-run against the new revision the same day
 (both recorded below), and **`v0.5.0`** was tagged, pushed and published with them.
+**B-5b scheduled (2026-10-01):** spec/design/tasks at `.specs/features/multilingual-five-domains/`
+with four locked decisions (context.md): bank keyed by **domain** (five keys, signatures in the
+six training languages), **baseline-first gates** (released multi measured on the new eval set
+fixes the numbers before training), **30k volume** (support's 18k kept, not the 9k en mirror that
+would halve the incumbent), and the **full B-5a publication pattern**. Not started.
 
 **Probes re-run (2026-10-01).** The three public probes were re-measured against `c00c174d` and
 `benchmarks/probes.md` re-rendered (previous artifacts kept as `probe_*_preb5.json`):
