@@ -9,6 +9,126 @@
     "other"
   ],
   "languages": {
+    "de": {
+      "entities": [
+        "Websuche",
+        "Python-Skript",
+        "Dateizugriff",
+        "API-Aufruf",
+        "Unit-Test",
+        "Datenbankabfrage",
+        "Bildgenerierung",
+        "Übersetzung",
+        "Terminabfrage",
+        "E-Mail-Entwurf",
+        "Code-Refactoring",
+        "Log-Parsing",
+        "Schema-Migration",
+        "Browser-Sitzung",
+        "Formularausfüllung",
+        "Datenexport",
+        "Abhängigkeitsinstallation",
+        "Berichtszusammenfassung",
+        "Token-Erneuerung",
+        "Sandbox-Prüfung"
+      ],
+      "instructions": {
+        "choice": "Welches Tool sollte der Agent als Nächstes verwenden?",
+        "noul": "Benötigt dieser Schritt {entity}?",
+        "score": "Wie dringend ist dieser Schritt?"
+      },
+      "levels": [
+        "Routine",
+        "bald",
+        "heute",
+        "blockierend"
+      ],
+      "noul_criteria": {
+        "false": "benötigt keine",
+        "true": "benötigt {entity}"
+      },
+      "option_descriptions": {
+        "code": "Skripte, Tests, Builds, Refactorings und Debugging-Schritte ausführen",
+        "files": "Dateien lesen oder schreiben, Uploads, Downloads, Exporte und Archive",
+        "other": "alles andere: Zusammenfassungen, Übersetzungen, Terminplanung, Entwürfe und Fragen an den Nutzer",
+        "search": "Websuchen, Dokumentationsabfragen, Rechercheschritte und Referenzantworten"
+      },
+      "option_terms": {
+        "code": [
+          "Python-Skript",
+          "Unit-Test",
+          "Build-Schritt",
+          "Code-Review",
+          "Refactoring",
+          "Debugging-Sitzung",
+          "Kompilierung",
+          "Lint-Prüfung"
+        ],
+        "files": [
+          "CSV-Upload",
+          "Datei-Download",
+          "Verzeichnisauflistung",
+          "PDF-Export",
+          "Bildskalierung",
+          "Archivextraktion",
+          "Logdatei",
+          "Konfigurationsspeicherung"
+        ],
+        "other": [
+          "Zusammenfassung",
+          "Übersetzung",
+          "Terminplanung",
+          "Nutzerbestätigung",
+          "E-Mail-Entwurf",
+          "Notizerstellung",
+          "Terminabfrage",
+          "Rückfrage"
+        ],
+        "search": [
+          "Websuche",
+          "Dokumentationsabfrage",
+          "Google-Abfrage",
+          "Artikelsuche",
+          "Antwortsuche",
+          "Rechercheschritt",
+          "API-Referenz",
+          "Doku-Abfrage"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Keine Eile: {entity} kommt später dran.",
+          "{entity} kann warten.",
+          "Wann immer Sie dazu kommen, {entity} zu erledigen.",
+          "Niedrige Priorität: nur {entity}."
+        ],
+        "distractor": [
+          "Ich habe auch {distractor} in die Warteschlange gestellt.",
+          "Ich habe {distractor} auch angefordert.",
+          "Vergessen Sie {distractor} nicht.",
+          "Ohne Bezug, aber immerhin vermerkt: {distractor}."
+        ],
+        "neutral": [
+          "Der Plan erwähnt {entity}.",
+          "Ich habe {entity} als Notiz festgehalten.",
+          "Ich habe {entity} im Dokument als Kontext vermerkt.",
+          "Für die Akte: wir haben {entity} besprochen."
+        ],
+        "request": [
+          "Als Nächstes führen Sie bitte {entity} aus.",
+          "{entity} jetzt weiter bearbeiten.",
+          "Wir brauchen {entity} vor dem Review fertig.",
+          "Könnte der Agent {entity} übernehmen?",
+          "Bitte führen Sie {entity} als ersten Schritt aus."
+        ],
+        "urgent": [
+          "{entity} blockiert die gesamte Pipeline!",
+          "Wir können nicht veröffentlichen, bis {entity} behoben ist!",
+          "{entity} brennt, kümmern Sie sich jetzt darum!",
+          "Alles steht still, weil {entity} fehlt!"
+        ]
+      }
+    },
     "en": {
       "entities": [
         "web search",
@@ -126,6 +246,606 @@
           "We cannot ship until the {entity} is fixed!",
           "This {entity} is on fire, handle it now!",
           "Everything is stalled on the {entity}!"
+        ]
+      }
+    },
+    "es": {
+      "entities": [
+        "búsqueda web",
+        "script python",
+        "lectura de archivo",
+        "llamada a la api",
+        "prueba unitaria",
+        "consulta a la base de datos",
+        "generación de imágenes",
+        "traducción",
+        "consulta de calendario",
+        "borrador de correo",
+        "refactorización de código",
+        "análisis de logs",
+        "migración de esquema",
+        "sesión de navegador",
+        "llenado de formularios",
+        "exportación de datos",
+        "instalación de dependencias",
+        "resumen de informe",
+        "renovación de token",
+        "comprobación de sandbox"
+      ],
+      "instructions": {
+        "choice": "¿Qué herramienta debería usar el agente a continuación?",
+        "noul": "¿Este paso requiere tu {entity}?",
+        "score": "¿Qué urgencia tiene este paso?"
+      },
+      "levels": [
+        "rutina",
+        "pronto",
+        "hoy",
+        "bloqueante"
+      ],
+      "noul_criteria": {
+        "false": "no se requiere",
+        "true": "requiere tu {entity}"
+      },
+      "option_descriptions": {
+        "code": "ejecutar scripts, pruebas, compilaciones, refactorizaciones y pasos de depuración",
+        "files": "leer o escribir archivos, subidas, descargas, exportaciones y archivos comprimidos",
+        "other": "todo lo demás: resúmenes, traducciones, programación, borradores y preguntar al usuario",
+        "search": "búsquedas web, consultas de documentación, pasos de investigación y respuestas de referencia"
+      },
+      "option_terms": {
+        "code": [
+          "script python",
+          "prueba unitaria",
+          "paso de build",
+          "revisión de código",
+          "refactorización",
+          "sesión de depuración",
+          "compilación",
+          "comprobación de lint"
+        ],
+        "files": [
+          "subida de csv",
+          "descarga de archivo",
+          "listado de directorio",
+          "exportación de pdf",
+          "redimensionamiento de imagen",
+          "extracción de archivo comprimido",
+          "archivo de log",
+          "escritura de configuración"
+        ],
+        "other": [
+          "resumen",
+          "traducción",
+          "programación",
+          "confirmación del usuario",
+          "borrador de correo",
+          "toma de notas",
+          "consulta de calendario",
+          "pregunta de seguimiento"
+        ],
+        "search": [
+          "búsqueda web",
+          "consulta de documentación",
+          "búsqueda en google",
+          "búsqueda de artículos",
+          "consulta de respuestas",
+          "paso de investigación",
+          "referencia de la api",
+          "consulta de docs"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sin prisa con tu {entity}.",
+          "Tu {entity} puede esperar.",
+          "Cuando puedas echar un vistazo a tu {entity}.",
+          "Prioridad baja: solo tu {entity}."
+        ],
+        "distractor": [
+          "También está tu {distractor} en cola.",
+          "También pedí tu {distractor}.",
+          "No olvides tu {distractor}.",
+          "También está tu {distractor} que no va al caso."
+        ],
+        "neutral": [
+          "El plan menciona tu {entity}.",
+          "Hay una nota sobre tu {entity}.",
+          "El contexto de tu {entity} está en el documento.",
+          "Para constar, se habló de tu {entity}."
+        ],
+        "request": [
+          "A continuación, ejecuta tu {entity}.",
+          "Sigue con tu {entity} ahora.",
+          "Necesitamos tu {entity} a tiempo para la revisión.",
+          "¿Puede el agente encargarse de tu {entity}?",
+          "Por favor, haz tu {entity} como primer paso."
+        ],
+        "urgent": [
+          "¡Tu {entity} está bloqueando todo el pipeline!",
+          "¡No podemos lanzar hasta que tu {entity} se corrija!",
+          "¡Tu {entity} está en llamas, resuelve eso ahora!",
+          "¡Todo está parado por tu {entity}!"
+        ]
+      }
+    },
+    "fr": {
+      "entities": [
+        "recherche web",
+        "script python",
+        "lecture de fichier",
+        "requête api",
+        "test unitaire",
+        "requête de base de données",
+        "génération d'images",
+        "traduction",
+        "consultation d'agenda",
+        "brouillon d'e-mail",
+        "refactorisation de code",
+        "lecture des logs",
+        "migration de schéma",
+        "session de navigateur",
+        "remplissage de formulaire",
+        "génération d'un export",
+        "mise en place de dépendances",
+        "synthèse de rapport",
+        "renouvellement de token",
+        "vérification de sandbox"
+      ],
+      "instructions": {
+        "choice": "Quel outil l'agent doit-il utiliser ensuite ?",
+        "noul": "Cette étape nécessite-t-elle votre {entity} ?",
+        "score": "Quelle est l'urgence de cette étape ?"
+      },
+      "levels": [
+        "routine",
+        "bientôt",
+        "aujourd'hui",
+        "bloquant"
+      ],
+      "noul_criteria": {
+        "false": "n'en nécessite pas",
+        "true": "nécessite votre {entity}"
+      },
+      "option_descriptions": {
+        "code": "exécuter des scripts, des tests, des builds, des refactorisations et du débogage",
+        "files": "lire ou écrire des fichiers, uploads, téléchargements, exports et archives",
+        "other": "tout le reste : résumés, traductions, planification, brouillons et demander à l'utilisateur",
+        "search": "recherches web, consultations de documentation, étapes de recherche et réponses de référence"
+      },
+      "option_terms": {
+        "code": [
+          "script python",
+          "test unitaire",
+          "phase de build",
+          "revue de code",
+          "refactorisation",
+          "session de débogage",
+          "compilation",
+          "vérification lint"
+        ],
+        "files": [
+          "mise en ligne de csv",
+          "téléchargement de fichier",
+          "liste du répertoire",
+          "création de pdf",
+          "redimensionnement d'image",
+          "décompression d'archive",
+          "fichier de log",
+          "sauvegarde de config"
+        ],
+        "other": [
+          "synthèse",
+          "traduction",
+          "planification",
+          "confirmation de l'utilisateur",
+          "brouillon d'e-mail",
+          "prise de notes",
+          "consultation d'agenda",
+          "question de suivi"
+        ],
+        "search": [
+          "recherche web",
+          "consultation de documentation",
+          "requête google",
+          "recherche d'article",
+          "consultation de réponses",
+          "phase de recherche",
+          "référence d'api",
+          "requête sur les docs"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Pas de pression pour votre {entity}.",
+          "Votre {entity} peut attendre.",
+          "Quand vous aurez le temps de vous occuper de votre {entity}.",
+          "Priorité basse : juste votre {entity}."
+        ],
+        "distractor": [
+          "Il y a aussi votre {distractor} en attente.",
+          "On a aussi demandé votre {distractor}.",
+          "N'oubliez pas votre {distractor}.",
+          "Il y a aussi votre {distractor} sans rapport."
+        ],
+        "neutral": [
+          "Le plan mentionne votre {entity}.",
+          "Il y a une note à propos de votre {entity}.",
+          "Le contexte de votre {entity} est dans le document.",
+          "Pour mémoire, on a parlé de votre {entity}."
+        ],
+        "request": [
+          "Ensuite, veuillez exécuter votre {entity}.",
+          "Allez-y avec votre {entity} maintenant.",
+          "Nous avons besoin de votre {entity} avant la revue.",
+          "L'agent pourrait-il s'occuper de votre {entity} ?",
+          "Veuillez effectuer votre {entity} comme première étape."
+        ],
+        "urgent": [
+          "Votre {entity} bloque tout le pipeline !",
+          "Nous ne pouvons pas livrer tant qu'on n'a pas corrigé votre {entity} !",
+          "Votre {entity} prend feu, gérez ça maintenant !",
+          "Tout est bloqué à cause de votre {entity} !"
+        ]
+      }
+    },
+    "it": {
+      "entities": [
+        "la ricerca web",
+        "lo script python",
+        "la lettura file",
+        "la chiamata api",
+        "il test unitario",
+        "la consultazione del database",
+        "la generazione di immagini",
+        "la traduzione",
+        "la consultazione del calendario",
+        "la bozza di email",
+        "il refactoring del codice",
+        "la lettura dei log",
+        "la migrazione dello schema",
+        "la sessione browser",
+        "la compilazione modulo",
+        "la generazione di un export",
+        "il caricamento di dipendenze",
+        "il riepilogo del report",
+        "la rigenerazione del token",
+        "la verifica sandbox"
+      ],
+      "instructions": {
+        "choice": "Quale strumento dovrebbe usare l'agente per la prossima azione?",
+        "noul": "Questo passaggio richiede {entity}?",
+        "score": "Quanto è urgente questo passaggio?"
+      },
+      "levels": [
+        "routine",
+        "presto",
+        "oggi",
+        "bloccante"
+      ],
+      "noul_criteria": {
+        "false": "non lo richiede",
+        "true": "richiede {entity}"
+      },
+      "option_descriptions": {
+        "code": "eseguire script, test, build, refactoring e passaggi di debug",
+        "files": "leggere o scrivere file, upload, download, export e archivi",
+        "other": "tutto il resto: riassunti, traduzioni, pianificazione, bozze e chiedere all'utente",
+        "search": "ricerche web, consultazioni della documentazione, passaggi di ricerca e risposte di riferimento"
+      },
+      "option_terms": {
+        "code": [
+          "lo script python",
+          "il test unitario",
+          "la fase di build",
+          "la revisione del codice",
+          "il refactoring",
+          "la sessione di debug",
+          "la compilazione",
+          "il controllo lint"
+        ],
+        "files": [
+          "il caricamento di csv",
+          "il download di file",
+          "la lista directory",
+          "la generazione di pdf",
+          "il ridimensionamento immagine",
+          "la decompressione dell'archivio",
+          "il file di log",
+          "la scrittura di configurazione"
+        ],
+        "other": [
+          "il riassunto",
+          "la traduzione",
+          "la pianificazione",
+          "la conferma dell'utente",
+          "la bozza di email",
+          "il prendere appunti",
+          "la consultazione del calendario",
+          "la domanda di follow-up"
+        ],
+        "search": [
+          "la ricerca web",
+          "la consultazione della documentazione",
+          "la query su google",
+          "la ricerca di articoli",
+          "la consultazione delle risposte",
+          "il passaggio di ricerca",
+          "il riferimento api",
+          "la query sui doc"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Nessuna fretta con {entity}.",
+          "Con {entity} si può aspettare.",
+          "Quando avrai tempo per {entity}.",
+          "Priorità bassa: solo {entity}."
+        ],
+        "distractor": [
+          "C'è anche {distractor} in coda.",
+          "Ho richiesto anche {distractor}.",
+          "Non dimenticare {distractor}.",
+          "C'è anche {distractor} senza alcun legame."
+        ],
+        "neutral": [
+          "Il piano menziona {entity}.",
+          "C'è una nota per {entity}.",
+          "Ho inserito {entity} nel documento come contesto.",
+          "Per la cronaca, abbiamo menzionato {entity}."
+        ],
+        "request": [
+          "Poi, per favore, esegui {entity}.",
+          "Vai avanti con {entity} adesso.",
+          "Ci serve {entity} prima della revisione.",
+          "L'agente può gestire {entity}?",
+          "Per favore, esegui {entity} come primo passo."
+        ],
+        "urgent": [
+          "Ecco {entity}: sta bloccando l'intera pipeline!",
+          "Non possiamo rilasciare finché non risolviamo {entity}!",
+          "Attenzione: {entity} è in fiamme, intervenisci subito!",
+          "Tutto è fermo finché non c'è {entity}!"
+        ]
+      }
+    },
+    "nl": {
+      "entities": [
+        "webzoekopdracht",
+        "Python-script",
+        "bestand uitlezen",
+        "api-aanroep",
+        "unit test",
+        "databasequery",
+        "afbeeldingsgeneratie",
+        "vertaling",
+        "agenda raadplegen",
+        "concept e-mail",
+        "refactoring van code",
+        "loganalyse",
+        "schemamigratie",
+        "browsersessie",
+        "formulier invullen",
+        "gegevensexport",
+        "afhankelijkheden installeren",
+        "samenvatting van het rapport",
+        "token verversen",
+        "sandboxcontrole"
+      ],
+      "instructions": {
+        "choice": "Welke tool moet de agent hierna gebruiken?",
+        "noul": "Vereist deze stap een {entity}?",
+        "score": "Hoe urgent is deze stap?"
+      },
+      "levels": [
+        "routine",
+        "binnenkort",
+        "vandaag",
+        "blokkerend"
+      ],
+      "noul_criteria": {
+        "false": "vereist er geen",
+        "true": "vereist een {entity}"
+      },
+      "option_descriptions": {
+        "code": "scripts, tests, builds, refactorings en debugstappen uitvoeren",
+        "files": "bestanden lezen of schrijven, uploads, downloads, exports en archieven",
+        "other": "de rest: samenvattingen, vertalingen, planning, concepten en de gebruiker raadplegen",
+        "search": "webzoekopdrachten, het raadplegen van documentatie, onderzoeksstappen en referentie-antwoorden"
+      },
+      "option_terms": {
+        "code": [
+          "Python-script",
+          "unit test",
+          "buildstap",
+          "code review",
+          "refactoring",
+          "debugsessie",
+          "compileren",
+          "lintcontrole"
+        ],
+        "files": [
+          "csv-upload",
+          "bestand downloaden",
+          "mapweergave",
+          "pdf-export",
+          "afbeelding schalen",
+          "archief uitpakken",
+          "logbestand",
+          "configuratie schrijven"
+        ],
+        "other": [
+          "samenvatting",
+          "vertaling",
+          "planning",
+          "bevestiging van de gebruiker",
+          "concept e-mail",
+          "notities nemen",
+          "agenda raadplegen",
+          "vervolgvraag"
+        ],
+        "search": [
+          "webzoekopdracht",
+          "documentatie raadplegen",
+          "Google-query",
+          "artikel zoeken",
+          "antwoord opzoeken",
+          "onderzoeksstap",
+          "api-referentie",
+          "zoekopdracht in de docs"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Geen haast met je {entity}.",
+          "Je {entity} kan wachten.",
+          "Wanneer je toekomt aan je {entity}.",
+          "Lage prioriteit: alleen je {entity}."
+        ],
+        "distractor": [
+          "Er staat ook een {distractor} in de wachtrij.",
+          "Er is ook een {distractor} aangevraagd.",
+          "Vergeet je {distractor} niet.",
+          "Er is ook een {distractor} zonder verband."
+        ],
+        "neutral": [
+          "Het plan noemt een {entity}.",
+          "Er is een notitie over je {entity}.",
+          "De achtergrondinfo over je {entity} staat in het document.",
+          "Voor de goede orde: je {entity} is besproken."
+        ],
+        "request": [
+          "Voer hierna alsjeblieft je {entity} uit.",
+          "Ga nu met je {entity} verder.",
+          "We hebben je {entity} voor de review nodig.",
+          "Kan de agent een {entity} op zich nemen?",
+          "Doe alsjeblieft je {entity} als eerste stap."
+        ],
+        "urgent": [
+          "Je {entity} blokkeert de hele pipeline!",
+          "We kunnen niet uitrollen tot je {entity} is opgelost!",
+          "Je {entity} staat in de fik, los dit nu op!",
+          "Alles ligt stil door je {entity}!"
+        ]
+      }
+    },
+    "pt": {
+      "entities": [
+        "a busca na web",
+        "o script python",
+        "a leitura de arquivo",
+        "a chamada de api",
+        "o teste unitário",
+        "a consulta ao banco de dados",
+        "a geração de imagens",
+        "a tradução",
+        "a consulta de agenda",
+        "o rascunho de e-mail",
+        "a refatoração de código",
+        "a análise de logs",
+        "a migração de schema",
+        "a sessão de navegador",
+        "o preenchimento de formulário",
+        "a exportação de dados",
+        "a instalação de dependências",
+        "o resumo de relatório",
+        "a renovação de token",
+        "a verificação de sandbox"
+      ],
+      "instructions": {
+        "choice": "Qual ferramenta o agente deve usar em seguida?",
+        "noul": "Esta etapa exige {entity}?",
+        "score": "Quão urgente é esta etapa?"
+      },
+      "levels": [
+        "rotina",
+        "logo",
+        "hoje",
+        "bloqueante"
+      ],
+      "noul_criteria": {
+        "false": "não exige nenhum",
+        "true": "exige {entity}"
+      },
+      "option_descriptions": {
+        "code": "executar scripts, testes, builds, refatorações e etapas de depuração",
+        "files": "ler ou gravar arquivos, uploads, downloads, exportações e arquivos compactados",
+        "other": "todo o resto: resumos, traduções, agendamentos, rascunhos e perguntar ao usuário",
+        "search": "buscas na web, consultas à documentação, etapas de pesquisa e respostas de referência"
+      },
+      "option_terms": {
+        "code": [
+          "o script python",
+          "o teste unitário",
+          "a etapa de build",
+          "a revisão de código",
+          "a refatoração",
+          "a sessão de depuração",
+          "a compilação",
+          "a checagem de lint"
+        ],
+        "files": [
+          "o upload de csv",
+          "o download de arquivo",
+          "a listagem de diretório",
+          "a exportação de pdf",
+          "o redimensionamento de imagem",
+          "a descompactação de arquivo",
+          "o arquivo de log",
+          "a gravação de config"
+        ],
+        "other": [
+          "o resumo",
+          "a tradução",
+          "o agendamento",
+          "a confirmação do usuário",
+          "o rascunho de e-mail",
+          "a anotação",
+          "a consulta de agenda",
+          "a pergunta de acompanhamento"
+        ],
+        "search": [
+          "a busca na web",
+          "a consulta de documentação",
+          "a pesquisa no google",
+          "a busca de artigo",
+          "a consulta de resposta",
+          "a etapa de pesquisa",
+          "a referência da api",
+          "a consulta nos docs"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sem pressa com {entity}.",
+          "Com {entity} dá pra esperar.",
+          "Quando você puder olhar {entity}.",
+          "Prioridade baixa: só {entity}."
+        ],
+        "distractor": [
+          "Também há {distractor} na fila.",
+          "Também pedi {distractor}.",
+          "Não esqueça {distractor}.",
+          "Tem também {distractor} sem relação."
+        ],
+        "neutral": [
+          "O plano menciona {entity}.",
+          "Há uma anotação sobre {entity}.",
+          "Coloquei {entity} no documento como contexto.",
+          "Para constar, conversamos sobre {entity}."
+        ],
+        "request": [
+          "A seguir, por favor, rode {entity}.",
+          "Pode seguir com {entity} agora.",
+          "Antes da revisão, precisamos concluir {entity}.",
+          "O agente pode resolver {entity}?",
+          "Por favor, faça {entity} como primeiro passo."
+        ],
+        "urgent": [
+          "Atenção: {entity} está bloqueando todo o pipeline!",
+          "Não podemos liberar até resolver {entity}!",
+          "Urgente: {entity} está pegando fogo, resolva agora!",
+          "Tudo travou sem {entity}!"
         ]
       }
     }

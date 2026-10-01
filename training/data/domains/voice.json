@@ -9,6 +9,126 @@
     "other"
   ],
   "languages": {
+    "de": {
+      "entities": [
+        "Lichtszene",
+        "Raumbeleuchtung",
+        "Temperaturregelung",
+        "Lautstärke",
+        "Playlist",
+        "Zeitsteuerung",
+        "Rollladenposition",
+        "Lautsprechergruppe",
+        "Luftreinigung",
+        "Kamera",
+        "Türverriegelung",
+        "Erinnerung",
+        "Einkaufsliste",
+        "Radiostation",
+        "Nachtlampe",
+        "Ventilatorgeschwindigkeit",
+        "Luftbefeuchtung",
+        "Morgenroutine",
+        "Alarmmelodie",
+        "Bildschirmhelligkeit"
+      ],
+      "instructions": {
+        "choice": "Welche Gerätegruppe soll diesen Befehl ausführen?",
+        "noul": "Geht es darum, die {entity} zu ändern?",
+        "score": "Wie dringend ist diese Sprachanweisung?"
+      },
+      "levels": [
+        "locker",
+        "bald",
+        "jetzt",
+        "kritisch"
+      ],
+      "noul_criteria": {
+        "false": "ist keine Anfrage",
+        "true": "ist eine Anfrage zur Änderung der {entity}"
+      },
+      "option_descriptions": {
+        "climate": "Thermostate, Temperatur, Ventilatorgeschwindigkeit, Luftbefeuchter und Luftreiniger",
+        "lights": "Lampen, Lichtszenen, Helligkeit, Lichtstreifen sowie Hof- und Nachtlampen",
+        "media": "Lautstärke, Playlists, Radio, Songs, Podcasts und Lautsprechergruppen",
+        "other": "alles andere: Timer, Erinnerungen, Listen, Routinen, Schlösser und Kameras"
+      },
+      "option_terms": {
+        "climate": [
+          "Thermostat",
+          "Temperatur",
+          "Ventilatorgeschwindigkeit",
+          "Luftbefeuchter",
+          "Luftreiniger",
+          "Heizeinstellung",
+          "Kühlung",
+          "Luftqualität"
+        ],
+        "lights": [
+          "Lichter",
+          "Lampe",
+          "Lichtszene",
+          "Helligkeit",
+          "Nachtlicht",
+          "Lichtstreifen",
+          "Hoflicht",
+          "Dimmer"
+        ],
+        "media": [
+          "Lautstärke",
+          "Playlist",
+          "Radiosender",
+          "Song",
+          "Podcast",
+          "Lautsprechergruppe",
+          "Warteschlange",
+          "Audiobalance"
+        ],
+        "other": [
+          "Timer",
+          "Erinnerung",
+          "Einkaufsliste",
+          "Morgenroutine",
+          "Alarmton",
+          "Türschloss",
+          "Kamera",
+          "Notiz an mich"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Keine Eile mit der {entity}.",
+          "Die {entity} kann warten.",
+          "Wann immer Sie sich die {entity} ansehen können.",
+          "Kein Druck mit der {entity}."
+        ],
+        "distractor": [
+          "Außerdem: {distractor} auf der Liste notiert.",
+          "Ich habe auch {distractor} angesprochen.",
+          "Getrennt davon: {distractor} kurz ansehen.",
+          "Ohne Bezug, aber nicht zu vergessen: {distractor}."
+        ],
+        "neutral": [
+          "Wir sprechen wieder über die {entity}.",
+          "Bei der {entity} ist keine Aktion nötig.",
+          "Nur eine Notiz zur {entity}.",
+          "Wir haben früher über die {entity} gesprochen."
+        ],
+        "request": [
+          "Bitte {entity} jetzt einstellen.",
+          "{entity} bitte heute ändern.",
+          "Können Sie {entity} erledigen?",
+          "Passen Sie {entity} einfach an.",
+          "Können Sie mir helfen, {entity} einzustellen?"
+        ],
+        "urgent": [
+          "Die {entity} reagiert nicht, kümmern Sie sich sofort darum!",
+          "Wir brauchen die {entity} sofort funktionsfähig!",
+          "Die {entity} ist kritisch, alle warten!",
+          "Stoppen Sie alles und kümmern Sie sich um die {entity}!"
+        ]
+      }
+    },
     "en": {
       "entities": [
         "light scene",
@@ -126,6 +246,606 @@
           "We need the {entity} working immediately!",
           "This {entity} is critical, everyone is waiting!",
           "Stop everything and sort the {entity}!"
+        ]
+      }
+    },
+    "es": {
+      "entities": [
+        "escena de iluminación",
+        "iluminación de las habitaciones",
+        "termostato",
+        "volumen",
+        "playlist",
+        "temporizador",
+        "posición de la persiana",
+        "grupo de altavoces",
+        "purificador de aire",
+        "cámara",
+        "cerradura",
+        "recordatorio",
+        "lista de compras",
+        "emisora de radio",
+        "luz de noche",
+        "velocidad del ventilador",
+        "humidificador",
+        "rutina de la mañana",
+        "sonido de la alarma",
+        "brillo de la pantalla"
+      ],
+      "instructions": {
+        "choice": "¿Qué grupo de dispositivos debería gestionar este comando?",
+        "noul": "¿Es una solicitud para cambiar tu {entity}?",
+        "score": "¿Qué urgencia tiene este comando de voz?"
+      },
+      "levels": [
+        "casual",
+        "pronto",
+        "ahora",
+        "crítico"
+      ],
+      "noul_criteria": {
+        "false": "no es una solicitud",
+        "true": "es una solicitud para cambiar tu {entity}"
+      },
+      "option_descriptions": {
+        "climate": "termostatos, temperatura, velocidad del ventilador, humidificadores y purificadores de aire",
+        "lights": "lámparas, escenas de iluminación, brillo, tiras y luces de entrada o de noche",
+        "media": "volumen, playlists, radio, canciones, podcasts y grupos de altavoces",
+        "other": "todo lo demás: temporizadores, recordatorios, listas, rutinas, cerraduras y cámaras"
+      },
+      "option_terms": {
+        "climate": [
+          "termostato",
+          "temperatura",
+          "velocidad del ventilador",
+          "humidificador",
+          "purificador de aire",
+          "ajuste de calor",
+          "refrigeración",
+          "calidad del aire"
+        ],
+        "lights": [
+          "luz",
+          "lámpara",
+          "escena de iluminación",
+          "brillo",
+          "luz de noche",
+          "tira de luces",
+          "luz de la entrada",
+          "dimmer"
+        ],
+        "media": [
+          "volumen",
+          "playlist",
+          "emisora de radio",
+          "canción",
+          "podcast",
+          "grupo de altavoces",
+          "cola de reproducción",
+          "balance del audio"
+        ],
+        "other": [
+          "temporizador",
+          "recordatorio",
+          "lista de compras",
+          "rutina de la mañana",
+          "sonido de la alarma",
+          "cerradura",
+          "cámara",
+          "nota para mí"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sin prisa con tu {entity}.",
+          "Tu {entity} puede esperar.",
+          "Cuando puedas echarle un vistazo a tu {entity}.",
+          "Sin urgencia con tu {entity}."
+        ],
+        "distractor": [
+          "También está tu {distractor} en la lista.",
+          "También pregunté por tu {distractor}.",
+          "Aparte, tu {distractor} necesita un vistazo.",
+          "Sin relación, pero conviene revisar tu {distractor}."
+        ],
+        "neutral": [
+          "Hablando de tu {entity} otra vez.",
+          "No hay que hacer nada con tu {entity}.",
+          "Solo una nota sobre tu {entity}.",
+          "Hablamos de tu {entity} antes."
+        ],
+        "request": [
+          "Por favor, ajusta tu {entity} ahora.",
+          "Necesito que tu {entity} se cambie hoy.",
+          "¿Puedes encargarte de tu {entity}?",
+          "Adelante, ajusta tu {entity}.",
+          "¿Puedes ayudarme con tu {entity}?"
+        ],
+        "urgent": [
+          "¡Tu {entity} no responde, resuelve eso ahora!",
+          "¡Necesitamos tu {entity} funcionando de inmediato!",
+          "¡Tu {entity} es urgente, todo el mundo está esperando!",
+          "¡Para todo y resuelve tu {entity}!"
+        ]
+      }
+    },
+    "fr": {
+      "entities": [
+        "scène d'éclairage",
+        "éclairage de la pièce",
+        "thermostat",
+        "volume",
+        "playlist",
+        "minuteur",
+        "position du volet",
+        "groupe d'enceintes",
+        "purificateur d'air",
+        "caméra",
+        "serrure",
+        "rappel",
+        "liste de courses",
+        "station de radio",
+        "veilleuse",
+        "vitesse du ventilateur",
+        "humidificateur",
+        "routine du matin",
+        "sonnerie d'alarme",
+        "luminosité de l'écran"
+      ],
+      "instructions": {
+        "choice": "Quel groupe d'appareils doit traiter cette commande ?",
+        "noul": "Cette demande vise-t-elle à modifier votre {entity} ?",
+        "score": "Quelle est l'urgence de cette commande vocale ?"
+      },
+      "levels": [
+        "décontracté",
+        "bientôt",
+        "maintenant",
+        "critique"
+      ],
+      "noul_criteria": {
+        "false": "n'est pas une demande",
+        "true": "est une demande visant à modifier votre {entity}"
+      },
+      "option_descriptions": {
+        "climate": "thermostats, température, vitesse du ventilateur, humidificateurs et purificateurs d'air",
+        "lights": "lampes, scènes d'éclairage, luminosité, bandes et lumières d'entrée ou veilleuses",
+        "media": "volume, playlists, radio, chansons, podcasts et groupes d'enceintes",
+        "other": "tout le reste : minuteurs, rappels, listes, routines, serrures et caméras"
+      },
+      "option_terms": {
+        "climate": [
+          "thermostat",
+          "température",
+          "vitesse du ventilateur",
+          "humidificateur",
+          "purificateur d'air",
+          "réglage de chauffage",
+          "climatisation",
+          "qualité de l'air"
+        ],
+        "lights": [
+          "éclairage",
+          "lampe",
+          "scène d'éclairage",
+          "luminosité",
+          "veilleuse",
+          "bande lumineuse",
+          "lumière du porche",
+          "variateur"
+        ],
+        "media": [
+          "volume",
+          "playlist",
+          "station de radio",
+          "chanson",
+          "podcast",
+          "groupe d'enceintes",
+          "file d'attente",
+          "équilibre audio"
+        ],
+        "other": [
+          "minuteur",
+          "rappel",
+          "liste de courses",
+          "routine du matin",
+          "sonnerie d'alarme",
+          "serrure",
+          "caméra",
+          "note pour moi"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Aucune précipitation avec votre {entity}.",
+          "Votre {entity} peut attendre.",
+          "Quand vous pourrez jeter un œil à votre {entity}.",
+          "Prenez votre temps avec votre {entity}."
+        ],
+        "distractor": [
+          "Il y a aussi votre {distractor} sur la liste.",
+          "J'ai aussi posé une question au sujet de votre {distractor}.",
+          "À part ça, votre {distractor} demande un coup d'œil.",
+          "Sans rapport, mais n'oubliez pas votre {distractor}."
+        ],
+        "neutral": [
+          "On reparle de votre {entity}.",
+          "Rien à faire pour votre {entity}.",
+          "Juste une note au sujet de votre {entity}.",
+          "On avait parlé de votre {entity} plus tôt."
+        ],
+        "request": [
+          "Veuillez régler votre {entity} maintenant.",
+          "Il faut modifier votre {entity} aujourd'hui.",
+          "Pouvez-vous vous occuper de votre {entity} ?",
+          "Allez-y, ajustez votre {entity}.",
+          "Pouvez-vous m'aider avec votre {entity} ?"
+        ],
+        "urgent": [
+          "Votre {entity} ne répond pas, réglez ça maintenant !",
+          "Il faut que votre {entity} fonctionne immédiatement !",
+          "Votre {entity} est critique, tout le monde attend !",
+          "Arrêtez tout et occupez-vous de votre {entity} !"
+        ]
+      }
+    },
+    "it": {
+      "entities": [
+        "scena luci",
+        "luce della stanza",
+        "regolazione della temperatura",
+        "regolazione del volume",
+        "playlist",
+        "funzione timer",
+        "posizione delle persiane",
+        "rete di altoparlanti",
+        "purificazione dell'aria",
+        "telecamera",
+        "serratura",
+        "nota di promemoria",
+        "lista della spesa",
+        "stazione radio",
+        "luce notturna",
+        "velocità della ventola",
+        "gestione dell'umidità",
+        "routine del mattino",
+        "suoneria della sveglia",
+        "luminosità dello schermo"
+      ],
+      "instructions": {
+        "choice": "Quale gruppo di dispositivi dovrebbe gestire questo comando?",
+        "noul": "È una richiesta di modificare la {entity}?",
+        "score": "Quanto è urgente questo comando vocale?"
+      },
+      "levels": [
+        "rilassato",
+        "presto",
+        "adesso",
+        "critico"
+      ],
+      "noul_criteria": {
+        "false": "non è una richiesta",
+        "true": "è una richiesta di modificare la {entity}"
+      },
+      "option_descriptions": {
+        "climate": "termostati, temperatura, velocità della ventola, umidificatori e purificatori d'aria",
+        "lights": "lampade, scene luci, luminosità, strisce e luci d'ingresso o notturne",
+        "media": "volume, playlist, radio, canzoni, podcast e gruppi di altoparlanti",
+        "other": "tutto il resto: timer, promemoria, liste, routine, serrature e telecamere"
+      },
+      "option_terms": {
+        "climate": [
+          "regolazione della temperatura",
+          "temperatura",
+          "velocità della ventola",
+          "gestione dell'umidità",
+          "purificazione dell'aria",
+          "programmazione del caldo",
+          "refrigerazione",
+          "qualità dell'aria"
+        ],
+        "lights": [
+          "luce",
+          "lampada",
+          "scena luci",
+          "luminosità",
+          "luce notturna",
+          "striscia luminosa",
+          "luce dell'ingresso",
+          "luminosità regolabile"
+        ],
+        "media": [
+          "regolazione del volume",
+          "playlist",
+          "stazione radio",
+          "canzone",
+          "puntata podcast",
+          "rete di altoparlanti",
+          "coda",
+          "regolazione audio"
+        ],
+        "other": [
+          "funzione timer",
+          "nota di promemoria",
+          "lista della spesa",
+          "routine del mattino",
+          "suoneria della sveglia",
+          "serratura",
+          "telecamera",
+          "nota per me"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Nessuna fretta con la {entity}.",
+          "La {entity} può aspettare.",
+          "Quando puoi dare un'occhiata alla {entity}.",
+          "Senza fretta per la {entity}."
+        ],
+        "distractor": [
+          "C'è anche una {distractor} nella lista.",
+          "Ho chiesto anche della {distractor}.",
+          "A parte questo, la {distractor} ha bisogno di un'occhiata.",
+          "Fuori argomento, ma c'è una {distractor}."
+        ],
+        "neutral": [
+          "Stiamo parlando di nuovo della {entity}.",
+          "Nessuna azione necessaria sulla {entity}.",
+          "Solo una nota sulla {entity}.",
+          "Abbiamo parlato della {entity} prima."
+        ],
+        "request": [
+          "Per favore, imposta la {entity} adesso.",
+          "Ho bisogno che la {entity} venga cambiata oggi.",
+          "Puoi occuparti della {entity}?",
+          "Regola pure la {entity}.",
+          "Puoi aiutarmi con la {entity}?"
+        ],
+        "urgent": [
+          "La {entity} non risponde, sistemala ora!",
+          "Ci serve la {entity} funzionante subito!",
+          "Questa {entity} è critica, tutti aspettano!",
+          "Ferma tutto e sistema la {entity}!"
+        ]
+      }
+    },
+    "nl": {
+      "entities": [
+        "lichtscene",
+        "kamerverlichting",
+        "thermostaat",
+        "volume",
+        "playlist",
+        "timer",
+        "positie van het gordijn",
+        "luidsprekergroep",
+        "luchtreiniger",
+        "camera",
+        "deurslot",
+        "herinnering",
+        "boodschappenlijst",
+        "radiostation",
+        "nachtlamp",
+        "ventilatorsnelheid",
+        "luchtbevochtiger",
+        "ochtendroutine",
+        "alarmgeluid",
+        "schermhelderheid"
+      ],
+      "instructions": {
+        "choice": "Welke apparaatgroep moet dit commando afhandelen?",
+        "noul": "Is dit een verzoek om je {entity} aan te passen?",
+        "score": "Hoe urgent is dit spraakcommando?"
+      },
+      "levels": [
+        "ontspannen",
+        "straks",
+        "nu",
+        "kritiek"
+      ],
+      "noul_criteria": {
+        "false": "is geen verzoek",
+        "true": "is een verzoek om je {entity} aan te passen"
+      },
+      "option_descriptions": {
+        "climate": "thermostaten, temperatuur, ventilatorsnelheid, luchtbevochtigers en luchtreinigers",
+        "lights": "lampen, lichtscènes, helderheid, lichtstrips en voor- of nachtlampen",
+        "media": "volume, playlists, radio, liedjes, podcasts en luidsprekergroepen",
+        "other": "al de rest: timers, herinneringen, lijsten, routines, sloten en camera's"
+      },
+      "option_terms": {
+        "climate": [
+          "thermostaat",
+          "temperatuur",
+          "ventilatorsnelheid",
+          "luchtbevochtiger",
+          "luchtreiniger",
+          "verwarming",
+          "koeling",
+          "luchtkwaliteit"
+        ],
+        "lights": [
+          "verlichting",
+          "lamp",
+          "lichtscene",
+          "helderheid",
+          "nachtlamp",
+          "lichtstrip",
+          "voordeurlamp",
+          "dimmer"
+        ],
+        "media": [
+          "volume",
+          "playlist",
+          "radiostation",
+          "nummer",
+          "podcast",
+          "luidsprekergroep",
+          "wachtrij",
+          "audiobalans"
+        ],
+        "other": [
+          "timer",
+          "herinnering",
+          "boodschappenlijst",
+          "ochtendroutine",
+          "alarmgeluid",
+          "deurslot",
+          "camera",
+          "notitie voor mezelf"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Geen haast met je {entity}.",
+          "Je {entity} kan wachten.",
+          "Wanneer je tijd hebt om je {entity} te bekijken.",
+          "Geen spoed met je {entity}."
+        ],
+        "distractor": [
+          "Er staat ook een {distractor} op de lijst.",
+          "Ik vroeg ook naar je {distractor}.",
+          "Daarnaast moet je {distractor} bekeken worden.",
+          "Niet gerelateerd, maar er is een {distractor}."
+        ],
+        "neutral": [
+          "We hebben het weer over je {entity}.",
+          "Voor je {entity} is geen actie nodig.",
+          "Gewoon een notitie over je {entity}.",
+          "We spraken eerder over je {entity}."
+        ],
+        "request": [
+          "Stel je {entity} alsjeblieft nu in.",
+          "Ik wil dat je {entity} vandaag wordt aangepast.",
+          "Kun je voor je {entity} zorgen?",
+          "Ga je gang en pas je {entity} aan.",
+          "Kun je me helpen met je {entity}?"
+        ],
+        "urgent": [
+          "Je {entity} reageert niet, los dit nu op!",
+          "We hebben je {entity} meteen nodig!",
+          "Je {entity} is kritiek, iedereen wacht!",
+          "Stop alles en los je {entity} op!"
+        ]
+      }
+    },
+    "pt": {
+      "entities": [
+        "cena de iluminação",
+        "iluminação dos cômodos",
+        "regulagem de temperatura",
+        "intensidade do som",
+        "playlist",
+        "função timer",
+        "posição da persiana",
+        "rede de caixas de som",
+        "purificação do ar",
+        "câmera",
+        "fechadura",
+        "nota de lembrete",
+        "lista de compras",
+        "estação de rádio",
+        "luz noturna",
+        "velocidade do ventilador",
+        "umidificação do ar",
+        "rotina da manhã",
+        "melodia do alarme",
+        "luminosidade da tela"
+      ],
+      "instructions": {
+        "choice": "Qual grupo de dispositivos deve atender este comando?",
+        "noul": "É um pedido para alterar a {entity}?",
+        "score": "Qual é a urgência deste comando de voz?"
+      },
+      "levels": [
+        "casual",
+        "em breve",
+        "agora",
+        "crítico"
+      ],
+      "noul_criteria": {
+        "false": "não é um pedido",
+        "true": "é um pedido para alterar a {entity}"
+      },
+      "option_descriptions": {
+        "climate": "termostatos, temperatura, velocidade do ventilador, umidificadores e purificadores de ar",
+        "lights": "lâmpadas, cenas de iluminação, brilho, fitas e luzes de entrada ou noturnas",
+        "media": "volume, playlists, rádio, músicas, podcasts e grupos de caixas de som",
+        "other": "todo o resto: temporizadores, lembretes, listas, rotinas, fechaduras e câmeras"
+      },
+      "option_terms": {
+        "climate": [
+          "regulagem de temperatura",
+          "temperatura",
+          "velocidade do ventilador",
+          "umidificação do ar",
+          "purificação do ar",
+          "regulagem de calor",
+          "refrigeração",
+          "qualidade do ar"
+        ],
+        "lights": [
+          "luz",
+          "luminária",
+          "cena de iluminação",
+          "luminosidade",
+          "luz noturna",
+          "fita de LED",
+          "luz da varanda",
+          "regulagem de luz"
+        ],
+        "media": [
+          "regulagem de volume",
+          "playlist",
+          "estação de rádio",
+          "música",
+          "série de podcast",
+          "rede de caixas de som",
+          "fila",
+          "regulagem do áudio"
+        ],
+        "other": [
+          "função timer",
+          "nota de lembrete",
+          "lista de compras",
+          "rotina da manhã",
+          "melodia do alarme",
+          "fechadura",
+          "câmera",
+          "nota para mim"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sem pressa com a {entity}.",
+          "A {entity} pode esperar.",
+          "Quando puder dar uma olhada na {entity}.",
+          "Sem urgência com a {entity}."
+        ],
+        "distractor": [
+          "Tem também uma {distractor} na lista.",
+          "Eu falei da {distractor} também.",
+          "À parte, a {distractor} precisa de uma olhada.",
+          "Fora do assunto, mas tem uma {distractor}."
+        ],
+        "neutral": [
+          "Falando da {entity} de novo.",
+          "Nenhuma ação necessária na {entity}.",
+          "Só uma nota sobre a {entity}.",
+          "A gente conversou sobre a {entity} antes."
+        ],
+        "request": [
+          "Por favor, ajuste a {entity} agora.",
+          "Preciso que a {entity} seja alterada hoje.",
+          "Você pode resolver a {entity}?",
+          "Pode ajustar a {entity}.",
+          "Você pode me ajudar com a {entity}?"
+        ],
+        "urgent": [
+          "A {entity} não está respondendo, resolva agora!",
+          "Precisamos da {entity} funcionando imediatamente!",
+          "Esta {entity} é crítica, todo mundo está esperando!",
+          "Pare tudo e resolva a {entity}!"
         ]
       }
     }

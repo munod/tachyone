@@ -9,6 +9,126 @@
     "other"
   ],
   "languages": {
+    "de": {
+      "entities": [
+        "Fachprüfung",
+        "Unterschrift",
+        "Schwärzung",
+        "Übersetzung",
+        "OCR-Durchsicht",
+        "Indexierung",
+        "Archivierung",
+        "Freigabe",
+        "Positionsprüfung",
+        "Versionszusammenführung",
+        "Zitatsprüfung",
+        "Metadaten-Korrektur",
+        "Anonymisierung",
+        "Umordnung der Seiten",
+        "Tabellenextraktion",
+        "Formatbereinigung",
+        "Compliance-Prüfung",
+        "Duplikatsprüfung",
+        "Sprachmarkierung",
+        "Qualitätsprüfung"
+      ],
+      "instructions": {
+        "choice": "Wie sollte dieses Dokument klassifiziert werden?",
+        "noul": "Benötigt dieses Dokument eine {entity}?",
+        "score": "Wie dringend ist diese Dokumentanfrage?"
+      },
+      "levels": [
+        "Routine",
+        "diese Woche",
+        "heute",
+        "sofort"
+      ],
+      "noul_criteria": {
+        "true": "benötigt eine {entity}",
+        "false": "benötigt keine"
+      },
+      "option_descriptions": {
+        "contract": "Verträge, Vereinbarungen, Klauseln, Unterschriften, Nachträge und Verlängerungsbedingungen",
+        "invoice": "Rechnungen, Quittungen, Bestellungen, Spesenabrechnungen und Zahlungsbedingungen",
+        "other": "alles andere: Lebensläufe, Richtlinien, interne Notizen, Pressemitteilungen und Bürohinweise",
+        "report": "Berichte, Tabellenkalkulationen, Präsentationen, Audits, Prognosen und Analyseunterlagen"
+      },
+      "option_terms": {
+        "contract": [
+          "Vertrag",
+          "Vereinbarung",
+          "Service-Level",
+          "Klausel",
+          "Unterschriftenseite",
+          "Verlängerungsbedingungen",
+          "Nachtrag",
+          "Geheimhaltungsvereinbarung"
+        ],
+        "invoice": [
+          "Rechnung",
+          "Quittung",
+          "Bestellung",
+          "Rechnungsübersicht",
+          "Spesenabrechnung",
+          "Zahlungsbedingungen",
+          "Gutschrift",
+          "Lieferantenrechnung"
+        ],
+        "other": [
+          "Lebenslauf",
+          "Richtlinienseite",
+          "Besprechungsnotiz",
+          "Pressemitteilung",
+          "Stellenausschreibung",
+          "Büronotiz",
+          "Veranstaltungsflugblatt",
+          "Handbuchseite"
+        ],
+        "report": [
+          "Quartalsbericht",
+          "Tabellenkalkulation",
+          "Kennzahlenpräsentation",
+          "Audit-Zusammenfassung",
+          "Analyse-Dokument",
+          "Statusbericht",
+          "Prognosetabelle",
+          "Vorstandsunterlagen"
+        ]
+      },
+      "phrases": {
+        "request": [
+          "Bitte erledigen Sie {entity} vor dem Einreichen.",
+          "{entity} braucht heute Aufmerksamkeit.",
+          "Können Sie {entity} für uns übernehmen?",
+          "Erledigen Sie {entity} bitte noch diese Woche.",
+          "Wir brauchen {entity} vor der Frist — bitte helfen Sie."
+        ],
+        "neutral": [
+          "Ich notiere nur etwas zur {entity}.",
+          "Bei der {entity} ist nichts zu tun.",
+          "Ich halte die {entity} hier nur fest.",
+          "Die {entity} wurde in der Besprechung besprochen."
+        ],
+        "urgent": [
+          "Die {entity} wird bis zur Frist benötigt, sofort!",
+          "Ohne die {entity} können wir nicht einreichen!",
+          "Diese {entity} blockiert die Einreichung!",
+          "Die {entity} wird sofort eskaliert, das Audit beginnt!"
+        ],
+        "calm": [
+          "Keine Eile mit der {entity}.",
+          "Die {entity} kann bis nächsten Monat warten.",
+          "Wann immer Sie Zeit für die {entity} haben.",
+          "Es eilt nicht mit der {entity}."
+        ],
+        "distractor": [
+          "Außerdem habe ich {distractor} zur Akte genommen.",
+          "Ich habe {distractor} ebenfalls hinzugefügt.",
+          "Getrennt davon ist mir {distractor} zugegangen.",
+          "Nebensache: ich habe auch {distractor} notiert."
+        ]
+      }
+    },
     "en": {
       "entities": [
         "human review",
@@ -126,6 +246,606 @@
           "We cannot file without the {entity}!",
           "This {entity} is blocking the submission!",
           "Escalating the {entity} immediately, the audit starts!"
+        ]
+      }
+    },
+    "es": {
+      "entities": [
+        "revisión humana",
+        "firma",
+        "supresión de datos",
+        "traducción",
+        "pasada de OCR",
+        "indexación",
+        "archivado",
+        "aprobación",
+        "revisión de partidas",
+        "fusión de versiones",
+        "revisión de citas",
+        "corrección de metadatos",
+        "anonimización",
+        "reordenación de páginas",
+        "extracción de tablas",
+        "limpieza de formato",
+        "revisión de cumplimiento",
+        "detección de duplicados",
+        "etiqueta de idioma",
+        "revisión de calidad"
+      ],
+      "instructions": {
+        "choice": "¿Cómo debe clasificarse este documento?",
+        "noul": "¿Este documento necesita tu {entity}?",
+        "score": "¿Qué urgencia tiene esta solicitud de documento?"
+      },
+      "levels": [
+        "de rutina",
+        "esta semana",
+        "hoy",
+        "de inmediato"
+      ],
+      "noul_criteria": {
+        "true": "necesita tu {entity}",
+        "false": "no lo necesita"
+      },
+      "option_descriptions": {
+        "contract": "contratos, acuerdos, cláusulas, firmas, anexos y condiciones de renovación",
+        "invoice": "facturas, recibos, órdenes de compra, solicitudes de gastos y condiciones de pago",
+        "other": "todo lo demás: currículums, políticas, memorandos, comunicados de prensa y notas de oficina",
+        "report": "informes, hojas de cálculo, presentaciones, auditorías, previsiones y documentos de análisis"
+      },
+      "option_terms": {
+        "contract": [
+          "contrato",
+          "acuerdo",
+          "nivel de servicio",
+          "cláusula",
+          "página de firma",
+          "condiciones de renovación",
+          "anexo",
+          "acuerdo de confidencialidad"
+        ],
+        "invoice": [
+          "factura",
+          "recibo",
+          "orden de compra",
+          "extracto de facturación",
+          "solicitud de gastos",
+          "condiciones de pago",
+          "nota de crédito",
+          "cuenta de proveedor"
+        ],
+        "other": [
+          "currículum",
+          "página de políticas",
+          "memorando de reunión",
+          "comunicado de prensa",
+          "oferta de empleo",
+          "nota interna",
+          "folleto de evento",
+          "página del manual"
+        ],
+        "report": [
+          "informe trimestral",
+          "hoja de cálculo",
+          "presentación de métricas",
+          "resumen de auditoría",
+          "documento de análisis",
+          "informe de estado",
+          "hoja de previsión",
+          "dossier de consejo"
+        ]
+      },
+      "phrases": {
+        "request": [
+          "Por favor, encárgate de tu {entity} antes de archivar.",
+          "Tu {entity} necesita atención hoy.",
+          "¿Puedes encargarte de tu {entity} por nosotros?",
+          "Me gustaría resolver tu {entity} esta semana.",
+          "Necesitamos ayuda con tu {entity} antes de la fecha límite."
+        ],
+        "neutral": [
+          "Dejando una nota sobre tu {entity}.",
+          "No hace falta hacer nada con tu {entity}.",
+          "Solo registrando tu {entity} aquí.",
+          "Tu {entity} se comentó en la reunión."
+        ],
+        "urgent": [
+          "¡Tu {entity} hace falta antes de la fecha límite, ahora mismo!",
+          "¡No podemos archivar sin tu {entity}!",
+          "¡Tu {entity} está bloqueando el envío!",
+          "¡Escalando tu {entity} de inmediato, empieza la auditoría!"
+        ],
+        "calm": [
+          "Sin prisa con tu {entity}.",
+          "Tu {entity} puede esperar hasta el mes que viene.",
+          "Cuando puedas echar un vistazo a tu {entity}.",
+          "Sin urgencia con tu {entity}."
+        ],
+        "distractor": [
+          "También apunté tu {distractor}.",
+          "También añadí tu {distractor}.",
+          "Aparte, llegó tu {distractor}.",
+          "Fuera del tema: también está tu {distractor}."
+        ]
+      }
+    },
+    "fr": {
+      "entities": [
+        "révision humaine",
+        "signature",
+        "occultation de données",
+        "traduction",
+        "lecture OCR",
+        "indexation",
+        "mise aux archives",
+        "approbation",
+        "vérification des lignes",
+        "fusion des versions",
+        "vérification des citations",
+        "correction des métadonnées",
+        "anonymisation",
+        "réorganisation des pages",
+        "extraction des tableaux",
+        "correction de mise en forme",
+        "vérification de conformité",
+        "détection des doublons",
+        "étiquette de langue",
+        "vérification de la qualité"
+      ],
+      "instructions": {
+        "choice": "Comment ce document doit-il être classé ?",
+        "noul": "Ce document a-t-il besoin d'une {entity} ?",
+        "score": "Quelle est l'urgence de cette demande de document ?"
+      },
+      "levels": [
+        "de routine",
+        "cette semaine",
+        "aujourd'hui",
+        "immédiatement"
+      ],
+      "noul_criteria": {
+        "true": "a besoin d'une {entity}",
+        "false": "n'en a pas besoin"
+      },
+      "option_descriptions": {
+        "contract": "contrats, accords, clauses, signatures, avenants et conditions de renouvellement",
+        "invoice": "factures, reçus, bons de commande, notes de frais et conditions de paiement",
+        "other": "tout le reste : CV, politiques, notes de réunion, communiqués de presse et notes internes",
+        "report": "rapports, tableurs, présentations, audits, prévisions et documents d'analyse"
+      },
+      "option_terms": {
+        "contract": [
+          "contrat",
+          "accord",
+          "niveau de service",
+          "clause",
+          "page de signature",
+          "conditions de renouvellement",
+          "avenant",
+          "accord de confidentialité"
+        ],
+        "invoice": [
+          "facture",
+          "reçu",
+          "bon de commande",
+          "relevé de facturation",
+          "note de frais",
+          "conditions de paiement",
+          "avoir",
+          "facture fournisseur"
+        ],
+        "other": [
+          "CV",
+          "page de politique",
+          "note de réunion",
+          "communiqué de presse",
+          "offre d'emploi",
+          "note interne",
+          "flyer d'événement",
+          "page de manuel"
+        ],
+        "report": [
+          "rapport trimestriel",
+          "tableur",
+          "présentation de métriques",
+          "synthèse d'audit",
+          "document d'analyse",
+          "rapport d'état",
+          "feuille de prévision",
+          "dossier de conseil"
+        ]
+      },
+      "phrases": {
+        "request": [
+          "Prenez soin de votre {entity} avant le classement.",
+          "Votre {entity} demande une attention aujourd'hui.",
+          "Pourriez-vous vous occuper de votre {entity} pour nous ?",
+          "J'aimerais que l'on s'occupe de votre {entity} cette semaine.",
+          "Nous avons besoin de votre {entity} avant l'échéance."
+        ],
+        "neutral": [
+          "Je dépose une note au sujet de cette {entity}.",
+          "Rien à faire pour cette {entity}.",
+          "Je consigne juste cette {entity} ici.",
+          "Cette {entity} a été évoquée en réunion."
+        ],
+        "urgent": [
+          "Une {entity} est exigée avant l'échéance, tout de suite !",
+          "On ne peut pas classer sans cette {entity} !",
+          "Cette {entity} bloque l'envoi !",
+          "Je fais remonter cette {entity} tout de suite, l'audit commence !"
+        ],
+        "calm": [
+          "Pas de pression pour cette {entity}.",
+          "Cette {entity} peut attendre le mois prochain.",
+          "Quand vous aurez le temps de voir cette {entity}.",
+          "Pas de hâte avec cette {entity}."
+        ],
+        "distractor": [
+          "Il y a aussi votre {distractor} au dossier.",
+          "On a aussi ajouté votre {distractor}.",
+          "Par ailleurs, vous avez aussi reçu votre {distractor}.",
+          "Hors sujet : il y a aussi votre {distractor}."
+        ]
+      }
+    },
+    "it": {
+      "entities": [
+        "la revisione umana",
+        "la firma",
+        "l'oscuramento",
+        "la traduzione",
+        "il passaggio OCR",
+        "l'indicizzazione",
+        "l'archiviazione",
+        "l'approvazione",
+        "la verifica delle righe",
+        "la fusione delle versioni",
+        "la verifica delle citazioni",
+        "la correzione dei metadati",
+        "l'anonimizzazione",
+        "il riordino delle pagine",
+        "l'estrazione delle tabelle",
+        "la pulizia del formato",
+        "la verifica di conformità",
+        "la scansione dei duplicati",
+        "l'etichetta di lingua",
+        "il controllo di qualità"
+      ],
+      "instructions": {
+        "choice": "Come dovrebbe essere classificato questo documento?",
+        "noul": "Questo documento richiede {entity}?",
+        "score": "Qual è l'urgenza di questa richiesta di documento?"
+      },
+      "levels": [
+        "di routine",
+        "questa settimana",
+        "oggi",
+        "subito"
+      ],
+      "noul_criteria": {
+        "true": "richiede {entity}",
+        "false": "non ne ha bisogno"
+      },
+      "option_descriptions": {
+        "contract": "contratti, accordi, clausole, firme, allegati e condizioni di rinnovo",
+        "invoice": "fatture, ricevute, ordini di acquisto, note spese e condizioni di pagamento",
+        "other": "tutto il resto: curriculum, politiche, memo, comunicati stampa e note d'ufficio",
+        "report": "resoconti, fogli di calcolo, presentazioni, audit, previsioni e documenti di analisi"
+      },
+      "option_terms": {
+        "contract": [
+          "il contratto",
+          "l'accordo",
+          "il livello di servizio",
+          "la clausola",
+          "la pagina delle firme",
+          "le condizioni di rinnovo",
+          "l'appendice",
+          "l'accordo di riservatezza"
+        ],
+        "invoice": [
+          "la fattura",
+          "la ricevuta",
+          "l'ordine di acquisto",
+          "il riepilogo di fatturazione",
+          "la nota spese",
+          "le condizioni di pagamento",
+          "la nota di credito",
+          "la fattura del fornitore"
+        ],
+        "other": [
+          "il curriculum",
+          "la pagina delle politiche",
+          "il memo di riunione",
+          "il comunicato stampa",
+          "l'offerta di lavoro",
+          "la nota d'ufficio",
+          "il flyer dell'evento",
+          "la pagina del manuale"
+        ],
+        "report": [
+          "il resoconto trimestrale",
+          "il foglio di calcolo",
+          "la presentazione delle metriche",
+          "il sommario dell'audit",
+          "il documento di analisi",
+          "il resoconto dello stato",
+          "il foglio delle previsioni",
+          "il dossier del consiglio"
+        ]
+      },
+      "phrases": {
+        "request": [
+          "Per favore, gestisci {entity} prima dell'archiviazione.",
+          "Serve attenzione per {entity} oggi.",
+          "Puoi gestire {entity} per noi?",
+          "Vorrei che qualcuno gestisca {entity} questa settimana.",
+          "Ci serve aiuto con {entity} prima della scadenza."
+        ],
+        "neutral": [
+          "Sto solo annotando {entity}.",
+          "Nessuna azione necessaria per {entity}.",
+          "Registro solo {entity} qui.",
+          "In riunione abbiamo menzionato {entity}."
+        ],
+        "urgent": [
+          "Serve {entity} prima della scadenza, adesso!",
+          "Non possiamo archiviare senza {entity}!",
+          "Attenzione: {entity} sta bloccando l'invio!",
+          "Segnalo subito {entity}, l'audit inizia!"
+        ],
+        "calm": [
+          "Nessuna fretta con {entity}.",
+          "Con {entity} si può aspettare fino al mese prossimo.",
+          "Quando avrai tempo per {entity}.",
+          "Nessuna urgenza con {entity}."
+        ],
+        "distractor": [
+          "Ho {distractor} ancora in sospeso.",
+          "Ho aggiunto anche {distractor}.",
+          "Separatamente, ho ricevuto anche {distractor}.",
+          "Fuori tema: ho visto anche {distractor}."
+        ]
+      }
+    },
+    "nl": {
+      "entities": [
+        "menselijke beoordeling",
+        "handtekening",
+        "gegevensmaskering",
+        "vertaling",
+        "OCR-verwerking",
+        "indexering",
+        "archivering",
+        "goedkeuring",
+        "controle per regel",
+        "samenvoeging van versies",
+        "citaatcontrole",
+        "metadatacorrectie",
+        "anonimisering",
+        "paginavolgorde",
+        "tabelextractie",
+        "correctie van opmaak",
+        "nalevingscontrole",
+        "scan op duplicaten",
+        "taalmarkering",
+        "kwaliteitscontrole"
+      ],
+      "instructions": {
+        "choice": "Hoe moet dit document worden geclassificeerd?",
+        "noul": "Heeft dit document een {entity} nodig?",
+        "score": "Hoe urgent is dit documentverzoek?"
+      },
+      "levels": [
+        "routine",
+        "deze week",
+        "vandaag",
+        "direct"
+      ],
+      "noul_criteria": {
+        "true": "heeft een {entity} nodig",
+        "false": "heeft het niet nodig"
+      },
+      "option_descriptions": {
+        "contract": "contracten, overeenkomsten, clausules, handtekeningen, bijlagen en verlengingsvoorwaarden",
+        "invoice": "facturen, bonnen, inkoopopdrachten, onkostenclaims en betalingsvoorwaarden",
+        "other": "alle rest: cv's, beleidspagina's, vergadernotities, persberichten en kantoornotities",
+        "report": "rapporten, werkbladen, presentaties, audits, prognoses en analysedocumenten"
+      },
+      "option_terms": {
+        "contract": [
+          "contract",
+          "overeenkomst",
+          "serviceniveau",
+          "clausule",
+          "ondertekeningspagina",
+          "verlengingsvoorwaarden",
+          "bijlage",
+          "geheimhouding"
+        ],
+        "invoice": [
+          "factuur",
+          "bon",
+          "inkoopopdracht",
+          "factuuroverzicht",
+          "onkostenclaim",
+          "betalingsvoorwaarden",
+          "creditnota",
+          "leveranciersfactuur"
+        ],
+        "other": [
+          "cv",
+          "beleidspagina",
+          "vergadernotitie",
+          "persbericht",
+          "vacature",
+          "kantoornotitie",
+          "evenementenflyer",
+          "handboekpagina"
+        ],
+        "report": [
+          "kwartaalrapport",
+          "werkblad",
+          "kerncijferpresentatie",
+          "auditsamenvatting",
+          "analysedocument",
+          "statusrapport",
+          "prognosewerkblad",
+          "bestuursdossier"
+        ]
+      },
+      "phrases": {
+        "request": [
+          "Zorg alsjeblieft voor je {entity} voordat je het document indient.",
+          "Je {entity} heeft vandaag aandacht nodig.",
+          "Kun je een {entity} voor ons oppakken?",
+          "Ik wil graag dat je dit deze week regelt: {entity}.",
+          "We hebben hulp nodig met je {entity} voor de deadline."
+        ],
+        "neutral": [
+          "Ik leg een notitie vast over de {entity}.",
+          "Er hoeft niets te gebeuren met de {entity}.",
+          "Ik noteer de {entity} hier alleen even.",
+          "De {entity} is besproken tijdens de vergadering."
+        ],
+        "urgent": [
+          "De {entity} is nodig voor de deadline, nu meteen!",
+          "We kunnen niet indienen zonder de {entity}!",
+          "Deze {entity} blokkeert de inzending!",
+          "De {entity} wordt meteen doorgezet, de audit begint!"
+        ],
+        "calm": [
+          "Geen haast met de {entity}.",
+          "De {entity} kan wachten tot volgende maand.",
+          "Wanneer je toekomt aan de {entity}.",
+          "Geen spoed met de {entity}."
+        ],
+        "distractor": [
+          "Er staat ook een {distractor} in het dossier.",
+          "Er is ook een {distractor} toegevoegd.",
+          "Daarnaast is er een {distractor} binnengekomen.",
+          "Ongerelateerd: er is ook een {distractor}."
+        ]
+      }
+    },
+    "pt": {
+      "entities": [
+        "a revisão humana",
+        "a assinatura",
+        "a supressão de dados",
+        "a tradução",
+        "a passagem de OCR",
+        "a indexação",
+        "o arquivamento",
+        "a aprovação",
+        "a conferência de itens",
+        "a mesclagem de versões",
+        "a conferência de citações",
+        "a correção de metadados",
+        "a anonimização",
+        "a reordenação de páginas",
+        "a extração de tabelas",
+        "a limpeza de formato",
+        "a verificação de conformidade",
+        "a verificação de duplicatas",
+        "a etiqueta de idioma",
+        "a revisão de qualidade"
+      ],
+      "instructions": {
+        "choice": "Como este documento deve ser classificado?",
+        "noul": "Este documento solicita {entity}?",
+        "score": "Qual é a urgência desta solicitação de documento?"
+      },
+      "levels": [
+        "de rotina",
+        "esta semana",
+        "hoje",
+        "imediatamente"
+      ],
+      "noul_criteria": {
+        "true": "solicita {entity}",
+        "false": "não precisa"
+      },
+      "option_descriptions": {
+        "contract": "contratos, acordos, cláusulas, assinaturas, aditivos e condições de renovação",
+        "invoice": "faturas, recibos, pedidos de compra, requisições de despesas e condições de pagamento",
+        "other": "todo o resto: currículos, políticas, memorandos, comunicados à imprensa e anotações de escritório",
+        "report": "relatórios, planilhas, apresentações de métricas, auditorias, previsões e documentos de análise"
+      },
+      "option_terms": {
+        "contract": [
+          "o contrato",
+          "o acordo",
+          "o nível de serviço",
+          "a cláusula",
+          "a página de assinatura",
+          "as condições de renovação",
+          "o aditivo",
+          "o acordo de confidencialidade"
+        ],
+        "invoice": [
+          "a fatura",
+          "o recibo",
+          "o pedido de compra",
+          "o extrato de cobrança",
+          "a requisição de despesas",
+          "as condições de pagamento",
+          "a nota de crédito",
+          "a conta do fornecedor"
+        ],
+        "other": [
+          "o currículo",
+          "a página de política",
+          "o memorando de reunião",
+          "o comunicado à imprensa",
+          "a vaga de emprego",
+          "a anotação interna",
+          "o panfleto de evento",
+          "a página do manual"
+        ],
+        "report": [
+          "o relatório trimestral",
+          "a planilha",
+          "a apresentação de métricas",
+          "o resumo de auditoria",
+          "o documento de análise",
+          "o relatório de status",
+          "a planilha de previsão",
+          "o pacote do conselho"
+        ]
+      },
+      "phrases": {
+        "request": [
+          "Por favor, resolva {entity} antes de arquivar.",
+          "Hoje {entity} precisa de atenção.",
+          "Você pode resolver {entity} pra gente?",
+          "Gostaria de resolver {entity} esta semana.",
+          "Precisamos de ajuda com {entity} antes do prazo."
+        ],
+        "neutral": [
+          "Registrando uma nota sobre {entity}.",
+          "Não é preciso fazer nada com {entity}.",
+          "Só registrando {entity} aqui.",
+          "Conversamos sobre {entity} na reunião."
+        ],
+        "urgent": [
+          "Urgente: {entity} precisa estar disponível antes do prazo, agora mesmo!",
+          "Não podemos arquivar sem {entity}!",
+          "Atenção: {entity} está bloqueando o envio!",
+          "Escalando {entity} imediatamente, a auditoria começa!"
+        ],
+        "calm": [
+          "Pode ficar tranquilo com {entity}.",
+          "Com {entity} dá para esperar até o mês que vem.",
+          "Quando você puder olhar {entity}.",
+          "Sem pressa com {entity}."
+        ],
+        "distractor": [
+          "Também anotei {distractor} no arquivo.",
+          "Também adicionei {distractor}.",
+          "Em separado, registrei também {distractor}.",
+          "Fora do assunto: também coloquei {distractor} na lista."
         ]
       }
     }

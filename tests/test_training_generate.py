@@ -15,6 +15,7 @@ from tachyone.primitives import Question
 from training.generate_data import (
     _LEVEL_BY_TONE,
     DEFAULT_DOMAIN,
+    DEFAULT_LANGUAGES,
     DOMAINS,
     DataConfig,
     DomainData,
@@ -470,28 +471,44 @@ def test_domain_signatures_accumulate_languages_and_reject_unknown_domains() -> 
 
 
 def test_every_committed_domain_file_is_complete() -> None:
-    """A domain needs options, terms, descriptions, entities, phrases, levels and instructions."""
+    """A domain needs options, terms, descriptions, entities, phrases, levels and instructions.
+
+    Every committed language in ``DEFAULT_LANGUAGES`` gets the full check — a table that only
+    ships English would silently fall back to English text under a non-English ``lang`` tag,
+    which is the L-008 label artifact (B-5b).
+    """
     assert set(DOMAINS) == set(_FIVE)
     for name, spec in DOMAINS.items():
         options = spec["options"]
         assert len(options) >= 2
         assert len(set(options)) == len(options)
-        english = spec["languages"]["en"]
-        assert len(english["entities"]) >= 8
-        assert len(english["levels"]) == 4
-        assert set(english["instructions"]) == {"noul", "choice", "score"}
-        assert set(english["noul_criteria"]) == {"true", "false"}
-        assert set(english["phrases"]) == {"request", "neutral", "urgent", "calm", "distractor"}
-        assert set(english["option_terms"]) == set(options)
-        assert set(english["option_descriptions"]) == set(options)
-        for option in options:
-            assert len(english["option_terms"][option]) >= 4, (name, option)
-            assert len(english["option_descriptions"][option]) >= 20, (name, option)
-        for tone in ("request", "neutral", "urgent", "calm"):
-            assert len(english["phrases"][tone]) >= 3, (name, tone)
-        assert all("{entity}" in p for p in english["phrases"]["request"]), name
-        assert all("{distractor}" in p for p in english["phrases"]["distractor"]), name
-        assert "{entity}" in english["instructions"]["noul"], name
+        assert set(spec["languages"]) >= set(DEFAULT_LANGUAGES), name
+        for lang in DEFAULT_LANGUAGES:
+            table = spec["languages"][lang]
+            assert len(table["entities"]) >= 8, (name, lang)
+            assert len(table["levels"]) == 4, (name, lang)
+            assert set(table["instructions"]) == {"noul", "choice", "score"}, (name, lang)
+            assert set(table["noul_criteria"]) == {"true", "false"}, (name, lang)
+            assert set(table["phrases"]) == {
+                "request",
+                "neutral",
+                "urgent",
+                "calm",
+                "distractor",
+            }, (
+                name,
+                lang,
+            )
+            assert set(table["option_terms"]) == set(options), (name, lang)
+            assert set(table["option_descriptions"]) == set(options), (name, lang)
+            for option in options:
+                assert len(table["option_terms"][option]) >= 4, (name, lang, option)
+                assert len(table["option_descriptions"][option]) >= 20, (name, lang, option)
+            for tone in ("request", "neutral", "urgent", "calm"):
+                assert len(table["phrases"][tone]) >= 3, (name, lang, tone)
+            assert all("{entity}" in p for p in table["phrases"]["request"]), (name, lang)
+            assert all("{distractor}" in p for p in table["phrases"]["distractor"]), (name, lang)
+            assert "{entity}" in table["instructions"]["noul"], (name, lang)
 
 
 def test_multi_domain_records_validate_as_primitives() -> None:

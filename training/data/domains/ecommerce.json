@@ -10,6 +10,137 @@
     "other"
   ],
   "languages": {
+    "de": {
+      "entities": [
+        "Rückerstattung",
+        "Rücksendeetikett",
+        "Tracking-Update",
+        "Bestellrechnung",
+        "Umtausch",
+        "Lieferzeitfenster",
+        "Preisanpassung",
+        "Stornierung der Bestellung",
+        "Reklamation",
+        "Geschenkgutschein",
+        "Versandkostenangebot",
+        "Adressänderung",
+        "Verfügbarkeitsbenachrichtigung",
+        "Abo-Box",
+        "Paketschaden",
+        "Kundenguthaben",
+        "Aktionscode",
+        "Bestellstatus",
+        "Abholtermin",
+        "Verkäuferauszahlung"
+      ],
+      "instructions": {
+        "choice": "Welche Warteschlange sollte diese Bestellung bearbeiten?",
+        "noul": "Fordert diese Nachricht {entity} an?",
+        "score": "Wie dringend ist dieses Problem mit der Bestellung?"
+      },
+      "levels": [
+        "Routine",
+        "bald",
+        "heute",
+        "sofort"
+      ],
+      "noul_criteria": {
+        "false": "fordert keine an",
+        "true": "fordert {entity} an"
+      },
+      "option_descriptions": {
+        "catalog": "Produktseiten, Größen, Bestand, Verkäufer, Bewertungen, Rabattcodes und Wunschzettel",
+        "other": "alles andere: Produktfragen, Kundenguthaben, Geschenkgutscheine, Aktionscode und Treuepunkte",
+        "payments": "Zahlungen, Karten, Quittungen, Rechnungen, Wallet-Guthaben und Steuern auf Bestellungen",
+        "returns": "Rücksendungen, Umtausch, Ersatz, Rücksendeetiketten und beschädigte Artikel",
+        "shipping": "Sendungsverfolgung, Lieferdaten, Kurierdienste, Adressänderungen und verlorene Pakete"
+      },
+      "option_terms": {
+        "catalog": [
+          "Produktseite",
+          "Größentabelle",
+          "Lagerbestand",
+          "Verkäuferangebot",
+          "Produktbewertung",
+          "Rabattcode",
+          "Wunschzettel",
+          "Vergleichstabelle"
+        ],
+        "other": [
+          "Kundenguthaben",
+          "Geschenkgutschein",
+          "Aktionscode",
+          "Treuepunkte",
+          "Produktfrage",
+          "Größenfrage",
+          "Bestandsfrage",
+          "Markenfrage"
+        ],
+        "payments": [
+          "Abbuchung",
+          "Kartenabweisung",
+          "Quittung",
+          "Bestellrechnung",
+          "Wallet-Guthaben",
+          "Doppelabbuchung",
+          "Steuerbeleg",
+          "Zahlungsmethode"
+        ],
+        "returns": [
+          "Rücksendung",
+          "Umtausch",
+          "Ersatz",
+          "Artikelschaden",
+          "Rücksendeetikett",
+          "Rückgabegebühr",
+          "Rückgabefrist",
+          "Reklamation"
+        ],
+        "shipping": [
+          "Sendungsverfolgung",
+          "Lieferung",
+          "Kurier",
+          "Paket",
+          "Versand",
+          "Lieferadresse",
+          "Lieferzeitangabe",
+          "Paketverlust"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Es eilt nicht: {entity} kommt später dran.",
+          "Wenn Sie {entity} ansehen können.",
+          "Alles gut, ich notiere nur {entity}.",
+          "Kein Zeitdruck: {entity} ist nicht dringend."
+        ],
+        "distractor": [
+          "Ich habe auch {distractor} offen.",
+          "Ich habe auch {distractor} eröffnet.",
+          "Getrennt davon habe ich {distractor} gemeldet.",
+          "Ohne Bezug: ich habe auch {distractor} notiert."
+        ],
+        "neutral": [
+          "Ich notiere {entity} nur für unsere Unterlagen.",
+          "Betreff {entity}: keine Aktion nötig.",
+          "Nur ein Hinweis: ich erwähne {entity} kurz.",
+          "Wir haben {entity} letzte Woche erfasst."
+        ],
+        "request": [
+          "Ich brauche {entity} heute erledigt.",
+          "Bitte übernehmen Sie {entity} für mich.",
+          "Können Sie {entity} für mich klären?",
+          "Ich möchte {entity} geregelt bekommen.",
+          "Können Sie mir helfen, {entity} zu erledigen?"
+        ],
+        "urgent": [
+          "{entity} blockiert den Checkout gerade!",
+          "Wir verlieren Bestellungen, weil {entity} blockiert!",
+          "{entity} ist kritisch, die Kunden warten!",
+          "Wir eskalieren {entity} jetzt, niemand kann bestellen!"
+        ]
+      }
+    },
     "en": {
       "entities": [
         "refund",
@@ -138,6 +269,661 @@
           "We are losing orders because of the {entity}!",
           "This {entity} is critical, customers are waiting!",
           "Escalating the {entity} now, nobody can order!"
+        ]
+      }
+    },
+    "es": {
+      "entities": [
+        "reembolso",
+        "etiqueta de devolución",
+        "actualización de seguimiento",
+        "factura del pedido",
+        "cambio",
+        "horario de entrega",
+        "ajuste de precio",
+        "cancelación del pedido",
+        "reclamación de garantía",
+        "tarjeta regalo",
+        "presupuesto de envío",
+        "cambio de dirección",
+        "aviso de reposición",
+        "caja de suscripción",
+        "paquete dañado",
+        "crédito de tienda",
+        "código promocional",
+        "estado del pedido",
+        "horario de recogida",
+        "pago al vendedor"
+      ],
+      "instructions": {
+        "choice": "¿Qué cola debe gestionar este pedido?",
+        "noul": "¿Este mensaje solicita tu {entity}?",
+        "score": "¿Qué urgencia tiene este problema con el pedido?"
+      },
+      "levels": [
+        "rutina",
+        "en breve",
+        "hoy",
+        "de inmediato"
+      ],
+      "noul_criteria": {
+        "false": "no lo solicita",
+        "true": "solicita tu {entity}"
+      },
+      "option_descriptions": {
+        "catalog": "páginas de producto, tamaños, stock, vendedores, reseñas, códigos de descuento y listas de deseos",
+        "other": "todo lo demás: preguntas sobre productos, crédito de tienda, tarjetas regalo, códigos promocionales y puntos de fidelidad",
+        "payments": "cargos, tarjetas, recibos, facturas, saldo de la cartera e impuestos en pedidos",
+        "returns": "devoluciones, cambios, sustituciones, etiquetas de devolución y artículos dañados",
+        "shipping": "seguimiento, fechas de entrega, mensajeros, cambios de dirección y paquetes perdidos"
+      },
+      "option_terms": {
+        "catalog": [
+          "página del producto",
+          "guía de tallas",
+          "nivel de stock",
+          "anuncio del vendedor",
+          "reseña de producto",
+          "código de descuento",
+          "lista de deseos",
+          "tabla comparativa"
+        ],
+        "other": [
+          "crédito de tienda",
+          "tarjeta regalo",
+          "código promocional",
+          "puntos de fidelidad",
+          "pregunta sobre producto",
+          "pregunta sobre talla",
+          "pregunta sobre stock",
+          "pregunta sobre marca"
+        ],
+        "payments": [
+          "cargo",
+          "tarjeta rechazada",
+          "recibo",
+          "factura del pedido",
+          "saldo de la cartera",
+          "cargo duplicado",
+          "comprobante de impuesto",
+          "forma de pago"
+        ],
+        "returns": [
+          "devolución",
+          "cambio",
+          "sustitución",
+          "artículo dañado",
+          "etiqueta de devolución",
+          "cargo por reabastecimiento",
+          "plazo de devolución",
+          "reclamación de garantía"
+        ],
+        "shipping": [
+          "seguimiento",
+          "entrega",
+          "mensajero",
+          "paquete",
+          "envío",
+          "dirección de entrega",
+          "estimación de entrega",
+          "paquete perdido"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sin prisa con tu {entity}.",
+          "Cuando puedas echar un vistazo a tu {entity}.",
+          "Todo bien, solo anotando tu {entity}.",
+          "Sin urgencia con tu {entity}."
+        ],
+        "distractor": [
+          "También está tu {distractor} pendiente.",
+          "Abrí tu {distractor} también.",
+          "Por separado, se abrió tu {distractor}.",
+          "No relacionado, pero también está tu {distractor}."
+        ],
+        "neutral": [
+          "Estoy anotando tu {entity} para nuestros registros.",
+          "Se trata de tu {entity}, no hace falta ninguna acción.",
+          "Solo un aviso sobre tu {entity}.",
+          "Registramos tu {entity} la semana pasada."
+        ],
+        "request": [
+          "Necesito ayuda con tu {entity} hoy.",
+          "Por favor, encárgate de mi {entity}.",
+          "¿Puedes resolver tu {entity} por mí?",
+          "Me gustaría que se resolviera tu {entity}.",
+          "¿Puedes ayudarme con mi {entity}?"
+        ],
+        "urgent": [
+          "¡Tu {entity} está bloqueando la compra ahora mismo!",
+          "¡Estamos perdiendo pedidos por tu {entity}!",
+          "¡Tu {entity} es urgente, los clientes están esperando!",
+          "¡Estamos escalando tu {entity} ahora, nadie puede hacer pedidos!"
+        ]
+      }
+    },
+    "fr": {
+      "entities": [
+        "remboursement",
+        "étiquette de retour",
+        "mise à jour du suivi",
+        "facture de commande",
+        "échange",
+        "créneau de livraison",
+        "ajustement de prix",
+        "annulation de commande",
+        "réclamation de garantie",
+        "carte cadeau",
+        "devis d'expédition",
+        "changement d'adresse",
+        "alerte de réassort",
+        "boîte d'abonnement",
+        "colis endommagé",
+        "crédit magasin",
+        "code promo",
+        "statut de commande",
+        "créneau de retrait",
+        "virement au vendeur"
+      ],
+      "instructions": {
+        "choice": "Quelle file doit traiter cette commande ?",
+        "noul": "Ce message demande-t-il votre {entity} ?",
+        "score": "Quelle est l'urgence de ce problème de commande ?"
+      },
+      "levels": [
+        "routine",
+        "bientôt",
+        "aujourd'hui",
+        "immédiatement"
+      ],
+      "noul_criteria": {
+        "false": "ne le demande pas",
+        "true": "demande votre {entity}"
+      },
+      "option_descriptions": {
+        "catalog": "pages produit, tailles, stock, vendeurs, avis, codes de réduction et listes de souhaits",
+        "other": "tout le reste : questions produit, crédit magasin, cartes cadeaux, codes promo et points de fidélité",
+        "payments": "frais, cartes, reçus, factures, crédit de portefeuille et taxes sur les commandes",
+        "returns": "retours, échanges, remplacements, étiquettes de retour et articles endommagés",
+        "shipping": "suivi, dates de livraison, coursiers, changements d'adresse et colis perdus"
+      },
+      "option_terms": {
+        "catalog": [
+          "page produit",
+          "guide des tailles",
+          "niveau de stock",
+          "annonce du vendeur",
+          "avis produit",
+          "code de réduction",
+          "liste de souhaits",
+          "tableau comparatif"
+        ],
+        "other": [
+          "crédit magasin",
+          "carte cadeau",
+          "code promo",
+          "points de fidélité",
+          "question produit",
+          "question sur la taille",
+          "question sur le stock",
+          "question sur la marque"
+        ],
+        "payments": [
+          "frais",
+          "carte refusée",
+          "reçu",
+          "facture de commande",
+          "crédit de portefeuille",
+          "double facturation",
+          "reçu fiscal",
+          "moyen de paiement"
+        ],
+        "returns": [
+          "retour",
+          "échange",
+          "remplacement",
+          "article endommagé",
+          "étiquette de retour",
+          "frais de réassort",
+          "délai de retour",
+          "réclamation de garantie"
+        ],
+        "shipping": [
+          "suivi",
+          "livraison",
+          "coursier",
+          "colis",
+          "expédition",
+          "adresse de livraison",
+          "estimation de livraison",
+          "colis perdu"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Pas de hâte pour votre {entity}.",
+          "Quand vous pourrez jeter un œil à votre {entity}.",
+          "Tout va bien, je note juste votre {entity}.",
+          "Aucune urgence avec votre {entity}."
+        ],
+        "distractor": [
+          "Il y a aussi votre {distractor} en attente.",
+          "J'ai aussi ouvert votre {distractor}.",
+          "Séparément, j'ai aussi signalé votre {distractor}.",
+          "Sans rapport, mais il y a aussi votre {distractor}."
+        ],
+        "neutral": [
+          "Je note votre {entity} pour nos registres.",
+          "C'est à propos de votre {entity}, aucune action nécessaire.",
+          "Juste une note au sujet de votre {entity}.",
+          "Nous avons enregistré votre {entity} la semaine dernière."
+        ],
+        "request": [
+          "J'ai besoin d'aide avec votre {entity} aujourd'hui.",
+          "Merci de vous occuper de votre {entity}.",
+          "Pouvez-vous régler votre {entity} pour moi ?",
+          "Je voudrais faire régler votre {entity}.",
+          "Pouvez-vous m'aider avec ce dossier : {entity} ?"
+        ],
+        "urgent": [
+          "Votre {entity} bloque le tunnel d'achat en ce moment !",
+          "Nous perdons des commandes à cause de votre {entity} !",
+          "Votre {entity} est critique, les clients attendent !",
+          "Nous faisons monter votre {entity} en urgence, plus personne ne peut commander !"
+        ]
+      }
+    },
+    "it": {
+      "entities": [
+        "il rimborso",
+        "l'etichetta di reso",
+        "l'aggiornamento tracciamento",
+        "la fattura dell'ordine",
+        "il cambio",
+        "lo slot di consegna",
+        "l'aggiustamento di prezzo",
+        "l'annullamento dell'ordine",
+        "il reclamo di garanzia",
+        "la carta regalo",
+        "il preventivo di spedizione",
+        "la modifica dell'indirizzo",
+        "l'avviso di riassortimento",
+        "la box in abbonamento",
+        "il pacco danneggiato",
+        "il credito del negozio",
+        "il codice promozionale",
+        "lo stato dell'ordine",
+        "lo slot di ritiro",
+        "il pagamento al venditore"
+      ],
+      "instructions": {
+        "choice": "Qual coda dovrebbe gestire questo ordine?",
+        "noul": "Questo messaggio richiede {entity}?",
+        "score": "Quanto è urgente questo problema con l'ordine?"
+      },
+      "levels": [
+        "di routine",
+        "presto",
+        "oggi",
+        "subito"
+      ],
+      "noul_criteria": {
+        "false": "non lo richiede",
+        "true": "richiede {entity}"
+      },
+      "option_descriptions": {
+        "catalog": "pagine prodotto, taglie, stock, venditori, recensioni, codici sconto e liste dei desideri",
+        "other": "tutto il resto: domande sui prodotti, credito del negozio, carte regalo, codici promozionali e punti fedeltà",
+        "payments": "addebiti, carte, ricevute, fatture, credito del portafoglio e tasse sugli ordini",
+        "returns": "resi, cambi, sostituzioni, etichette di reso e articoli danneggiati",
+        "shipping": "tracciamento, date di consegna, corrieri, modifiche dell'indirizzo e pacchi smarriti"
+      },
+      "option_terms": {
+        "catalog": [
+          "la pagina prodotto",
+          "la guida alle taglie",
+          "il livello di stock",
+          "l'annuncio del venditore",
+          "la recensione prodotto",
+          "il codice sconto",
+          "la lista dei desideri",
+          "la tabella comparativa"
+        ],
+        "other": [
+          "il credito del negozio",
+          "la carta regalo",
+          "il codice promozionale",
+          "i punti fedeltà",
+          "la domanda sul prodotto",
+          "la domanda sulla taglia",
+          "la domanda sullo stock",
+          "la domanda sul marchio"
+        ],
+        "payments": [
+          "l'addebito",
+          "la carta rifiutata",
+          "la ricevuta",
+          "la fattura dell'ordine",
+          "il credito del portafoglio",
+          "l'addebito duplicato",
+          "la ricevuta fiscale",
+          "il metodo di pagamento"
+        ],
+        "returns": [
+          "il reso",
+          "il cambio",
+          "la sostituzione",
+          "l'articolo danneggiato",
+          "l'etichetta di reso",
+          "il costo di riassortimento",
+          "il termine di reso",
+          "il reclamo di garanzia"
+        ],
+        "shipping": [
+          "il tracciamento",
+          "la consegna",
+          "il corriere",
+          "il pacco",
+          "la spedizione",
+          "l'indirizzo di spedizione",
+          "la previsione di consegna",
+          "il pacco smarrito"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Nessuna fretta con {entity}.",
+          "Quando puoi guardare {entity}.",
+          "Tutto bene, sto solo segnando {entity}.",
+          "Nessuna urgenza con {entity}."
+        ],
+        "distractor": [
+          "Ho anche {distractor} in sospeso.",
+          "Ho aperto anche {distractor}.",
+          "Separatamente, ho segnalato anche {distractor}.",
+          "Fuori tema, ma ho notato anche {distractor}."
+        ],
+        "neutral": [
+          "Sto solo registrando {entity} per i nostri archivi.",
+          "Per {entity}: nessuna azione necessaria.",
+          "Solo un avviso circa {entity}.",
+          "Abbiamo registrato {entity} la settimana scorsa."
+        ],
+        "request": [
+          "Ho bisogno di aiuto con {entity} oggi.",
+          "Per favore, gestisci {entity}.",
+          "Puoi sistemare {entity} per me?",
+          "Vorrei risolvere {entity}.",
+          "Puoi aiutarmi con {entity}?"
+        ],
+        "urgent": [
+          "Ecco {entity}: sta bloccando il checkout adesso!",
+          "Stiamo perdendo ordini: {entity} è il problema!",
+          "Attenzione: {entity} è cruciale, i clienti stanno aspettando!",
+          "Mettiamo {entity} in cima alle priorità ora, nessuno può ordinare!"
+        ]
+      }
+    },
+    "nl": {
+      "entities": [
+        "terugbetaling",
+        "retourlabel",
+        "trackingupdate",
+        "bestelfactuur",
+        "ruiling",
+        "bezorgmoment",
+        "prijsaanpassing",
+        "annulering van de bestelling",
+        "garantieclaim",
+        "cadeaubon",
+        "verzendofferte",
+        "adreswijziging",
+        "voorraadmelding",
+        "abonnementsbox",
+        "beschadigd pakket",
+        "winkeltegoed",
+        "promocode",
+        "bestelstatus",
+        "afhaalmoment",
+        "uitbetaling aan de verkoper"
+      ],
+      "instructions": {
+        "choice": "Welke wachtrij moet deze bestelling afhandelen?",
+        "noul": "Vraagt dit bericht om een {entity}?",
+        "score": "Hoe urgent is dit probleem met de bestelling?"
+      },
+      "levels": [
+        "routine",
+        "binnenkort",
+        "vandaag",
+        "direct"
+      ],
+      "noul_criteria": {
+        "false": "vraagt er niet om",
+        "true": "vraagt om een {entity}"
+      },
+      "option_descriptions": {
+        "catalog": "productpagina's, maten, voorraad, verkopers, beoordelingen, kortingscodes en verlanglijsten",
+        "other": "al de rest: productvragen, winkeltegoed, cadeaubonnen, promocodes en loyaliteitspunten",
+        "payments": "betalingen, kaarten, bonnen, facturen, wallettegoed en belasting over bestellingen",
+        "returns": "retouren, ruilen, vervanging, retourlabels en beschadigde artikelen",
+        "shipping": "tracking, bezorgdaten, koeriers, adreswijzigingen en verloren pakketten"
+      },
+      "option_terms": {
+        "catalog": [
+          "productpagina",
+          "maatgids",
+          "voorraadniveau",
+          "verkopersaanbod",
+          "productbeoordeling",
+          "kortingscode",
+          "verlanglijst",
+          "vergelijkingstabel"
+        ],
+        "other": [
+          "winkeltegoed",
+          "cadeaubon",
+          "promocode",
+          "loyaliteitspunten",
+          "productvraag",
+          "maatvraag",
+          "voorraadvraag",
+          "merkvraag"
+        ],
+        "payments": [
+          "afschrijving",
+          "geweigerde kaart",
+          "bon",
+          "bestelfactuur",
+          "wallettegoed",
+          "dubbele afschrijving",
+          "fiscale bon",
+          "betaalmethode"
+        ],
+        "returns": [
+          "retour",
+          "ruil",
+          "vervanging",
+          "beschadigd artikel",
+          "retourlabel",
+          "retouropslag",
+          "retourtermijn",
+          "garantieclaim"
+        ],
+        "shipping": [
+          "tracking",
+          "bezorging",
+          "koerier",
+          "pakket",
+          "verzending",
+          "bezorgadres",
+          "verwachte bezorging",
+          "verloren pakket"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Geen haast met je {entity}.",
+          "Wanneer je naar je {entity} kunt kijken.",
+          "Alles goed, ik noteer alleen je {entity}.",
+          "Geen spoed met je {entity}."
+        ],
+        "distractor": [
+          "Er is ook een {distractor} open.",
+          "Ik heb ook een {distractor} geopend.",
+          "Apart is er een {distractor} gemeld.",
+          "Niets mee te maken, maar er is ook een {distractor}."
+        ],
+        "neutral": [
+          "Ik noteer je {entity} alleen voor onze administratie.",
+          "Dit gaat over je {entity}, geen actie nodig.",
+          "Even een seintje over je {entity}.",
+          "We hebben je {entity} vorige week geregistreerd."
+        ],
+        "request": [
+          "Ik heb vandaag hulp nodig met je {entity}.",
+          "Zorg alsjeblieft voor mijn {entity}.",
+          "Kun je een {entity} voor mij oplossen?",
+          "Ik wil graag dit geregeld hebben: {entity}.",
+          "Kun je me helpen met mijn {entity}?"
+        ],
+        "urgent": [
+          "Je {entity} blokkeert het afrekenen nu!",
+          "We verliezen bestellingen door je {entity}!",
+          "Je {entity} is kritiek, klanten wachten!",
+          "We escaleren je {entity} nu, niemand kan bestellen!"
+        ]
+      }
+    },
+    "pt": {
+      "entities": [
+        "o reembolso",
+        "a etiqueta de devolução",
+        "a atualização de rastreio",
+        "a nota fiscal do pedido",
+        "a troca",
+        "o horário de entrega",
+        "o ajuste de preço",
+        "o cancelamento do pedido",
+        "a reclamação de garantia",
+        "o cartão-presente",
+        "o orçamento de frete",
+        "a alteração de endereço",
+        "o aviso de reposição",
+        "a caixa de assinatura",
+        "o pacote danificado",
+        "o crédito na loja",
+        "o código promocional",
+        "o status do pedido",
+        "o horário de retirada",
+        "o repasse ao vendedor"
+      ],
+      "instructions": {
+        "choice": "Qual fila deve tratar este pedido?",
+        "noul": "Esta mensagem solicita {entity}?",
+        "score": "Qual é a urgência deste problema com o pedido?"
+      },
+      "levels": [
+        "rotina",
+        "em breve",
+        "hoje",
+        "imediato"
+      ],
+      "noul_criteria": {
+        "false": "não solicita",
+        "true": "solicita {entity}"
+      },
+      "option_descriptions": {
+        "catalog": "páginas de produto, tamanhos, estoque, vendedores, avaliações, códigos de desconto e listas de desejos",
+        "other": "todo o resto: dúvidas sobre produtos, crédito na loja, cartões-presente, códigos promocionais e pontos de fidelidade",
+        "payments": "cobranças, cartões, recibos, notas fiscais, saldo da carteira e impostos em pedidos",
+        "returns": "devoluções, trocas, substituições, etiquetas de devolução e itens danificados",
+        "shipping": "rastreio, datas de entrega, transportadoras, alterações de endereço e pacotes perdidos"
+      },
+      "option_terms": {
+        "catalog": [
+          "a página do produto",
+          "o guia de tamanhos",
+          "o nível de estoque",
+          "o anúncio do vendedor",
+          "a avaliação de produto",
+          "o código de desconto",
+          "a lista de desejos",
+          "a tabela comparativa"
+        ],
+        "other": [
+          "o crédito na loja",
+          "o cartão-presente",
+          "o código promocional",
+          "os pontos de fidelidade",
+          "a dúvida sobre produto",
+          "a dúvida sobre tamanho",
+          "a dúvida sobre estoque",
+          "a dúvida sobre marca"
+        ],
+        "payments": [
+          "a cobrança",
+          "o cartão recusado",
+          "o recibo",
+          "a nota fiscal do pedido",
+          "o saldo da carteira",
+          "a cobrança duplicada",
+          "o comprovante de imposto",
+          "a forma de pagamento"
+        ],
+        "returns": [
+          "a devolução",
+          "a troca",
+          "a substituição",
+          "o item danificado",
+          "a etiqueta de devolução",
+          "a taxa de reposição",
+          "o prazo de devolução",
+          "a reclamação de garantia"
+        ],
+        "shipping": [
+          "o rastreio",
+          "a entrega",
+          "a transportadora",
+          "o pacote",
+          "o envio",
+          "o endereço de entrega",
+          "a previsão de entrega",
+          "o pacote perdido"
+        ]
+      },
+      "phrases": {
+        "calm": [
+          "Sem pressa com {entity}.",
+          "Quando puder conferir {entity}.",
+          "Tudo bem, só estou registrando {entity}.",
+          "Sem urgência com {entity}."
+        ],
+        "distractor": [
+          "Também deixei {distractor} em aberto.",
+          "Abri {distractor} também.",
+          "Em separado, registrei também {distractor}.",
+          "Sem relação, mas também citei {distractor}."
+        ],
+        "neutral": [
+          "Estou registrando {entity} para nossos registros.",
+          "É sobre {entity}, nenhuma ação necessária.",
+          "Só um aviso sobre {entity}.",
+          "Registramos {entity} semana passada."
+        ],
+        "request": [
+          "Preciso de ajuda com {entity} hoje.",
+          "Por favor, resolve {entity}.",
+          "Você pode resolver {entity} para mim?",
+          "Gostaria de resolver {entity}.",
+          "Pode me ajudar com {entity}?"
+        ],
+        "urgent": [
+          "Atenção: {entity} está bloqueando o checkout agora!",
+          "Estamos perdendo pedidos sem {entity}!",
+          "É {entity} que está urgente, os clientes estão esperando!",
+          "Estamos escalando {entity} agora, ninguém consegue fazer pedidos!"
         ]
       }
     }
