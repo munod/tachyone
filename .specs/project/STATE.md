@@ -752,6 +752,27 @@ cost it carried (the speed points) rather than reverting silently.
 paying a latency tax on every p95 for an unmeasured intuition, and confusing input access
 with capability.
 
+### L-015: A temperature fitted where the model is saturated zeroes the axis off-domain
+
+**Context:** B-13 JB-7. The per-arm calibration refit (the B-5 pattern: `fit_calibration` on the
+arm's own `eval_en_domains` predictions) ran where both fresh arms score 0.9999 — i.e. on data the
+model has essentially memorised (the known train/eval row collision).
+**Problem:** the fit landed at **T=0.05–0.1** (sharpening: in-domain ECE → 0.000012), and the
+*same shipped asset* pushed off-domain ECE to ≥ 0.5 on the public items — **Calibration axis 0 for
+every arm, including the published one** (ECE 0.543). A first pass had read ctrl 65.3 / treat 48.4
+because those two serves ran **without** `temperature_calibration.json` (the silent, documented
+fallback = T=1): two arms measured with the asset, two without — an instrumentation inconsistency
+that looked like a calibration difference. Intelligence never moved between passes (temperature
+cannot change argmax — the invariant that exposed the inconsistency).
+**Solution:** measure every arm **as shipped** — the asset belongs to the instrument, not just the
+adapter (L-013 applied to calibration); fit temperatures on data where the model is *not*
+saturated, or make the temperature depend on input plausibility (the P3 shrinkage that B-13 keeps
+deferring to); when an asset can legitimately be absent, publish both numbers instead of one.
+**Prevents:** quoting a Calibration axis bought by an in-sample fit, reading an absent asset as
+"better calibrated", and comparing arms whose serving configuration differs.
+
+---
+
 ---
 
 ## Quick Tasks Completed

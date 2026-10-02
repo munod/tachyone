@@ -139,11 +139,13 @@ harness, explicit adapter (L-013), calibration refit per arm:
 | arm | in-domain overall | gates B-5 | bench score | Intelligence | Calibration | Speed | Cost |
 | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
 | published (P0 reference) | 0.9637 | all PASS | 0.43 | 8.4 | 0.0 | 85.0 | 78.8 |
-| control (fresh run-5) | 0.9999 | all PASS | 1.44 | 9.0 | 65.3 | 84.5 | 78.8 |
-| **treatment (mixture)** | **0.9999** | **all PASS** | **4.19** | **15.0** | 48.4 | 84.7 | 78.8 |
+| control (fresh run-5) | 0.9999 | all PASS | 0.51 | 9.0 | 0.0 | 84.6 | 78.8 |
+| **treatment (mixture)** | **0.9999** | **all PASS** | **1.59** | **15.0** | 0.0 | 84.3 | 78.8 |
 
 Attribution: control +0.6 vs treatment **+6.0** Intelligence — the gain rides on the
-data, not run variance (L-006/L-012). **Target I ≥ 50 missed (15.0).** Remaining
+data, not run variance (L-006/L-012). **Target I ≥ 50 missed (15.0).** Calibration is 0
+for every arm as shipped (L-015: the in-domain refit sharpens to T=0.05 and zeroes the
+axis off-domain — measured consistently, asset present, for all three). Remaining
 distance is concentrated where the architecture is thin: `noul` never reads the rubric
 (`hard/trap` 0.000, `standard/policy` ≈ chance), and `hard/temporal_numeric` regressed
 (0.267 → 0.133). Biggest gains: `standard/ordinal` 0.25 → 0.667, `score` 0.222 → 0.611,

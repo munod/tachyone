@@ -1080,10 +1080,12 @@ facts+tree, label spaces audited per L-010, zero public-item overlap); mixture 3
 Two arms one factor apart, both `exit=0`, fits green, evaluated in one harness. **Full
 table: `.specs/features/jevbench/tasks.md` JB-7.** Verdict: all B-5 gates pass on every
 arm; **Intelligence 8.4 (published) → 9.0 (control) → 15.0 (treatment)**, bench score
-0.43 → 1.44 → **4.19** — the treatment's +6.0 is 10× the control's +0.6 variance move, so
-the gain is the data's (L-006/L-012). **Cycle gate I ≥ 50 NOT met (15.0).** Structural
-leftovers: `noul` remains rubric-blind (`hard/trap` 0.000), `hard/temporal_numeric`
-regressed, treatment Calibration (48.4) sits below control (65.3).
+0.43 → 0.51 → **1.59** — the treatment's +6.0 is 10× the control's +0.6 variance move, so
+the gain is the data's (L-006/L-012). **Cycle gate I ≥ 50 NOT met (15.0).** Calibration
+is 0 for all three arms as shipped (**L-015**: the in-domain refit sharpens to T=0.05 and
+zeroes the axis off-domain; an earlier pass that read 65.3/48.4 for the fresh arms had
+served them *without* the asset). Structural leftovers: `noul` remains rubric-blind
+(`hard/trap` 0.000), `hard/temporal_numeric` regressed.
 
 **Acceptance.**
 - [x] P0: baseline measured and recorded (231 public items, one harness, L-013-compliant
