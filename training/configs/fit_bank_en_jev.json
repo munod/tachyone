@@ -1,0 +1,15 @@
+{
+  "bank_dir": "checkpoints/en_jev_bank",
+  "batch_size": 64,
+  "choice_rank": 128,
+  "control_dir": "checkpoints/en_jev_bank_ctrl",
+  "data_path": "data/train_jev_en.jsonl",
+  "device": "auto",
+  "epochs": 8,
+  "learning_rate": 0.0001,
+  "max_len": 512,
+  "model_id": "answerdotai/ModernBERT-large",
+  "seed": 2,
+  "trunk_adapter": "checkpoints/en_jev",
+  "val_split": 0.1
+}
