@@ -142,7 +142,12 @@ optimization).
 fitted bank, fitted shared) and BACKLOG names the publish decision.
 **Tests:** — (measurement) · **Gate:** full.
 **Commit:** `docs(specs): record the B-5b isolate and the publish decision`
-**Status:** Not started.
+**Status:** **Done (2026-10-02).** Fitted bank **0.9975** / fitted shared 0.9976 (1-row tie —
+L-012 replicates: structure neutral under equal optimization; the joint bank's deficit was
+optimization exposure). Publish arm decided: **fitted bank** — all gates pass with zero ECE
+exceptions, gate strict 1.000, unseen-text 0.9957. Artifacts:
+`benchmarks/results/multi_domains_fit_{bank,ctrl}.json`, config
+`training/configs/fit_bank_multi_domains.json`, loop `/tmp/opencode/b5b_fit{,_eval}.sh`.
 
 ## B5B-7: Gates verdict
 

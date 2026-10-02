@@ -504,6 +504,40 @@ separates *structure* from *joint-training exposure*. Publish the best measured 
 bank wins → multi ships ADR-0016's keyed format; shared wins → multi ships the legacy head
 and B-5b publishes the structural finding.
 
+**B5B-6b + B5B-7 — the isolate ran, gates PASS with zero ECE exceptions, publish arm decided
+(2026-10-02).** `training/configs/fit_bank_multi_domains.json` (trunk `checkpoints/multi_b5b`,
+10,000 `choice` records encoded once, lr 1e-4, 8 epochs, `choice_rank` 128) produced both fitted
+arms; evaluated in the same harness with calibration refit per arm — the full candidate table:
+
+| arm | overall | ECE | `choice` | `support` | worst new domain | gate strict | unseen text |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| baseline (released multi) | 0.5609 | 0.172 | 0.2580 | 0.8413 | 0.438 | — | 0.510 |
+| joint bank | 0.8732 | 0.023 | 0.6196 | 0.9453 | 0.801 | 1.000 | 0.897 |
+| joint shared | 0.9295 | 0.012 | 0.7884 | 0.9800 | 0.890 | — | 0.936 |
+| **fitted bank (publish)** | **0.9975** | **0.001** | **0.9924** | **1.0000** | **0.993** | **1.000** | 0.996 |
+| fitted shared | 0.9976 | 0.001 | 0.9928 | 1.0000 | 0.992 | — | 0.996 |
+
+**Verdict — every B-5b gate passes on the publish arm:** `support` **1.0000 ≥ 0.8413** ✓,
+worst new domain **0.9927 ≥ 0.70** ✓, per-domain ECE **0.0005–0.0038 (all five under 0.05 —
+zero exceptions, first time either checkpoint family posts that)** ✓, gate **strict 1.000,
+0 fell to shared, 0 wrong domain** over 2,500 `choice` rows ✓. Per-language 0.995–1.000,
+worst cell `ecommerce/pt` 0.980, held-out-text 0.9957 (so the headline is not the known
+train/eval row collision buying it — B7's discipline).
+
+**What the isolate proves (and what it does not):** fitted bank vs fitted shared differ by
+**1 row of 7,500** — under equal optimization the structure is *neutral*, replicating the
+English isolate's 3-row tie (L-012, now measured twice); the joint bank's 5.6-point deficit
+was optimization exposure, not capacity or routing (gate 1.000, oracle identical). The
+fitted heads riding ~0.99 is the same mechanism as the published English `v0.5.0` isolate:
+the generator's option-specific phrase pools make in-domain `choice` nearly deterministic
+for a head fit on frozen, well-trained encodings — the published methodology, not a new
+trick. Everything above rides on `noul`/`score` = 1.000 (the B-12 label ceiling).
+
+**Publish decision: the fitted bank** (`checkpoints/multi_b5b_fit_bank` — trunk + keyed
+`choice_head.json` + fit recipe, L-011). It is best-or-tied on every column, ships ADR-0016's
+decided format with the gate that measures 1.000, and matches the English adapter's proven
+trunk+fitter construction. B5B-8 promotes it to `checkpoints/multi` and republishes.
+
 **Risks / notes.** Five domains in one LoRA of fixed capacity may dilute per-domain accuracy —
 that is what the worst-domain gate is for. Training time vs the 12 GB budget (ADR-0005). Tool/
 function selection largely overlaps the existing `choice` case, so it may add vocabulary rather

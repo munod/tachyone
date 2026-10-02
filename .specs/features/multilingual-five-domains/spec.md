@@ -18,21 +18,22 @@ kind L-008/L-010 forbid. ADR-0016 §4 unblocked this cycle explicitly: the bank'
 
 ## Goals
 
-- [ ] **Localized content:** all five committed domains ship complete language tables for
+- [x] **Localized content:** all five committed domains ship complete language tables for
       `DEFAULT_LANGUAGES` (7), with English tables byte-untouched (golden hashes hold).
-- [ ] **Datasets:** `data/train_multi_domains.jsonl` (30k) and `data/eval_multi_domains.jsonl`
+- [x] **Datasets:** `data/train_multi_domains.jsonl` (30k) and `data/eval_multi_domains.jsonl`
       (7.5k) reproduce from committed configs, with the support halves identical to
       `train_multi`/`eval_multi` modulo the `domain` key.
-- [ ] **Trained bank:** one joint mmBERT run writes a keyed `choice_head.json` (shared + five
+- [x] **Trained bank:** one joint mmBERT run writes a keyed `choice_head.json` (shared + five
       domain heads, signatures in the six training languages) that loads and answers through
-      the unchanged ADR-0016 gate.
-- [ ] **Gates (baseline first):** released-multilingual baseline measured on the new eval
-      set before training fixes the numbers; then `support` ≥ baseline cell, worst new
-      domain ≥ 0.70, per-domain ECE ≤ 0.05 with exceptions declared, gate strict accuracy
-      published beside `per_domain`.
+      the unchanged ADR-0016 gate — **and the frozen-trunk fitter (ADR-0016 §5 isolate)
+      produced the publish arm: `checkpoints/multi_b5b_fit_bank`.**
+- [x] **Gates (baseline first):** released-multilingual baseline measured on the new eval
+      set before training fixed the numbers (`support` ≥ 0.8413, worst new domain ≥ 0.70,
+      per-domain ECE ≤ 0.05 with exceptions declared, gate strict published) — **all pass on
+      the publish arm with zero ECE exceptions (0.0005–0.0038), gate strict 1.000.**
 - [ ] **Published:** `munod/tachyone-multi` republished sha256-verified; report, model card,
       README, benchmarks docs and CHANGELOG carry the new set; MASSIVE probe and fast-path
-      parity re-run (0 flips expected).
+      parity re-run (0 flips expected). → **B5B-8, next.**
 
 ## Out of Scope
 

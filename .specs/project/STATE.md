@@ -29,11 +29,23 @@ this L4 box and are labelled box-bound (the previous adapter measures 51.8 ms be
 54.4 ms on the same path). **Then open, now closed:** only the GitHub release tag — the public
 probes and the head-to-head `choice` cells were re-run against the new revision the same day
 (both recorded below), and **`v0.5.0`** was tagged, pushed and published with them.
-**B-5b scheduled (2026-10-01):** spec/design/tasks at `.specs/features/multilingual-five-domains/`
-with four locked decisions (context.md): bank keyed by **domain** (five keys, signatures in the
-six training languages), **baseline-first gates** (released multi measured on the new eval set
-fixes the numbers before training), **30k volume** (support's 18k kept, not the 9k en mirror that
-would halve the incumbent), and the **full B-5a publication pattern**. Not started.
+**B-5b scheduled (2026-10-01) and measured through the isolate (2026-10-02):** spec/design/tasks
+at `.specs/features/multilingual-five-domains/` with four locked decisions (context.md):
+bank keyed by **domain** (five keys, signatures in the six training languages), **baseline-first
+gates** (released multi measured on the new eval set fixes the numbers before training), **30k
+volume** (support's 18k kept, not the 9k en mirror that would halve the incumbent), and the
+**full B-5a publication pattern**. Landed: lexicons localized (3 review passes, 14k-combination
+audit, `19de6b9`), 30k/7.5k datasets with support halves byte-identical (`367aa88`), the
+`per_domain_language` cross cell (`ea24e73`), baseline + gates fixed (`9d94818`), joint run +
+fit config (`cc74225`). **Two lessons recorded: L-013** (the published multi 0.743 is a routed
+number — 13–15% of multilingual rows fall through to `tachyone-en`, whose 2026-10-01 republish
+moved it to 0.736; the explicit harness gives 0.8413) and the **joint bank deficit** (bank
+loses 5.6 points to its own shared head in joint training — optimization exposure, not
+structure). **Verdict (B5B-7): every gate passes on the fitted bank** — overall **0.9975**,
+support **1.0000**, worst new domain **0.993**, per-domain ECE **0.0005–0.0038 (zero
+exceptions)**, gate strict **1.000**, unseen text 0.9957; fitted bank vs fitted shared tie at
+**1 row** (L-012 replicated). **Publish arm: `checkpoints/multi_b5b_fit_bank`; remaining B5B-8
+(Hub + docs + probes/fast-path) and B5B-9 (docs site + close).**
 
 **Probes re-run (2026-10-01).** The three public probes were re-measured against `c00c174d` and
 `benchmarks/probes.md` re-rendered (previous artifacts kept as `probe_*_preb5.json`):
