@@ -1,0 +1,9 @@
+{
+  "_comment": "The training mixture for the B-13 P2 treatment arm (JB-5). The fine-tune takes ONE data_path, so the mixture is itself a recipe: ordered parts, concatenated by training/build_jev_mixture.py with id-uniqueness and shape checks. Part files are gitignored; this config plus the part recipes (jev_sources.json, jev_families.json, data_en_domains.json) is what reproduces it (L-011).",
+  "parts": [
+    "data/train_en_domains.jsonl",
+    "data/train_jev_sources.jsonl",
+    "data/train_jev_families.jsonl"
+  ],
+  "out": "data/train_jev_en.jsonl"
+}
