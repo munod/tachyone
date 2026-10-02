@@ -15,17 +15,17 @@ reached `training/`, which is exactly what makes the numbers mean something.
 - **Judge each number against that probe's chance level**, stated in its section — not
   against the synthetic 0.964. Different tasks, different option counts,
   no shared distribution with the training data.
-- **All three temperature fits landed on the grid ceiling (T=20.0).** That flattens the
-  distribution, so a low `ECE cal` is *bought* with confidence: read it next to `Conf`
-  and `Brier`, and treat `ECE raw` as what the adapter actually ships (same caveat as
-  [`docs/compare.md` §3](../docs/compare.md#3-why-not-another-open-system-one-scorer)).
-- **These are the released adapters, zero-shot.** The English one now covers five domains (B-5 shipped it on 2026-10-01); the multilingual one is still trained on support tickets with four team labels. None of these rows was ever in `training/`.
+- **Temperature fits (`typed-decisions` T=20, `massive` T=14.55, `xnli` T=20).** A fit pinned at the grid ceiling (T=20.0)
+  flattens the distribution, so a low `ECE cal` is *bought* with confidence: read it next
+  to `Conf` and `Brier`, and treat `ECE raw` as what the adapter actually ships (same
+  caveat as [`docs/compare.md` §3](../docs/compare.md#3-why-not-another-open-system-one-scorer)).
+- **These are the released adapters, zero-shot.** Both now cover five domains — the English one since B-5 (2026-10-01) and the multilingual one since B-5b (2026-10-02, support plus four new domains across six languages). None of these rows was ever in `training/`.
 
 ## Method
 
 | | |
 | --- | --- |
-| Hardware | one GPU per run, recorded in each artifact's `environment.gpu` — the 2026-10-01 re-run was a **single NVIDIA L4**, the 2026-09-29 numbers an RTX 3060 · Python 3.12 · stock encoder forward (no `fast`) |
+| Hardware | one GPU per run, recorded in each artifact's `environment.gpu` — the 2026-10-01/02 re-runs were a **single NVIDIA L4**, the 2026-09-29 numbers an RTX 3060 · Python 3.12 · stock encoder forward (no `fast`) |
 | Engine | `encoder` backend through `tachyone.wire.answer`, released adapters (`munod/tachyone-en`, `munod/tachyone-multi`) selected per row by the language router |
 | Metrics | one implementation of accuracy / 10-bin ECE / Brier; a failed answer counts as **wrong** |
 | Temperature | fitted per probe on that probe's own development split, never on the split being reported |
@@ -72,31 +72,31 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 ### tachyone (encoder)
 
-3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=20.0) · NVIDIA L4 · Python 3.12.3
+3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=14.55) · NVIDIA L4 · Python 3.12.3
 
 #### Quality
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 3584 | 3584 | 0.011 | 0.354 | 0.016 | 0.984 | 0.027 |
+| tachyone (encoder) | 3584 | 3584 | 0.039 | 0.518 | 0.005 | 0.980 | 0.044 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 129.89 | 456.47 | 4.2 | 1.000 | 3094 | 2960 |
+| tachyone (encoder) | 319.57 | 449.97 | 2.8 | 1.000 | 3123 | 2960 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| de | tachyone (encoder) | 512 | 0.004 | 0.234 | 0.020 | 0.024 |
-| en | tachyone (encoder) | 512 | 0.039 | 0.724 | 0.005 | 0.044 |
-| es | tachyone (encoder) | 512 | 0.010 | 0.446 | 0.015 | 0.025 |
-| fr | tachyone (encoder) | 512 | 0.006 | 0.194 | 0.015 | 0.021 |
-| it | tachyone (encoder) | 512 | 0.006 | 0.321 | 0.019 | 0.025 |
-| nl | tachyone (encoder) | 512 | 0.006 | 0.372 | 0.023 | 0.029 |
-| pt | tachyone (encoder) | 512 | 0.004 | 0.186 | 0.018 | 0.022 |
+| de | tachyone (encoder) | 512 | 0.037 | 0.518 | 0.002 | 0.038 |
+| en | tachyone (encoder) | 512 | 0.039 | 0.724 | 0.025 | 0.064 |
+| es | tachyone (encoder) | 512 | 0.043 | 0.419 | 0.011 | 0.032 |
+| fr | tachyone (encoder) | 512 | 0.043 | 0.664 | 0.019 | 0.062 |
+| it | tachyone (encoder) | 512 | 0.055 | 0.490 | 0.020 | 0.043 |
+| nl | tachyone (encoder) | 512 | 0.025 | 0.464 | 0.013 | 0.038 |
+| pt | tachyone (encoder) | 512 | 0.029 | 0.345 | 0.003 | 0.030 |
 
 ## `xnli` — facebook/xnli (CC BY-NC 4.0)
 
@@ -133,7 +133,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 | --- | --- | ---: | ---: | ---: |
 | in-sample synthetic eval (`benchmarks/report.md`) | synthetic, shares states with training data | 1500 | 0.964 | 0.023 |
 | typed-decisions `test` | public, Apache-2.0 | 2000 | 0.269 | 0.542 |
-| massive `test` | public, CC-BY-4.0 | 3584 | 0.011 | 0.354 |
+| massive `test` | public, CC-BY-4.0 | 3584 | 0.039 | 0.518 |
 | xnli `test` | public, CC BY-NC 4.0 | 5010 | 0.341 | 0.650 |
 
 Raw (uncalibrated) ECE is what the engine shipped with; see

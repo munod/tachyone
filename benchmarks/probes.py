@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -125,6 +126,10 @@ MASSIVE_INTENTS: tuple[str, ...] = (
 )
 
 #: Where each probe comes from, how it is licensed and how it is cited (rendered by ``render``).
+#: Backup artifacts keep their cycle suffix (``probe_massive_preb5``) so before/after tables can
+#: cite them; the rendered page skips them (see ``render``).
+_BACKUP_SUFFIX = re.compile(r"_pre[a-z0-9]+$")
+
 SOURCES: dict[str, dict[str, str]] = {
     "typed-decisions": {
         "repo": "LocalLLaMA/typed-decisions",
@@ -511,8 +516,17 @@ def _synthetic_row(path: Path) -> list[str]:
 
 
 def render(paths: list[Path], out: Path, synthetic: Path | None) -> None:
-    """Compose ``benchmarks/probes.md`` from probe artifacts (plus the synthetic row)."""
-    artifacts = [json.loads(path.read_text(encoding="utf-8")) for path in paths]
+    """Compose ``benchmarks/probes.md`` from probe artifacts (plus the synthetic row).
+
+    Backup artifacts (``probe_<name>_pre<cycle>.json``) are skipped: the documented
+    reproduce command globs ``probe_*.json``, and the page must show one row per engine —
+    the backups are kept for before/after tables, never for the rendered page.
+    """
+    artifacts = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in paths
+        if not _BACKUP_SUFFIX.search(path.stem)
+    ]
     # The reference figure comes from the artifact, not from a literal: B-11 republished every
     # number as a set, and a hardcoded 0.859 would silently outlive the data behind it.
     synthetic_accuracy = (
@@ -531,6 +545,13 @@ def render(paths: list[Path], out: Path, synthetic: Path | None) -> None:
         by_probe.setdefault(probe, []).append(artifact)
 
     ordered = [probe for probe in PROBES if probe in by_probe]
+    # The fitted temperature per probe comes from the artifacts (B-5b moved MASSIVE off the
+    # grid ceiling), so the caveat below never outlives the data behind it.
+    temperatures = {
+        probe: max(float(a.get("temperature", {}).get("value") or 0.0) for a in by_probe[probe])
+        for probe in ordered
+    }
+    temperature_line = ", ".join(f"`{probe}` T={value:g}" for probe, value in temperatures.items())
     body = [
         "# Public probes",
         "",
@@ -549,20 +570,22 @@ def render(paths: list[Path], out: Path, synthetic: Path | None) -> None:
         "- **Judge each number against that probe's chance level**, stated in its section — not",
         f"  against the synthetic {synthetic_accuracy}. Different tasks, different option counts,",
         "  no shared distribution with the training data.",
-        "- **All three temperature fits landed on the grid ceiling (T=20.0).** That flattens the",
-        "  distribution, so a low `ECE cal` is *bought* with confidence: read it next to `Conf`",
-        "  and `Brier`, and treat `ECE raw` as what the adapter actually ships (same caveat as",
-        "  [`docs/compare.md` §3](../docs/compare.md#3-why-not-another-open-system-one-scorer)).",
-        "- **These are the released adapters, zero-shot.** The English one now covers five"
-        " domains (B-5 shipped it on 2026-10-01); the multilingual one is still trained on support"
-        " tickets with four team labels. None of these rows was ever in `training/`.",
+        f"- **Temperature fits ({temperature_line}).** A fit pinned at the grid ceiling (T=20.0)",
+        "  flattens the distribution, so a low `ECE cal` is *bought* with confidence: read it next",
+        "  to `Conf` and `Brier`, and treat `ECE raw` as what the adapter actually ships (same",
+        "  caveat as [`docs/compare.md` §3]"
+        "(../docs/compare.md#3-why-not-another-open-system-one-scorer)).",
+        "- **These are the released adapters, zero-shot.** Both now cover five domains — the"
+        " English one since B-5 (2026-10-01) and the multilingual one since B-5b (2026-10-02,"
+        " support plus four new domains across six languages). None of these rows was ever in"
+        " `training/`.",
         "",
         "## Method",
         "",
         "| | |",
         "| --- | --- |",
         "| Hardware | one GPU per run, recorded in each artifact's `environment.gpu` — the"
-        " 2026-10-01 re-run was a **single NVIDIA L4**, the 2026-09-29 numbers an RTX 3060 ·"
+        " 2026-10-01/02 re-runs were a **single NVIDIA L4**, the 2026-09-29 numbers an RTX 3060 ·"
         " Python 3.12 · stock encoder forward (no `fast`) |",
         "| Engine | `encoder` backend through `tachyone.wire.answer`, released adapters "
         "(`munod/tachyone-en`, `munod/tachyone-multi`) selected per row by the language router |",
