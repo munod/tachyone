@@ -66,6 +66,13 @@ Every stage is a committed script with a committed config and a fixed seed.
     and `data_noisy.json` regenerate byte-for-byte.
   `tests/test_training_generate.py` pins both rules with golden hashes and checks each committed
   data config against the dataset it documents.
+- **Localization completeness (B-5b):** every committed domain ships a full table for each tag in
+  `DEFAULT_LANGUAGES` (`en, pt, es, fr, de, it, nl`) — entities, instructions, levels, criteria,
+  ≥ 4 option terms and ≥ 20-char descriptions per option, and all five phrase tones with their
+  `{entity}`/`{distractor}` placeholders. The completeness test iterates the seven languages
+  rather than `en` alone, because a table that only ships English produces English sentences
+  under a non-`en` `lang` tag — the L-008 artifact in its second form. Runtime fallback to the
+  English table still exists (`DomainData._lang`), but shipped domains may not rely on it.
 - **Input-noise augmentation (B-4):** `--noise-rate r` (config field `noise_rate`) applies one
   deterministic surface edit — char swap/delete, accent strip, casing flip, or terminal-punctuation
   drop — to `r` of records' `state` only (labels/questions untouched). `r=0` reproduces the clean
@@ -150,6 +157,8 @@ hyper-parameters, seed, record counts — L-011).
 uv run python -m training.fit_choice_bank --config training/configs/fit_bank_en_domains.json --dry-run
 # fit both arms (one encode pass, ~10 min on an L4):
 uv run python -m training.fit_choice_bank --config training/configs/fit_bank_en_domains.json
+# the multilingual counterpart (B-5b): trunk = the joint five-domain run's adapter
+uv run python -m training.fit_choice_bank --config training/configs/fit_bank_multi_domains.json
 ```
 
 The measured outcome — four arms on one harness — is in `.specs/project/BACKLOG.md` **B-5**:
@@ -158,6 +167,12 @@ refitting only the head took five-domain accuracy 0.879 → **0.964** on a froze
 per-domain capacity, closed the gap (lesson L-012). Keep the trainer's learning rate (**1e-4**):
 at 1e-3 an Adam step is ~10% of these heads' weight RMS and the domain heads — which see only
 ~1/5 of the batches — degrade while the shared head still looks fine.
+
+**B-5b is the same finding on the other checkpoint, twice.** Under joint training the
+per-domain bank **lost** to its own shared head by 5.6 points overall (0.8732 vs 0.9295 — the
+first joint bank run ever measured), while the frozen-trunk fit produced **0.9975 with bank and
+shared tied at 1 row**: the structure is neutral under equal optimization (L-012 replicated),
+joint-training exposure is what made the bank look bad, and the fitted bank is what shipped.
 
 ### Parameter-efficient training
 
@@ -224,11 +239,20 @@ Report per primitive and per language group:
 | Contradictory-label rate | `report["noul_labels"]` — every `noul` label judged against its own text (request → 1, neutral/empty → 0); states no phrase bank explains (surface noise) count as `unknown` and are never judged |
 | `choice` gate accuracy | `report["choice_gate"]` — how often the bank's gate picked the record's **own** domain, with `fell_to_shared` (the designed fallback) and `wrong_domain` (the only harmful outcome) counted separately, per domain (ADR-0016). Present only when the loaded asset ships a bank |
 | Seen-text split | `report["text_seen"]` — accuracy on rows whose **input text** occurs in the training set versus rows it never does, from `--train-data`. The shipped eval sets collide with their training rows on most `choice` rows, so this is the only line that separates memorization from generalization |
+| Domain × language cells | `report["per_domain_language"]` — accuracy/ECE per `domain/lang` cell, emitted only when the eval set carries more than one domain (legacy reports stay byte-identical) and rendered worst-cell-first. `per_domain` hides the language spread inside a domain and `per_language` hides the domain spread inside a language; the worst-cell gate needs both (B-5b) |
 
 `training/predict --head-hint domain` runs the **oracle arm** — every record forced onto its own
 domain head — so head quality separates from gate quality; `--head-hint <key>` forces one head,
 and a typo exits before the run instead of publishing an unforced arm as forced (the *wire* hint
 keeps its ADR-0016 fall-through).
+
+**Which harness measures what (lesson L-013).** `training.predict --adapter <dir>` measures
+*that checkpoint* explicitly; `training.evaluate --backend encoder` goes through the wire and
+the language router, where on multilingual rows 13–15% fall through to `tachyone-en` (empty or
+short states) — so the routed number depends on whatever the *English* adapter happens to be
+today (the published multilingual 0.743 stopped reproducing the day the English adapter was
+republished). Gate one checkpoint's quality only on the explicit harness; read routed numbers
+as product-level measurements that mix checkpoints by design.
 
 `benchmarks/report.py` renders the last two **in one table**, because the pre-B-11 generator made
 `de`/`es`/`nl` look weak when the labels, not the model, were the problem (L-008).

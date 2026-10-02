@@ -6,6 +6,46 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Five-domain multilingual coverage (B-5b).** The four new domain lexicons (`ecommerce`,
+  `agent_tools`, `documents`, `voice`) now ship complete tables for all seven training languages
+  (`support` already did); `test_every_committed_domain_file_is_complete` iterates
+  `DEFAULT_LANGUAGES`, because a table that only ships English puts English text under a
+  non-`en` `lang` tag — the L-008 artifact. Three review passes (read-aloud of generated
+  records + a full template × filler combinatorial audit, 14,082 combinations) keep the
+  composed sentences grammatical per language.
+- **Multilingual five-domain datasets:** `training/configs/data_multi_domains.json` /
+  `data_eval_multi_domains.json` → 30,000 train (support keeps its 18,000; four new domains
+  3,000 each) and 7,500 eval records over `pt es fr de it nl`; both support halves are
+  byte-identical to `train_multi`/`eval_multi` modulo the `domain` key (test-enforced), so the
+  no-regression gate measures the published rows.
+- **`report["per_domain_language"]`** — accuracy/ECE per `domain/language` cell, emitted only
+  when the eval set carries more than one domain (legacy reports stay byte-identical) and
+  rendered by `benchmarks/report.py` worst-cell-first with a `Worst cell (accuracy)` line.
+
+### Changed
+
+- **`munod/tachyone-multi` republished (commit [`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)).**
+  The artifact is the B-5b joint run (30k five-domain multilingual records, mmBERT, LoRA r=64,
+  8 epochs) with the `choice` heads re-fitted on the **frozen** trunk
+  (`training/configs/fit_bank_multi_domains.json`, recipe shipped as `choice_bank_fit.json`);
+  the stale `finetune_config.json` was deleted and all six uploaded files were sha256-verified.
+  On the five-domain split: **0.561 → 0.9975** overall (worst new domain 0.438 → 0.993, `choice`
+  0.620 → 0.992, gate strict **1.000**, per-domain ECE 0.0005–0.0038 with zero exceptions, all
+  six languages ≤ 0.004, held-out-text 0.996). On the support-only *routed* split the
+  product-level number moves **0.743 → 0.895**; gates were fixed from the previous adapter's
+  baseline (0.561 / support 0.8413) *before* training — table in `.specs/project/BACKLOG.md` B-5b.
+- **`benchmarks/report.md` gains a fourth entry** (`multilingual five-domain — B-5b fitted
+  choice-head bank`) with the gate row, the domain × language cross table and the held-out-text
+  split; the `multilingual` entry was re-measured on the new weights (0.743 → 0.895) and the
+  reproduction commands now follow the multi chain (generate → joint run → frozen-trunk fit →
+  predict), including the previously stale render invocation.
+- **Fast path re-checked on the multilingual checkpoint:** 3.66× p50, **0 top-label flips**
+  (`benchmarks/results/fast_path_multi.json`); English stays 3.76× / 0 flips.
+- README, `docs/model-card.md`, `docs/benchmarks.md` and `docs/huggingface.md` carry the new
+  set; `docs/benchmarks.md`'s multilingual section is now the B-5b artifact with both splits.
+
 ## [0.5.0] - 2026-10-01
 
 ### Added

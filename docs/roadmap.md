@@ -166,7 +166,7 @@ Delivered 2026-09-28 (CHANGELOG `[Unreleased]`):
   (`choice` 0.303, support 0.763), so B-5's structural decision is what remains. Fast path
   2.65×, probes 0.330 / 0.011 / 0.333, head-to-head 0.236 / 0.974 re-measured in the same pass.
 
-Delivered 2026-10-01 (CHANGELOG `[Unreleased]`):
+Delivered 2026-10-01 (CHANGELOG `[0.5.0]`):
 
 - **B-5 / ADR-0016: per-domain `choice` heads, published** ✅ — the keyed `choice_head.json` bank
   with its deterministic gate, the additive `choice_head` request hint, the bank trainer, the
@@ -178,6 +178,22 @@ Delivered 2026-10-01 (CHANGELOG `[Unreleased]`):
   split goes 0.511 → **0.964**. The isolate's own answer: the shared-head control trails the bank
   by **3 of 2,500 `choice` rows**, so the labels closed the gap, not the per-domain capacity
   (lesson L-012).
+
+Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
+
+- **B-5b: multilingual five domains, published** ✅ — the four new lexicons localized to all
+  seven training languages (read-aloud reviews + a 14,082-combination agreement audit), 30k/7.5k
+  datasets whose support halves are byte-identical to the incumbent, the joint mmBERT run and
+  the frozen-trunk head fit. **`munod/tachyone-multi` (`9a3ef5a5`)** goes **0.561 → 0.9975** on
+  the five-domain split (worst new domain 0.438 → 0.993, gate strict **1.000**, per-domain ECE
+  0.0005–0.0038 with zero exceptions, all six languages ≤ 0.004, held-out text 0.996) and
+  **0.743 → 0.895** on the support-only routed split, with gates fixed from the baseline
+  *before* training. Two lessons recorded: **L-013** — the routed harness had been answering
+  13–15% of multilingual rows with the *English* checkpoint (which is why the published 0.743
+  stopped reproducing), so a checkpoint's quality is never gated on a routed harness — and the
+  **joint-bank deficit**: per-domain heads lost 5.6 points under joint training while the
+  frozen-trunk fit ties bank vs shared at **1 row** (L-012 replicated), so the fitted bank is
+  what shipped.
 
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 

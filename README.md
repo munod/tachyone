@@ -118,18 +118,24 @@ graceful fallback.
 
 - Adapters: [`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en) ·
   [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)
-- Measured on a single RTX 3060 12GB (full tables: [`benchmarks/report.md`](benchmarks/report.md)):
+- Measured on a single RTX 3060 12GB (B-5b training on a single L4 23GB; full tables:
+  [`benchmarks/report.md`](benchmarks/report.md)):
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | **0.964** | **1.000** | 0.946 | 0.946 | 0.023 |
-  | Multilingual (mmBERT-base + LoRA r=64 + choice head, 8 epochs) | **0.743** | 0.468 | 0.892 | 0.870 | 0.089 |
+  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank), support split | **0.964** | **1.000** | 0.946 | 0.946 | 0.023 |
+  | Multilingual (mmBERT-base + LoRA r=64 + fitted choice-head bank), five-domain split | **0.9975** | **0.992** | 1.000 | 1.000 | 0.001 |
 
-  The English row is the support split (the multilingual row's own eval set); on the **five-domain**
-  eval the same adapter scores **0.964** overall with every domain ≥ 0.963, where the previous
-  support-only weights scored 0.879. Its `noul`/`score` on support moved 0.992/0.978 → 0.946/0.946
-  — the five-domain trunk trades those two for `choice` 0.946 → 1.000 and four new domains; the
-  whole trade-off is tabled in [`docs/benchmarks.md`](docs/benchmarks.md).
+  The English row is the support split; on the **five-domain** eval the same adapter scores
+  **0.964** overall with every domain ≥ 0.963, where the previous support-only weights scored
+  0.879. Its `noul`/`score` on support moved 0.992/0.978 → 0.946/0.946 — the five-domain trunk
+  trades those two for `choice` 0.946 → 1.000 and four new domains.
+  **B-5b (multilingual)** went the other way around: the previous adapter scores **0.561**
+  zero-shot on the same five-domain rows (worst new domain 0.438), and the published artifact
+  posts **0.9975** with every domain ≥ 0.993, gate strict **1.000**, all six languages at
+  ECE ≤ 0.004, and 0.996 on held-out text — on the support-only *routed* split the product-level
+  number moves 0.743 → **0.895**. The whole trade-off is tabled in
+  [`docs/benchmarks.md`](docs/benchmarks.md).
 
   Every label comes from the text it accompanies (B-11 + B-12 / ADR-0014 + ADR-0015): `noul` from
   its phrase bank, `score` from the tone's level, `choice` from the option the state names, with
@@ -137,8 +143,9 @@ graceful fallback.
   contradictory rows** (the pre-B-11 labels contradicted 121 of 241 request-toned English rows, and
   7.8% of `score` rows carried a "near-tie" the text never showed). The dedicated `choice` head
   (L-002) and localized per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance);
-  **one of six** languages meets ECE ≤ 0.05 (`es` 0.045) — `pt`/`fr`/`de`/`nl`/`it` are above it
-  (NFR-C06). The CUDA-graph fast path (`TACHYONE_FAST=1`) improves p50 9.0 → 3.4 ms with no
+  on the five-domain split all six languages meet ECE ≤ 0.05, but on the support-only routed
+  split `nl` (ECE 0.167) is still above target (NFR-C06, BACKLOG B-1). The CUDA-graph fast path
+  (`TACHYONE_FAST=1`) improves p50 9.0 → 3.4 ms (3.7× English, 3.7× multilingual) with no
   top-label changes.
 
 ## Architecture at a glance

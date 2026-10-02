@@ -11,7 +11,20 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-01 (B-5, ADR-0016)** — commits [`c00c174d`](https://huggingface.co/munod/tachyone-en/commit/c00c174dde0208b186cb503abfa0e15bdde0400d)
+> **Latest revision: 2026-10-02 (B-5b)** — commit [`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)
+> (`tachyone-multi`). The multilingual adapter now ships the **five-domain artifact**: an mmBERT
+> trunk joint-trained on 30,000 multilingual five-domain records (support keeps its 18,000, four
+> new domains 3,000 each) with its `choice` heads re-fitted on the **frozen** trunk — the recipe
+> ships beside the weights as `choice_bank_fit.json`, and the stale `finetune_config.json` was
+> deleted (it described the weights this replaces). On the five-domain split: **0.9975** overall
+> (previous adapter zero-shot 0.561), `choice` 0.992, `noul`/`score` 1.000, per-domain 0.993–1.000,
+> per-language ECE 0.001–0.004 (all six ≤ 0.05), gate strict **1.000** (0 to shared, 0 wrong
+> domain), held-out text 0.996; on the support-only *routed* split the product-level number moves
+> 0.743 → **0.895** (13–15% of multilingual rows route to `tachyone-en`, L-013). Fast path
+> re-checked on this adapter: **3.66× p50, 0 top-label flips**. All six uploaded files were
+> sha256-verified against the local build.
+>
+> Previous revision **2026-10-01 (B-5, ADR-0016)** — commits [`c00c174d`](https://huggingface.co/munod/tachyone-en/commit/c00c174dde0208b186cb503abfa0e15bdde0400d)
 > (`tachyone-en`) and [`d3f64cc0`](https://huggingface.co/munod/tachyone-multi/commit/d3f64cc0704e67d8a18cf4906dc3a3ece6be8a6a)
 > (`tachyone-multi`, model card only). `tachyone-en` now ships the **five-domain artifact**: run
 > 5's trunk kept frozen while its `choice` head was re-fitted as a **bank** — shared + one head per
