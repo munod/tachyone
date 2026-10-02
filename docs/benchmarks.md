@@ -43,25 +43,23 @@ adapter now publishes the **B-5b fitted bank** — the 30k five-domain joint run
 heads re-fitted on its frozen trunk — superseding the B-12 retrain (its weights × labels ladder
 lives in `.specs/project/BACKLOG.md` **B-12**). Provenance is stated with every table.
 
-## English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) — B-5 artifact
+## English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) — B-13 artifact
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | **0.964** | 0.023 | 54.384 | 90.428 |
-| `choice` | 500 | **1.000** | 0.000 | 86.316 | 92.598 |
-| `noul` | 500 | 0.946 | 0.038 | 50.858 | 56.172 |
-| `score` | 500 | 0.946 | 0.030 | 53.668 | 58.860 |
+| overall | 1500 | **1.000** | 0.000 | 53.541 | 91.554 |
+| `choice` | 500 | **1.000** | 0.000 | 85.331 | 103.943 |
+| `noul` | 500 | **1.000** | 0.000 | 50.514 | 56.767 |
+| `score` | 500 | **1.000** | 0.000 | 52.147 | 61.229 |
 
-Noisy view (noise_rate 0.15): overall accuracy **0.963**, ECE **0.024**.
+Noisy view (noise_rate 0.15): overall accuracy **0.997**, ECE **0.003**.
 
-> **Latency re-measured 2026-10-01 on the L4 reference box.** These two columns are *not*
-> comparable with the 23 ms this table showed before — that was a different box, and today the
-> adapter it replaces measures **51.8 ms** p50 on the same path in the same session against these
-> **54.4 ms**, so the new artifact costs ≈ +5%, not 2.4×. Accuracy and ECE are machine-independent
-> and are what the comparison rests on.
+> **Latency re-measured 2026-10-02 on the same L4 reference box and path** — the B-5 artifact
+> measured 54.4 ms p50 beside these **53.5 ms** in the same session style; the columns are
+> box-bound, accuracy and ECE are not.
 
 `noul` label audit of the same 500 rows: **0 contradictory** (241 request / 232 neutral / 27 empty,
-0 unreadable), positive rate 0.482. The whole history of this table in six rows — weights ×
+0 unreadable), positive rate 0.482. The whole history of this table in seven rows — weights ×
 labels, because neither half is comparable on its own:
 
 | English checkpoint × labels | overall | `noul` | `choice` | `score` |
@@ -71,18 +69,28 @@ labels, because neither half is comparable on its own:
 | B-11 weights × B-12 labels (previous published) | 0.972 | 0.992 | 0.946 | 0.978 |
 | B-12 retrain × B-12 labels | 0.962 | 1.000 | 0.888 | 0.998 |
 | control — identical recipe, seed 2 | 0.841 | 1.000 | 0.732 | 0.792 |
-| **B-5 five-domain bank × B-12 labels — published** | **0.964** | 0.946 | **1.000** | 0.946 |
+| B-5 five-domain bank × B-12 labels | 0.964 | 0.946 | 1.000 | 0.946 |
+| **B-13 mixture retrain × B-12 labels — published** | **1.000** | **1.000** | **1.000** | **1.000** |
 
-**The trade this row makes, stated plainly.** The published English adapter is now the five-domain
-artifact: on this support-only split it **loses** 0.008 overall (`noul` 0.992 → 0.946,
-`score` 0.978 → 0.946) and **gains** `choice` 0.946 → 1.000 — and on the five-domain split it goes
-from 0.511 to 0.964 (see the multi-domain section below). Both halves are published; neither is
-hidden inside a single headline number.
+**What the B-13 row is (and what it is not).** The published English adapter is now the
+mixture retrain: the same run-5 recipe and seed, trained on 35,540 records (the 21,000
+five-domain records **plus** 11,000 pinned public records — MultiNLI/BoolQ/Banking77 — and
+3,540 rule-tree family records built for the JevBench preparation, B-13), then the same
+frozen-trunk `choice`-bank fit. It sweeps the support split **0.964 → 1.000** and the
+five-domain split **0.964 → 1.000** with gate strict 1.000 (see below) — but this split is
+**in-sample synthetic** (the known train/eval row collision), so saturation here buys
+nothing external: on the 231 public JevBench items the same weights move Intelligence
+**8.4 → 15.0** against a fresh control's **+0.6** (measurement and attribution in
+`.specs/features/jevbench/tasks.md` JB-7). Read the public probes below as the honest
+check on this table.
 
-Two lessons are visible in it: the labels were the cap, not the model (`noul` 0.718 → 0.946 by
-relabeling alone, `score` 0.882 → 0.978 by the same weights on corrected labels); and the
-retraining *gamble* is real — the control differs from the retrain only in `out_dir` and lands 13
-points lower.
+The B-5 trade note it replaced still explains why the five-domain artifact existed: on its
+release it **lost** 0.008 on support (`noul` 0.992 → 0.946) to gain `choice` 0.946 → 1.000
+and the whole five-domain split 0.511 → 0.964; B-13 inherits both halves at 1.000.
+
+Two lessons from the history above still stand: the labels were the cap, not the model
+(`noul` 0.718 → 0.946 by relabeling alone); and the retraining *gamble* is real — the
+control differs from the retrain only in `out_dir` and lands 13 points lower.
 
 ## Multilingual (mmBERT-base + LoRA r=64 + choice head, 8 epochs) — B-5b fitted bank, five domains
 
@@ -177,11 +185,11 @@ this date were the RTX 3060 build); the speedup ratio and the parity are not.
 questions); response shape unchanged. **NFR-P01** (p50 ≤ 20 ms, p95 ≤ 50 ms) is met by both paths,
 with a **3.76× p50 speedup** for the fast path (2.65× on the 3060 build).
 
-**The released B-5 artifact was checked in the same pass** (ModernBERT + the keyed bank,
-`benchmarks/results/fast_path_en.json`): **0 top-label flips**, max answer difference
-**0.000649**, **2.59×** p50 (17.63 → 6.81 ms). The gate and the per-domain heads run *after* the
-encode, so the CUDA-graph path neither sees nor perturbs them — which is what ADR-0016 predicted
-when it kept the head as plain JSON computed post-encode.
+**The released B-13 artifact was checked in the same pass** (ModernBERT + the keyed bank,
+`benchmarks/results/fast_path_en.json`, re-measured 2026-10-02): **0 top-label flips**, max
+answer difference **0.000784**, **2.543×** p50 (17.31 → 6.81 ms). The gate and the per-domain
+heads run *after* the encode, so the CUDA-graph path neither sees nor perturbs them — which is
+what ADR-0016 predicted when it kept the head as plain JSON computed post-encode.
 
 **The B-5b multilingual artifact** was measured on its own five-domain split
 (`benchmarks/results/fast_path_multi.json`, mmBERT + the fitted bank, `eval_multi_domains`,
@@ -189,24 +197,27 @@ max_len 1024, n=284): **3.659×** p50 (13.97 → 3.82 ms), **0 top-label flips**
 answer-probability difference **0.000173** — the gate and the keyed heads still execute *after*
 the encode, so the graphed path sees neither, exactly as ADR-0016 predicted for the keyed format.
 The earlier runs stay where they were: the support-split run in the table above (`fast_path.json`,
-the weights B-5b replaced) at **3.762× / 0 flips**, and the English run (`fast_path_en.json`) at
-**2.59× / 0 flips**.
+the weights B-5b replaced) at **3.762× / 0 flips**, and the English run at **2.59× / 0 flips**
+(`fast_path_en_b5.json`, the B-5 weights the B-13 retrain replaced).
 
 ## Public probes (B-7)
 
 Three public datasets Tachyone did **not** train on, scored through the same metric code as
-everything else. Full tables (including per-language and per-config accuracy *and* ECE), licences,
+everything else. (B-13's mixture trains on MultiNLI's **train** split; XNLI's test pairs are
+translated MultiNLI *development* rows — standard split discipline, no probe row was ever
+trained or calibrated on, and each probe stays evaluation-only.) Full tables (including
+per-language and per-config accuracy *and* ECE), licences,
 citations and the exact reproduction commands live in
 [`benchmarks/probes.md`](https://github.com/munod/tachyone/blob/main/benchmarks/probes.md).
 
 | Probe | Licence | n | Accuracy | Chance | ECE raw |
 | --- | --- | ---: | ---: | ---: | ---: |
-| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.269** | 0.20–0.50 | 0.542 |
-| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.039** | 0.017 | 0.518 |
-| XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.341** | 0.333 | 0.650 |
+| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.367** | 0.20–0.50 | 0.578 |
+| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.051** | 0.017 | 0.583 |
+| XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.566** | 0.333 | 0.426 |
 
 Evaluation only — no probe row has ever reached `training/`. Read each number against its
-**chance** level and against the in-sample 0.964 above, not against the other rows: these are the
+**chance** level and against the in-sample 1.000 above, not against the other rows: these are the
 released adapters zero-shot on tasks they were never trained for.
 
 **Re-run on the B-5 artifact (2026-10-01, right after `munod/tachyone-en` `c00c174d`).** The
@@ -233,11 +244,24 @@ reading is that the public probe measures option-space coverage the synthetic tr
 contains; the adapter is no longer *below* chance anywhere, and both facts are published side by
 side.
 
+**Re-run on the B-13 artifact (2026-10-02, right after `munod/tachyone-en` got the mixture
+retrain).** All three move together for the first time since B-12. **XNLI 0.341 → 0.566**
+(chance 0.333) — the MultiNLI-trained reading transfers, and XNLI's test pairs are translated
+MultiNLI *development* rows the trainer never saw. **typed-decisions 0.269 → 0.367** (still
+inside its 0.20–0.50 per-config band, up 9.8 points overall). **MASSIVE 0.039 → 0.051** against
+the 0.017 chance with every language above it (`en` 0.117, `it` 0.055, `de` 0.047, `es`/`fr`
+0.041, `nl` 0.031, `pt` 0.027 — the en-locale rows ride the new English adapter). Confidence
+stays sharp off-domain: `Conf` **0.945 / 0.992 / 0.634**, `ECE raw` **0.578 / 0.426 / 0.583**;
+`ECE cal` improves for typed-decisions (0.170 → 0.139) and XNLI (0.294 → 0.144) and worsens for
+MASSIVE (0.005 → 0.038, T=11.6). The direction is finally right on accuracy while the
+calibration trade remains exactly where L-007 and L-015 say it is: the data bought
+*capability off-domain*, not *confidence off-domain*.
+
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 
 Five domains trained into one adapter — `support`, `ecommerce`, `agent_tools`, `documents`,
 `voice` — English only, 21,000 records, evaluated on `data/eval_en_domains.jsonl` (7,500 rows;
-its `support` half is the same records as `eval_en.jsonl`, so **0.964** above is the comparable
+its `support` half is the same records as `eval_en.jsonl`, so **1.000** above is the comparable
 support number). **Released as `munod/tachyone-en` (2026-10-01):** run 5's trunk kept frozen and
 its `choice` head re-fitted as a **bank** — shared + five domain heads behind a deterministic gate
 (ADR-0016), 8 epochs at lr 1e-4 against the B-12-corrected labels.
@@ -282,6 +306,39 @@ capacity nor time — `choice_rank` 32 → 128 → 256 with 4 → 6 → 8 epochs
 The full six-run curve, the per-(domain, primitive) cross tables, the isolate's four arms and the
 three structural options live in `.specs/project/BACKLOG.md` **B-5**.
 
+### Released 2026-10-02: B-13 mixture retrain (JevBench preparation)
+
+Same recipe and seed as the table above, one factor changed — the **training data**: the 21,000
+five-domain records plus 11,000 pinned public records (MultiNLI/BoolQ/Banking77, licences in
+`training/data/jev_sources.lock.json`) plus 3,540 rule-tree family records
+(`training/data/jev/`), one 35,540-record mixture, then the identical frozen-trunk bank fit.
+A fresh **control arm** (same recipe, old data) was trained beside it on the other GPU so the
+delta could be attributed (L-006/L-012).
+
+| Scope (n=7,500) | B-5 bank | **B-13 mixture — published** |
+| --- | ---: | ---: |
+| overall | 0.964 | **1.000** |
+| `support` | 0.964 | **1.000** |
+| `agent_tools` | 0.964 | **1.000** |
+| `documents` | 0.963 | 0.999 |
+| `ecommerce` | 0.964 | **1.000** |
+| `voice` | 0.963 | **1.000** |
+| `choice` (gate strict) | 0.9996 (1.000) | **1.000 (1.000)** |
+| unseen text (n=791) | — | **0.9987** (ECE 0.001) |
+
+**Gates: support 1.000 ≥ 0.85 ✓ · worst new domain 0.999 ≥ 0.70 ✓ · per-domain ECE
+0.000–0.001 (all five ≤ 0.05) ✓ · gate strict 1.000, 0 fell to shared, 0 wrong domain ✓.**
+
+**What the retrain bought outside this split (the number that matters).** On the 231 public
+JevBench items — evaluation-only, never trained on — the published artifact scores
+Intelligence **8.4 → 15.0** while the fresh control moves **+0.6**: the gain is the data's,
+not run variance. Per tier: easy 0.500 → **0.625**, standard 0.361 → **0.417**, hard 0.288 →
+**0.333** (still at its 0.336 chance — cc-score 0, unchanged).
+The structural limit is unchanged and visible: `noul` still scores `sigmoid(cos(question,
+state))` without reading the rubric, so policy/trap judgments stay at chance — that is the
+open item, not the data. Full attribution table: `.specs/features/jevbench/tasks.md` JB-7;
+public-probe deltas in the section above.
+
 ## Known limitations
 
 - Per-language ECE (NFR-C06): on the five-domain split **all six** multilingual languages meet the
@@ -301,7 +358,7 @@ three structural options live in `.specs/project/BACKLOG.md` **B-5**.
   are the opposite case — public distributions, evaluation-only, no shared states with training.
 - **Domain coverage is narrow.** Run against an external public probe (the peer scorer's own nine
   families — news, banking intents, emotions, MMLU, reviews, tickets), the released English
-  adapter scores **0.236** while scoring **0.972** on its own support records. That is the
+  adapter scores **0.288** while scoring **1.000** on its own support records. That is the
   adapter's training distribution, not a ceiling for the engine; broadening it is backlog `B-5`.
   Both tables, the method and the caveats (in-sample synthetic, different `n` per engine, ECE read
   together with `Conf`/`Brier`) are published in [`compare.md`](compare.md).

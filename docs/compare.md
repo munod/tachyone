@@ -125,7 +125,7 @@ measures the engine — quoting only one of these tables would mislead in either
 > are their own untouched artifacts — their models and the gold labels have not moved since B-12,
 > so re-running them would only re-measure run-to-run variance. The **performance** tables stay on
 > the original single-box measurement for all four engines; Tachyone's latency re-checked on the
-> L4 reference box reads **25.0 ms** p50 at home and **75.1 ms** on the 576-row probe (up to 77
+> L4 reference box reads **24.2 ms** p50 at home and **73.7 ms** on the 576-row probe (up to 77
 > options), so no latency figure here is quoted across boxes.
 
 #### A. Their distribution — `pngwn/system-one-decisions` test split, 64 rows per task family
@@ -137,35 +137,39 @@ They trained on this data; Tachyone and both LLMs are zero-shot here.
 | llm (ling-tiny) | 36 | 32 | 0.333 | 0.231 | 0.150 | 0.736 | 0.384 |
 | llm (ornith-9b) | 36 | 36 | 0.611 | 0.242 | 0.263 | 0.641 | 0.513 |
 | systemone-qwen3.5-4b | 576 | 576 | 0.705 | 0.134 | 0.046 | 0.373 | 0.746 |
-| **tachyone (encoder)** | 576 | 576 | **0.233** | 0.561 | 0.131 | 0.816 | 0.355 |
+| **tachyone (encoder)** | 576 | 576 | **0.288** | 0.569 | 0.132 | 0.813 | 0.386 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | llm (ling-tiny) | 1662.23 | 50326.40 | 0.1 | 0.889 | 9494 | 4836 |
 | llm (ornith-9b) | 6844.39 | 20876.05 | 0.1 | 1.000 | 8749 | 5512 |
 | systemone-qwen3.5-4b | 350.23 | 4660.68 | 0.9 | 1.000 | 9147 | 8921 |
-| **tachyone (encoder)** | 73.85 | 551.63 | 6.5 | 1.000 | 2942 | 3626 |
+| **tachyone (encoder)** | 73.66 | 712.24 | 4.9 | 1.000 | 2940 | 3634 |
 
 Accuracy by task family (calibrated):
 
 | Task family | ling-tiny | ornith-9b | systemone | **tachyone** |
 | --- | ---: | ---: | ---: | ---: |
-| ag_news | 0.500 | 1.000 | 0.922 | 0.312 |
-| banking77 | 0.000 | 0.750 | 0.891 | 0.000 |
-| go_emotions | 0.750 | 0.500 | 0.859 | 0.453 |
-| mmlu | 0.500 | 0.750 | 0.688 | 0.234 |
-| tickets_language | 0.500 | 1.000 | 0.891 | 0.391 |
-| tickets_priority | 0.000 | 0.500 | 0.469 | 0.297 |
-| tickets_queue | 0.250 | 0.000 | 0.234 | 0.000 |
-| tickets_type | 0.500 | 0.750 | 0.750 | 0.156 |
-| yelp_score | 0.000 | 0.250 | 0.641 | 0.250 |
+| ag_news | 0.500 | 1.000 | 0.922 | 0.219 |
+| banking77 | 0.000 | 0.750 | 0.891 | 0.219 |
+| go_emotions | 0.750 | 0.500 | 0.859 | 0.438 |
+| mmlu | 0.500 | 0.750 | 0.688 | 0.203 |
+| tickets_language | 0.500 | 1.000 | 0.891 | 0.562 |
+| tickets_priority | 0.000 | 0.500 | 0.469 | 0.406 |
+| tickets_queue | 0.250 | 0.000 | 0.234 | 0.031 |
+| tickets_type | 0.500 | 0.750 | 0.750 | 0.328 |
+| yelp_score | 0.000 | 0.250 | 0.641 | 0.188 |
 
-The Tachyone row was re-run on the B-12 adapters (2026-09-29: 0.229 → 0.241 → **0.236**) and
-again on the **B-5 adapter (2026-10-01: 0.233)** — the per-task cells move with it (its `choice`
-head now fits five synthetic domains, so it is *less* comfortable on the peer's 52-queue /
-77-intent option spaces: `banking77` 0.047 → 0.000, `tickets_queue` 0.031 → 0.000, while
-`tickets_priority` 0.078 → 0.297 and `go_emotions` 0.359 → 0.453). The peers were never re-run —
-nothing about *their* data or *their* weights moves.
+The Tachyone row was re-run on the B-12 adapters (2026-09-29: 0.229 → 0.241 → **0.236**), on
+the **B-5 adapter (2026-10-01: 0.233)** — where its five-synthetic-domain `choice` head was
+*less* comfortable on the peer's 52-queue / 77-intent option spaces (`banking77` 0.047 → 0.000,
+`tickets_queue` 0.031 → 0.000) — and again on the **B-13 mixture adapter (2026-10-02: 0.233 →
+0.288)**, which trains on real Banking77 and routing-shaped data: `banking77` **0.000 → 0.219**,
+`tickets_type` 0.156 → 0.328, `tickets_language` 0.391 → 0.562, `tickets_priority` 0.297 →
+0.406, `tickets_queue` 0.000 → 0.031, while `ag_news` 0.312 → 0.219 and `mmlu` 0.234 → 0.203
+drift down — real data moved the cells toward its own families, which is exactly what a
+domain-coverage number measures (L-007). The peers were never re-run — nothing about *their*
+data or *their* weights moves.
 
 #### B. Tachyone's distribution — our English support records, 64 rows per primitive
 
@@ -184,33 +188,33 @@ validation rows for the temperature fit.
 | llm (ling-tiny) | 48 | 42 | 0.438 | 0.171 | 0.069 | 0.606 | 0.471 |
 | llm (ornith-9b) | 48 | 48 | 0.771 | 0.101 | 0.290 | 0.490 | 0.481 |
 | systemone-qwen3.5-4b | 192 | 192 | 0.604 | 0.130 | 0.099 | 0.512 | 0.590 |
-| **tachyone (encoder)** | 192 | 192 | **0.958** | 0.026 | 0.026 | 0.037 | 0.979 |
+| **tachyone (encoder)** | 192 | 192 | **1.000** | 0.000 | 0.000 | 0.000 | 1.000 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | llm (ling-tiny) | 1218.95 | 16085.12 | 0.2 | 0.875 | 5030 | 4832 |
 | llm (ornith-9b) | 3315.28 | 8622.10 | 0.2 | 1.000 | 5833 | 5510 |
 | systemone-qwen3.5-4b | 114.05 | 153.88 | 7.7 | 1.000 | 9149 | 8754 |
-| **tachyone (encoder)** | 22.83 | 37.07 | 31.1 | 1.000 | 2393 | 1743 |
+| **tachyone (encoder)** | 24.19 | 60.94 | 24.4 | 1.000 | 2361 | 1751 |
 
 Accuracy by primitive (calibrated):
 
 | Primitive | ling-tiny | ornith-9b | systemone | **tachyone** |
 | --- | ---: | ---: | ---: | ---: |
 | choice | 0.438 | 0.875 | 0.688 | **1.000** |
-| noul | 0.625 | 0.938 | 0.609 | 0.938 |
-| score | 0.250 | 0.500 | 0.516 | 0.938 |
+| noul | 0.625 | 0.938 | 0.609 | **1.000** |
+| score | 0.250 | 0.500 | 0.516 | **1.000** |
 
 #### How to read these two tables
 
-- **Each engine wins at home.** 0.705 vs **0.233** on their data; **0.958** vs 0.604 on ours. That
+- **Each engine wins at home.** 0.705 vs **0.288** on their data; **1.000** vs 0.604 on ours. That
   gap is domain coverage — it says the adapters are narrow, not that one architecture beats the
-  other. Tachyone's own home number also moved **down** when the released adapter became the
-  five-domain one: `choice` 0.938 → **1.000** while `noul`/`score` went 1.000/0.984 → 0.938/0.938
-  (the same trade, on support, that `docs/benchmarks.md` tables in full — this turf is the
-  support-only split, so the four new domains it bought are not visible here).
-- **Tachyone is faster and smaller on *both* turfs:** 4.7× the peer's throughput on their rows
-  (73.9 vs 350.2 ms p50) and 5.0× on ours (22.8 vs 114.1 ms), with **5× less VRAM** (1.7 vs
+  other. The B-5 home trade (`choice` 0.938 → 1.000 while `noul`/`score` fell 1.000/0.984 →
+  0.938/0.938) is **closed by B-13**: all three primitives now post **1.000** on this turf
+  (the same 1.000 `docs/benchmarks.md` tables in full — this turf is the support-only split, so
+  the four domains stay invisible here).
+- **Tachyone is faster and smaller on *both* turfs:** 4.8× the peer's throughput on their rows
+  (73.7 vs 350.2 ms p50) and 4.7× on ours (24.2 vs 114.1 ms), with **5× less VRAM** (1.7 vs
   8.5 GiB) and a 1.6 GB footprint against 8.9 GB. Option count drives the peer's cost (its p95 is
   4.7 s on 77-option questions); Tachyone's `choice` head scores 1–255 options in one pass.
 - **The small LLMs failed the contract, and the prompt was part of the reason.** With the
@@ -222,12 +226,13 @@ Accuracy by primitive (calibrated):
   respectable (0.611 / 0.771) — at 3.3–6.8 s p50, i.e. **20–29× slower than the peer and
   93–145× slower than Tachyone**.
 - **Calibration has to be read with confidence.** Tachyone ships well-calibrated on its own turf
-  (ECE raw **0.026**). Off-domain the B-5 head carries no signal but plenty of conviction: raw ECE
-  **0.561**, the fit still pushes T into the 20.0 ceiling of the grid, and mean confidence *rises*
-  to **0.355** — the five-domain head was fitted to be sharp in domain and is now sharply wrong out
-  of it (before B-5 it simply collapsed to 0.268). A table quoting only `ECE cal` (0.131) would
-  still look *better* than the peer's 0.046 while being useless — `Brier` (0.816 vs 0.373) and
-  `Conf` expose it. **ECE alone is not a quality metric.**
+  (ECE raw **0.000**, `Conf` **1.000**). Off-domain the B-13 head still carries little signal but
+  plenty of conviction: raw ECE **0.569**, the fit still pushes T into the 20.0 ceiling of the
+  grid, and mean confidence sits at **0.386** — sharp *in* domain and sharply wrong *out* of it
+  (the pre-B-13 adapters read 0.268 → 0.561 → 0.569 raw ECE across this table's history). A table
+  quoting only `ECE cal` (0.132) would still look *better* than the peer's 0.046 while being
+  useless — `Brier` (0.813 vs 0.373) and `Conf` expose it. **ECE alone is not a quality metric**
+  (L-015 owns the fix).
 
 #### What the prompt fix (`B-10`) changed
 
@@ -272,8 +277,8 @@ residual `0.889` / `0.917`.
 run reproduces: temperature **1.75** (card 1.75), accuracy **0.705** (card 0.707), ECE
 **0.046** (card 0.044), 537 validation / 576 test rows, and **8 of 9** per-task accuracies
 identical to the card (`mmlu` 0.688 vs 0.703 is the only deviation). Tachyone's row likewise
-reproduces ours: **0.958** on the 192-row subset against **0.964** on the full 1,500-row split
-(both re-measured 2026-10-01 against the released B-5 adapter).
+reproduces ours: **1.000** on the 192-row subset against **1.000** on the full 1,500-row split
+(both re-measured 2026-10-02 against the released B-13 adapter).
 
 #### Limitations, before quoting anything
 

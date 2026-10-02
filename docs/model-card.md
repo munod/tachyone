@@ -19,11 +19,21 @@ pipeline_tag: text-classification
 
 # Tachyone (System One decision engine)
 
-> **Status: released (`v0.6.0`), revision 2026-10-02 (B-5b).** Trained on a single RTX 3060 12GB (the
-> B-5b cycle on a single NVIDIA L4 23GB) and published as LoRA adapters
+> **Status: released, revision 2026-10-02 (B-13 English / B-5b multilingual).** Trained on a
+> single RTX 3060 12GB (B-5b and B-13 on NVIDIA L4 23GB) and published as LoRA adapters
 > ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
+>
+> **This revision adds B-13 for the English checkpoint: the mixture retrain.** Same recipe and
+> seed as the B-5 run, one factor changed — the training data: 35,540 records (the 21,000
+> five-domain records **plus** 11,000 pinned public records — MultiNLI, BoolQ, Banking77, licences
+> in `training/data/jev_sources.lock.json` — and 3,540 executable-rule-tree family records), then
+> the identical frozen-trunk `choice`-bank fit. It sweeps both English splits **0.964 → 1.000**
+> (gate strict 1.000; unseen-text rows 0.9987) — and, measured against a fresh same-recipe
+> control that moves +0.6, it lifts Intelligence on the 231 public JevBench items
+> (**evaluation-only, never trained on**) from **8.4 to 15.0**. The probes below are the honest
+> external check: XNLI **0.341 → 0.566**, typed-decisions **0.269 → 0.367**.
 >
 > **This revision is B-5b: the multilingual checkpoint now covers five domains.** Its trunk is
 > joint-trained on 30,000 multilingual five-domain records (support keeps its 18,000; four new
@@ -42,11 +52,12 @@ pipeline_tag: text-classification
 > `score` rows a "near-tie" the text never showed.
 >
 > **Provenance, stated plainly:** each adapter carries its recipe next to the weights
-> (`finetune_config.json` / `choice_bank_fit.json`) — the English adapter is the B-5 bank over
-> run 5's frozen trunk; the multilingual adapter is the B-5b joint run plus the frozen-trunk
-> head fit. Both heads-first constructions exist because training the corrected labels makes
-> `noul`+`score` trivial and costs `choice` (an identical-recipe control landed 13 points lower,
-> L-006) — the fix that worked was re-fitting the head on a trunk that already knew the data.
+> (`finetune_config.json` / `choice_bank_fit.json`) — the English adapter is the B-13 mixture
+> bank over the B-13 joint run's frozen trunk; the multilingual adapter is the B-5b joint run
+> plus the frozen-trunk head fit. Both heads-first constructions exist because training the
+> corrected labels makes `noul`+`score` trivial and costs `choice` (an identical-recipe control
+> landed 13 points lower, L-006) — the fix that worked was re-fitting the head on a trunk that
+> already knew the data.
 
 ## Model details
 
@@ -99,24 +110,26 @@ jointly, then `training/fit_choice_bank.py` re-fits the `choice` heads on cached
 
 | Checkpoint | Split | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- | --- |
-| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **0.964** | 0.023 | 54.4 |
-| English, five-domain split | 5 domains | **0.964** | 0.024 | 23.0 |
+| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.000** | 0.000 | 53.5 |
+| English, five-domain split | 5 domains | **1.000** | 0.000 | 22.4 |
 | Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.895** | 0.062 | 46.9 |
 | Multilingual, five-domain split | 5 domains | **0.9975** | 0.0014 | 18.6 |
 
-Per primitive (English): `choice` **1.000**, `noul` 0.946, `score` 0.946; (multilingual,
+Per primitive (English): `choice` **1.000**, `noul` **1.000**, `score` **1.000**; (multilingual,
 five-domain): `choice` **0.9924**, `noul` **1.000**, `score` **1.000**. **Label audit:** every
 `noul` row is judged against its own text — **0 contradictory** in every eval set (positive
 rates 0.472–0.486), per language in `benchmarks/report.md`.
 
-**What this English row trades (published in full, not summarized away).** On the support-only
-split the previous artifact scored 0.972 — `noul` 0.992, `score` 0.978, `choice` 0.946. The
-five-domain bank scores 0.964 there: `choice` becomes **1.000** while `noul`/`score` give up 4.6
-and 3.2 points, and in exchange the adapter covers four domains it could not answer at all
-before — on the five-domain split the previous artifact scores **0.511** overall (worst domain
-0.328) against this one's **0.964** (worst domain 0.963). The gate that routes each `choice`
-question to its domain head scores **strict 1.000** (0 to shared, 0 wrong domain) over 2,500 rows,
-and accuracy on the 473 rows whose text never occurs in training is **0.998**. Full tables:
+**What the English B-13 row is (in-sample, stated plainly).** Both English splits read 1.000
+because the held-out synthetic sets share rows with training data (the known 81% `choice`
+row collision) — saturation here is a ceiling, not a claim: accuracy on the 791 rows whose
+text never occurs in training is **0.9987**, and the external check is the public one — the
+231 JevBench items move Intelligence **8.4 → 15.0** against a fresh control's **+0.6**
+(attribution table in `.specs/features/jevbench/tasks.md` JB-7), with XNLI **0.566** and
+typed-decisions **0.367** as the probe deltas. The B-5 trade this row replaces is closed:
+the previous bank won `choice` 0.946 → 1.000 at the cost of `noul`/`score` (0.992/0.978 →
+0.946/0.946) on support; B-13 posts **1.000 across all three primitives** on both splits,
+gate **strict 1.000** (0 to shared, 0 wrong domain over 2,500 `choice` rows). Full tables:
 [`docs/benchmarks.md`](https://github.com/munod/tachyone/blob/main/docs/benchmarks.md).
 
 **The multilingual B-5b gates (fixed before training, all pass).** The previous adapter measured
@@ -130,12 +143,12 @@ training is **0.996**. Per-language ECE on that split is **0.0010–0.0041 — a
 rows fall through to the English checkpoint by language routing, `.specs/project/BACKLOG.md`
 L-013) three of six languages remain above the 0.05 target — `nl` accuracy 0.715 / ECE 0.167,
 `de` 0.083, `it` 0.056 — open under NFR-C06 / BACKLOG B-1. The CUDA-graph fast path
-(`TACHYONE_FAST=1`) gives **2.59×** p50 on English (17.63 → 6.81 ms) and **3.66×** on the
+(`TACHYONE_FAST=1`) gives **2.54×** p50 on English (17.31 → 6.81 ms) and **3.66×** on the
 multilingual five-domain path (13.97 → 3.82 ms), both with **0 top-label flips** — the gate and
 the keyed heads execute after the encode, which the graphed path never sees.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
-states) English drops only 0.964 → 0.963 and multilingual 0.743 → 0.744, so the released
+states) English drops only 1.000 → 0.997 and multilingual 0.743 → 0.744, so the released
 adapters are robust to this noise model.
 
 Full tables and environment are in

@@ -195,6 +195,20 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   frozen-trunk fit ties bank vs shared at **1 row** (L-012 replicated), so the fitted bank is
   what shipped.
 
+- **B-13: JevBench preparation — the English mixture retrain, published** ✅ — the public
+  scoreboard for Jev-class decision models (its `typesafe` adapter speaks our frozen wire
+  unchanged: 231/231 strict-valid on the first run). P0 measured the baseline (Intelligence
+  **8.4**, Calibration **0**, composite **0.43** on the 231 public items); P1 re-audited the wire
+  and **reverted** a 4096-token context that bought **net 0 accuracy** for −7.2 Speed
+  (lesson **L-014**); P2 built three data layers — sha256-pinned MultiNLI/BoolQ/Banking77
+  (11k), five executable-rule-tree families (3.5k, every target re-executes from its shipped
+  facts+tree), a validated 35,540-record mixture — and trained **two arms one factor apart**
+  on two L4s. Result: both B-5 gates pass with zero ECE exceptions, support and five-domain
+  splits **0.964 → 1.000**, and on the public items Intelligence **8.4 → 15.0** against the
+  fresh control's **+0.6** (the gain is the data's); XNLI **0.341 → 0.566**, typed-decisions
+  **0.269 → 0.367**. The cycle's own target (I ≥ 50) was **not** met — `noul` still never reads
+  the rubric — and lesson **L-015** records why Calibration reads 0 for every arm as shipped.
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

@@ -118,18 +118,23 @@ graceful fallback.
 
 - Adapters: [`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en) ·
   [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)
-- Measured on a single RTX 3060 12GB (B-5b training on a single L4 23GB; full tables:
+- Measured on a single RTX 3060 12GB (B-5b and B-13 training on NVIDIA L4 23GB; full tables:
   [`benchmarks/report.md`](benchmarks/report.md)):
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank), support split | **0.964** | **1.000** | 0.946 | 0.946 | 0.023 |
+  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank), support split | **1.000** | **1.000** | **1.000** | **1.000** | 0.000 |
   | Multilingual (mmBERT-base + LoRA r=64 + fitted choice-head bank), five-domain split | **0.9975** | **0.992** | 1.000 | 1.000 | 0.001 |
 
-  The English row is the support split; on the **five-domain** eval the same adapter scores
-  **0.964** overall with every domain ≥ 0.963, where the previous support-only weights scored
-  0.879. Its `noul`/`score` on support moved 0.992/0.978 → 0.946/0.946 — the five-domain trunk
-  trades those two for `choice` 0.946 → 1.000 and four new domains.
+  The English row is the support split; on the **five-domain** eval the same adapter also scores
+  **1.000** (every domain ≥ 0.999, gate strict 1.000, unseen-text rows 0.9987). This is the
+  **B-13 mixture retrain**: same recipe and seed as B-5, one factor changed — the training data
+  (35,540 records: the 21,000 five-domain ones plus 11,000 pinned public records — MultiNLI,
+  BoolQ, Banking77 — and 3,540 executable-rule-tree family records) — followed by the same
+  frozen-trunk `choice`-bank fit. These splits are in-sample synthetic (shared rows), so the
+  external check is the public one: on the 231 JevBench items (evaluation-only, never trained
+  on) Intelligence moves **8.4 → 15.0** against a fresh same-recipe control's **+0.6**, XNLI
+  **0.341 → 0.566**, typed-decisions **0.269 → 0.367**.
   **B-5b (multilingual)** went the other way around: the previous adapter scores **0.561**
   zero-shot on the same five-domain rows (worst new domain 0.438), and the published artifact
   posts **0.9975** with every domain ≥ 0.993, gate strict **1.000**, all six languages at

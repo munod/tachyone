@@ -6,6 +6,48 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **JevBench-family training data (B-13).** Three layers, all reproducible from committed
+  recipes: (1) `training/fetch_jev_sources.py` + `training/data/jev_sources.lock.json` pin
+  MultiNLI, BoolQ and Banking77 by git revision **and sha256** (AG News/SST-5 excluded with
+  their licence words recorded — reviewed against tev1's `DATA_SOURCES.md`); (2)
+  `training/build_jev_sources.py` converts them to wire-shaped records (11,000 — MNLI mirrors
+  the XNLI probe's state/instruction mapping verbatim, Banking77 gets 5-way confusable-sibling
+  options with 77 authored descriptions); (3) `training/rule_trees.py` +
+  `training/build_jev_families.py` + `training/data/jev/` generate 3,540 records across five
+  families (`long_policy`, `trap`, `multi_hop`, `temporal_numeric`, `adequacy`) where **every
+  target re-executes from the record's own shipped facts + tree** (never an index, B-11/B-12
+  discipline), label spaces audited per L-010, states capped to the 512-token window (L-014).
+  `training/build_jev_mixture.py` validates and concatenates the three layers into the
+  35,540-record treatment mixture (cross-part id uniqueness enforced). **Zero normalized-text
+  overlap with the 231 public JevBench items** — they stay evaluation-only, enforced by the
+  builders' `--public-dir` refusal.
+- **`.specs/features/jevbench/`** — spec, tasks and the full B-13 record: the P0 public
+  baseline (231 items through JevBench's own `typesafe` adapter, 231/231 strict-valid wire),
+  the P1b long-context A/B, and the JB-7 three-arm attribution table.
+
+### Changed
+
+- **`munod/tachyone-en` rebuilt as the B-13 mixture retrain (same recipe/seed as B-5, one
+  factor changed — the data).** Support split **0.964 → 1.000** and five-domain split
+  **0.964 → 1.000** (every domain ≥ 0.999, gate strict 1.000, unseen-text rows 0.9987, ECE
+  0.000), `noul`/`score` 0.946 → **1.000**. Trained and fit alongside a fresh **control arm**
+  (identical recipe, old data) on two L4s: on the 231 public JevBench items the treatment
+  moves Intelligence **8.4 → 15.0** while the control moves **+0.6** — the gain is the data's
+  (L-006/L-012), recorded with the full table in `.specs/features/jevbench/tasks.md` JB-7.
+- **Public probes re-run against the new English weights:** XNLI **0.341 → 0.566**
+  (chance 0.333), typed-decisions **0.269 → 0.367**; `ECE cal` improves on both (0.294 →
+  0.144, 0.170 → 0.139) while raw confidence stays sharp off-domain — the same trade the
+  in-domain table buys, published instead of absorbed (L-007, L-015).
+- Fast path re-checked on the new weights: **2.543× p50 (17.31 → 6.81 ms), 0 top-label flips**,
+  answer parity 0.000784. Serving note: `TACHYONE_FAST` stays **off** by default — measured
+  end-to-end it is not faster at serving shapes and OOMs on long contexts.
+- New lessons: **L-014** (seeing the input is not being able to use it — the 4096-token context
+  A/B measured net 0 accuracy against −7.2 Speed and was reverted) and **L-015** (a temperature
+  fitted where the model is saturated zeroes the calibration axis off-domain; measured as
+  shipped, Calibration is 0 for all three B-13 arms).
+
 ## [0.6.0] - 2026-10-02
 
 ### Added

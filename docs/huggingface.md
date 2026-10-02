@@ -11,7 +11,21 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-02 (B-5b)** — commit [`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)
+> **Latest revision: 2026-10-02 (B-13, English)** — commit [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993)
+> (`tachyone-en`). The English adapter now ships the **mixture retrain**: the same B-5 recipe and
+> seed with **one factor changed — the training data** — 35,540 records (the 21,000 five-domain
+> ones plus 11,000 sha256-pinned public records: MultiNLI, BoolQ, Banking77, licences in
+> `training/data/jev_sources.lock.json` — and 3,540 executable-rule-tree family records), then
+> the identical frozen-trunk `choice`-bank fit with a calibration refitted on `eval_en_domains`.
+> Support **and** five-domain splits go **0.964 → 1.000** (all three primitives 1.000, gate
+> strict **1.000** — 0 to shared, 0 wrong domain — held-out-text **0.9987**, per-domain ECE
+> 0.000–0.001). The external checks move too: on the 231 public JevBench items (evaluation-only,
+> never trained on) Intelligence **8.4 → 15.0** against a fresh same-recipe control's **+0.6**;
+> XNLI **0.341 → 0.566**, typed-decisions **0.269 → 0.367**, MASSIVE **0.039 → 0.051**; fast
+> path re-checked **2.54× p50, 0 top-label flips**. A control arm and every candidate were
+> evaluated in one harness; all six uploaded files were sha256-verified against the local build.
+>
+> Previous revision **2026-10-02 (B-5b)** — commit [`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)
 > (`tachyone-multi`). The multilingual adapter now ships the **five-domain artifact**: an mmBERT
 > trunk joint-trained on 30,000 multilingual five-domain records (support keeps its 18,000, four
 > new domains 3,000 each) with its `choice` heads re-fitted on the **frozen** trunk — the recipe
