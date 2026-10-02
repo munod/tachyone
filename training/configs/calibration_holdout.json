@@ -1,0 +1,18 @@
+{
+  "_comment": "Recipe for training/build_calibration_holdout.py (B-13 P3, JB-9): the two legal calibration slices for the evidence-conditioned confidence fit. The 'training' slice is a deterministic stride sample of data/train_en_domains.jsonl — the English checkpoint's own training set, which is also where the prototype bank's centroids come from — so the fit's high-strength knot describes the distribution the bank describes. The 'remainder' slice is MultiNLI/BoolQ train rows no training file ever saw, filtered against every training set of the checkpoint. Every slice is asserted against the 231 public JevBench items before a byte is written. Output data/calibration_holdout.jsonl is gitignored — this config is the reproducible recipe (L-011). Nothing here generates records.",
+  "training": {
+    "path": "data/train_en_domains.jsonl",
+    "counts": {
+      "noul": 600,
+      "choice": 600,
+      "score": 600
+    }
+  },
+  "remainder": {
+    "prefix": "rem",
+    "counts": {
+      "multi_nli": 600,
+      "boolq": 600
+    }
+  }
+}
