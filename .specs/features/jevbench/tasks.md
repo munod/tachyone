@@ -1,7 +1,8 @@
 # JevBench Preparation (B-13) — Tasks
 
-**Spec:** `.specs/features/jevbench/spec.md` (P0/P1 results live there)
-**Status:** P0 + P1 done; **P2 in progress**
+**Spec:** `.specs/features/jevbench/spec.md` (P0/P1 results live there; the P3 design is
+pre-registered in *P3 design*)
+**Status:** P0 + P1 + P2 done; **P3 in progress (JB-9 … JB-14)**; P4 open
 
 Commit-per-task, tests co-located (AGENTS.md hard rule 6), full gate before each commit:
 `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest -m "not e2e"`.
@@ -222,6 +223,113 @@ head-to-head **re-run, not merely re-checked** (the English adapter moved): thei
 CHANGELOG `[Unreleased]`; `mkdocs build --strict` green. **Still open:** P3 (calibration
 shrinkage — the Calibration axis reads 0 for every arm as shipped, L-015) and P4 (the
 `[bench request]` issue itself).
+
+---
+
+## P3 — Calibration (JB-9 … JB-14)
+
+Hard constraints (spec *Locked decisions* + *P3 design*): **the 231 public items and the
+308 sealed items are never a fit input**; every answer (choice argmax, noul direction,
+score expected value) must come out **byte-identical** — this phase moves confidence only;
+the fit protocol is pre-registered in the spec and the public run is measured **once**
+after the assets are frozen.
+
+### JB-9: The legal calibration holdout
+
+**What:** `training/build_calibration_holdout.py` + `training/configs/calibration_holdout.json`
+→ `data/calibration_holdout.jsonl` with four slices, each recorded in the run report:
+(a) fresh in-domain eval (new seed, never trained on), (b) **source remainder** — MultiNLI +
+BoolQ train rows disjoint from `data/train_jev_sources.jsonl` (id *and* normalized-state
+asserted), (c) fresh families (seed 7, existing builder), (d) **truncation slice** — (c)
+behind a per-record document preamble so the decisive clause falls past the 512-token window.
+**Where:** `training/`, `data/` (gitignored), `tests/test_training_calibration_holdout.py`.
+**Depends on:** — · **Requirement:** P3 fit input.
+**Done when:** all four slices present with counts + accuracy/strength recorded; **zero**
+overlap with any trained record and **zero** normalized-text overlap with the 231 public
+items (the existing `--public-dir` assertion reused); composition documented in the spec.
+**Tests:** slice counts, disjointness assertions, determinism, overlap guard · **Gate:** full.
+**Commit:** `feat(training): build the P3 calibration holdout from legal slices`
+
+### JB-10: The prototype bank asset
+
+**What:** `training/build_prototypes.py` → `checkpoints/en/state_prototypes.json`: K=32
+k-means centroids of the checkpoint's **own training state embeddings** (encoded with the
+adapter loaded — same space as inference), unit-normalized, seeded, with provenance (data
+file, record count, model, seed, K). Built once per checkpoint and rebuilt whenever the
+checkpoint changes (documented next to the asset).
+**Where:** `training/build_prototypes.py`, `checkpoints/en/state_prototypes.json`,
+`tests/test_training_prototypes.py`.
+**Depends on:** JB-9 (nothing) · **Requirement:** the `noul` strength signal.
+**Done when:** deterministic across runs (hash), centroids unit-norm within 1e-6, and the
+bank reproduces the measured separation (in-domain strength ≥ 0.95, public ≤ 0.95 — the
+*AUC 1.000* result from the spec) on a 100-row sample.
+**Tests:** determinism, shape/norm, provenance fields, separation smoke test (small sample)
+· **Gate:** full. **Commit:** `feat(training): build the training-state prototype bank`
+
+### JB-11: Runtime — evidence-conditioned `noul` confidence
+
+**What:** `src/tachyone/backends/encoder.py` gains `load_state_prototypes()` (same
+absent-asset-silent / corrupt-asset-warn discipline as `load_temperatures`, B-8) and
+`EncoderModel` gains the prototype bank + `confidence map`: per request compute
+`strength = max_k cos(state_embedding, centroid_k)` once, then for `noul`
+`p = g(strength)` (yes) / `1 − g(strength)` (no) — **direction from the answer, magnitude
+from the evidence**. `choice`/`score` keep the temperature path; a missing map or missing
+bank falls back to today's behaviour exactly.
+**Where:** `src/tachyone/backends/encoder.py`, `src/tachyone/calibration.py` (the map
+lookup), `tests/test_encoder.py`.
+**Depends on:** JB-10 · **Requirement:** P3 mechanism.
+**Done when:** the direction is provably unchanged for every input (test over edge cases:
+p just above/below 0.5, strength outside the knot range → clamped, empty/degenerate
+distribution), absent assets are silent, corrupt assets warn (B-8).
+**Tests:** co-located in `tests/test_encoder.py` (≥6 cases) · **Gate:** full —
+`tests/test_contract_wire.py` **must stay untouched** (no wire change ⇒ hard rule 1 idle).
+**Commit:** `feat(backends): condition noul confidence on the training-state evidence`
+
+### JB-12: The fitter
+
+**What:** `training/predict.py` emits `strength` per row when `--prototypes` is given;
+`training/fit_confidence.py` reads the natural predictions of JB-9 and writes
+`checkpoints/en/confidence_calibration.json`: per primitive `{choice: temperature}` from
+`fit_temperature` (DEFAULT_GRID, pooled rows), `{score: pinned 0.1 + reason}`, and
+`{noul: g}` — accuracy per strength bin, monotone-enforced, piecewise-linear knots.
+**Where:** `training/predict.py`, `training/fit_confidence.py`,
+`tests/test_training_fit_confidence.py`.
+**Depends on:** JB-9, JB-10 · **Requirement:** pre-registered fit protocol.
+**Done when:** the report records ECE before/after per slice (in-domain, remainder,
+families, truncation) and per primitive, the fitted `choice` `T` and the `noul` knots are
+written with their provenance; `score` is pinned with the EV reason in the file itself.
+**Tests:** monotone map, clamping, grid fit on a synthetic fixture, score pin honoured
+· **Gate:** full. **Commit:** `feat(training): fit confidence on the legal P3 holdout`
+
+### JB-13: Gates — one public measurement
+
+**What:** (a) in-domain: `training.predict` on `eval_en_domains` with the new assets —
+**accuracy must be byte-identical** to the published report and ECE per primitive ≤ 0.05;
+(b) holdout ECE per slice (diagnostic); (c) serve `checkpoints/en` explicitly (L-013) and
+run the 231 public items **once**: `calibration(ece)` ≥ 60 (ECE ≤ 0.15), Intelligence still
+**15.0**, 231/231 strict-valid.
+**Where:** `/tmp/opencode/jevbench_runs_p3`, `benchmarks/results/`, `.specs/`.
+**Depends on:** JB-12 · **Requirement:** P3 acceptance.
+**Done when:** one comparable table (published / P3) with all four axes and both ECE
+surfaces, and an explicit verdict (adopt or record the miss).
+**Tests:** — (measurement) · **Gate:** full.
+**Commit:** `docs(specs): record the P3 calibration measurement`
+
+### JB-14: Sweep, publish, close P3
+
+**What:** every confidence-bearing surface re-measured on the adopted assets — in-domain
+report, probes (`Conf`/`ECE`/`Brier` move, accuracy must not), fast path (0 flips),
+head-to-head (ECE columns) — then one consistent set across `benchmarks/report.md`,
+`docs/benchmarks.md`, `docs/model-card.md`, `docs/compare.md`, `docs/huggingface.md`
+(the two new asset files), README, roadmap, CHANGELOG `[Unreleased]`; Hub revision with
+every file sha256-verified; `mkdocs build --strict`; BACKLOG/STATE/spec closed for P3;
+new lesson recorded if the measurements earned one.
+**Where:** `benchmarks/`, `docs/`, `CHANGELOG.md`, `.specs/`, Hub.
+**Depends on:** JB-13 · **Requirement:** hard rule 5 (one set everywhere).
+**Done when:** no number-bearing doc quotes a pre-P3 confidence, the P3 acceptance box is
+ticked, and P4 is the only open phase.
+**Tests:** `tests/test_docs_site.py` · **Gate:** full.
+**Commit:** `docs: publish the P3 calibration set`
 
 **Deferred (recorded, not scheduled):** `probability`, `ambiguous`, `tradeoff`,
 `adversarial`, `routing_hard` synthetic families (public n ≤ 10 each); source data for

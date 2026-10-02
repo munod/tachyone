@@ -5,9 +5,9 @@
 ([`munod/tachyone-en` `f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993),
 six files sha256-verified). Final record: Intelligence **8.4 → 15.0** on the 231 public items
 (control +0.6), all B-5 gates PASS, probes XNLI 0.566 / typed-decisions 0.367 / MASSIVE 0.051,
-head-to-head 0.288 (theirs) / 1.000 (ours). **Open: P3** (calibration shrinkage — the
-Calibration axis reads 0 for every arm as shipped, L-015) **and P4** (the `[bench request]`
-issue); the cycle's own I ≥ 50 target stands recorded as **not met**.
+head-to-head 0.288 (theirs) / 1.000 (ours). **P3 (calibration) design locked 2026-10-02 —
+see *P3 design* below; execution JB-9…JB-14.** P4 (the `[bench request]` issue) still open;
+the cycle's own I ≥ 50 target stands recorded as **not met**.
 
 **Context:** `.specs/project/BACKLOG.md` B-13 · external harness:
 <https://github.com/fstandhartinger/jevbench> (MIT — cloned to a local download for
@@ -156,13 +156,79 @@ distance is concentrated where the architecture is thin: `noul` never reads the 
 `.specs/features/jevbench/tasks.md` JB-7; artifacts
 `benchmarks/results/en_jev_{published,ctrl,treat}.json`.
 
+## P3 design (pre-registered 2026-10-02, before any P3 asset was fitted)
+
+**Diagnosis (measured, not assumed).** The shipped asset sharpens to `T=0.05/0.05/0.1`
+(L-015). Reconstructing the pre-temperature scores from the published run and sweeping `T`
+over the three surfaces gives, per primitive (ECE, top-label, 10 bins):
+
+| `T` | `choice` public / in-domain / source-remainder | `noul` public / in-domain / source-remainder | `score` public / in-domain |
+| --- | --- | --- | --- |
+| 0.20 (shipped-ish) | 0.507 / 0.0002 / 0.150 | 0.460 / 0.029 / 0.168 | 0.285 / 0.471 |
+| 0.50 | 0.277 / 0.0005 / 0.138 | 0.321 / 0.183 / **0.026** | 0.415 / 0.295 |
+| 0.75 | 0.130 / 0.0013 / 0.125 | 0.212 / 0.267 / 0.065 | 0.429 / 0.132 |
+| 1.00 (natural) | 0.069 / 0.0045 / 0.107 | 0.167 / 0.318 / 0.100 | 0.391 / **0.028** |
+| 1.50 | **0.028** / 0.026 / 0.059 | 0.118 / 0.375 / 0.152 | 0.361 / 0.081 |
+
+**No global temperature serves all three surfaces** — `noul` alone wants `0.2` at home,
+`0.5` on the source remainder and `≥1.5` on the public items. Two structural facts decide
+the design:
+
+1. **`noul`'s runtime signal carries no difficulty information.** `cos(question, state)`
+   reads 0.68 (in-domain) vs 0.65 (public) — and within the public items it does *not*
+   separate right from wrong (AUC 0.477). Its temperature can only trade one surface for
+   another.
+2. **An in-domain-ness signal does exist and is exact.** `strength = max_k cos(state,
+   prototype_k)` over k-means centroids (K=32) of the checkpoint's own training states:
+   in-domain **0.991** (p10 0.979) vs public **0.702** (p90 0.907), **AUC 1.000** — holding
+   when the prototypes are built from the real 35,540-record mixture.
+
+**Legal calibration surfaces** (never trained on, never a JevBench item, overlap asserted):
+
+| slice | n | accuracy | strength |
+| --- | ---: | ---: | ---: |
+| fresh in-domain eval (new seed) | 1,500 | ~1.00 | 0.99 |
+| source remainder (MultiNLI + BoolQ train rows not in `train_jev_sources`) | 1,200 | 0.806 | 0.45–0.75 (p50 0.72) |
+| fresh families, seed 7 (zero public overlap) | 1,000 | 0.843 | 0.743 |
+| **truncation slice** — fresh families behind a document preamble, decisive clause past the 512-token window | 1,000 | **0.379** (`noul` **0.487**) | 0.715 |
+
+The truncation slice is the one that covers the bench's difficulty: P1 already recorded
+that hard states average 1,079 tokens against a 512-token window (L-014), so ">512-token
+inputs" is a *known deployment condition*, not a benchmark artefact — and its accuracy
+lands where the public items are (0.379 vs 0.420).
+
+**Design (locked for this cycle):**
+
+- **`choice` — one global temperature** fitted on the pooled legal holdout with the existing
+  `fit_temperature` grid. Its own confidence is already informative in every regime
+  (public 0.41 at `T=1` against 0.36 accuracy).
+- **`noul` — instance-dependent confidence.** `p = g(strength)` when the natural answer is
+  "yes", `1 − g(strength)` when it is "no": the **direction comes from the answer, the
+  magnitude from the evidence**. `g` is a piecewise-linear map over strength bins fitted to
+  empirical accuracy on the same holdout. Argmax is preserved by construction.
+- **`score` — temperature pinned at the shipped 0.1.** Its answer is the distribution's
+  *expected value*, so temperature moves the answer (in-domain rounded-EV accuracy is 0.53
+  at `T=1` vs 0.9996 shipped); it also has no off-domain holdout rows. Changing it would
+  move Intelligence, which this phase must not do.
+- **Pre-registered fit protocol:** `fit_temperature` on the pooled holdout rows, `DEFAULT_GRID`,
+  per primitive, `score` excluded (pinned); `g` = mean accuracy per strength bin, monotone
+  enforced. No public item is a fit input at any point; the public run is measured **once**
+  after the assets are frozen.
+- **Mechanism note (L-014 → P3):** only confidence moves. Every answer — `choice` argmax,
+  `noul` direction, `score` expected value — is provably untouched, so Intelligence and all
+  B-5 gates are invariant by construction, not by luck.
+
+**Acceptance (P3):** public run ECE ≤ 0.15 → `calibration(ece)` ≥ 60; in-domain ECE per
+primitive ≤ 0.05 with accuracy byte-identical to the published set; `eval_en_domains`,
+probes and head-to-head accuracies unchanged; wire untouched (contract test unchanged).
+
 ## Plan (P1–P4)
 
 | Phase | Work | Gate |
 | --- | --- | --- |
 | **P1** hardening | **DONE (2026-10-02)** — see *P1 results* above: wire audit green ×2, context A/B measured → reverted (L-014), serve fast-off, cost basis measured | 231/231 valid; A/B recorded |
 | **P2** Intelligence | family-shaped training data in two layers: **(a)** real public sources (MultiNLI/BoolQ/Banking77, + SST-5/AG News only after licence review — tev1 `DATA_SOURCES.md`) converted to our record shape with pinned provenance; **(b)** synthetic **executable rule trees** for `long_policy`/`multi_hop`/`temporal_numeric`/`trap` + the six original families | public items **evaluation-only**; targets: easy ≥ 0.95, standard ≥ 0.73 → **I ≥ 50**; ablation with control (L-006), one harness (L-013) |
-| **P3** Calibration | ECE 0.543 → ≤ 0.15: flatten confidence when the best similarity is weak (argmax untouched → Intelligence independent); diverse holdout fit; optional B-6 contrastive | `calibration(ece)` ≥ 60 on the public run |
+| **P3** Calibration | **DESIGN LOCKED — see *P3 design* above** (evidence-conditioned `noul` confidence from a training-prototype bank, global `choice` temperature, `score` pinned; all fitted on legal slices only) | `calibration(ece)` ≥ 60 (ECE ≤ 0.15) on the public run, in-domain ECE ≤ 0.05, answers byte-identical |
 | **P4** submission | issue `[bench request]`: pinned `munod/tachyone-en` + base `answerdotai/ModernBERT-large`, licences, inference command, `temperature.json`, this diagnostic, cost basis; `docs/jevbench.md` + CHANGELOG | docs gate + issue filed |
 
 ## Out of scope
