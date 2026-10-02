@@ -157,6 +157,19 @@ def test_default_checkpoints_declare_base_and_adapter() -> None:
     assert multilingual.adapter == "munod/tachyone-multi"
 
 
+def test_english_context_reads_long_states_without_truncating_them() -> None:
+    """B-13 P1b: runtime truncation must cover the long-policy cases that motivated it.
+
+    The JevBench hard tier's states average 1,079 tokens (max 3,746); at the previous
+    512 the deciding facts never reached the encoder. 4096 covers that tier with margin
+    and stays inside ModernBERT-large's trained 8192 positions.
+    """
+    english = DEFAULT_CHECKPOINTS[ENGLISH]
+    assert english.context == 4096
+    assert english.context <= 8192
+    assert DEFAULT_CHECKPOINTS[MULTILINGUAL].context == 1024
+
+
 def test_apply_adapters_overrides_and_disables() -> None:
     router = Router()
     apply_adapters(router, {ENGLISH: "acme/tuned-en", MULTILINGUAL: None})

@@ -451,7 +451,11 @@ DEFAULT_CHECKPOINTS: dict[str, CheckpointInfo] = {
     ENGLISH: CheckpointInfo(
         id=ENGLISH,
         languages=["en"],
-        context=512,
+        # Inference reads up to 4096 tokens (B-13 P1b, measured A/B): ModernBERT-large trains
+        # at 8192, and the JevBench hard tier's states average 1,079 tokens (max 3,746) — at
+        # the old 512 the deciding facts of a long policy were truncated before the encoder
+        # saw them. Training max_len (512) is unchanged; this only bounds runtime truncation.
+        context=4096,
         size_params=395_000_000,
         base_model="answerdotai/ModernBERT-large",
         adapter="munod/tachyone-en",
