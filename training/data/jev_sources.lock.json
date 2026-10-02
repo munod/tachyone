@@ -1,0 +1,56 @@
+{
+  "_comment": "Pinned public sources for the JevBench-family records (B-13 P2). Pins cross-checked against togethercomputer/tev1 sources.lock.json (MIT) + its DATA_SOURCES.md on 2026-10-02. Fetch with: uv run python -m training.fetch_jev_sources --record (first time, writes the sha256) then --check to verify. Data lands in data/sources/ (gitignored) — the lock, not the data, is the recipe (L-011).",
+  "sources": {
+    "multi_nli": {
+      "repo": "nyu-mll/multi_nli",
+      "revision": "da70db2af9d09693783c3320c4249840212ee221",
+      "file": "data/train-00000-of-00001.parquet",
+      "url": "https://huggingface.co/datasets/nyu-mll/multi_nli",
+      "license": [
+        "cc-by-3.0",
+        "cc-by-sa-3.0",
+        "mit",
+        "other"
+      ],
+      "license_note": "mixed-source corpus; metadata read at the pinned revision, redistribution of extracted rows keeps the dataset card's attribution terms",
+      "sha256": "1c1de03640b168e410aabfca19e7cc2f3dfcd7f0e126e935674e56fb102c4529",
+      "purpose": "choice: premise+hypothesis -> entailment/neutral/contradiction (directly targets the XNLI-at-chance reading gap and the judge/adequacy shape)"
+    },
+    "boolq": {
+      "repo": "google/boolq",
+      "revision": "35b264d03638db9f4ce671b711558bf7ff0f80d5",
+      "file": "data/train-00000-of-00001.parquet",
+      "url": "https://huggingface.co/datasets/google/boolq",
+      "license": [
+        "cc-by-sa-3.0"
+      ],
+      "license_note": "metadata read at the pinned revision",
+      "sha256": "4f028e992c0bd4df30b9f056f4946b64f5c23028034ff0ed5ea467d8538cc623",
+      "purpose": "noul: passage+question -> yes/no (the binary reading-comprehension shape the rubric-blind noul head sits at chance on)"
+    },
+    "banking77": {
+      "repo": "legacy-datasets/banking77",
+      "revision": "f54121560de48f2852f90be299010d1d6dc612ec",
+      "file": "data/train-00000-of-00001.parquet",
+      "url": "https://huggingface.co/datasets/legacy-datasets/banking77",
+      "license": [
+        "cc-by-4.0"
+      ],
+      "license_note": "metadata read at the pinned revision",
+      "sha256": "3c648a31689f4ab3acbd4f4f4d120944bb521cf6ba57da77aa87c57e8979be81",
+      "purpose": "choice: user utterance -> one of 77 banking intents (routing/intent families; option descriptions are authored in training/data/jev_banking77_descriptions.json)"
+    }
+  },
+  "excluded": {
+    "ag_news": {
+      "repo": "fancyzhx/ag_news",
+      "license": "unknown",
+      "reason": "licence metadata is 'unknown' at the pinned revision — excluded until reviewed (tev1 DATA_SOURCES.md flags it for the same reason)"
+    },
+    "sst5": {
+      "repo": "SetFit/sst5",
+      "license": "unspecified",
+      "reason": "licence unspecified in the repository card metadata — excluded until reviewed (tev1 DATA_SOURCES.md flags it for the same reason)"
+    }
+  }
+}

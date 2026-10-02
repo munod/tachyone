@@ -51,6 +51,8 @@ train = [
     "numpy>=1.26",
     "peft>=0.10",
     "accelerate>=0.30",
+    # parquet reader for training/fetch_jev_sources.py (pinned public sources, B-13 P2)
+    "pyarrow>=17",
 ]
 fast = ["tilelang>=0.1.14"]
 
