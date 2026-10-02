@@ -145,9 +145,14 @@ artifact carries its recipe.
 `checkpoints/en_jev_ctrl`) vs `finetune_en_jev.json` (identical — same seed 2, same
 epochs 6, same LoRA/head ranks — only `data_path`/`out_dir` differ) plus the two fit
 configs (`fit_bank_en_jev*.json`, lr 1e-4 / 8 epochs per the B-5a lesson). Both dry-runs
-green (21,000 vs 35,540; committed-domain validation passes). **Both arms launched
-concurrently** — control on GPU0, treatment on GPU1 — under L-009 (`setsid nohup`, 15 s
-RAM/VRAM sampler, `exit=` line, marker files), logs `/tmp/opencode/b13_{ctrl,treat}.log`.
+green (21,000 vs 35,540; committed-domain validation passes). **Both arms trained
+concurrently and finished `exit=0`, 6/6 epochs, no L-011 collapse signature** (control
+`choice` loss 1.154 → 0.0047, treatment 0.527 → 0.0695 — the mixture's harder data keeps
+its final loss higher, expected). Artifacts reconcile with their launch configs (the only
+`finetune_config.json` delta is the materialised `choice_init_std` default), each carries
+the keyed bank (`shared` + `domains`) plus `temperature.json`. **Frozen-trunk fits
+launched** (`b13_fit.sh`, L-009,15 s sampler): control on GPU0 (7,000 `choice` records),
+treatment on GPU1 (16,780), logs `/tmp/opencode/b13_fit_{ctrl,treat}.log`.
 
 ## JB-7: Gates — bench diagnostic + in-domain non-regression
 
