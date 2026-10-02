@@ -12,7 +12,7 @@ from __future__ import annotations
 from tachyone.client import TachyoneAPIError, TachyoneClient, TachyoneConnectionError, TachyoneError
 from tachyone.handoff import HandoffReport, HandoffSignal, Uncertainty, assess, assess_response
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __all__ = [
     "HandoffReport",
     "HandoffSignal",
