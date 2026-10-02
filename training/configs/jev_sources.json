@@ -1,0 +1,10 @@
+{
+  "_comment": "Recipe for training/build_jev_sources.py (B-13 P2, JB-2). Pinned sources come from training/data/jev_sources.lock.json; this file only says how many rows to sample and how the choice distractors are drawn. The output data/train_jev_sources.jsonl is gitignored — this config plus the lock is the reproducible recipe (L-011).",
+  "seed": 1,
+  "counts": {
+    "multi_nli": 5000,
+    "boolq": 3000,
+    "banking77": 3000
+  },
+  "distractors_per_choice": 4
+}
