@@ -464,6 +464,46 @@ harness silently answers with *whatever the English checkpoint is today*. Contro
 `/tmp/opencode/control_eval_multi.json` (predict) and `control_eval_backend.json` (routed).
 **Rule (L-013): never gate one checkpoint's quality on a routed harness.**
 
+**B5B-6 — three arms, one harness, gates PASS (2026-10-02).** The joint run finished
+(`exit=0`, 8/8 epochs, `choice` loss oscillating but descending 0.51 → 0.035, no L-011
+collapse signature; `finetune_config.json` matches the launch config). Arms via
+`/tmp/opencode/b5b_eval.sh` (explicit adapter, calibration refit per arm, `--train-data`
+split; the shared-only arm is the trained bank's `shared` payload written in the legacy
+shape — it differs from the bank arm by exactly one factor: which head answers `choice`):
+
+| arm | overall | ECE | `choice` | `support` | worst new domain | gate strict |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| baseline (released multi) | 0.5609 | 0.172 | 0.258 | 0.8413 | 0.438 | — (legacy asset) |
+| bank + gate | 0.8732 | 0.023 | 0.6196 | **0.9453 ✓** | **0.847 ✓** | **1.000** (0 shared / 0 wrong, n=2500) |
+| bank + oracle | 0.8732 (identical to gate — routing is not the bottleneck) | | | | | |
+| **shared only** | **0.9295** | **0.012** | **0.7884** | **0.980** | **0.890** | — |
+
+**Gates (bank+gate vs the numbers fixed before training): `support` 0.9453 ≥ 0.8413 PASS ·
+worst new domain 0.8467 ≥ 0.70 PASS · per-domain ECE ≤ 0.05 → two declared exceptions
+(`support` 0.071, `ecommerce` 0.052; `agent_tools` 0.044, `documents` 0.038, `voice` 0.029) ·
+gate strict 1.0000 published.** `noul` and `score` are **1.000 in every arm and every domain**
+(the B-12 corrected-label ceiling: both are the same tone detector — L-010; every difference
+between arms rides on `choice`).
+
+**The measured surprise — the shared head beats the per-domain bank in EVERY domain**
+(`choice`: `ecommerce` +0.290, `voice` +0.224, `support` +0.104, `agent_tools` +0.130,
+`documents` +0.096), taking overall **0.9295 vs 0.8732**. Per-language: shared 0.893–0.948 vs
+bank 0.826–0.918; worst cell `ecommerce/de` 0.799 (shared) vs `agent_tools/fr` 0.763 (bank);
+held-out-text 0.936 (shared) vs 0.897 (bank). This is the **first joint bank run ever
+measured** (B-5a published the frozen-trunk *isolate*, where bank and shared-refit tied at
+3 rows — L-012); the trainer code was re-read and each head is trained standalone against the
+same target with the same lr — no train/inference mismatch, so the loss is real. Candidate
+mechanism (unresolved, L-006: do not call it structure yet): each domain head gets ~1/5 of
+the optimizer exposures while the trunk is still moving early in training, while the shared
+head's criteria-conditioned residual pools evidence across all five option spaces.
+
+**Open → the isolate decides the publish arm:** ADR-0016 §5's designated experiment —
+`training/fit_choice_bank.py` on the **frozen trained trunk** (`checkpoints/multi_b5b`),
+which equalizes optimization (both arms refit on one cached encode pass) and therefore
+separates *structure* from *joint-training exposure*. Publish the best measured arm:
+bank wins → multi ships ADR-0016's keyed format; shared wins → multi ships the legacy head
+and B-5b publishes the structural finding.
+
 **Risks / notes.** Five domains in one LoRA of fixed capacity may dilute per-domain accuracy —
 that is what the worst-domain gate is for. Training time vs the 12 GB budget (ADR-0005). Tool/
 function selection largely overlaps the existing `choice` case, so it may add vocabulary rather

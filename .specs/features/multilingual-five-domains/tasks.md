@@ -121,6 +121,28 @@ asset (`domains` stripped → legacy). Publish `choice_gate`, `per_domain`, `per
 with the table (what moved, what is shared).
 **Tests:** — (measurement) · **Gate:** full.
 **Commit:** `docs(specs): record the B-5b measurement in STATE and BACKLOG B-5b`
+**Status:** **Done (2026-10-02).** Three arms + baseline in one harness (calibration refit per
+arm, held-out split). All cycle gates PASS on the bank+gate arm (support 0.9453 ≥ 0.8413,
+worst new domain 0.8467 ≥ 0.70, gate strict 1.0000; two declared ECE exceptions). The
+**shared-only control beats the bank in every domain** (overall 0.9295 vs 0.8732, `choice`
+0.7884 vs 0.6196) — first joint bank run ever measured; trainer math re-verified (each head
+standalone, no path bug). Full table: BACKLOG B-5b.
+
+## B5B-6b: The isolate on the frozen trained trunk (decides the publish arm)
+
+**What:** `training/configs/fit_bank_multi_domains.json` (`trunk_adapter checkpoints/multi_b5b`,
+`data_path data/train_multi_domains.jsonl`, model mmBERT, `max_len 1024`, `choice_rank 128`,
+seed 42, lr 1e-4) → fit shared-refit control + bank from **one cached encode pass** over the
+10k `choice` records, then evaluate both fitted assets through `training.predict` (same
+harness, same calibration flow) against the joint arms already recorded.
+**Where:** `training/configs/fit_bank_multi_domains.json`, `benchmarks/results/multi_domains_fit_*.json`.
+**Depends on:** B5B-6 · **Requirement:** ADR-0016 §5, L-012 (attribute structure under equal
+optimization).
+**Done when:** the candidate table has all five arms (baseline, joint bank, joint shared,
+fitted bank, fitted shared) and BACKLOG names the publish decision.
+**Tests:** — (measurement) · **Gate:** full.
+**Commit:** `docs(specs): record the B-5b isolate and the publish decision`
+**Status:** Not started.
 
 ## B5B-7: Gates verdict
 
