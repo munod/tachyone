@@ -1,19 +1,25 @@
 # State
 
 **Last Updated:** 2026-10-02
-**Current Work:** **B-13 — JevBench preparation. P2 (JB-1…JB-7) executed and measured.**
-Seven commits of data infrastructure (pinned sources → records → rule trees → five
-families → 35,540-record mixture → two-arm training configs) plus both arms trained and
-fit (`exit=0`, L-011 reconciled) and evaluated in one harness. **JB-7 verdict: all B-5
-gates PASS on every arm; Intelligence 8.4 (published) → 9.0 (fresh control) → 15.0
-(treatment), bench score 0.43 → 1.44 → 4.19** — the treatment's +6.0 vs the control's
-+0.6 variance move attributes the gain to the data (L-006/L-012). **The cycle's I ≥ 50
-target was NOT met (15.0)**; structural leftovers: `noul` stays rubric-blind (`hard/trap`
-0.000), `hard/temporal_numeric` regressed, treatment Calibration (48.4) below control
-(65.3). Full table: `.specs/features/jevbench/tasks.md` JB-7; artifacts
-`benchmarks/results/en_jev_{published,ctrl,treat}.json` + `/tmp/opencode/jevbench_runs_*`.
-**Open decision: JB-8 — adopt `checkpoints/en_jev_bank` (beats published on every
-measured axis, gates pass) and republish, vs hold for a second P2 iteration.**
+**Current Work:** **B-13 — JevBench preparation: JB-1…JB-8 COMPLETE, artifact adopted and
+published.** The treatment arm (`checkpoints/en_jev_bank`, the 35,540-record mixture retrain)
+was promoted to `checkpoints/en` (previous build kept at `checkpoints/en_prev_pub0.9637`) and
+uploaded as **`munod/tachyone-en` revision [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993)**
+— six files **sha256-verified one by one**, no stale remote files. Final one-set numbers:
+support **0.964 → 1.000** and five-domain **0.964 → 1.000** (gate strict **1.000**, held-out
+text 0.9987, per-domain ECE 0.000–0.001); **JevBench public items Intelligence 8.4 → 15.0**
+(control +0.6, bench score 0.43 → **1.59** as-shipped, Calibration 0 for every arm —
+**L-015**); probes **XNLI 0.341 → 0.566, typed-decisions 0.269 → 0.367, MASSIVE 0.039 →
+0.051**; fast path **2.543× / 0 flips**; head-to-head **re-run** — their turf **0.233 →
+0.288** (`banking77` 0.000 → 0.219), home **0.958 → 1.000**. The cycle's own target
+**I ≥ 50 stands recorded as NOT met (15.0)** — `noul` never reads the rubric, so `hard/trap`
+stays 0.000. Sweep surfaces all quote one set (`benchmarks/report.md`, `docs/benchmarks.md`,
+model card, `docs/compare.md` §3, `docs/huggingface.md`, README, roadmap, CHANGELOG);
+`mkdocs build --strict` green. **Open: P3** (calibration shrinkage — the Calibration axis is
+0 for all arms as shipped) **and P4** (the `[bench request]` issue itself); B-6 contrastive
+stays an optional experiment inside P3. Full record: `.specs/features/jevbench/`, BACKLOG
+**B-13**. Locked decisions unchanged: public items **evaluation-only for ever**, offline
+artifact submission, English checkpoint only.
 **P0/P1 record (earlier the same day):** the baseline was measured on the
 231 public items of [jevbench](https://github.com/fstandhartinger/jevbench) through its own
 `typesafe` adapter against a local `tachyone-serve` (`checkpoints/en`, explicit adapter —

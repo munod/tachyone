@@ -1,10 +1,13 @@
 # JevBench Preparation (B-13) Specification
 
 **Phase:** Post-M6 · **Spec accepted:** 2026-10-02
-**Status:** **P0 + P1 + P2 measured (2026-10-02)** — JB-1…JB-7 done. **P2 verdict:
-Intelligence 8.4 → 15.0 (control 9.0), all B-5 gates PASS, cycle target I ≥ 50 NOT met.**
-**Open: JB-8** (adopt the treatment artifact vs hold for a second P2 iteration), then
-P3/P4.
+**Status:** **JB-1 … JB-8 done (2026-10-02) — the B-13 artifact is adopted and published**
+([`munod/tachyone-en` `f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993),
+six files sha256-verified). Final record: Intelligence **8.4 → 15.0** on the 231 public items
+(control +0.6), all B-5 gates PASS, probes XNLI 0.566 / typed-decisions 0.367 / MASSIVE 0.051,
+head-to-head 0.288 (theirs) / 1.000 (ours). **Open: P3** (calibration shrinkage — the
+Calibration axis reads 0 for every arm as shipped, L-015) **and P4** (the `[bench request]`
+issue); the cycle's own I ≥ 50 target stands recorded as **not met**.
 
 **Context:** `.specs/project/BACKLOG.md` B-13 · external harness:
 <https://github.com/fstandhartinger/jevbench> (MIT — cloned to a local download for

@@ -1026,7 +1026,7 @@ corrected labels" option is now *measured and closed* rather than open.
 
 ---
 
-## B-13 — JevBench preparation (score well on the public board) · **In progress — P0 + P1 done (2026-10-02)**
+## B-13 — JevBench preparation (score well on the public board) · **P0…JB-8 done (2026-10-02) — artifact adopted and published as `munod/tachyone-en` [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993); P3 + P4 open**
 
 **Why.** [JevBench](https://github.com/fstandhartinger/jevbench) ranks Jev-class decision
 models on four equally-weighted axes (Intelligence chance-corrected per tier, Calibration =
@@ -1086,6 +1086,18 @@ is 0 for all three arms as shipped (**L-015**: the in-domain refit sharpens to T
 zeroes the axis off-domain; an earlier pass that read 65.3/48.4 for the fresh arms had
 served them *without* the asset). Structural leftovers: `noul` remains rubric-blind
 (`hard/trap` 0.000), `hard/temporal_numeric` regressed.
+
+**JB-8 executed same day — adopted by merit.** Both adoption conditions held (bench **1.59
+vs 0.43** as-shipped, all gates PASS; treatment vs fresh control **1.59 vs 0.51**).
+`checkpoints/en_jev_bank` promoted to `checkpoints/en` (old build kept at
+`checkpoints/en_prev_pub0.9637`), calibration shipped as `temperature_calibration.json`.
+Full sweep one set: support **1.000** / five-domain **1.000** / gate **1.000**; probes
+XNLI **0.566**, typed-decisions **0.367**, MASSIVE **0.051**; fast path **2.543× / 0
+flips**; head-to-head **re-run** (the English adapter moved — their turf **0.288** with
+`banking77` 0.000 → 0.219, home **1.000** across all three primitives); Hub revision
+`f28103bf` (six files sha256-verified, no stale files); report/benchmarks/model-card/
+compare/huggingface/README/roadmap/CHANGELOG one set, `mkdocs build --strict` green.
+Full record: `.specs/features/jevbench/tasks.md` JB-8.
 
 **Acceptance.**
 - [x] P0: baseline measured and recorded (231 public items, one harness, L-013-compliant

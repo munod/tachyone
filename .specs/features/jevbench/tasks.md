@@ -204,6 +204,24 @@ what stopped it).
 **Done when:** every number-bearing doc quotes one set; feature status updated.
 **Tests:** `tests/test_docs_site.py` · **Gate:** full.
 **Commit:** `feat(release): adopt the JevBench-family checkpoint` + `docs: …`
+**Status:** **Done (2026-10-02) — adopted by merit.** Both adoption conditions held (bench
+**1.59 vs 0.43** as-shipped with all B-5 gates PASS; treatment beats its fresh control 1.59
+vs 0.51). Executed: `checkpoints/en_jev_bank` → **`checkpoints/en`** (previous build kept as
+`checkpoints/en_prev_pub0.9637`), the per-arm refit shipped as `temperature_calibration.json`
+(L-015 — every bench pass re-run *as shipped*). Measurement sweep on the new weights, one set
+everywhere: support view **1.000** (noisy 0.997), five-domain **1.000**, gate strict
+**1.000**; probes **XNLI 0.566 / typed-decisions 0.367 / MASSIVE 0.051** (all re-run;
+`benchmarks/probes.md` re-rendered without leaking backups); fast path **2.543× / 0 flips**;
+head-to-head **re-run, not merely re-checked** (the English adapter moved): their turf
+**0.233 → 0.288** (`banking77` 0.000 → 0.219 — the real Banking77 data shows up), home turf
+**0.958 → 1.000** (all three primitives), peers' artifacts byte-identical. Published:
+**`munod/tachyone-en` revision [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993)**
+— six files **sha256-verified one by one**, no stale remote files. Docs one set:
+`benchmarks/report.md` (entries + reproduce commands), `docs/benchmarks.md`,
+`docs/model-card.md`, `docs/compare.md` §3, `docs/huggingface.md`, README, roadmap,
+CHANGELOG `[Unreleased]`; `mkdocs build --strict` green. **Still open:** P3 (calibration
+shrinkage — the Calibration axis reads 0 for every arm as shipped, L-015) and P4 (the
+`[bench request]` issue itself).
 
 **Deferred (recorded, not scheduled):** `probability`, `ambiguous`, `tradeoff`,
 `adversarial`, `routing_hard` synthetic families (public n ≤ 10 each); source data for
