@@ -158,3 +158,4 @@ def test_parse_temperature_report_tolerates_bad_shapes() -> None:
     assert parse_temperature_report({"per_primitive": []}) == {}
     assert parse_temperature_report(["nope"]) == {}  # type: ignore[arg-type]
     assert parse_temperature_report({"per_primitive": {"choice": []}}) == {}
+

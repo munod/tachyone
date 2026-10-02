@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from tachyone.agent import Agent
 from tachyone.backends.base import PredictionResult
-from tachyone.calibration import confidence, parse_temperature_report
+from tachyone.calibration import confidence, interpolate_confidence, parse_temperature_report
 from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
@@ -73,14 +73,31 @@ class EncoderCheckpointLike(Protocol):
         ...
 
 
-def _dot(left: list[float], right: list[float]) -> float:
+def _dot(left: Sequence[float], right: Sequence[float]) -> float:
     return sum(a * b for a, b in zip(left, right, strict=True))
 
 
-def _cosine(left: list[float], right: list[float]) -> float:
+def _cosine(left: Sequence[float], right: Sequence[float]) -> float:
     left_norm = math.sqrt(sum(value * value for value in left)) or 1.0
     right_norm = math.sqrt(sum(value * value for value in right)) or 1.0
     return _dot(left, right) / (left_norm * right_norm)
+
+
+def prototype_strength(
+    embedding: Sequence[float], centroids: Sequence[Sequence[float]]
+) -> float | None:
+    """Largest cosine between an embedding and a training-state prototype bank (P3).
+
+    Returns ``None`` when the bank was built for a different embedding width — a mismatch
+    is refused, never approximated. Shared by the runtime and the fitter so the signal the
+    map is *fitted* on is bit-for-bit the signal it is *applied* with.
+    """
+    if not centroids or not embedding:
+        return None
+    dim = len(centroids[0])
+    if len(embedding) != dim or any(len(centroid) != dim for centroid in centroids):
+        return None
+    return max(_cosine(embedding, centroid) for centroid in centroids)
 
 
 def _softmax(scores: list[float], temperature: float = 1.0) -> list[float]:
@@ -324,6 +341,117 @@ class ChoiceHeadBank:
         return self.domains[key].head
 
 
+class ConfidenceCalibration:
+    """Evidence-conditioned confidence: a prototype bank plus the fitted ``noul`` map (P3).
+
+    ``strength`` is the largest cosine between a state embedding and any training-state
+    centroid — how like the training distribution this input is (spec, *P3 design*). The
+    map turns that evidence into the confidence a ``noul`` answer reports: the *direction*
+    still comes from the answer itself, so no input ever changes its mind, only how loudly
+    it says it (P3's rule: Intelligence is independent of the Calibration axis).
+
+    Built from ``confidence_calibration.json``, which embeds the bank and the map together
+    so the pair can never drift apart. Unusable content is dropped with a warning naming
+    the problem (B-8 discipline): the engine then falls back to the fitted temperature,
+    exactly as an adapter that ships no asset would.
+    """
+
+    __slots__ = ("_dim", "centroids", "noul_knots", "prototypes")
+
+    def __init__(
+        self,
+        centroids: list[list[float]],
+        noul_knots: list[tuple[float, float]],
+        *,
+        prototypes: Mapping[str, Any] | None = None,
+    ) -> None:
+        self.centroids = centroids
+        self.noul_knots = noul_knots
+        self.prototypes = dict(prototypes or {})
+        self._dim = len(centroids[0]) if centroids else 0
+
+    @property
+    def dim(self) -> int:
+        """Embedding width the bank was built for; a mismatch is refused, never guessed."""
+        return self._dim
+
+    def strength(self, embedding: Sequence[float]) -> float | None:
+        """Max cosine to the bank, or ``None`` when the bank is for a different space."""
+        return prototype_strength(embedding, self.centroids)
+
+    def noul_confidence(self, strength: float) -> float:
+        """Confidence for this evidence, clamped to ``[0.5, 1]`` (a binary floor)."""
+        value = interpolate_confidence(strength, self.noul_knots)
+        return min(1.0, max(0.5, value))
+
+    @classmethod
+    def from_dict(cls, data: Any, *, warn: Callable[[str], None]) -> ConfidenceCalibration | None:
+        """Validate the asset and build it; call ``warn`` and return ``None`` if unusable."""
+        if not isinstance(data, Mapping):
+            warn("asset is not a JSON object")
+            return None
+        if data.get("version") != CONFIDENCE_VERSION:
+            warn(f"unsupported version {data.get('version')!r}")
+            return None
+        prototypes = data.get("prototypes")
+        if not isinstance(prototypes, Mapping):
+            warn("missing 'prototypes'")
+            return None
+        if prototypes.get("metric") != "cosine":
+            warn(f"unsupported metric {prototypes.get('metric')!r}")
+            return None
+        raw_centroids = prototypes.get("centroids")
+        dim = prototypes.get("dim")
+        if not isinstance(raw_centroids, list) or not raw_centroids:
+            warn("centroids must be a non-empty list")
+            return None
+        if not isinstance(dim, int) or dim < 1:
+            warn(f"dim must be a positive int, got {dim!r}")
+            return None
+        if prototypes.get("k") != len(raw_centroids):
+            warn(f"k={prototypes.get('k')!r} does not match {len(raw_centroids)} centroids")
+            return None
+        centroids: list[list[float]] = []
+        for index, centroid in enumerate(raw_centroids):
+            if not isinstance(centroid, list) or len(centroid) != dim:
+                warn(f"centroid {index} is not a {dim}-vector")
+                return None
+            try:
+                values = [float(value) for value in centroid]
+            except (TypeError, ValueError):
+                warn(f"centroid {index} contains a non-numeric value")
+                return None
+            if not all(math.isfinite(value) for value in values):
+                warn(f"centroid {index} contains a non-finite value")
+                return None
+            centroids.append(values)
+        noul = data.get("noul")
+        raw_knots = noul.get("knots") if isinstance(noul, Mapping) else None
+        knots: list[tuple[float, float]] = []
+        if not isinstance(raw_knots, list) or not raw_knots:
+            warn("missing 'noul' knots")
+            return None
+        previous = -math.inf
+        for entry in raw_knots:
+            if not isinstance(entry, (list, tuple)) or len(entry) != 2:
+                warn("knots must be [strength, confidence] pairs")
+                return None
+            try:
+                strength, level = float(entry[0]), float(entry[1])
+            except (TypeError, ValueError):
+                warn("knots must be numeric")
+                return None
+            if not (math.isfinite(strength) and 0.0 <= level <= 1.0):
+                warn(f"knot out of range: {entry!r}")
+                return None
+            if strength <= previous:
+                warn("knots must be strictly increasing in strength")
+                return None
+            previous = strength
+            knots.append((strength, level))
+        return cls(centroids, knots, prototypes=prototypes)
+
+
 class EncoderModel:
     """Turns embeddings into typed answers with a similarity baseline."""
 
@@ -334,16 +462,32 @@ class EncoderModel:
         temperature: float = 1.0,
         temperatures: Mapping[str, float] | None = None,
         choice_bank: ChoiceHeadBank | None = None,
+        confidence: ConfidenceCalibration | None = None,
     ) -> None:
         self._encode = encode
         self._temperature = temperature
         self._temperatures = dict(temperatures or {})
         self._choice_bank = choice_bank
+        self._confidence = confidence
 
     @property
     def choice_bank(self) -> ChoiceHeadBank | None:
         """The loaded head bank (``None`` when the adapter ships no asset)."""
         return self._choice_bank
+
+    @property
+    def confidence(self) -> ConfidenceCalibration | None:
+        """The loaded evidence-confidence asset (``None`` when the adapter ships no asset)."""
+        return self._confidence
+
+    def state_embedding(self, state: State) -> list[float]:
+        """Embed ``state`` exactly as scoring does — same tokenization, same window.
+
+        Exposed so the fitter can measure the evidence signal (``prototype_strength``) on
+        the same vector the runtime will see; anything computed from a differently encoded
+        state would be fitting a different input than the one deployed.
+        """
+        return self._encode([state_text(state)])[0]
 
     def _temp(self, kind: str, lang: str | None = None) -> float:
         """Temperature for ``kind``, preferring a per-language fit over the per-primitive one."""
@@ -377,11 +521,19 @@ class EncoderModel:
 
         embeddings = self._encode(texts)
         state_embedding = embeddings[0]
+        calibration = self._confidence
+        strength = calibration.strength(state_embedding) if calibration is not None else None
         answers: dict[str, Answer] = {}
         for question_id, question, question_index, criterion_indices in plan:
             question_embedding = embeddings[question_index]
             if isinstance(question, NoulQuestion):
-                score = _cosine(question_embedding, state_embedding) / self._temp("noul", lang)
+                raw = _cosine(question_embedding, state_embedding)
+                if strength is not None and calibration is not None:
+                    # P3: the answer keeps its own direction, the evidence sets the volume.
+                    level = calibration.noul_confidence(strength)
+                    answers[question_id] = NoulAnswer(noul=level if raw >= 0.0 else 1.0 - level)
+                    continue
+                score = raw / self._temp("noul", lang)
                 answers[question_id] = NoulAnswer(noul=min(1.0, max(0.0, _sigmoid(score))))
                 continue
             scores = [
@@ -440,6 +592,7 @@ class EncoderCheckpoint:
         temperature: float = 1.0,
         temperatures: Mapping[str, float] | None = None,
         choice_bank: ChoiceHeadBank | None = None,
+        confidence: ConfidenceCalibration | None = None,
     ) -> None:
         self.info = info
         self.model = EncoderModel(
@@ -447,6 +600,7 @@ class EncoderCheckpoint:
             temperature=temperature,
             temperatures=temperatures,
             choice_bank=choice_bank,
+            confidence=confidence,
         )
 
     def predict(
@@ -612,6 +766,10 @@ def load_encoder(
 TEMPERATURE_ASSET = "temperature_calibration.json"
 #: Trained ``choice`` scorer shipped next to the adapter (L-002).
 CHOICE_HEAD_ASSET = "choice_head.json"
+#: Evidence-conditioned confidence: prototype bank + fitted ``noul`` map (P3).
+CONFIDENCE_ASSET = "confidence_calibration.json"
+#: Schema version of that asset; the runtime refuses a version it does not know.
+CONFIDENCE_VERSION = 1
 
 _log = logging.getLogger(__name__)
 
@@ -738,6 +896,30 @@ def load_choice_head(
     )
 
 
+def load_confidence(
+    info: CheckpointInfo, *, models_dir: str, offline: bool = False
+) -> ConfidenceCalibration | None:
+    """Load the evidence-confidence asset (prototype bank + ``noul`` map) if present.
+
+    Same contract as :func:`load_temperatures`: an adapter that does not ship the file is
+    normal and stays silent; a file that exists but cannot be read, parsed or interpreted —
+    or cannot be fetched offline — logs a WARNING naming the asset and its source before the
+    engine falls back to the fitted temperature (B-8). The bank and the map are one file on
+    purpose: a map fitted against a different bank would be measuring a different signal.
+    """
+    if not info.adapter:
+        return None
+    source = _adapter_asset(info.adapter, CONFIDENCE_ASSET, models_dir=models_dir, offline=offline)
+    if source is None:
+        return None
+    payload = _read_asset_json(source, CONFIDENCE_ASSET)
+    if payload is None:
+        return None
+    return ConfidenceCalibration.from_dict(
+        payload, warn=lambda message: _warn_asset(CONFIDENCE_ASSET, str(source), message)
+    )
+
+
 def apply_adapters(router: Router, adapters: Mapping[str, str | None]) -> Router:
     """Override each checkpoint's adapter from a config mapping (empty value disables it)."""
     for checkpoint_id, adapter in adapters.items():
@@ -755,11 +937,18 @@ def load_checkpoint(
     offline: bool = False,
     fast: bool = False,
 ) -> EncoderCheckpoint:
-    """Load a full checkpoint: encoder (+ adapter), fitted temperatures, and choice head bank."""
+    """Load a full checkpoint: encoder (+ adapter), temperatures, choice head, confidence."""
     encode = load_encoder(info, models_dir=models_dir, device=device, offline=offline, fast=fast)
     temperatures = load_temperatures(info, models_dir=models_dir, offline=offline)
     choice_bank = load_choice_head(info, models_dir=models_dir, offline=offline)
-    return EncoderCheckpoint(info, encode, temperatures=temperatures, choice_bank=choice_bank)
+    confidence = load_confidence(info, models_dir=models_dir, offline=offline)
+    return EncoderCheckpoint(
+        info,
+        encode,
+        temperatures=temperatures,
+        choice_bank=choice_bank,
+        confidence=confidence,
+    )
 
 
 def _usage(state: State, questions: dict[str, Question]) -> Usage:
@@ -847,10 +1036,13 @@ def _fake_encode(texts: list[str]) -> list[list[float]]:
 
 __all__ = [
     "CHOICE_HEAD_ASSET",
+    "CONFIDENCE_ASSET",
+    "CONFIDENCE_VERSION",
     "MODEL_IDS",
     "TEMPERATURE_ASSET",
     "ChoiceHeadBank",
     "ChoiceScorer",
+    "ConfidenceCalibration",
     "DomainChoiceHead",
     "EncodeFn",
     "EncoderBackend",
@@ -860,6 +1052,8 @@ __all__ = [
     "apply_adapters",
     "load_checkpoint",
     "load_choice_head",
+    "load_confidence",
     "load_encoder",
     "load_temperatures",
+    "prototype_strength",
 ]

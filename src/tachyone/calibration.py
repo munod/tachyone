@@ -15,6 +15,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 from typing import Any
 
 #: Default temperature grid searched by :func:`fit_temperature`. Wide enough that a weakly
@@ -175,6 +176,31 @@ def parse_temperature_report(report: Mapping[str, Any]) -> dict[str, float]:
     return temperatures
 
 
+def interpolate_confidence(strength: float, knots: Sequence[Sequence[float]]) -> float:
+    """Piecewise-linear ``confidence = f(strength)`` over ``(strength, confidence)`` knots.
+
+    The knots are sorted by strength; outside the fitted range the answer is the nearest
+    knot's confidence (an input *more* in-domain than anything seen keeps the in-domain
+    confidence, an input further out keeps the weakest one fitted — never an extrapolation
+    into confidence 0 or 1). The caller decides what the value means for its primitive; for
+    ``noul`` the runtime clamps it to ``[0.5, 1]``, because a binary confidence below 0.5
+    would invert the answer rather than express doubt (P3).
+    """
+    if not knots:
+        raise ValueError("knots must not be empty")
+    if strength <= knots[0][0]:
+        return float(knots[0][1])
+    if strength >= knots[-1][0]:
+        return float(knots[-1][1])
+    for (left_x, left_y), (right_x, right_y) in pairwise(knots):
+        if left_x <= strength <= right_x:
+            if right_x == left_x:
+                return float(right_y)
+            ratio = (strength - left_x) / (right_x - left_x)
+            return float(left_y + ratio * (right_y - left_y))
+    return float(knots[-1][1])  # pragma: no cover - unreachable given the two guards above
+
+
 __all__ = [
     "DEFAULT_GRID",
     "Temperature",
@@ -182,6 +208,7 @@ __all__ = [
     "confidence",
     "expected_calibration_error",
     "fit_temperature",
+    "interpolate_confidence",
     "margin",
     "normalized_entropy",
     "parse_temperature_report",

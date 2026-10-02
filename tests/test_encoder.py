@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from tachyone.backends.encoder import (
+    CONFIDENCE_ASSET,
     ChoiceHeadBank,
     ChoiceScorer,
     DomainChoiceHead,
@@ -22,6 +23,7 @@ from tachyone.backends.encoder import (
     EncoderModel,
     apply_adapters,
     load_choice_head,
+    load_confidence,
     load_encoder,
     load_temperatures,
 )
@@ -727,3 +729,200 @@ def test_cuda_graph_encode_matches_eager_on_cuda() -> None:
     other = eager_pool(["dddd", "ee"])
     for row, reference in zip(encode(["dddd", "ee"]), other, strict=True):
         assert row == pytest.approx(reference, abs=1e-4)
+
+
+# --- P3: evidence-conditioned confidence (JB-11) -------------------------------------------
+
+
+def _confidence_payload(dim: int = 8, knots: list | None = None) -> dict:
+    """A minimal, valid ``confidence_calibration.json`` payload for an 8-dim fake encoder."""
+    centroids = []
+    for axis in range(4):
+        vector = [0.0] * dim
+        vector[axis] = 1.0
+        centroids.append(vector)
+    return {
+        "version": 1,
+        "prototypes": {
+            "version": 1,
+            "metric": "cosine",
+            "k": len(centroids),
+            "dim": dim,
+            "seed": 0,
+            "source": {"data": "x", "records": 10, "sha256": "0" * 64},
+            "model": {"id": "fake", "adapter": None},
+            "centroids": centroids,
+        },
+        "noul": {"knots": knots if knots is not None else [[0.5, 0.55], [0.9, 1.0]]},
+    }
+
+
+def _load_confidence(payload: object, caplog: pytest.LogCaptureFixture):
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        return ConfidenceCalibration.from_dict(payload, warn=_warn_recorder(caplog))
+
+
+def _warn_recorder(caplog: pytest.LogCaptureFixture):
+    """Route the validator's warning through the module logger caplog is listening to."""
+
+    def warn(message: str) -> None:
+        logging.getLogger("tachyone.backends.encoder").warning(
+            "tachyone: cannot use the confidence asset (%s)", message
+        )
+
+    return warn
+
+
+def test_confidence_from_dict_happy_path() -> None:
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(_confidence_payload(), warn=lambda _m: None)
+    assert asset is not None
+    assert asset.dim == 8
+    assert len(asset.centroids) == 4
+    assert asset.noul_knots == [(0.5, 0.55), (0.9, 1.0)]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "match"),
+    [
+        (lambda p: p.update(version=2), "unsupported version"),
+        (lambda p: p.pop("prototypes"), "missing 'prototypes'"),
+        (lambda p: p["prototypes"].update(metric="dot"), "unsupported metric"),
+        (lambda p: p["prototypes"].update(centroids=[]), "non-empty list"),
+        (lambda p: p["prototypes"].update(dim=0), "dim must be a positive int"),
+        (lambda p: p["prototypes"].update(k=9), "does not match"),
+        (lambda p: p["prototypes"]["centroids"][0].append(0.0), "not a 8-vector"),
+        (lambda p: p["prototypes"]["centroids"][0].__setitem__(0, "x"), "non-numeric"),
+        (lambda p: p["prototypes"]["centroids"][0].__setitem__(0, float("nan")), "non-finite"),
+        (lambda p: p.pop("noul"), "missing 'noul' knots"),
+        (lambda p: p["noul"].update(knots=[]), "missing 'noul' knots"),
+        (lambda p: p["noul"].update(knots=[[0.5]]), "pairs"),
+        (lambda p: p["noul"].update(knots=[[0.5, 1.5]]), "out of range"),
+        (lambda p: p["noul"].update(knots=[[0.9, 1.0], [0.5, 0.6]]), "increasing"),
+    ],
+)
+def test_confidence_from_dict_rejects_unusable_assets(
+    mutate, match: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    payload = _confidence_payload()
+    mutate(payload)
+    assert _load_confidence(payload, caplog) is None
+    messages = _warnings(caplog)
+    assert messages and match in messages[-1], messages
+
+
+def test_confidence_from_dict_rejects_non_objects(caplog: pytest.LogCaptureFixture) -> None:
+    assert _load_confidence([1, 2], caplog) is None
+    assert _load_confidence("nope", caplog) is None
+    assert any("not a JSON object" in message for message in _warnings(caplog))
+
+
+def test_strength_is_the_best_prototype_match_and_refuses_foreign_spaces() -> None:
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(_confidence_payload(), warn=lambda _m: None)
+    assert asset is not None
+    aligned = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    orthogonal = [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]
+    assert asset.strength(aligned) == pytest.approx(1.0)
+    assert asset.strength(orthogonal) == pytest.approx(0.0)
+    assert asset.strength([1.0, 0.0]) is None, "a different embedding width is refused"
+
+
+def test_noul_confidence_never_goes_below_half() -> None:
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(
+        _confidence_payload(knots=[[0.5, 0.1], [0.9, 0.95]]), warn=lambda _m: None
+    )
+    assert asset is not None
+    assert asset.noul_confidence(0.5) == 0.5, "a binary confidence below 0.5 would invert"
+    assert asset.noul_confidence(0.9) == 0.95
+    assert asset.noul_confidence(0.2) == 0.5, "outside the fitted range clamps, never extrapolates"
+    assert asset.noul_confidence(0.7) == pytest.approx(0.1 + 0.5 * 0.85)
+
+
+def test_noul_direction_is_unchanged_for_every_state() -> None:
+    """P3's whole invariant: the asset moves the volume, never the answer."""
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(_confidence_payload(), warn=lambda _m: None)
+    assert asset is not None
+    question = NoulQuestion(instructions="Does this express urgency?")
+    plain = EncoderModel(_encode)
+    mapped = EncoderModel(_encode, temperatures={"noul": 0.05}, confidence=asset)
+    states = [
+        "please refund now",
+        "the quarterly report was filed",
+        "urgent: the service is down",
+        "",
+        "   ",
+        "a" * 400,
+        "¿y si devolvemos el dinero?",
+    ]
+    for state in states:
+        reference = plain.answer_state(state, {"q": question})["q"]
+        tested = mapped.answer_state(state, {"q": question})["q"]
+        assert isinstance(reference, NoulAnswer) and isinstance(tested, NoulAnswer)
+        assert (reference.noul >= 0.5) == (tested.noul >= 0.5), state
+        assert 0.5 <= tested.noul <= 1.0
+
+
+def test_confidence_asset_leaves_choice_and_score_byte_identical() -> None:
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(_confidence_payload(), warn=lambda _m: None)
+    assert asset is not None
+    plain = EncoderModel(_encode, temperatures={"choice": 0.05, "score": 0.1})
+    mapped = EncoderModel(_encode, temperatures={"choice": 0.05, "score": 0.1}, confidence=asset)
+    for state in ("please refund", "the printer is jammed"):
+        for kind in ("department", "urgency"):
+            reference = plain.answer_state(state, {"q": _QUESTIONS[kind]})["q"]
+            tested = mapped.answer_state(state, {"q": _QUESTIONS[kind]})["q"]
+            assert reference == tested, (state, kind)
+
+
+def test_foreign_embedding_width_falls_back_to_the_temperature_path() -> None:
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(_confidence_payload(dim=4), warn=lambda _m: None)
+    assert asset is not None
+    question = NoulQuestion(instructions="Does this express urgency?")
+    temperatures = {"noul": 0.05}
+    reference = EncoderModel(_encode, temperatures=temperatures).answer_state(
+        "please refund", {"q": question}
+    )["q"]
+    tested = EncoderModel(_encode, temperatures=temperatures, confidence=asset).answer_state(
+        "please refund", {"q": question}
+    )["q"]
+    assert tested == reference
+
+
+def test_load_confidence_is_silent_when_absent_and_loud_when_broken(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    info = _info(str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_confidence(info, models_dir=str(tmp_path)) is None
+    assert _warnings(caplog) == [], "an adapter that ships no asset is a normal case"
+    caplog.clear()
+
+    (tmp_path / CONFIDENCE_ASSET).write_text("{not json", encoding="utf-8")
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        assert load_confidence(info, models_dir=str(tmp_path)) is None
+    messages = _warnings(caplog)
+    assert messages and CONFIDENCE_ASSET in messages[0]
+    caplog.clear()
+
+    (tmp_path / CONFIDENCE_ASSET).write_text(json.dumps(_confidence_payload()), encoding="utf-8")
+    with caplog.at_level(logging.WARNING, logger="tachyone.backends.encoder"):
+        loaded = load_confidence(info, models_dir=str(tmp_path))
+    assert loaded is not None and loaded.dim == 8
+    assert _warnings(caplog) == []
+
+
+def test_load_confidence_without_adapter_is_none() -> None:
+    assert load_confidence(_info(None), models_dir="/tmp") is None
