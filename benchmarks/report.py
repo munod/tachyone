@@ -308,16 +308,10 @@ def main(argv: Iterable[str] | None = None) -> int:
             "uv run python -m training.generate_data --seed 2 --per-type 500 "
             "--languages pt,es,fr,de,it,nl --out data/eval_multi.jsonl",
             "uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json",
-            "uv run python -m training.finetune_rlcd "
-            "--config training/configs/finetune_multi_b12.json",
             "uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en "
             "--out-predictions data/preds_en.jsonl",
             "uv run python -m training.fit_calibration --calibration data/preds_en.jsonl "
             "--out checkpoints/en/temperature_calibration.json",
-            "uv run python -m training.predict --data data/eval_multi.jsonl "
-            "--adapter checkpoints/multi --max-len 1024 --out-predictions data/preds_multi.jsonl",
-            "uv run python -m training.fit_calibration --calibration data/preds_multi.jsonl "
-            "--out checkpoints/multi/temperature_calibration.json",
             # B-11: both evaluates pin the local adapter (the Hub id would fetch a revision) and
             # carry --noise-rate, without which the noisy view the report prints is not produced.
             "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en "
@@ -352,8 +346,37 @@ def main(argv: Iterable[str] | None = None) -> int:
             "--adapter checkpoints/en_domains_bank --train-data data/train_en_domains.jsonl "
             "--out-predictions data/preds_en_domains_bank_gate.jsonl "
             "--out-report benchmarks/results/en_domains_bank_gate.json",
+            # B-5b: five domains, multilingual (support keeps its 18k), joint run + frozen-trunk
+            # fit; the promoted checkpoints/multi is the fitted bank (fit_bank -> mv multi).
+            "uv run python -m training.generate_data --seed 1 --per-type 1000 "
+            "--languages pt,es,fr,de,it,nl "
+            "--domains support,ecommerce,agent_tools,documents,voice --per-domain support=6000 "
+            "--out data/train_multi_domains.jsonl",
+            "uv run python -m training.generate_data --seed 2 --per-type 500 "
+            "--languages pt,es,fr,de,it,nl "
+            "--domains support,ecommerce,agent_tools,documents,voice "
+            "--out data/eval_multi_domains.jsonl",
+            "uv run python -m training.finetune_rlcd "
+            "--config training/configs/finetune_multi_domains.json",
+            "uv run python -m training.fit_choice_bank "
+            "--config training/configs/fit_bank_multi_domains.json",
+            "uv run python -m training.predict --data data/eval_multi_domains.jsonl "
+            "--adapter checkpoints/multi_b5b_fit_bank --train-data data/train_multi_domains.jsonl "
+            "--out-predictions data/preds_multi_domains_fit_bank.jsonl "
+            "--out-report benchmarks/results/multi_domains_fit_bank.json",
+            "uv run python -m training.fit_calibration "
+            "--calibration data/preds_multi_domains_fit_bank.jsonl "
+            "--out benchmarks/results/calibration_multi_domains_fit_bank.json",
             "uv run python -m benchmarks.report "
-            "--entry encoder=benchmarks/results/en_split.json --out benchmarks/report.md",
+            '--entry "english (ModernBERT-large + LoRA r=16 + choice head)'
+            '=benchmarks/results/en_split.json" '
+            '--entry "english five-domain (B-5 choice-head bank, frozen trunk)'
+            '=benchmarks/results/en_domains_bank_gate.json" '
+            '--entry "multilingual (mmBERT-base + LoRA r=64 + choice head)'
+            '=benchmarks/results/multi_split.json" '
+            '--entry "multilingual five-domain (B-5b fitted choice-head bank, frozen trunk)'
+            '=benchmarks/results/multi_domains_fit_bank.json" '
+            "--out benchmarks/report.md",
         ],
         title=args.title,
         notes=args.note,
