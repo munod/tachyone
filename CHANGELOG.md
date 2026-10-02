@@ -41,6 +41,13 @@ All notable changes to this project are documented here. The format is based on
   split; the `multilingual` entry was re-measured on the new weights (0.743 → 0.895) and the
   reproduction commands now follow the multi chain (generate → joint run → frozen-trunk fit →
   predict), including the previously stale render invocation.
+- **Public probe MASSIVE re-run against the released B-5b bytes:** 0.011 → **0.039** (chance
+  0.017; every language now above chance at 0.025–0.055) with `ECE raw` 0.354 → 0.518 and
+  `Conf` 0.365 → 0.557 — sharp off-domain, the same trade English showed at B-5; the fit is the
+  only probe off the grid ceiling (T=14.55), so `benchmarks/probes.py` now renders its
+  temperature line from the artifacts and skips `*_pre*` backup files so the documented
+  `probe_*.json` glob reproduces the page exactly. typed-decisions and XNLI are English-routed
+  and unchanged.
 - **Fast path re-checked on the multilingual checkpoint:** 3.66× p50 (13.97 → 3.82 ms), **0
   top-label flips** (`benchmarks/results/fast_path_multi.json`); English 2.59× / 0 flips
   (`fast_path_en.json`) and the replaced multilingual weights 3.76× / 0 flips (`fast_path.json`).

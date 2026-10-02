@@ -202,7 +202,7 @@ citations and the exact reproduction commands live in
 | Probe | Licence | n | Accuracy | Chance | ECE raw |
 | --- | --- | ---: | ---: | ---: | ---: |
 | typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.269** | 0.20–0.50 | 0.542 |
-| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | 0.011 | 0.017 | 0.354 |
+| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.039** | 0.017 | 0.518 |
 | XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.341** | 0.333 | 0.650 |
 
 Evaluation only — no probe row has ever reached `training/`. Read each number against its
@@ -219,9 +219,19 @@ still near chance: typed-decisions **0.330 → 0.269** (best config 0.412 → 0.
 0.670 → 1.304 and 0.983 → 1.272 — while all three temperature fits still pin T=20.0 and can no
 longer buy it back (`ECE cal` 0.069 → 0.170, 0.021 → 0.294, 0.010 → 0.016). The B-5 head was
 fitted to be sharply right *in* domain; *off* domain it is now sharply confident. That is the same
-trade the in-domain table buys, published here instead of absorbed — MASSIVE is still the 60-way
-`choice` task whose weakest cell is the multilingual `choice` head (0.468), so the external probe
-and the internal one still tell the same story.
+trade the in-domain table buys, published here instead of absorbed.
+
+**Re-run on the B-5b artifact (2026-10-02, right after `munod/tachyone-multi` `9a3ef5a5`).**
+Only MASSIVE can move — typed-decisions and XNLI are English rows that route to the English
+adapter, untouched since B-5, so their rows above are the same measurements. MASSIVE goes
+**0.011 → 0.039** against its 0.017 chance, with **every language above chance** (0.025–0.055;
+the B-5a run spanned 0.004–0.039), while the confidence trade deepens: `Conf` 0.365 → **0.557**,
+`ECE raw` 0.354 → **0.518**, `Brier` 1.272 → 1.393. The fit no longer needs the grid ceiling
+(**T=14.55**, the only probe off it): `ECE cal` 0.0165 → 0.005. Read beside the internal table —
+in-domain `choice` **0.992**, external 60-way intent routing still near chance — the honest
+reading is that the public probe measures option-space coverage the synthetic training never
+contains; the adapter is no longer *below* chance anywhere, and both facts are published side by
+side.
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 
