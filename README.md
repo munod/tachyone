@@ -144,9 +144,11 @@ graceful fallback.
   7.8% of `score` rows carried a "near-tie" the text never showed). The dedicated `choice` head
   (L-002) and localized per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance);
   on the five-domain split all six languages meet ECE ≤ 0.05, but on the support-only routed
-  split `nl` (ECE 0.167) is still above target (NFR-C06, BACKLOG B-1). The CUDA-graph fast path
-  (`TACHYONE_FAST=1`) improves p50 9.0 → 3.4 ms (3.7× English, 3.7× multilingual) with no
-  top-label changes.
+  split `nl` (ECE 0.167) — with `de` 0.083 and `it` 0.056 — is still above the 0.05 target
+  (NFR-C06, BACKLOG B-1). The CUDA-graph fast path (`TACHYONE_FAST=1`) improves p50 by **2.6×**
+  on English (17.63 → 6.81 ms) and **3.7×** on the multilingual five-domain path
+  (13.97 → 3.82 ms), always with **0 top-label changes** — the keyed gate and the per-domain
+  heads run after the encode, which the graphed path never sees.
 
 ## Architecture at a glance
 

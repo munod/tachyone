@@ -128,9 +128,11 @@ worst new domain **0.993**, per-domain ECE **0.0005–0.0038** (zero exceptions)
 training is **0.996**. Per-language ECE on that split is **0.0010–0.0041 — all six languages
 ≤ 0.05** for the first time on a five-domain set; on the support-only *routed* split (13–15% of
 rows fall through to the English checkpoint by language routing, `.specs/project/BACKLOG.md`
-L-013) `nl` still sits at accuracy 0.715 / ECE 0.167 and remains open under NFR-C06 / BACKLOG
-B-1. The CUDA-graph fast path (`TACHYONE_FAST=1`) gives **3.76×** p50 on English and **3.66×**
-on the multilingual checkpoint (8.97 → 3.39 ms / 12.9 → 3.5 ms), both with **0 top-label flips**.
+L-013) three of six languages remain above the 0.05 target — `nl` accuracy 0.715 / ECE 0.167,
+`de` 0.083, `it` 0.056 — open under NFR-C06 / BACKLOG B-1. The CUDA-graph fast path
+(`TACHYONE_FAST=1`) gives **2.59×** p50 on English (17.63 → 6.81 ms) and **3.66×** on the
+multilingual five-domain path (13.97 → 3.82 ms), both with **0 top-label flips** — the gate and
+the keyed heads execute after the encode, which the graphed path never sees.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of
 states) English drops only 0.964 → 0.963 and multilingual 0.743 → 0.744, so the released

@@ -41,8 +41,9 @@ All notable changes to this project are documented here. The format is based on
   split; the `multilingual` entry was re-measured on the new weights (0.743 → 0.895) and the
   reproduction commands now follow the multi chain (generate → joint run → frozen-trunk fit →
   predict), including the previously stale render invocation.
-- **Fast path re-checked on the multilingual checkpoint:** 3.66× p50, **0 top-label flips**
-  (`benchmarks/results/fast_path_multi.json`); English stays 3.76× / 0 flips.
+- **Fast path re-checked on the multilingual checkpoint:** 3.66× p50 (13.97 → 3.82 ms), **0
+  top-label flips** (`benchmarks/results/fast_path_multi.json`); English 2.59× / 0 flips
+  (`fast_path_en.json`) and the replaced multilingual weights 3.76× / 0 flips (`fast_path.json`).
 - README, `docs/model-card.md`, `docs/benchmarks.md` and `docs/huggingface.md` carry the new
   set; `docs/benchmarks.md`'s multilingual section is now the B-5b artifact with both splits.
 
