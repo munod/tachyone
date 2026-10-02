@@ -367,11 +367,41 @@ def main(argv: Iterable[str] | None = None) -> int:
             "uv run python -m training.fit_calibration "
             "--calibration data/preds_multi_domains_fit_bank.jsonl "
             "--out benchmarks/results/calibration_multi_domains_fit_bank.json",
+            # B-13: JevBench-family data (pinned sources + rule-tree families + mixture),
+            # two-arm training, frozen-trunk fit; the promoted checkpoints/en is the treatment
+            # bank (fit_bank -> mv checkpoints/en_jev_bank checkpoints/en).
+            "uv run python -m training.fetch_jev_sources",
+            "uv run python -m training.build_jev_sources "
+            "--public-dir <jevbench-clone>/datasets/public",
+            "uv run python -m training.build_jev_families "
+            "--public-dir <jevbench-clone>/datasets/public",
+            "uv run python -m training.build_jev_mixture",
+            "uv run python -m training.finetune_rlcd "
+            "--config training/configs/finetune_en_jev.json",
+            "uv run python -m training.fit_choice_bank "
+            "--config training/configs/fit_bank_en_jev.json",
+            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
+            "--adapter checkpoints/en_jev_bank --train-data data/train_en_domains.jsonl "
+            "--out-predictions data/preds_en_jev_treat.jsonl "
+            "--out-report benchmarks/results/en_jev_treat_raw.json",
+            "uv run python -m training.fit_calibration "
+            "--calibration data/preds_en_jev_treat.jsonl "
+            "--out benchmarks/results/calibration_en_jev_treat.json",
+            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
+            "--adapter checkpoints/en_jev_bank "
+            "--temperature benchmarks/results/calibration_en_jev_treat.json "
+            "--train-data data/train_en_domains.jsonl "
+            "--out-predictions data/preds_en_jev_treat_cal.jsonl "
+            "--out-report benchmarks/results/en_jev_treat.json",
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en "
+            "uv run python -m training.evaluate --data data/eval_en.jsonl "
+            "--out benchmarks/results/en_split_jev.json --backend encoder --noise-rate 0.15 "
+            '--models-dir "$HOME/.cache/tachyone/models"',
             "uv run python -m benchmarks.report "
             '--entry "english (ModernBERT-large + LoRA r=16 + choice head)'
-            '=benchmarks/results/en_split.json" '
-            '--entry "english five-domain (B-5 choice-head bank, frozen trunk)'
-            '=benchmarks/results/en_domains_bank_gate.json" '
+            '=benchmarks/results/en_split_jev.json" '
+            '--entry "english five-domain (B-13 JevBench-family fitted bank, frozen trunk)'
+            '=benchmarks/results/en_jev_treat.json" '
             '--entry "multilingual (mmBERT-base + LoRA r=64 + choice head)'
             '=benchmarks/results/multi_split.json" '
             '--entry "multilingual five-domain (B-5b fitted choice-head bank, frozen trunk)'

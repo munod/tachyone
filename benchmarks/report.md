@@ -4,12 +4,12 @@
 
 ```json
 {
-  "git_commit": "a68fccad56417f3179d6ef9848b46fdec15d4b85",
+  "git_commit": "740d90d41a53d40f2cb68521a3744296d1f5ef19",
   "peft": "0.21.0",
   "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
   "pydantic": "2.13.5",
   "python": "3.12.3",
-  "tachyone": "0.5.0",
+  "tachyone": "0.6.0",
   "torch": "2.14.0+cu130",
   "transformers": "5.17.0"
 }
@@ -41,7 +41,17 @@ uv run python -m training.finetune_rlcd --config training/configs/finetune_multi
 uv run python -m training.fit_choice_bank --config training/configs/fit_bank_multi_domains.json
 uv run python -m training.predict --data data/eval_multi_domains.jsonl --adapter checkpoints/multi_b5b_fit_bank --train-data data/train_multi_domains.jsonl --out-predictions data/preds_multi_domains_fit_bank.jsonl --out-report benchmarks/results/multi_domains_fit_bank.json
 uv run python -m training.fit_calibration --calibration data/preds_multi_domains_fit_bank.jsonl --out benchmarks/results/calibration_multi_domains_fit_bank.json
-uv run python -m benchmarks.report --entry "english (ModernBERT-large + LoRA r=16 + choice head)=benchmarks/results/en_split.json" --entry "english five-domain (B-5 choice-head bank, frozen trunk)=benchmarks/results/en_domains_bank_gate.json" --entry "multilingual (mmBERT-base + LoRA r=64 + choice head)=benchmarks/results/multi_split.json" --entry "multilingual five-domain (B-5b fitted choice-head bank, frozen trunk)=benchmarks/results/multi_domains_fit_bank.json" --out benchmarks/report.md
+uv run python -m training.fetch_jev_sources
+uv run python -m training.build_jev_sources --public-dir <jevbench-clone>/datasets/public
+uv run python -m training.build_jev_families --public-dir <jevbench-clone>/datasets/public
+uv run python -m training.build_jev_mixture
+uv run python -m training.finetune_rlcd --config training/configs/finetune_en_jev.json
+uv run python -m training.fit_choice_bank --config training/configs/fit_bank_en_jev.json
+uv run python -m training.predict --data data/eval_en_domains.jsonl --adapter checkpoints/en_jev_bank --train-data data/train_en_domains.jsonl --out-predictions data/preds_en_jev_treat.jsonl --out-report benchmarks/results/en_jev_treat_raw.json
+uv run python -m training.fit_calibration --calibration data/preds_en_jev_treat.jsonl --out benchmarks/results/calibration_en_jev_treat.json
+uv run python -m training.predict --data data/eval_en_domains.jsonl --adapter checkpoints/en_jev_bank --temperature benchmarks/results/calibration_en_jev_treat.json --train-data data/train_en_domains.jsonl --out-predictions data/preds_en_jev_treat_cal.jsonl --out-report benchmarks/results/en_jev_treat.json
+TACHYONE_ADAPTERS=tachyone-en=checkpoints/en uv run python -m training.evaluate --data data/eval_en.jsonl --out benchmarks/results/en_split_jev.json --backend encoder --noise-rate 0.15 --models-dir "$HOME/.cache/tachyone/models"
+uv run python -m benchmarks.report --entry "english (ModernBERT-large + LoRA r=16 + choice head)=benchmarks/results/en_split_jev.json" --entry "english five-domain (B-13 JevBench-family fitted bank, frozen trunk)=benchmarks/results/en_jev_treat.json" --entry "multilingual (mmBERT-base + LoRA r=64 + choice head)=benchmarks/results/multi_split.json" --entry "multilingual five-domain (B-5b fitted choice-head bank, frozen trunk)=benchmarks/results/multi_domains_fit_bank.json" --out benchmarks/report.md
 ```
 
 ## Results
@@ -50,40 +60,52 @@ uv run python -m benchmarks.report --entry "english (ModernBERT-large + LoRA r=1
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.964 | 0.023 | 54.384 | 90.428 |
-| choice | 500 | 1.000 | 0.000 | 86.316 | 92.598 |
-| noul | 500 | 0.946 | 0.038 | 50.858 | 56.172 |
-| score | 500 | 0.946 | 0.030 | 53.668 | 58.860 |
-| lang:en | 1500 | 0.964 | 0.023 | 54.384 | 90.428 |
+| overall | 1500 | 1.000 | 0.000 | 53.541 | 91.554 |
+| choice | 500 | 1.000 | 0.000 | 85.331 | 103.943 |
+| noul | 500 | 1.000 | 0.000 | 50.514 | 56.767 |
+| score | 500 | 1.000 | 0.000 | 52.147 | 61.229 |
+| lang:en | 1500 | 1.000 | 0.000 | 53.541 | 91.554 |
 
-Worst language (accuracy): `en` — accuracy 0.964, ECE 0.023.
+Worst language (accuracy): `en` — accuracy 1.000, ECE 0.000.
 
-Noisy view (noise_rate 0.15) — overall: accuracy 0.963, ECE 0.024, p50 54.492 ms.
+Noisy view (noise_rate 0.15) — overall: accuracy 0.997, ECE 0.003, p50 54.156 ms.
 #### `noul` per language — accuracy beside the label audit
 
 | Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| en | 500 | 0.946 | 0.038 | 241 | 232 | 27 | 0 | 0 (0.0%) |
+| en | 500 | 1.000 | 0.000 | 241 | 232 | 27 | 0 | 0 (0.0%) |
 
 
-### english five-domain (B-5 choice-head bank, frozen trunk)
+### english five-domain (B-13 JevBench-family fitted bank, frozen trunk)
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 7500 | 0.964 | 0.024 | 22.967 | 61.658 |
-| choice | 2500 | 1.000 | 0.000 | 55.607 | 63.104 |
-| noul | 2500 | 0.946 | 0.042 | 21.024 | 22.745 |
-| score | 2500 | 0.946 | 0.029 | 22.949 | 24.857 |
-| lang:en | 7500 | 0.964 | 0.024 | 22.967 | 61.658 |
-| domain:agent_tools | 1500 | 0.964 | 0.023 | 22.932 | 57.589 |
-| domain:documents | 1500 | 0.963 | 0.026 | 23.021 | 59.264 |
-| domain:ecommerce | 1500 | 0.964 | 0.027 | 23.030 | 64.439 |
-| domain:support | 1500 | 0.964 | 0.023 | 22.871 | 57.404 |
-| domain:voice | 1500 | 0.963 | 0.021 | 22.959 | 57.385 |
+| overall | 7500 | 1.000 | 0.000 | 22.388 | 61.270 |
+| choice | 2500 | 1.000 | 0.000 | 55.086 | 62.468 |
+| noul | 2500 | 1.000 | 0.000 | 20.423 | 22.113 |
+| score | 2500 | 1.000 | 0.000 | 22.371 | 24.254 |
+| lang:en | 7500 | 1.000 | 0.000 | 22.388 | 61.270 |
+| domain:agent_tools | 1500 | 1.000 | 0.000 | 22.424 | 57.421 |
+| domain:documents | 1500 | 0.999 | 0.001 | 22.424 | 57.199 |
+| domain:ecommerce | 1500 | 1.000 | 0.000 | 22.369 | 62.873 |
+| domain:support | 1500 | 1.000 | 0.000 | 22.399 | 56.345 |
+| domain:voice | 1500 | 1.000 | 0.000 | 22.314 | 56.823 |
 
-Worst language (accuracy): `en` — accuracy 0.964, ECE 0.024.
+Worst language (accuracy): `en` — accuracy 1.000, ECE 0.000.
 
-Worst domain (accuracy): `documents` — accuracy 0.963, ECE 0.026.
+Worst domain (accuracy): `documents` — accuracy 0.999, ECE 0.001.
+#### domain x language
+
+| Cell | n | Accuracy | ECE |
+| --- | --- | --- | --- |
+| documents/en | 1500 | 0.999 | 0.001 |
+| agent_tools/en | 1500 | 1.000 | 0.000 |
+| ecommerce/en | 1500 | 1.000 | 0.000 |
+| support/en | 1500 | 1.000 | 0.000 |
+| voice/en | 1500 | 1.000 | 0.000 |
+
+Worst cell (accuracy): `documents/en` — accuracy 0.999, ECE 0.001.
+
 #### `choice` gate
 
 Answers routed by `gate` — strict accuracy 1.000, fell to shared 0, wrong domain 0 of n=2500.
@@ -96,13 +118,13 @@ Answers routed by `gate` — strict accuracy 1.000, fell to shared 0, wrong doma
 | support | 500 | 1.000 | 0 | 0 |
 | voice | 500 | 1.000 | 0 | 0 |
 
-Input text seen in training: n=6709, accuracy 0.961 — never seen: n=791, accuracy 0.991.
+Input text seen in training: n=6709, accuracy 1.000 — never seen: n=791, accuracy 0.999.
 
 #### `noul` per language — accuracy beside the label audit
 
 | Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| en | 2500 | 0.946 | 0.042 | 1176 | 1189 | 135 | 0 | 0 (0.0%) |
+| en | 2500 | 1.000 | 0.000 | 1176 | 1189 | 135 | 0 | 0 (0.0%) |
 
 
 ### multilingual (mmBERT-base + LoRA r=64 + choice head)
