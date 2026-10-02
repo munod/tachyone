@@ -1026,6 +1026,64 @@ corrected labels" option is now *measured and closed* rather than open.
 
 ---
 
+## B-13 — JevBench preparation (score well on the public board) · **In progress — P0 done (2026-10-02)**
+
+**Why.** [JevBench](https://github.com/fstandhartinger/jevbench) ranks Jev-class decision
+models on four equally-weighted axes (Intelligence chance-corrected per tier, Calibration =
+ECE + gold-distribution fidelity, Speed, Cost) with a `(I/50)²` multiplier below 50
+Intelligence. It speaks exactly the frozen `/v1/systemone` wire (their adapter `typesafe` —
+verified against our models, no change needed), so it is the external scoreboard the
+project's quality work has never had. 534 decisions: 231 public (measurable today) + 308
+sealed (measured by the evaluator on our offline artifact).
+
+**Status — P0 baseline measured (2026-10-02), full record in
+`.specs/features/jevbench/spec.md`:** 231/231 strict-valid, **0 failures** (wire needs
+nothing), but on the public items: Intelligence **8.4** (Laya, same trunk class: 45.8),
+Calibration **0.0** (ECE 0.543 ≥ 0.5 zeroes the axis), Speed **84.8**, Cost **78.8** →
+composite **0.43** with the near-chance multiplier 0.028. Per tier: easy 0.500, standard
+0.361, hard 0.288 (below its 0.336 chance). Per primitive: `noul` 0.473 (= binary chance),
+`choice` 0.309, `score` 0.222. Two structural causes recorded: the runtime `noul` score
+ignores the rubric (`cos(question, state)` only → policy/adequacy at chance), and English
+inference truncates at **512 tokens** while hard states average 1,079 (max 3,746).
+
+**Plan (locked decisions in the spec):**
+1. **P1 hardening** — wire audit (done in P0); English `context` 512 → long enough for the
+   hard tier, **A/B measured on the public run** (mean-pool shift risk, do not assume);
+   fast path + p50/p95; cost basis documented ($0.01/M encoder class, one forward pass).
+2. **P2 Intelligence** — family-shaped training data, two layers: (a) real public sources
+   (MultiNLI/BoolQ/Banking77; SST-5/AG News only after licence review — the tev1 recipe's
+   `DATA_SOURCES.md` is the reference) converted to our record shape with pinned
+   provenance; (b) synthetic **executable rule trees** for `long_policy`/`multi_hop`/
+   `temporal_numeric`/`trap` + the six original families. Targets: easy ≥ 0.95,
+   standard ≥ 0.73 → **I ≥ 50** (kills the multiplier).
+3. **P3 Calibration** — ECE 0.543 → ≤ 0.15 by flattening confidence when the best
+   similarity is weak (argmax untouched ⇒ Intelligence independent of this axis); B-6
+   contrastive is optional here, measured on these items.
+4. **P4 submission** — offline-artifact issue (the #158 pattern): pinned Hub weights,
+   licences, inference command, `temperature.json`, this diagnostic, cost basis.
+
+**Acceptance.**
+- [x] P0: baseline measured and recorded (231 public items, one harness, L-013-compliant
+      explicit-adapter serve).
+- [ ] P1: re-run keeps 231/231 strict-valid; long-context A/B recorded with latency cost.
+- [ ] P2: **I ≥ 50 on the public diagnostic** with public items evaluation-only for ever;
+      ablation carries a control (L-006).
+- [ ] P3: `calibration(ece)` ≥ 60 (ECE ≤ 0.15) on the public run.
+- [ ] P4: `[bench request]` filed; `docs/jevbench.md` + CHANGELOG carry the same set.
+
+**Risks / notes.** Hard tier (30% weight) may stay at chance for a similarity encoder — it
+contributes 0 rather than negative (cc clipped), so the multiplier is decided by
+easy+standard (42% weight) plus judge (28%, no public items — the sealed run decides it).
+Never train or calibrate on public/sealed items (the >25 pp public-to-sealed gap is
+penalised); never vendor the harness (AD-011). Submission queue is long (~30 open
+`[bench request]` issues) — file early.
+
+**Related.** `.specs/features/jevbench/spec.md`, `.specs/project/STATE.md` L-003/L-006/
+L-013, `docs/compare.md` §3 (the probes said this already: XNLI ≈ chance, ECE raw 0.35–0.65),
+`AGENTS.md` hard rules 1/5/6.
+
+---
+
 ## Evaluated and not pursued (for now)
 
 These proposals were assessed against the frozen wire (ADR-0001) and the actual similarity-based

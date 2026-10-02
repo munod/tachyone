@@ -1,7 +1,25 @@
 # State
 
-**Last Updated:** 2026-10-01
-**Current Work:** Post-M6 backlog. **B-5's structural decision (ADR-0016) executed and measured —
+**Last Updated:** 2026-10-02
+**Current Work:** **B-13 — JevBench preparation. P0 baseline measured (2026-10-02)** on the
+231 public items of [jevbench](https://github.com/fstandhartinger/jevbench) through its own
+`typesafe` adapter against a local `tachyone-serve` (`checkpoints/en`, explicit adapter —
+L-013). **Wire: 231/231 strict-valid, 0 failures** (the frozen contract needed nothing).
+**The gap: Intelligence 8.4 vs Laya's 45.8 on the same trunk class, Calibration 0.0 (ECE
+0.543 zeroes the axis), Speed 84.8, Cost 78.8 → composite 0.43** with the `(I/50)²`
+multiplier at 0.028. Per tier easy 0.500 / standard 0.361 / hard 0.288 (below chance);
+`noul` 0.473 (= binary chance — the runtime score reads only `cos(question, state)`, never
+the rubric), `choice` 0.309, `score` 0.222. Two structural causes: rubric-blind `noul` and
+**English inference truncating at 512 tokens against hard states averaging 1,079 (max
+3,746)**. Next: P1 hardening (long-context A/B first), then P2 family-shaped training data
+(MultiNLI/BoolQ/Banking77 + executable rule trees — tev1's recipe is the reference),
+targets easy ≥ 0.95 / standard ≥ 0.73 → **I ≥ 50**, P3 calibration shrinkage, P4
+offline-artifact submission. Full record: `.specs/features/jevbench/spec.md`, BACKLOG
+**B-13**. Locked: public items **evaluation-only for ever**, submission as offline
+artifact, English checkpoint only, B-6 optional inside P3.
+**B-5b remains closed** — see below; no change to its published numbers.
+
+**Previous (2026-10-01/02): Post-M6 backlog.** **B-5's structural decision (ADR-0016) executed and measured —
 the isolate closes 91% of the support gap (2026-10-01).** The per-domain `choice`-head bank, its
 deterministic gate, the additive `choice_head` request hint, the bank trainer and the frozen-trunk
 fitter shipped (`.specs/features/choice-head-bank`, tasks B1–B7), and the isolate ran against a
