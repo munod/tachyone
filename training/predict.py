@@ -19,6 +19,7 @@ from tachyone.backends.encoder import (
     MODEL_IDS,
     EncoderModel,
     load_choice_head,
+    load_confidence,
     load_encoder,
     prototype_strength,
 )
@@ -47,9 +48,19 @@ _DEFAULT_MODELS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "tachyone"
 
 
 def _build_model(
-    model_id: str, adapter_dir: str | None, *, device: str, max_len: int
+    model_id: str,
+    adapter_dir: str | None,
+    *,
+    device: str,
+    max_len: int,
+    confidence: bool = True,
 ) -> EncoderModel:
-    """Reuse the runtime loader so training and inference share one encode implementation."""
+    """Reuse the runtime loader so training and inference share one encode implementation.
+
+    ``confidence=False`` skips the adapter's evidence-confidence asset so the emitted
+    probabilities are the *natural* ones — that is what the fitter reads, because fitting a
+    temperature on top of an already-mapped confidence would be fitting the wrong signal.
+    """
     info = CheckpointInfo(
         id="adhoc",
         languages=["*"],
@@ -60,7 +71,8 @@ def _build_model(
     )
     encode = load_encoder(info, models_dir=_DEFAULT_MODELS_DIR, device=device)
     choice_bank = load_choice_head(info, models_dir=_DEFAULT_MODELS_DIR)
-    return EncoderModel(encode, choice_bank=choice_bank)
+    calibration = load_confidence(info, models_dir=_DEFAULT_MODELS_DIR) if confidence else None
+    return EncoderModel(encode, choice_bank=choice_bank, confidence=calibration)
 
 
 def _load_temperatures(path: str | None) -> dict[str, float]:
@@ -199,9 +211,16 @@ def run(
     head_hint: str | None = None,
     train_data: str | Path | None = None,
     prototypes_path: str | Path | None = None,
+    apply_confidence: bool = True,
 ) -> dict[str, Any]:
     examples = load_examples(records_path, limit=limit)
-    model = _build_model(model_id, adapter_dir, device=device, max_len=max_len)
+    model = _build_model(
+        model_id,
+        adapter_dir,
+        device=device,
+        max_len=max_len,
+        confidence=apply_confidence,
+    )
     bank_keys = model.choice_bank.domains if model.choice_bank is not None else ()
     hint = resolve_head_hint(head_hint, bank_keys)
     if hint is not None and not bank_keys:
@@ -273,6 +292,12 @@ def build_parser() -> argparse.ArgumentParser:
         "forces that head for every record, and omitting it lets the asset's gate decide (B6)",
     )
     parser.add_argument(
+        "--no-confidence",
+        action="store_true",
+        help="ignore the adapter's evidence-confidence asset: emit the natural probabilities "
+        "the fit reads (training.fit_confidence's input), not the deployed confidence",
+    )
+    parser.add_argument(
         "--prototypes",
         default=None,
         help="state_prototypes.json (JB-10): emit a 'strength' per prediction row — the "
@@ -303,6 +328,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         head_hint=args.head_hint,
         train_data=args.train_data,
         prototypes_path=args.prototypes,
+        apply_confidence=not args.no_confidence,
     )
     print(json.dumps(report["overall"], indent=2, sort_keys=True))
     return 0

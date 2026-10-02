@@ -110,3 +110,13 @@ def test_build_gate_routes_lexically_and_ignores_other_primitives() -> None:
         domain="voice",
     )
     assert gate(noul) is None
+
+
+def test_predict_cli_applies_confidence_by_default_and_can_opt_out() -> None:
+    """The report a run publishes must carry the deployed confidence; the fitter must not."""
+    from training.predict import build_parser
+
+    default = build_parser().parse_args(["--data", "rows.jsonl"])
+    assert default.no_confidence is False, "prediction reports match the runtime by default"
+    fitting = build_parser().parse_args(["--data", "rows.jsonl", "--no-confidence"])
+    assert fitting.no_confidence is True
