@@ -175,6 +175,15 @@ the multilingual engine; CHANGELOG `[Unreleased]`.
 **Done when:** every number-bearing doc quotes the same set and the sha256 log matches.
 **Tests:** `tests/test_docs_site.py` · **Gate:** full.
 **Commit:** `feat(release): publish the multilingual five-domain adapter` + docs commits
+**Status:** **Done (2026-10-02).** Hub revision [`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1),
+six files sha256-verified, stale `finetune_config.json` deleted (upload unblocked twice: a
+fine-grained token without Write, then without content-write — the `pass create_pr=1` hint
+exposed the PR-only scope). Report (4 entries, reproduction commands fixed), `docs/benchmarks.md`,
+model card, README, `docs/huggingface.md`, `docs/roadmap.md`, CHANGELOG and `docs/training.md`
+carry one consistent set; MASSIVE **0.011 → 0.039** re-run + probes page re-rendered (backup
+filter so the documented glob reproduces it); fast path **3.66× / 0 flips**; head-to-head
+**not** re-run — both tables are English-only rows routed to the untouched `tachyone-en`
+(checked, not assumed). Full record: BACKLOG B5B-8.
 
 ## B5B-9: Docs site + cycle close
 
@@ -186,6 +195,16 @@ pass, release-tag decision recorded (B-5 pattern: after the numbers).
 **Done when:** docs site strict-builds and the feature's Cycle status paragraph is written.
 **Tests:** `tests/test_docs_site.py` · **Gate:** full.
 **Commit:** `docs: document the multilingual five-domain cycle`
+**Status:** **Done (2026-10-02).** `uv run mkdocs build --strict` exit 0 (the Material banner
+about mkdocs 2.0 is advisory, not a build warning); full gate green (ruff/format/pyright/pytest
+554). Release-tag decision recorded with the cycle close.
 
-**Cycle status:** Not started. Order: B5B-1 → B5B-2 → (B5B-3 ∥ B5B-4) → B5B-5 → B5B-6 →
-B5B-7 → B5B-8 → B5B-9. Gates fixed in B5B-4 **before** B5B-5 launches.
+**Cycle status:** **B5B-1 … B5B-9 complete (2026-10-02).** Publication: `munod/tachyone-multi`
+revision [`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)
+(six files sha256-verified, stale file deleted). Gates: all pass — support **1.0000 ≥ 0.8413**,
+worst new domain **0.993 ≥ 0.70**, per-domain ECE **0.0005–0.0038 (zero exceptions)**, gate
+strict **1.000**. Lessons: **L-013** (routed-harness contamination) and the **joint-bank
+deficit** (L-012 replicated at 1 row under equal optimization — the fitted bank shipped). Sweep
+complete: report (4 entries), `docs/benchmarks.md`, model card, README, `huggingface.md`,
+roadmap, CHANGELOG, `training.md`, probes page (MASSIVE 0.011 → 0.039), fast path 3.66× / 0
+flips, head-to-head checked-not-rerun (English-only rows).

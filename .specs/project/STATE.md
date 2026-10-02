@@ -44,8 +44,15 @@ loses 5.6 points to its own shared head in joint training — optimization expos
 structure). **Verdict (B5B-7): every gate passes on the fitted bank** — overall **0.9975**,
 support **1.0000**, worst new domain **0.993**, per-domain ECE **0.0005–0.0038 (zero
 exceptions)**, gate strict **1.000**, unseen text 0.9957; fitted bank vs fitted shared tie at
-**1 row** (L-012 replicated). **Publish arm: `checkpoints/multi_b5b_fit_bank`; remaining B5B-8
-(Hub + docs + probes/fast-path) and B5B-9 (docs site + close).**
+**1 row** (L-012 replicated). **Published (B5B-8, 2026-10-02): `munod/tachyone-multi` revision
+[`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)**
+— six files sha256-verified, stale `finetune_config.json` deleted (the upload fought back twice:
+a fine-grained token without Write, then PR-only scope — the `pass create_pr=1` hint named it).
+One consistent set across report (4 entries, reproduction commands fixed), `docs/benchmarks.md`,
+model card, README, `huggingface.md`, roadmap, CHANGELOG, `training.md`; sweep: **MASSIVE 0.011
+→ 0.039** (every language above chance; `ECE raw` 0.354 → 0.518 — sharp off-domain), fast path
+**3.66× / 0 flips**, head-to-head **not** re-run (both tables English-only → untouched
+`tachyone-en`). **Remaining: B5B-9** (docs site strict build + cycle close + release decision).
 
 **Probes re-run (2026-10-01).** The three public probes were re-measured against `c00c174d` and
 `benchmarks/probes.md` re-rendered (previous artifacts kept as `probe_*_preb5.json`):

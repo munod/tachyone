@@ -538,6 +538,26 @@ trick. Everything above rides on `noul`/`score` = 1.000 (the B-12 label ceiling)
 decided format with the gate that measures 1.000, and matches the English adapter's proven
 trunk+fitter construction. B5B-8 promotes it to `checkpoints/multi` and republishes.
 
+**B5B-8 — published and verified (2026-10-02).** `checkpoints/multi_b5b_fit_bank` promoted to
+`checkpoints/multi` (the replaced build kept at `checkpoints/multi_preb5b`, the fit's own
+calibration promoted beside it) and uploaded as **[`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)**
+— six files **sha256-verified one by one** against the local build, file set exact, stale
+`finetune_config.json` deleted (the upload hit a fine-grained-token 403 on both the xet and LFS
+paths — and a token with only PR-create scope, which the `pass create_pr=1` hint exposed — until
+Write was granted). The whole published surface is one set: `benchmarks/report.md` (fourth
+entry, reproduction commands fixed — the render invocation was stale), `docs/benchmarks.md`
+(multilingual section replaced by the B-5b artifact, both splits labelled by harness), model
+card, README, `docs/huggingface.md` (revision entry), `docs/roadmap.md`, `CHANGELOG.md`
+(`[Unreleased]`), `docs/training.md` (localization completeness, the multi fitter config, the
+`per_domain_language` row, the L-013 harness rule). Sweep: **MASSIVE re-run** 0.011 →
+**0.039** (chance 0.017, every language above chance; `ECE raw` 0.354 → 0.518, `Conf` 0.365 →
+0.557 — sharp off-domain, English's B-5 trade; the only probe off the grid ceiling at
+**T=14.55**, so `probes.py` renders its temperature line from the artifacts and skips `*_pre*`
+backups so the documented glob reproduces the page) and **fast-path parity** 3.66× / **0
+flips**. The head-to-head was **not** re-run, by check not by habit: both quoted tables are
+English-only rows (`system-one-decisions`, `eval_en`) that route to `tachyone-en`, untouched
+since B-5.
+
 **Risks / notes.** Five domains in one LoRA of fixed capacity may dilute per-domain accuracy —
 that is what the worst-domain gate is for. Training time vs the 12 GB budget (ADR-0005). Tool/
 function selection largely overlaps the existing `choice` case, so it may add vocabulary rather

@@ -1,7 +1,11 @@
 # Multilingual Five-Domain Coverage (B-5b) Specification
 
 **Phase:** Post-M6 (B-5 second half, `.specs/project/BACKLOG.md` B-5)
-**Status:** **Spec accepted (2026-10-01)** — not started
+**Status:** **B5B-1 … B5B-8 done (2026-10-02)** — localized lexicons, 30k/7.5k datasets, the
+`per_domain_language` cell, baseline-first gates, the joint run, the five-arm measurement, the
+verdict (fitted bank) and the publication (**`munod/tachyone-multi` `9a3ef5a5`**, sha256-verified)
+with the full sweep (MASSIVE, fast path, report, docs). **Open: B5B-9** (docs site strict build,
+cycle close, release decision).
 **Context (locked decisions):** `.specs/features/multilingual-five-domains/context.md`
 **Related:** `.specs/features/choice-head-bank/spec.md` (B-5a), `.specs/features/multilingual-quality/spec.md`
 (B-1), `docs/adr/ADR-0016-per-domain-choice-heads.md` §4, AGENTS.md hard rules 1, 5, 6
@@ -31,9 +35,9 @@ kind L-008/L-010 forbid. ADR-0016 §4 unblocked this cycle explicitly: the bank'
       set before training fixed the numbers (`support` ≥ 0.8413, worst new domain ≥ 0.70,
       per-domain ECE ≤ 0.05 with exceptions declared, gate strict published) — **all pass on
       the publish arm with zero ECE exceptions (0.0005–0.0038), gate strict 1.000.**
-- [ ] **Published:** `munod/tachyone-multi` republished sha256-verified; report, model card,
-      README, benchmarks docs and CHANGELOG carry the new set; MASSIVE probe and fast-path
-      parity re-run (0 flips expected). → **B5B-8, next.**
+- [x] **Published:** `munod/tachyone-multi` republished sha256-verified (revision `9a3ef5a5`);
+      report, model card, README, benchmarks docs and CHANGELOG carry the new set; MASSIVE probe
+      (0.011 → 0.039) and fast-path parity (3.66×, 0 flips) re-run. **B5B-8, done 2026-10-02.**
 
 ## Out of Scope
 
