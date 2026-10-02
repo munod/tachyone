@@ -1,7 +1,20 @@
 # State
 
 **Last Updated:** 2026-10-02
-**Current Work:** **B-13 — JevBench preparation. P0 baseline measured (2026-10-02)** on the
+**Current Work:** **B-13 — JevBench preparation. P2 (JB-1…JB-7) executed and measured.**
+Seven commits of data infrastructure (pinned sources → records → rule trees → five
+families → 35,540-record mixture → two-arm training configs) plus both arms trained and
+fit (`exit=0`, L-011 reconciled) and evaluated in one harness. **JB-7 verdict: all B-5
+gates PASS on every arm; Intelligence 8.4 (published) → 9.0 (fresh control) → 15.0
+(treatment), bench score 0.43 → 1.44 → 4.19** — the treatment's +6.0 vs the control's
++0.6 variance move attributes the gain to the data (L-006/L-012). **The cycle's I ≥ 50
+target was NOT met (15.0)**; structural leftovers: `noul` stays rubric-blind (`hard/trap`
+0.000), `hard/temporal_numeric` regressed, treatment Calibration (48.4) below control
+(65.3). Full table: `.specs/features/jevbench/tasks.md` JB-7; artifacts
+`benchmarks/results/en_jev_{published,ctrl,treat}.json` + `/tmp/opencode/jevbench_runs_*`.
+**Open decision: JB-8 — adopt `checkpoints/en_jev_bank` (beats published on every
+measured axis, gates pass) and republish, vs hold for a second P2 iteration.**
+**P0/P1 record (earlier the same day):** the baseline was measured on the
 231 public items of [jevbench](https://github.com/fstandhartinger/jevbench) through its own
 `typesafe` adapter against a local `tachyone-serve` (`checkpoints/en`, explicit adapter —
 L-013). **Wire: 231/231 strict-valid, 0 failures** (the frozen contract needed nothing).
@@ -17,10 +30,10 @@ against p95 333 ms → 2,700 ms / Speed 84.8 → 77.6 → reverted** — new les
 serving settles on **fast path off** (end-to-end slower at these shapes, OOMs at raised
 context), never `expandable_segments` (leaked 24.5 GiB on kill; GPU0 keeps 12.0 GiB free,
 the historical training envelope), and the cost basis is measured (510 input tokens/
-decision, $0.00510/1000 @ $0.01/M → Cost 78.8). **Next: P2 family-shaped training data**
-(MultiNLI/BoolQ/Banking77 + executable rule trees — tev1's recipe is the reference),
-targets easy ≥ 0.95 / standard ≥ 0.73 → **I ≥ 50**, then P3 calibration shrinkage, P4
-offline-artifact submission. Full record: `.specs/features/jevbench/spec.md`, BACKLOG
+decision, $0.00510/1000 @ $0.01/M → Cost 78.8). **P2 (the next step at that point) was
+then executed and measured — see the Current Work above;** its targets were easy ≥ 0.95 /
+standard ≥ 0.73 → **I ≥ 50**, then P3 calibration shrinkage, P4 offline-artifact
+submission. Full record: `.specs/features/jevbench/spec.md`, BACKLOG
 **B-13**. Locked: public items **evaluation-only for ever**, submission as offline
 artifact, English checkpoint only, B-6 optional inside P3.
 **B-5b remains closed** — see below; no change to its published numbers.

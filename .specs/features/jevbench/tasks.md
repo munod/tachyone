@@ -167,6 +167,24 @@ in the spec: easy ≥ 0.95, standard ≥ 0.73, **I ≥ 50**, ECE not worse than 
 and the verdict is explicit.
 **Tests:** — (measurement) · **Gate:** full.
 **Commit:** `docs(specs): record the B-13 P2 measurement`
+**Status:** **Done (2026-10-02).** One comparable set, explicit adapter per arm (L-013),
+calibration refit per arm, bench = the 231 public items:
+
+| arm | in-domain overall | gates B-5 | bench score | Intelligence | Calibration | Speed | Cost |
+| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| published (P0 reference) | 0.9637 | all PASS | 0.43 | 8.4 | 0.0 | 85.0 | 78.8 |
+| control (fresh run-5 recipe) | 0.9999 | all PASS | 1.44 | 9.0 | 65.3 | 84.5 | 78.8 |
+| **treatment (mixture)** | **0.9999** | **all PASS** | **4.19** | **15.0** | 48.4 | 84.7 | 78.8 |
+
+Attribution (L-006/L-012): the control arm — identical recipe, one factor apart — moves
+Intelligence **+0.6**; the treatment moves **+6.0**, so the gain rides on the data.
+Biggest movers: `standard/ordinal` 0.25 → 0.667, `score` 0.222 → 0.611, `hard/multi_hop`
+0.056 → 0.333, `easy/intent` 0.583 → 0.750, `hard/adversarial` 0.333 → 0.667.
+**Cycle target NOT met: I ≥ 50 landed at 15.0** (multiplier 0.09). Structural leftovers
+recorded honestly: `noul` stays rubric-blind (0.473 → 0.487), so `hard/trap` is still
+0.000 and `standard/policy` ≈ chance; `hard/temporal_numeric` regressed (0.267 → 0.133);
+treatment Calibration (48.4) below control (65.3). Both B-5 gates pass on all three arms
+with zero ECE exceptions.
 
 ## JB-8: Adopt, publish-or-keep, and close P2
 

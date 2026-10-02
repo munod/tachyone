@@ -1072,13 +1072,28 @@ never `expandable_segments:True` (20.5 GiB at warm-up, 24.5 GiB leaked on kill �
 12.0 GiB free, the historical training envelope). Cost basis measured: **510 input
 tokens/decision, $0.00510/1000 @ $0.01/M → Cost 78.8**.
 
+**P2 executed and measured (2026-10-02) — direction proven, target missed.** Layers:
+(a) real sources MultiNLI/BoolQ/Banking77 (11k records, pinned+sha256, AG News/SST-5
+excluded on licence); (b) five rule-tree families (`long_policy`/`trap`/`multi_hop`/
+`temporal_numeric`/`adequacy`, 3,540 records — every target re-executes from its shipped
+facts+tree, label spaces audited per L-010, zero public-item overlap); mixture 35,540.
+Two arms one factor apart, both `exit=0`, fits green, evaluated in one harness. **Full
+table: `.specs/features/jevbench/tasks.md` JB-7.** Verdict: all B-5 gates pass on every
+arm; **Intelligence 8.4 (published) → 9.0 (control) → 15.0 (treatment)**, bench score
+0.43 → 1.44 → **4.19** — the treatment's +6.0 is 10× the control's +0.6 variance move, so
+the gain is the data's (L-006/L-012). **Cycle gate I ≥ 50 NOT met (15.0).** Structural
+leftovers: `noul` remains rubric-blind (`hard/trap` 0.000), `hard/temporal_numeric`
+regressed, treatment Calibration (48.4) sits below control (65.3).
+
 **Acceptance.**
 - [x] P0: baseline measured and recorded (231 public items, one harness, L-013-compliant
       explicit-adapter serve).
 - [x] P1: re-run keeps 231/231 strict-valid; long-context A/B recorded with latency cost
       (measured, reverted, documented).
-- [ ] P2: **I ≥ 50 on the public diagnostic** with public items evaluation-only for ever;
-      ablation carries a control (L-006).
+- [x] P2: two-arm run + full pipeline executed; **public diagnostic I 8.4 → 15.0 with all
+      B-5 gates PASS** and public items evaluation-only for ever — **but the recorded
+      target I ≥ 50 was not met (15.0)**; the data axis is proven (control +0.6 vs
+      treatment +6.0), the remaining distance is a follow-up cycle, not a re-run.
 - [ ] P3: `calibration(ece)` ≥ 60 (ECE ≤ 0.15) on the public run.
 - [ ] P4: `[bench request]` filed; `docs/jevbench.md` + CHANGELOG carry the same set.
 

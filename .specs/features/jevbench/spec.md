@@ -1,9 +1,10 @@
 # JevBench Preparation (B-13) Specification
 
 **Phase:** Post-M6 · **Spec accepted:** 2026-10-02
-**Status:** **P0 + P1 done (2026-10-02)** — baseline measured; wire audit green; the
-long-context A/B measured and reverted; serving path settled. **P2 (family-shaped training
-data) next.**
+**Status:** **P0 + P1 + P2 measured (2026-10-02)** — JB-1…JB-7 done. **P2 verdict:
+Intelligence 8.4 → 15.0 (control 9.0), all B-5 gates PASS, cycle target I ≥ 50 NOT met.**
+**Open: JB-8** (adopt the treatment artifact vs hold for a second P2 iteration), then
+P3/P4.
 
 **Context:** `.specs/project/BACKLOG.md` B-13 · external harness:
 <https://github.com/fstandhartinger/jevbench> (MIT — cloned to a local download for
@@ -129,6 +130,26 @@ Artifacts (outside the repo): `/tmp/opencode/jevbench_runs/` (results, manifests
 - **(d) Cost basis — measured and ready for submission:** mean **510 input tokens per
   decision** (max 3,746), `$0.00510 / 1000 decisions` at the encoder size-class price
   `$0.01/M in, $0 out` (the same basis they used for Laya) → Cost axis **78.8**.
+
+## P2 results (2026-10-02)
+
+Two arms one factor apart (the data), same recipe/seed, both trained and fit, one
+harness, explicit adapter (L-013), calibration refit per arm:
+
+| arm | in-domain overall | gates B-5 | bench score | Intelligence | Calibration | Speed | Cost |
+| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| published (P0 reference) | 0.9637 | all PASS | 0.43 | 8.4 | 0.0 | 85.0 | 78.8 |
+| control (fresh run-5) | 0.9999 | all PASS | 1.44 | 9.0 | 65.3 | 84.5 | 78.8 |
+| **treatment (mixture)** | **0.9999** | **all PASS** | **4.19** | **15.0** | 48.4 | 84.7 | 78.8 |
+
+Attribution: control +0.6 vs treatment **+6.0** Intelligence — the gain rides on the
+data, not run variance (L-006/L-012). **Target I ≥ 50 missed (15.0).** Remaining
+distance is concentrated where the architecture is thin: `noul` never reads the rubric
+(`hard/trap` 0.000, `standard/policy` ≈ chance), and `hard/temporal_numeric` regressed
+(0.267 → 0.133). Biggest gains: `standard/ordinal` 0.25 → 0.667, `score` 0.222 → 0.611,
+`hard/multi_hop` 0.056 → 0.333, `easy/intent` 0.583 → 0.750. Full record:
+`.specs/features/jevbench/tasks.md` JB-7; artifacts
+`benchmarks/results/en_jev_{published,ctrl,treat}.json`.
 
 ## Plan (P1–P4)
 
