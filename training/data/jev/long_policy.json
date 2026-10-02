@@ -1,0 +1,134 @@
+{
+  "_comment": "Committed English content for the long_policy family (B-13 P2, JB-4). Two shapes: 'routing' (approval bands over a computed contract value) and 'coverage' (policy conditions/exclusions deciding a claim outcome). The generator composes the document text AND the rule facts/trees from these same pieces; targets are executions, never indices. Style mirrors the JevBench hard family without reusing any of its text.",
+  "orgs": [
+    "Northvale Mutual Insurance",
+    "Castellan Provisions AG",
+    "Quarry Lane Underwriters",
+    "Brightmoor Facilities Group",
+    "Harrowgate Logistics SE",
+    "Selkirk Renewable Partners"
+  ],
+  "doc_titles": [
+    "HOMEOWNERS SERVICE POLICY FORM",
+    "GROUP PROCUREMENT POLICY",
+    "FACILITIES APPROVAL MANUAL",
+    "EXTENDED SERVICE CONTRACT",
+    "FLEET MAINTENANCE AGREEMENT",
+    "SUPPLIER ONBOARDING POLICY"
+  ],
+  "claim_refs": [
+    "CL-28-00471",
+    "HX-2026-118804",
+    "PR-2026-4471",
+    "NS-2026-131",
+    "FM-77120",
+    "EW-5540981"
+  ],
+  "routing": {
+    "question": "Determine the required approval level for request {ref} under policy {clause} as amended.",
+    "intro": "{org} — {title} {clause} (version {version}, effective {effective})\n\nEXTRACT FOR APPROVAL ROUTING, WITH PURCHASE REQUEST {ref}\n\n",
+    "clause_text": [
+      "1. Purpose and scope\n1.1 This policy governs approvals of all purchase and spend requests raised by {org} and its subsidiaries, excluding payroll, taxes and intercompany charges.\n",
+      "2. Definitions\n2.1 \"Total Contract Value\" or \"TCV\" means the full multi-year value committed by the request: the annual value times the number of contract years, plus one-time fees, plus any one-off onboarding charges.\n2.2 TCV excludes conditional or time-limited promotional discounts that are not stated in the order form.\n2.3 \"Related Purchases\" are requests from the same cost centre submitted within the 90 days before this request; where the combined value crosses a band, the higher level applies (aggregation clause).\n",
+      "3. Approval levels (the highest level reached decides)\n{bands}\n",
+      "4. Evidence in the request file\n4.1 Request {ref}: {components}. {aggregation_note}\n4.2 The order form also quotes {discount_note}\n"
+    ],
+    "bands": [
+      {
+        "key": "level1_budget_holder",
+        "max": 10000,
+        "desc": "Level 1 is the highest level reached (TCV up to EUR 10,000)."
+      },
+      {
+        "key": "level2_department_head",
+        "max": 50000,
+        "desc": "Level 2 is the highest level reached (above EUR 10,000 up to EUR 50,000)."
+      },
+      {
+        "key": "level3_vp_finance",
+        "max": 150000,
+        "desc": "Level 3 is the highest level reached (above EUR 50,000 up to EUR 150,000)."
+      },
+      {
+        "key": "level4_cfo",
+        "max": 500000,
+        "desc": "Level 4 is the highest level reached (above EUR 150,000 up to EUR 500,000)."
+      },
+      {
+        "key": "level5_executive_committee",
+        "max": null,
+        "desc": "Level 5 is the highest level reached (above EUR 500,000)."
+      }
+    ],
+    "component_templates": [
+      "an annual value of EUR {annual} over {years} contract year(s), a one-time onboarding fee of EUR {fee}, and a one-off documentation charge of EUR {extra}",
+      "an annual value of EUR {annual} over {years} contract year(s), a one-time integration fee of EUR {fee}, and a one-off training charge of EUR {extra}"
+    ],
+    "discount_notes": [
+      "a promotional discount of EUR {discount}, conditional on signing within 14 days.",
+      "a conditional rebate of EUR {discount}, payable only if volume targets are met.",
+      "a time-limited introductory credit of EUR {discount}, subject to review."
+    ],
+    "aggregation_notes": [
+      "Related Purchases approved in the last 90 days total EUR {related} and must be added.",
+      "Two Related Purchases from the same cost centre total EUR {related}; the aggregation clause applies.",
+      "No Related Purchases fall in the 90-day window."
+    ]
+  },
+  "coverage": {
+    "question": "Acting as the coverage reviewer, decide how the reported loss under claim {ref} must be settled under the policy form above.",
+    "intro": "{org} — {title} {clause} (edition {version}) AND CLAIM FILE {ref}\n\nPrepared for coverage review. Page numbers omitted. Bracketed notes are from the file clerk.\n\n=== POLICY EXCERPTS ===\n",
+    "clauses": {
+      "window": "A. Notice window. A loss must be reported within {window} days of the date it was discovered. Claims reported later are denied as late notice.",
+      "vacancy": "B. Vacancy exclusion. The dwelling is excluded for any loss occurring while it has been unoccupied for more than {vacancy_days} consecutive days before the loss.",
+      "sublimit": "C. Water damage. Water damage caused by a leak hidden inside a wall — unknown to the occupant until damage appeared — is covered subject to a sublimit of EUR {sublimit}. Water damage with a visible, accessible cause is covered in full, with no sublimit.",
+      "deductible": "D. Deductible. Each approved claim is paid after deducting EUR {deductible} from the settled amount."
+    },
+    "incident_templates": [
+      "=== CLAIM FILE {ref} ===\nNamed insured: {who}\nDiscovery date: {discovery}\nReport received {report_delay} days after discovery.\n{cause_sentence} The dwelling was unoccupied for {unoccupied} consecutive days before the loss; furnishings remained in place.\nLoss estimate: EUR {loss}.",
+      "=== CLAIM FILE {ref} ===\nNamed insured: {who}\nDiscovered: {discovery}\nNotice given to the claims line {report_delay} day(s) later.\n{cause_sentence} The premises stood unoccupied for {unoccupied} days before the event; the household goods were left in place.\nLoss estimate: EUR {loss}."
+    ],
+    "causes": [
+      {
+        "concealed": true,
+        "text": "Cause: water escaping from a pipe inside the wall cavity, hidden from view until the damage appeared."
+      },
+      {
+        "concealed": false,
+        "text": "Cause: a burst feed hose under the sink, visible and accessible from the start."
+      }
+    ],
+    "people": [
+      "Dana Okafor",
+      "Ingrid Halvorsen",
+      "Marcus Bell",
+      "Priya Raman",
+      "Tomas Weiss",
+      "Helena Costa"
+    ],
+    "outcomes": [
+      {
+        "key": "deny_late_notice",
+        "desc": "The loss is denied because it was reported after the notice window closed."
+      },
+      {
+        "key": "deny_vacancy_exclusion",
+        "desc": "The loss is denied under the vacancy exclusion for the stated period of absence."
+      },
+      {
+        "key": "pay_capped_at_sublimit",
+        "desc": "The loss is covered but payment is capped by the concealed-leak sublimit of EUR {sublimit}."
+      },
+      {
+        "key": "pay_full_estimate_less_deductible",
+        "desc": "The loss is covered without any sublimit; the full estimate is paid after deducting EUR {deductible}."
+      }
+    ]
+  },
+  "doc_titles_insurance": [
+    "HOMEOWNERS SERVICE POLICY FORM",
+    "PROPERTY DAMAGE POLICY FORM",
+    "DWELLING COVERAGE FORM",
+    "WATER DAMAGE ENDORSEMENT"
+  ]
+}

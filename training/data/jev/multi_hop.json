@@ -1,0 +1,94 @@
+{
+  "_comment": "Committed content for the multi_hop family (B-13 P2, JB-4): a stated graph of people/edges (plus optional urgency override) from which the asked person's chain leads to exactly one unit. The builder binds every edge the tree references (true iff stated in the text), so each option's branch is `all(edges on the path from the asked person)` — labels are executions, and unreachable options bind an unstated edge as false.",
+  "org_header": "{org} — ESCALATION MANUAL, Chapter \"{chapter}\" (rev. {rev})\n\n9.1 Purpose. Every request must reach the responsible unit. Follow the stated reporting edges from the named owner; where an override is stated for this request, it takes precedence over the chain.\n\n9.2 Stated relationships\n",
+  "orgs": [
+    "Aldermoor Industries SE",
+    "Pinehill Services Ltd",
+    "Corven Rail Operations",
+    "Halloway Bio Labs",
+    "Tresmoor Retail Group"
+  ],
+  "chapters": [
+    "Invoice approval routing",
+    "Incident escalation",
+    "Access request routing",
+    "Change approval routing"
+  ],
+  "people": [
+    "Ann Kerr",
+    "Bo Nascimento",
+    "Celia Frost",
+    "Dev Raman",
+    "Elsa Mohr",
+    "Farid Nazari",
+    "Greta Lund",
+    "Hugo Baptiste",
+    "Iris Chen",
+    "Jonas Weber",
+    "Kira Novak",
+    "Liam Doherty",
+    "Mira Osei",
+    "Noah Fischer",
+    "Olga Petrova",
+    "Pavel Horak"
+  ],
+  "units": [
+    {
+      "key": "tier1_team_lead",
+      "name": "Tier 1 team lead desk",
+      "desc": "Route to the team lead desk (Tier 1)."
+    },
+    {
+      "key": "tier2_department_head",
+      "name": "Tier 2 department head office",
+      "desc": "Route to the department head (Tier 2)."
+    },
+    {
+      "key": "tier3_finance",
+      "name": "Tier 3 finance escalation desk",
+      "desc": "Route to the finance escalation desk (Tier 3)."
+    },
+    {
+      "key": "tier4_board",
+      "name": "Tier 4 board audit committee",
+      "desc": "Route to the board audit committee (Tier 4)."
+    },
+    {
+      "key": "duty_operations",
+      "name": "duty operations desk",
+      "desc": "Route to the duty operations desk."
+    },
+    {
+      "key": "vendor_risk",
+      "name": "vendor risk office",
+      "desc": "Route to the vendor risk office."
+    },
+    {
+      "key": "security_incident",
+      "name": "security incident team",
+      "desc": "Route to the security incident team."
+    }
+  ],
+  "edge_templates": [
+    "{a} reports to {b}.",
+    "{a} hands escalated items to {b}.",
+    "{a} is deputy to {b}.",
+    "{a} covers the queue while {b} is away."
+  ],
+  "seat_template": "{a} sits in the {unit}.",
+  "incident_template": "\n9.3 Request in scope: {request}, owned by {owner}.",
+  "urgency": {
+    "manual_clause": "9.4 Override. Requests marked urgent bypass the chain and go directly to the duty operations desk.",
+    "incident_flag_yes": " Priority: URGENT.",
+    "incident_flag_no": " Priority: normal.",
+    "override_unit": "duty_operations"
+  },
+  "requests": [
+    "request RQ-2026-3391",
+    "invoice NS-2026-131",
+    "incident INC-88412",
+    "change CHG-77120",
+    "access request AR-9903"
+  ],
+  "question": "Following the manual, which unit must {request} concerning {owner} be routed to?"
+}

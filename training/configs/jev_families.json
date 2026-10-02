@@ -1,0 +1,11 @@
+{
+  "_comment": "Recipe for training/build_jev_families.py (B-13 P2, JB-4/JB-5). Committed content lives in training/data/jev/*.json; this file only fixes the seed and the per-family record counts. Output data/train_jev_families.jsonl is gitignored — config + content is the reproducible recipe (L-011).",
+  "seed": 1,
+  "counts": {
+    "long_policy": 800,
+    "trap": 640,
+    "multi_hop": 700,
+    "temporal_numeric": 700,
+    "adequacy": 700
+  }
+}

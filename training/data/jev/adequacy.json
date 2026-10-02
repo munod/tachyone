@@ -1,0 +1,31 @@
+{
+  "_comment": "Committed content for the adequacy family (B-13 P2, JB-4) — the judge-tier proxy: request + response, label = all(constraints executed) over drawn facts (value correct, response within the explicit format constraint). Operations and operands are drawn; responses are rendered from the same drawn values, so the text always matches the facts.",
+  "question": "Is the response a complete and compliant answer to the request?",
+  "criteria": {
+    "false": "Wrong, incomplete, or violates an explicit constraint of the request",
+    "true": "Correct, complete, and within every explicit constraint"
+  },
+  "requests": [
+    {"key": "sum", "kind": "int", "op": "sum", "template": "Request: Compute the sum of {a} and {b}. Return only the number."},
+    {"key": "diff", "kind": "int", "op": "diff", "template": "Request: Compute {a} minus {b}. Return only the number."},
+    {"key": "product", "kind": "int", "op": "product", "template": "Request: Compute {a} times {b}. Return only the number, no commentary."},
+    {"key": "pair", "kind": "pair", "op": "pair", "template": "Request: Give the sum of {a} and {b} and the value of {a} minus {b}, one per line, in that order."},
+    {"key": "quote_words", "kind": "int", "op": "count_words", "template": "Request: Count the words in the quote \"{quote}\". Return only the number."},
+    {"key": "rounded", "kind": "float1", "op": "round1", "template": "Request: Round {decimal} to one decimal place. Return only the number."}
+  ],
+  "quotes": [
+    "delayed trains ran on the branching line",
+    "weekly invoices arrive before noon",
+    "the northern gate stays closed at night",
+    "fresh stock reaches the shelf at dawn",
+    "late shifts cover the eastern platform"
+  ],
+  "responses": {
+    "clean": {"true": "{value}", "false": "{wrong}"},
+    "prose": {
+      "true": "Certainly — the answer is {value}.",
+      "false": "Let me work through it first: the result comes out to {wrong}."
+    }
+  },
+  "style_violation_note": "The response adds commentary the request forbids."
+}

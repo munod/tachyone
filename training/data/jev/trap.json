@@ -1,0 +1,293 @@
+{
+  "_comment": "Committed content for the trap family (B-13 P2, JB-4): a rule whose DEFINED term contradicts the everyday reading, an agent note pushing the wrong answer, and facts whose tree evaluates the defined condition. `facts` declares how each fact is drawn AND how it is worded in the text (kind: bool/int/text/derived); `tree` is executed for the target; `surface_answer` (the everyday note's answer) ships in the record for audit only. Derived facts are computed by named, tested formulas in training/build_jev_families.py.",
+  "cases": [
+    {
+      "key": "unopened_seal",
+      "rule": "The instant refund for unopened items applies only when the return is requested within 30 days of delivery and the item still counts as unopened.",
+      "definition": "Inspection standard IS-4 counts an item as factory sealed only when every seal applied by the manufacturer is intact at inspection; the outer shipping bag plays no part in that test.",
+      "question": "Does this return qualify for the instant unopened-item refund?",
+      "facts": {
+        "seal_split": {
+          "kind": "bool",
+          "yes": "the clear seal over the product box split end to end when the mailer was lifted",
+          "no": "the clear seal over the product box remains continuous end to end"
+        },
+        "days": {
+          "kind": "int",
+          "min": 4,
+          "max": 42,
+          "template": "the return was requested on day {days}"
+        }
+      },
+      "tree": {
+        "op": "all",
+        "args": [
+          {
+            "op": "not",
+            "arg": {
+              "op": "fact",
+              "name": "seal_split"
+            }
+          },
+          {
+            "op": "cmp",
+            "cmp": "<=",
+            "left": {
+              "op": "fact",
+              "name": "days"
+            },
+            "right": {
+              "op": "const",
+              "value": 30
+            }
+          }
+        ]
+      },
+      "note": "Agent note: customer says unopened; likely eligible.",
+      "surface_answer": 1
+    },
+    {
+      "key": "vacancy_definition",
+      "rule": "The policy denies losses occurring while the dwelling has been unoccupied for more than 60 consecutive days before the loss.",
+      "definition": "Definitions 8/9: a dwelling is \"vacant\" only when it is unoccupied AND stripped of furnishings; a furnished house standing empty is \"unoccupied\" but not \"vacant\", so the vacancy exclusion does not reach it.",
+      "question": "Does the vacancy exclusion apply to this loss?",
+      "facts": {
+        "unoccupied_days": {
+          "kind": "int",
+          "min": 20,
+          "max": 95,
+          "template": "the dwelling stood unoccupied for {unoccupied_days} consecutive days before the loss"
+        },
+        "stripped": {
+          "kind": "bool",
+          "yes": "the house had been stripped of furnishings before the loss",
+          "no": "the house remained furnished and stocked throughout"
+        }
+      },
+      "tree": {
+        "op": "all",
+        "args": [
+          {
+            "op": "fact",
+            "name": "stripped"
+          },
+          {
+            "op": "cmp",
+            "cmp": ">",
+            "left": {
+              "op": "fact",
+              "name": "unoccupied_days"
+            },
+            "right": {
+              "op": "const",
+              "value": 60
+            }
+          }
+        ]
+      },
+      "note": "Agent note: empty house for months, the vacancy clause surely applies.",
+      "surface_answer": 1
+    },
+    {
+      "key": "fair_use_ceiling",
+      "rule": "The unlimited plan covers every request the customer sends, provided usage stays within the fair-use ceiling.",
+      "definition": "The schedule defines fair use as up to 5,000 requests per calendar month; usage above the ceiling is throttled and not covered.",
+      "question": "Is this month's usage covered by the unlimited plan?",
+      "facts": {
+        "requests": {
+          "kind": "int",
+          "min": 800,
+          "max": 7400,
+          "template": "the account sent {requests} requests this month"
+        }
+      },
+      "tree": {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {
+          "op": "fact",
+          "name": "requests"
+        },
+        "right": {
+          "op": "const",
+          "value": 5000
+        }
+      },
+      "note": "Agent note: the plan says unlimited, so it is covered.",
+      "surface_answer": 1
+    },
+    {
+      "key": "consent_on_file",
+      "rule": "Account changes are permitted only with the account holder's written consent.",
+      "definition": "The operating manual defines written consent as a signature on file (paper or e-signature); verbal approval given on a call does not satisfy the definition.",
+      "question": "Is the account change permitted under the manual?",
+      "facts": {
+        "signature_on_file": {
+          "kind": "bool",
+          "yes": "an e-signed consent form is on file, dated before the change",
+          "no": "no signed consent is on file; a support agent notes verbal approval was given on a call"
+        },
+        "change": {
+          "kind": "text",
+          "pool": [
+            "the recovery phone number was changed yesterday",
+            "the login e-mail was changed last week",
+            "the withdrawal limit was raised this morning"
+          ]
+        }
+      },
+      "tree": {
+        "op": "fact",
+        "name": "signature_on_file"
+      },
+      "note": "Agent note: the customer agreed on the call, so consent exists.",
+      "surface_answer": 1
+    },
+    {
+      "key": "business_day_cutoff",
+      "rule": "Same-day settlement applies to transfers confirmed before the daily cutoff on a business day.",
+      "definition": "The schedule defines the cutoff as 17:00 local time at the receiving branch; confirmations at or after 17:00 roll to the next business day.",
+      "question": "Was the transfer confirmed in time for same-day settlement?",
+      "facts": {
+        "confirmed_hour": {
+          "kind": "int",
+          "min": 9,
+          "max": 21,
+          "template": "the confirmation was stamped at {confirmed_hour}:40 local time"
+        },
+        "business_day": {
+          "kind": "bool",
+          "yes": "the confirmation was made on a business day",
+          "no": "the confirmation was made on a public holiday"
+        }
+      },
+      "tree": {
+        "op": "all",
+        "args": [
+          {
+            "op": "fact",
+            "name": "business_day"
+          },
+          {
+            "op": "cmp",
+            "cmp": "<",
+            "left": {
+              "op": "fact",
+              "name": "confirmed_hour"
+            },
+            "right": {
+              "op": "const",
+              "value": 17
+            }
+          }
+        ]
+      },
+      "note": "Agent note: the cutoff is a formality; customers expect same-day.",
+      "surface_answer": 1
+    },
+    {
+      "key": "complete_kit",
+      "rule": "Restocking fees are waived when the returned item is a complete set.",
+      "definition": "The returns policy defines a complete set as every part listed on the packing list present in the box; missing accessories make the set incomplete regardless of the main unit's condition.",
+      "question": "Is the restocking fee waived for this return?",
+      "facts": {
+        "all_parts_present": {
+          "kind": "bool",
+          "yes": "every part on the packing list is present in the box",
+          "no": "the charging cable and the spare tip listed on the packing list are missing"
+        },
+        "unit": {
+          "kind": "text",
+          "pool": [
+            "the main unit itself is unused and intact",
+            "the main unit shows light scuffs but works",
+            "the main unit is factory resealed"
+          ]
+        }
+      },
+      "tree": {
+        "op": "fact",
+        "name": "all_parts_present"
+      },
+      "note": "Agent note: the main unit is like new, waive the fee.",
+      "surface_answer": 1
+    },
+    {
+      "key": "notice_window_sunday",
+      "rule": "Incidents must be reported within 5 business days of discovery.",
+      "definition": "The claims manual defines business days as Monday to Friday excluding public holidays; weekend days do not count toward the five.",
+      "question": "Was the incident reported within the 5 business days?",
+      "facts": {
+        "elapsed_days": {
+          "kind": "int",
+          "min": 3,
+          "max": 12,
+          "template": "the report arrived {elapsed_days} calendar days after discovery"
+        },
+        "weekend_in_between": {
+          "kind": "bool",
+          "yes": "the elapsed period included one weekend (two non-business days)",
+          "no": "the elapsed period contained no weekend or holiday"
+        },
+        "effective_days": {
+          "kind": "derived",
+          "formula": "business_days",
+          "deps": [
+            "elapsed_days",
+            "weekend_in_between"
+          ]
+        }
+      },
+      "tree": {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {
+          "op": "fact",
+          "name": "effective_days"
+        },
+        "right": {
+          "op": "const",
+          "value": 5
+        }
+      },
+      "note": "Agent note: six days is close enough, the five-day rule is bureaucratic.",
+      "surface_answer": 1
+    },
+    {
+      "key": "trial_conversion",
+      "rule": "The introductory rate renews for another term only if no proper cancellation was received before the renewal date.",
+      "definition": "The terms define cancellation as a cancellation request submitted through the account portal; opening a support ticket is not a cancellation.",
+      "question": "Does the introductory rate renew for this customer?",
+      "facts": {
+        "proper_cancel": {
+          "kind": "bool",
+          "yes": "a cancellation request was submitted in the portal before the renewal date",
+          "no": "only a support ticket asking about cancellation was opened before the renewal date"
+        },
+        "charged_next_term": {
+          "kind": "bool",
+          "yes": "the account was charged for the next term on the renewal date",
+          "no": "no charge was taken for the next term"
+        }
+      },
+      "tree": {
+        "op": "all",
+        "args": [
+          {
+            "op": "not",
+            "arg": {
+              "op": "fact",
+              "name": "proper_cancel"
+            }
+          },
+          {
+            "op": "fact",
+            "name": "charged_next_term"
+          }
+        ]
+      },
+      "note": "Agent note: the customer clearly wanted out before renewal, keep the rate anyway.",
+      "surface_answer": 1
+    }
+  ]
+}

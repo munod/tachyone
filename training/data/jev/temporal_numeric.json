@@ -1,0 +1,33 @@
+{
+  "_comment": "Committed content for the temporal_numeric family (B-13 P2, JB-4). Two kinds: 'within_period' (noul) — a stated period rule whose end the builder computes with a tested clamp formula (month-end, leap years), bound as a derived fact and NOT stated in the text, so the reader must apply the rule; and 'payout_band' (choice) — deductible/cap arithmetic over a drawn estimate. Targets are executions of the shipped trees.",
+  "within_period": {
+    "orgs": ["Brightmoor Home Appliances", "Selkirk Device Care", "Northvale Service Plans"],
+    "cert_refs": ["EW-5540981", "SP-311876", "VC-440912", "GW-70255"],
+    "question": "Was claim {ref} reported within the covered period of certificate {cert}?",
+    "doc": "{org} — EXTENDED SERVICE CERTIFICATE {cert} (extract) AND CLAIM RECORD\n\nProduct: {product}, serial {serial}.\nStart date: {start}.\nTerm. Coverage applies to breakdowns reported during the period that starts on the start date and ends {rule_sentence}\nClaims. A claim is \"reported\" when the online claim form is submitted or the claims line is called.\n\nClaim {ref}: reported on {event}.",
+    "rule_sentences": [
+      "{months} calendar months after the start date. Where the calendar month in which the period ends has no day with the same number as the start day, the period ends on the last day of that month. The period ends at 24:00 on its last day.",
+      "{months} months after the start date, with the same last-day convention: if the day number does not exist in the ending month, the period ends on that month's last day at 24:00.",
+      "{days} days after the start date, counting every calendar day including weekends; the period ends at 24:00 on the last day."
+    ],
+    "products": ["FrostPro 70 fridge-freezer", "AquaStream 900 washer", "ThermaCore heat pump", "LumenArc oven", "Ventus air purifier"],
+    "criteria": {
+      "false": "The claim was reported after the covered period had ended.",
+      "true": "The claim was reported before the end of the covered period."
+    }
+  },
+  "payout_band": {
+    "orgs": ["Quarry Lane Underwriters", "Harrowgate Claims Services"],
+    "file_refs": ["CL-28-00471", "CL-28-00915", "CL-27-33410", "CL-28-01188"],
+    "question": "How must claim {ref} be settled under the payment rule above?",
+    "doc": "{org} — CLAIM FILE {ref}\n\nPayment rule. An approved claim is settled by paying the loss estimate after deducting EUR {deductible}, capped at EUR {cap}; a claim whose estimate does not exceed the deductible is declined as below excess.\n\nLoss estimate: EUR {loss}. The claim is approved.",
+    "deductible": 1000,
+    "caps": [5000, 10000, 15000],
+    "question_note": null,
+    "outcomes": [
+      {"key": "decline_below_deductible", "desc": "Decline the claim: the estimate does not exceed the deductible."},
+      {"key": "pay_capped_at_limit", "desc": "Pay the settled amount capped at the policy limit of EUR {cap}."},
+      {"key": "pay_estimate_less_deductible", "desc": "Pay the estimate less the deductible, under the cap."}
+    ]
+  }
+}
