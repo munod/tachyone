@@ -1,11 +1,10 @@
 # Multilingual Five-Domain Coverage (B-5b) Specification
 
 **Phase:** Post-M6 (B-5 second half, `.specs/project/BACKLOG.md` B-5)
-**Status:** **B5B-1 … B5B-8 done (2026-10-02)** — localized lexicons, 30k/7.5k datasets, the
+**Status:** **B5B-1 … B5B-9 done (2026-10-02) — cycle closed, `v0.6.0` released** — localized lexicons, 30k/7.5k datasets, the
 `per_domain_language` cell, baseline-first gates, the joint run, the five-arm measurement, the
 verdict (fitted bank) and the publication (**`munod/tachyone-multi` `9a3ef5a5`**, sha256-verified)
-with the full sweep (MASSIVE, fast path, report, docs). **Open: B5B-9** (docs site strict build,
-cycle close, release decision).
+with the full sweep (MASSIVE, fast path, report, docs).
 **Context (locked decisions):** `.specs/features/multilingual-five-domains/context.md`
 **Related:** `.specs/features/choice-head-bank/spec.md` (B-5a), `.specs/features/multilingual-quality/spec.md`
 (B-1), `docs/adr/ADR-0016-per-domain-choice-heads.md` §4, AGENTS.md hard rules 1, 5, 6
@@ -240,11 +239,11 @@ change in this cycle).
 
 ## Success Criteria
 
-- [ ] All five domains × seven languages complete and validated; English byte-identity holds.
-- [ ] 30k/7.5k datasets reproduce from committed configs; support halves byte-identical.
-- [ ] Baseline measured first; gates fixed in BACKLOG before the trained arms are read.
-- [ ] `support` ≥ baseline, worst new domain ≥ 0.70, per-domain ECE ≤ 0.05 (exceptions declared),
+- [x] All five domains × seven languages complete and validated; English byte-identity holds.
+- [x] 30k/7.5k datasets reproduce from committed configs; support halves byte-identical.
+- [x] Baseline measured first; gates fixed in BACKLOG before the trained arms are read.
+- [x] `support` ≥ baseline, worst new domain ≥ 0.70, per-domain ECE ≤ 0.05 (exceptions declared),
       gate strict published.
-- [ ] `munod/tachyone-multi` republished and verified; docs/report/probes/fast-path one set.
-- [ ] Full gate green per commit (ruff, format, pyright, pytest `-m "not e2e"`), conventional
+- [x] `munod/tachyone-multi` republished and verified; docs/report/probes/fast-path one set.
+- [x] Full gate green per commit (ruff, format, pyright, pytest `-m "not e2e"`), conventional
       commits, spec status updated at cycle close.
