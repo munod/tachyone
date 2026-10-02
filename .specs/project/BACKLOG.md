@@ -1026,7 +1026,7 @@ corrected labels" option is now *measured and closed* rather than open.
 
 ---
 
-## B-13 — JevBench preparation (score well on the public board) · **In progress — P0 done (2026-10-02)**
+## B-13 — JevBench preparation (score well on the public board) · **In progress — P0 + P1 done (2026-10-02)**
 
 **Why.** [JevBench](https://github.com/fstandhartinger/jevbench) ranks Jev-class decision
 models on four equally-weighted axes (Intelligence chance-corrected per tier, Calibration =
@@ -1062,10 +1062,21 @@ inference truncates at **512 tokens** while hard states average 1,079 (max 3,746
 4. **P4 submission** — offline-artifact issue (the #158 pattern): pinned Hub weights,
    licences, inference command, `temperature.json`, this diagnostic, cost basis.
 
+**P1 closed (2026-10-02), full numbers in the spec's *P1 results*:** wire re-audited
+**231/231 strict-valid** on both runs; the long-context A/B (`context` 512 → 4096) measured
+**1 flip each way — net 0 accuracy (82/231 both, I 8.4 → 8.4) against p95 333 ms → 2,700 ms
+and Speed 84.8 → 77.6** → reverted (`4bb5a6a`), which is lesson **L-014**: information access
+is not the binding constraint of a similarity encoder. Serving settles on **fast path off**
+(end-to-end slower at these shapes; OOMs at raised context — 18.8 GiB of graph pools) and
+never `expandable_segments:True` (20.5 GiB at warm-up, 24.5 GiB leaked on kill — GPU0 keeps
+12.0 GiB free, the historical training envelope). Cost basis measured: **510 input
+tokens/decision, $0.00510/1000 @ $0.01/M → Cost 78.8**.
+
 **Acceptance.**
 - [x] P0: baseline measured and recorded (231 public items, one harness, L-013-compliant
       explicit-adapter serve).
-- [ ] P1: re-run keeps 231/231 strict-valid; long-context A/B recorded with latency cost.
+- [x] P1: re-run keeps 231/231 strict-valid; long-context A/B recorded with latency cost
+      (measured, reverted, documented).
 - [ ] P2: **I ≥ 50 on the public diagnostic** with public items evaluation-only for ever;
       ablation carries a control (L-006).
 - [ ] P3: `calibration(ece)` ≥ 60 (ECE ≤ 0.15) on the public run.

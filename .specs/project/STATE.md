@@ -9,11 +9,17 @@ L-013). **Wire: 231/231 strict-valid, 0 failures** (the frozen contract needed n
 0.543 zeroes the axis), Speed 84.8, Cost 78.8 → composite 0.43** with the `(I/50)²`
 multiplier at 0.028. Per tier easy 0.500 / standard 0.361 / hard 0.288 (below chance);
 `noul` 0.473 (= binary chance — the runtime score reads only `cos(question, state)`, never
-the rubric), `choice` 0.309, `score` 0.222. Two structural causes: rubric-blind `noul` and
+the rubric), `choice` 0.309, `score` 0.222. Structural causes: rubric-blind `noul` and
 **English inference truncating at 512 tokens against hard states averaging 1,079 (max
-3,746)**. Next: P1 hardening (long-context A/B first), then P2 family-shaped training data
+3,746)**. **P1 closed the same day:** wire re-audited **231/231 strict-valid**, and the
+long-context A/B (`512 → 4096`) measured **net 0 accuracy (1 flip each way, 82/231 both)
+against p95 333 ms → 2,700 ms / Speed 84.8 → 77.6 → reverted** — new lesson **L-014**;
+serving settles on **fast path off** (end-to-end slower at these shapes, OOMs at raised
+context), never `expandable_segments` (leaked 24.5 GiB on kill; GPU0 keeps 12.0 GiB free,
+the historical training envelope), and the cost basis is measured (510 input tokens/
+decision, $0.00510/1000 @ $0.01/M → Cost 78.8). **Next: P2 family-shaped training data**
 (MultiNLI/BoolQ/Banking77 + executable rule trees — tev1's recipe is the reference),
-targets easy ≥ 0.95 / standard ≥ 0.73 → **I ≥ 50**, P3 calibration shrinkage, P4
+targets easy ≥ 0.95 / standard ≥ 0.73 → **I ≥ 50**, then P3 calibration shrinkage, P4
 offline-artifact submission. Full record: `.specs/features/jevbench/spec.md`, BACKLOG
 **B-13**. Locked: public items **evaluation-only for ever**, submission as offline
 artifact, English checkpoint only, B-6 optional inside P3.
@@ -711,6 +717,27 @@ harnesses record-by-record before blaming the weights, and record which checkpoi
 which rows.
 **Prevents:** publishing a gate the runtime does not deliver, "losing" 0.7 points to someone
 else's republish, and reading a routing artifact as a capability change.
+
+---
+
+### L-014: Seeing the input is not the same as being able to use it
+
+**Context:** B-13 P1b. The JevBench hard tier's states average 1,079 tokens (max 3,746)
+while English inference truncated at 512, so the obvious structural read was "the deciding
+facts of a long policy never reach the encoder".
+**Problem:** raising the runtime context to 4096 and re-running all 231 public items moved
+**one** item right and **one** item wrong — 82/231 both runs, Intelligence 8.4 → 8.4 —
+while raw p95 went 333 ms → 2,700 ms and the Speed axis 84.8 → 77.6. The extra visibility
+bought nothing because a mean-pooled cosine scorer trained at ≤512 has learned no behavior
+for *finding* a decisive clause among 4,096 tokens: the constraint was what the model can
+do with text, not how much of it it sees. The intuition was plausible, cheap to test, and
+wrong — which is why it was tested before it was shipped.
+**Solution:** A/B a structural lever on the real measurement before keeping it, tie
+inference length to *training* length, and record the negative result together with the
+cost it carried (the speed points) rather than reverting silently.
+**Prevents:** shipping a "reads long documents now" change with zero accuracy behind it,
+paying a latency tax on every p95 for an unmeasured intuition, and confusing input access
+with capability.
 
 ---
 

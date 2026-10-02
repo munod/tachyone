@@ -1,8 +1,9 @@
 # JevBench Preparation (B-13) Specification
 
 **Phase:** Post-M6 · **Spec accepted:** 2026-10-02
-**Status:** **P0 done (2026-10-02)** — baseline measured on the 231 public items;
-P1 (hardening) next.
+**Status:** **P0 + P1 done (2026-10-02)** — baseline measured; wire audit green; the
+long-context A/B measured and reverted; serving path settled. **P2 (family-shaped training
+data) next.**
 
 **Context:** `.specs/project/BACKLOG.md` B-13 · external harness:
 <https://github.com/fstandhartinger/jevbench> (MIT — cloned to a local download for
@@ -86,7 +87,7 @@ Reproduce (server must be up):
 ```bash
 TACHYONE_BACKEND=encoder TACHYONE_PORT=8756 \
 TACHYONE_ADAPTERS="tachyone-en=$PWD/checkpoints/en" TACHYONE_PRELOAD=tachyone-en \
-uv run tachyone-serve                       # detached; health on /health
+uv run tachyone-serve                       # detached; health on /health; NO TACHYONE_FAST
 
 cd /tmp/opencode/jevbench && for f in original easy hard; do
   python3 -m jevbench.cli run --tasks datasets/public/$f.jsonl \
@@ -103,11 +104,37 @@ python3 /tmp/opencode/analyze_p0.py         # axes via the harness's composite_v
 Artifacts (outside the repo): `/tmp/opencode/jevbench_runs/` (results, manifests, ledger,
 `p0_baseline.json`), `/tmp/opencode/analyze_p0.py`, local clone `/tmp/opencode/jevbench`.
 
+## P1 results (2026-10-02)
+
+- **(a) Wire audit — green twice:** 231/231 `strict_valid`, 0 renormalised, 0 failed on
+  both the P0 and the P1 run. The `typesafe` adapter needs nothing from us (hard rule 1
+  not triggered).
+- **(b) Long context — measured and REVERTED (lesson L-014).** `context` 512 → 4096
+  (`15792d4`), full re-run of the 231 items: **1 item flipped right, 1 flipped wrong —
+  82/231 both runs, Intelligence 8.4 → 8.4** — while raw p95 went **333 ms → 2,700 ms**
+  and the Speed axis **84.8 → 77.6**. Seeing the deciding facts is not the binding
+  constraint for a similarity encoder; knowing what to do with them is (that is P2).
+  Reverted in `4bb5a6a` with the A/B recorded in the code comment and in
+  `tests/test_encoder.py::test_english_context_matches_the_trained_length`. Revisit only
+  together with a longer *training* `max_len`.
+- **(c) Speed / fast path — serve with `TACHYONE_FAST` off (the default).** End-to-end at
+  the short shapes this suite mostly sends, fast-on measured *slower* (p50 126.7 ms on vs
+  82.0 ms off — the micro-benchmark's 2.68× is forward-only, not HTTP-serving), and at the
+  raised context fast-on **OOMed**: 18.8 GiB in CUDA-graph private pools on a 22 GiB GPU
+  (per-shape capture was built for fixed short shapes). Also: **never set
+  `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` on this stack** — the control run
+  held 20.5 GiB at warm-up (vs 1.9 GiB without) and leaked 24.5 GiB of GPU memory across
+  both devices when the process was killed (unrecoverable without a reboot; GPU0 keeps
+  12.0 GiB free — the historical training envelope).
+- **(d) Cost basis — measured and ready for submission:** mean **510 input tokens per
+  decision** (max 3,746), `$0.00510 / 1000 decisions` at the encoder size-class price
+  `$0.01/M in, $0 out` (the same basis they used for Laya) → Cost axis **78.8**.
+
 ## Plan (P1–P4)
 
 | Phase | Work | Gate |
 | --- | --- | --- |
-| **P1** hardening | (a) wire audit — **done in P0** (231/231); (b) English `context` 512 → long enough for the hard tier, **A/B measured, not assumed** (mean-pool shift risk); (c) fast path + p50/p95; (d) cost basis documented | public run: accuracy up, latency accounted |
+| **P1** hardening | **DONE (2026-10-02)** — see *P1 results* above: wire audit green ×2, context A/B measured → reverted (L-014), serve fast-off, cost basis measured | 231/231 valid; A/B recorded |
 | **P2** Intelligence | family-shaped training data in two layers: **(a)** real public sources (MultiNLI/BoolQ/Banking77, + SST-5/AG News only after licence review — tev1 `DATA_SOURCES.md`) converted to our record shape with pinned provenance; **(b)** synthetic **executable rule trees** for `long_policy`/`multi_hop`/`temporal_numeric`/`trap` + the six original families | public items **evaluation-only**; targets: easy ≥ 0.95, standard ≥ 0.73 → **I ≥ 50**; ablation with control (L-006), one harness (L-013) |
 | **P3** Calibration | ECE 0.543 → ≤ 0.15: flatten confidence when the best similarity is weak (argmax untouched → Intelligence independent); diverse holdout fit; optional B-6 contrastive | `calibration(ece)` ≥ 60 on the public run |
 | **P4** submission | issue `[bench request]`: pinned `munod/tachyone-en` + base `answerdotai/ModernBERT-large`, licences, inference command, `temperature.json`, this diagnostic, cost basis; `docs/jevbench.md` + CHANGELOG | docs gate + issue filed |
