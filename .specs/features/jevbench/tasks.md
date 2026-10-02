@@ -27,6 +27,10 @@ their source URLs recorded in the lock (tev1 `DATA_SOURCES.md` cross-checked).
 **Tests:** `tests/test_training_jev_sources.py` (lock schema, hash format, excluded
 sources documented; download itself network-gated/skipped).
 **Gate:** full · **Commit:** `feat(training): fetch the JevBench-family sources with pinned hashes`
+**Status:** **Done (2026-10-02), commit `bb1b113`.** Pinned revisions cross-checked against
+tev1; all three files sha256-recorded (`1c1de036…`, `4f028e99…`, `3c648a31…`), 208 MB
+cached under `data/sources/`; AG News and SST-5 excluded with their licence words
+verbatim. 17 tests, `file://` downloads, `--check`/`--record` flows covered.
 
 ## JB-2: Convert the sources into Tachyone records
 
@@ -44,6 +48,13 @@ JevBench item (asserted by normalized-text overlap check against the three publi
 **Tests:** `tests/test_training_jev_sources.py` (counts, shape, overlap assertion,
 determinism) · **Gate:** full.
 **Commit:** `feat(training): build Tachyone records from the pinned public sources`
+**Status:** **Done (2026-10-02), commit `9901b6e`.** 11,000 records (MNLI 5k / BoolQ 3k /
+Banking77 3k, seeded reservoir), MNLI state+instruction mirror `benchmarks.probes`' XNLI
+mapping verbatim (single source of truth), Banking77 descriptions authored (77, label
+order), **zero normalized-text overlap with the 231 public items** (build ran with
+`--public-dir`), read-aloud spot-check green. One real bug caught by the tests: the pinned
+card stores **one pair per row** (scalars), not two — `mnli_pairs` now accepts both
+layouts.
 
 ## JB-3: Executable rule trees (pure python)
 
@@ -59,6 +70,13 @@ temporal/numeric predicate, trap-with-distractor).
 **Tests:** `tests/test_training_rule_trees.py` (≥10 cases incl. negation, sublimit,
 2-hop chain, off-by-one date boundary, trap distractor) · **Gate:** full.
 **Commit:** `feat(training): add executable rule trees for family labels`
+**Status:** **Done (2026-10-02), commit `60da2e2`.** Ops `const/fact/all/any/not/cmp/select`
+with strict failures (unbound fact, mixed kinds, unknown op/comparison), `as_target`
+validates choice outputs against the option set, `reexecute(record)` is the audit hook. 22
+tests: every comparison op, the 30-day inclusive boundary, leap-year dates, multi-hop
+chains, and the trap shape (the distractor is a fact but never a tree node). One test bug
+found by the gate itself (a "boundary" date that was inside the window) — fixed and
+amended before push.
 
 ## JB-4: Committed family content + generators
 
@@ -78,6 +96,17 @@ own tree; all five families produce their count; a read-aloud sample per family 
 **Tests:** `tests/test_training_jev_families.py` (tree-label identity over the whole
 generated set, counts, determinism, ≤512-token decisive states) · **Gate:** full.
 **Commit:** `feat(training): generate the JevBench-family records from rule trees`
+**Status:** **Done (2026-10-02), commit `a4ad754`.** 3,540 records (long_policy 800 /
+trap 640 / multi_hop 700 / temporal_numeric 700 / adequacy 700), **every target
+re-executes from its shipped facts+tree** (tested over the whole set), state window
+enforced by char cap (1,800; measured 3.87 chars/token) **and** by the real tokenizer
+(≤512 tokens, 3,540 states), determinism hash-tested, **zero public-item collisions**
+(the overlap check caught a question I had copied verbatim from a bench trap item —
+rewritten). Label distributions audited per label space (L-010): four skew bugs found and
+fixed during the build — routing bands now uniform (85/70/81/78/86), `decline` scenario
+added, duty-desk reachable only via the override, adequacy label drawn first (48/52).
+Read-aloud found and fixed: coverage titles,9.4-before-9.3 numbering, seat article,
+claim-ref = cert-ref.
 
 ## JB-5: Data configs + the mixed training set
 
@@ -90,6 +119,11 @@ composition recorded.
 spec.
 **Tests:** co-located regeneration test · **Gate:** full.
 **Commit:** `feat(training): add the JevBench-family mixture config`
+**Status:** **Done (2026-10-02), commit `2c2d433`.** `training/build_jev_mixture.py` +
+`training/configs/jev_mixture.json` → **35,540 records** (domains 21,000 + sources
+11,000 + families 3,540; choice 16,780 / noul 11,760 / score 7,000). Cross-part id
+uniqueness enforced (ids may repeat *inside* the incumbent domain part — per-type
+counters — which the tests pin explicitly); 8 tests.
 
 ## JB-6: Two-arm training + full candidate pipeline
 
@@ -106,6 +140,14 @@ can be credited to the data and not to run variance).
 artifact carries its recipe.
 **Tests:** existing trainer tests (bank writer path) · **Gate:** full.
 **Commit:** `feat(training): add the two-arm JevBench-family training configs`
+**Status:** **In progress (2026-10-02).** Configs written and committed (`ffed949`):
+`finetune_en_jev_ctrl.json` (run-5 recipe, `train_en_domains`, out
+`checkpoints/en_jev_ctrl`) vs `finetune_en_jev.json` (identical — same seed 2, same
+epochs 6, same LoRA/head ranks — only `data_path`/`out_dir` differ) plus the two fit
+configs (`fit_bank_en_jev*.json`, lr 1e-4 / 8 epochs per the B-5a lesson). Both dry-runs
+green (21,000 vs 35,540; committed-domain validation passes). **Both arms launched
+concurrently** — control on GPU0, treatment on GPU1 — under L-009 (`setsid nohup`, 15 s
+RAM/VRAM sampler, `exit=` line, marker files), logs `/tmp/opencode/b13_{ctrl,treat}.log`.
 
 ## JB-7: Gates — bench diagnostic + in-domain non-regression
 
