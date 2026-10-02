@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-02
+
 ### Added
 
 - **JevBench-family training data (B-13).** Three layers, all reproducible from committed

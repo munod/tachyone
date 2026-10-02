@@ -24,6 +24,9 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 > XNLI **0.341 → 0.566**, typed-decisions **0.269 → 0.367**, MASSIVE **0.039 → 0.051**; fast
 > path re-checked **2.54× p50, 0 top-label flips**. A control arm and every candidate were
 > evaluated in one harness; all six uploaded files were sha256-verified against the local build.
+> The model card was updated for the `v0.7.0` cut as a README-only follow-up revision
+> [`f624419`](https://huggingface.co/munod/tachyone-en/commit/f624419933f7311f4671d1e31eceac09e80e98a3)
+> (sha256-verified as well).
 >
 > Previous revision **2026-10-02 (B-5b)** — commit [`9a3ef5a5`](https://huggingface.co/munod/tachyone-multi/commit/9a3ef5a5d38972ffe119cdfe6b4b6c7bb14da9d1)
 > (`tachyone-multi`). The multilingual adapter now ships the **five-domain artifact**: an mmBERT

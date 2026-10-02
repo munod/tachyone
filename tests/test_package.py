@@ -35,7 +35,7 @@ _CORE_MODULES = [
 
 
 def test_version_is_exposed() -> None:
-    assert tachyone.__version__ == "0.6.0"
+    assert tachyone.__version__ == "0.7.0"
 
 
 def test_handoff_helpers_are_public() -> None:
