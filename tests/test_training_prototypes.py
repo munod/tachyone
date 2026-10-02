@@ -109,6 +109,20 @@ def test_kmeans_keeps_empty_clusters_alive() -> None:
         assert abs(sum(value * value for value in centroid) - 1.0) < 1e-9
 
 
+def test_kmeans_numpy_and_python_paths_agree() -> None:
+    """Reproducibility across environments: the fast path must be the same algorithm."""
+    numpy = pytest.importorskip("numpy")
+    from training.build_prototypes import _kmeans_numpy, _kmeans_python
+
+    vectors, _ = _clustered()
+    points = [[value / sum(v * v for v in vector) ** 0.5 for value in vector] for vector in vectors]
+    slow = _kmeans_python(points, 3, seed=0, iterations=25)
+    fast = _kmeans_numpy(numpy, points, 3, seed=0, iterations=25)
+    assert len(slow) == len(fast)
+    for left, right in zip(slow, fast, strict=True):
+        assert left == pytest.approx(right, abs=1e-9)
+
+
 def test_kmeans_validates_k() -> None:
     with pytest.raises(PrototypeError, match="k must be"):
         kmeans([[1.0, 0.0]], 0)

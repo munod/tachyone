@@ -55,50 +55,56 @@ def kmeans(
 ) -> list[list[float]]:
     """Spherical k-means: assign by dot product, renormalize each centroid every round.
 
-    Deterministic for a given input, ``k`` and ``seed`` (L-003 discipline: one seeded RNG,
-    no draw that can correlate with anything else). Raises when ``k`` exceeds the number of
-    distinct rows, so a mis-sized bank fails at build time instead of shipping duplicates.
+    Seeding is farthest-point after one seeded draw, which is deterministic *and* keeps the
+    starts apart — uniform sampling landed two starts in one cluster and left another empty
+    (measured, seed 0), and probability-weighted k-means++ would have made the answer depend
+    on how the sampler draws.
+
+    Runs on numpy when it is importable. The equivalent pure-Python loop is still here for
+    the base install, but it is roughly two orders of magnitude slower: fitting 21,000 x
+    1,024 states took 30 minutes of CPU before the fast path existed. Both paths are the
+    same algorithm with the same seeding and are asserted to agree (tests).
     """
     if k < 1:
         raise PrototypeError(f"k must be >= 1, got {k}")
     if len(vectors) < k:
         raise PrototypeError(f"k={k} needs at least {len(vectors)} vectors")
     points = [_normalize(vector) for vector in vectors]
-    # k-means++ seeding: sample the next start with probability proportional to how badly
-    # the already-chosen centroids miss it (1 - best cosine). Picking k rows uniformly can
-    # land two starts in one cluster and leave another empty — measured, seed 0.
+    try:
+        import numpy  # pyright: ignore[reportMissingImports]
+    except ImportError:
+        return _kmeans_python(points, k, seed=seed, iterations=iterations)
+    return _kmeans_numpy(numpy, points, k, seed=seed, iterations=iterations)
+
+
+def _starts(points: Sequence[Sequence[float]], k: int, seed: int) -> list[int]:
+    """Farthest-point seeding after one seeded draw (shared by both paths)."""
     rng = random.Random(seed)
-    first = rng.randrange(len(points))
-    chosen = [first]
+    chosen = [rng.randrange(len(points))]
+    best = [1.0 - _dot(point, points[chosen[0]]) for point in points]
+    best[chosen[0]] = -1.0
     while len(chosen) < k:
-        misses = [
-            max(0.0, 1.0 - max(_dot(points[index], points[other]) for other in chosen))
-            for index in range(len(points))
+        pick = max(range(len(points)), key=lambda index: best[index])
+        chosen.append(pick)
+        newest = points[pick]
+        best = [
+            min(current, 1.0 - _dot(point, newest))
+            for point, current in zip(points, best, strict=True)
         ]
-        total = sum(misses)
-        if total <= 0.0:
-            chosen.extend(
-                index for index in rng.sample(range(len(points)), k) if index not in chosen
-            )
-            break
-        pick = rng.random() * total
-        running = 0.0
-        selected = len(points) - 1
-        for index, miss in enumerate(misses):
-            running += miss
-            if running >= pick:
-                selected = index
-                break
-        chosen.append(selected)
-    centroids = [list(points[index]) for index in chosen[:k]]
+        best[pick] = -1.0
+    return chosen
+
+
+def _kmeans_python(
+    points: list[list[float]], k: int, *, seed: int, iterations: int
+) -> list[list[float]]:
+    centroids = [list(points[index]) for index in _starts(points, k, seed)]
     assignment = [-1] * len(points)
     for _ in range(iterations):
-        changed = False
         labels = [max(range(k), key=lambda c: _dot(point, centroids[c])) for point in points]
-        for index, label in enumerate(labels):
-            if label != assignment[index]:
-                assignment[index] = label
-                changed = True
+        if labels == assignment:
+            break
+        assignment = labels
         for centroid_index in range(k):
             members = [
                 points[index] for index, label in enumerate(labels) if label == centroid_index
@@ -107,9 +113,29 @@ def kmeans(
                 continue  # an empty cluster keeps its previous centroid (never NaN)
             mean = [sum(values) for values in zip(*members, strict=True)]
             centroids[centroid_index] = _normalize(mean)
-        if not changed:
-            break
     return centroids
+
+
+def _kmeans_numpy(
+    numpy: Any, points: Sequence[Sequence[float]], k: int, *, seed: int, iterations: int
+) -> list[list[float]]:
+    matrix = numpy.asarray(points, dtype=numpy.float64)
+    centroids = matrix[numpy.asarray(_starts(points, k, seed))].copy()
+    assignment = numpy.full(len(points), -1, dtype=numpy.int64)
+    for _ in range(iterations):
+        labels = (matrix @ centroids.T).argmax(axis=1)
+        if numpy.array_equal(labels, assignment):
+            break
+        assignment = labels
+        for centroid_index in range(k):
+            members = matrix[labels == centroid_index]
+            if members.size == 0:
+                continue  # an empty cluster keeps its previous centroid (never NaN)
+            mean = members.mean(axis=0)
+            norm = float(numpy.linalg.norm(mean))
+            if norm > 0.0:
+                centroids[centroid_index] = mean / norm
+    return [[float(value) for value in row] for row in centroids]
 
 
 def _dot(left: Sequence[float], right: Sequence[float]) -> float:
