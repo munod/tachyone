@@ -52,6 +52,8 @@ class EvalExample:
     lang: str
     #: Domain the record came from; pre-B-5 records carry no ``domain`` field and are support.
     domain: str = DEFAULT_DOMAIN
+    #: Which holdout slice the record came from (P3 diagnostics); empty for plain eval sets.
+    slice: str = ""
 
 
 def record_to_example(record: dict[str, Any]) -> EvalExample:
@@ -81,6 +83,7 @@ def record_to_example(record: dict[str, Any]) -> EvalExample:
         target=record["target"],
         lang=record["lang"],
         domain=str(record.get("domain", DEFAULT_DOMAIN)),
+        slice=str(record.get("slice", "")),
     )
 
 

@@ -159,3 +159,60 @@ def test_parse_temperature_report_tolerates_bad_shapes() -> None:
     assert parse_temperature_report(["nope"]) == {}  # type: ignore[arg-type]
     assert parse_temperature_report({"per_primitive": {"choice": []}}) == {}
 
+
+# --- P3: the evidence -> confidence map (JB-12) -------------------------------------------
+
+
+def test_interpolate_confidence_is_piecewise_linear_and_clamped() -> None:
+    from tachyone.calibration import interpolate_confidence
+
+    knots = [(0.5, 0.5), (0.7, 0.7), (0.9, 1.0)]
+    assert interpolate_confidence(0.5, knots) == pytest.approx(0.5)
+    assert interpolate_confidence(0.6, knots) == pytest.approx(0.6)
+    assert interpolate_confidence(0.8, knots) == pytest.approx(0.85)
+    assert interpolate_confidence(0.9, knots) == pytest.approx(1.0)
+    assert interpolate_confidence(0.1, knots) == pytest.approx(0.5), "clamp below the range"
+    assert interpolate_confidence(5.0, knots) == pytest.approx(1.0), "clamp above the range"
+
+
+def test_interpolate_confidence_rejects_an_empty_map() -> None:
+    from tachyone.calibration import interpolate_confidence
+
+    with pytest.raises(ValueError, match="knots"):
+        interpolate_confidence(0.5, [])
+
+
+def test_fit_confidence_map_is_monotone_and_survives_a_flat_signal() -> None:
+    from tachyone.calibration import fit_confidence_map
+
+    strengths = [0.99] * 40 + [0.7] * 20 + [0.5] * 20
+    correct = [True] * 40 + [True] * 10 + [False] * 10 + [False] * 8 + [True] * 12
+    knots = fit_confidence_map(strengths, correct, bins=8)
+    assert len(knots) >= 2
+    xs = [x for x, _ in knots]
+    ys = [y for _, y in knots]
+    assert xs == sorted(xs)
+    assert len(set(xs)) == len(xs), "knots are strictly increasing in strength"
+    assert ys == sorted(ys), "isotonic: weaker evidence never promises more confidence"
+    assert all(0.0 <= y <= 1.0 for y in ys)
+
+
+def test_fit_confidence_map_merges_equal_centers() -> None:
+    from tachyone.calibration import fit_confidence_map
+
+    # a perfectly flat signal: every bin shares one center, so the map must collapse
+    knots = fit_confidence_map([0.9] * 60, [True] * 40 + [False] * 20, bins=6)
+    assert len(knots) == 1
+    assert knots[0][0] == pytest.approx(0.9)
+    assert knots[0][1] == pytest.approx(2 / 3)
+
+
+def test_fit_confidence_map_validates_input() -> None:
+    from tachyone.calibration import fit_confidence_map
+
+    with pytest.raises(ValueError, match="same length"):
+        fit_confidence_map([0.1, 0.2], [True])
+    with pytest.raises(ValueError, match="at least one"):
+        fit_confidence_map([], [])
+    with pytest.raises(ValueError, match="bins"):
+        fit_confidence_map([0.1], [True], bins=0)

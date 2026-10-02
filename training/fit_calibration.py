@@ -35,6 +35,10 @@ class CalibrationExample:
     probabilities: dict[str, float]
     target: str | int
     lang: str = "und"
+    #: Holdout slice the row came from (P3 diagnostics); ``""`` for plain calibration sets.
+    slice: str = ""
+    #: Evidence signal from ``training.predict --prototypes`` (P3); ``None`` when absent.
+    strength: float | None = None
 
 
 def load_examples(path: str | Path) -> list[CalibrationExample]:
@@ -62,7 +66,12 @@ def load_examples(path: str | Path) -> list[CalibrationExample]:
                     raise ValueError(f"line {line_number}: {kind} needs a probabilities map")
                 distribution = {str(key): float(value) for key, value in probabilities.items()}
                 target = payload["target"]
-            examples.append(CalibrationExample(kind, distribution, target, lang))
+            raw_slice = str(payload.get("slice") or "")
+            raw_strength = payload.get("strength")
+            strength = None if raw_strength is None else float(raw_strength)
+            examples.append(
+                CalibrationExample(kind, distribution, target, lang, raw_slice, strength)
+            )
     return examples
 
 

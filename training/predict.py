@@ -15,7 +15,13 @@ from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
-from tachyone.backends.encoder import MODEL_IDS, EncoderModel, load_choice_head, load_encoder
+from tachyone.backends.encoder import (
+    MODEL_IDS,
+    EncoderModel,
+    load_choice_head,
+    load_encoder,
+    prototype_strength,
+)
 from tachyone.calibration import apply_temperature, confidence, parse_temperature_report
 from tachyone.primitives import (
     Answer,
@@ -94,6 +100,7 @@ def _prediction_row(example: EvalExample, answer: Answer) -> dict[str, Any]:
             "id": example.id,
             "type": "noul",
             "lang": example.lang,
+            "slice": example.slice,
             "probabilities": answer.noul,
             "target": int(example.target),
         }
@@ -103,6 +110,7 @@ def _prediction_row(example: EvalExample, answer: Answer) -> dict[str, Any]:
             "id": example.id,
             "type": "choice",
             "lang": example.lang,
+            "slice": example.slice,
             "probabilities": {key: float(value) for key, value in answer.probabilities.items()},
             "target": example.target,
         }
@@ -111,11 +119,21 @@ def _prediction_row(example: EvalExample, answer: Answer) -> dict[str, Any]:
         "id": example.id,
         "type": "score",
         "lang": example.lang,
+        "slice": example.slice,
         "probabilities": {
             str(index): float(value) for index, value in answer.probabilities.items()
         },
         "target": int(example.target),
     }
+
+
+def _load_prototypes(path: str | Path) -> list[list[float]]:
+    """Read a ``state_prototypes.json`` bank (JB-10) and validate it before measuring."""
+    from training.build_prototypes import validate_asset
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    validate_asset(payload)
+    return [[float(value) for value in row] for row in payload["centroids"]]
 
 
 def build_predictor(model: EncoderModel, temperatures: dict[str, float]):
@@ -180,6 +198,7 @@ def run(
     out_predictions: str | Path | None = None,
     head_hint: str | None = None,
     train_data: str | Path | None = None,
+    prototypes_path: str | Path | None = None,
 ) -> dict[str, Any]:
     examples = load_examples(records_path, limit=limit)
     model = _build_model(model_id, adapter_dir, device=device, max_len=max_len)
@@ -191,6 +210,7 @@ def run(
         )
     predictor = build_predictor(model, _load_temperatures(temperature_path))
 
+    bank = _load_prototypes(prototypes_path) if prototypes_path else None
     if out_predictions:
         path = Path(out_predictions)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -201,7 +221,17 @@ def run(
                     example.question,
                     head_hint=None if hint is None else record_hint(example, hint),
                 )
-                handle.write(json.dumps(_prediction_row(example, answer), sort_keys=True) + "\n")
+                row = _prediction_row(example, answer)
+                if bank is not None:
+                    # P3: emit the evidence signal beside the prediction the fit will read,
+                    # measured on the same embedding the runtime will score (state_embedding).
+                    strength = prototype_strength(model.state_embedding(example.state), bank)
+                    if strength is None:
+                        raise SystemExit(
+                            f"prototype bank is not for this encoder ({adapter_dir or model_id})"
+                        )
+                    row["strength"] = round(strength, 6)
+                handle.write(json.dumps(row, sort_keys=True) + "\n")
 
     # The eval sets collide with their training sets on most rows, so accuracy is also split
     # by whether the row's input text occurred in training (B7) — same harness for every arm.
@@ -243,6 +273,12 @@ def build_parser() -> argparse.ArgumentParser:
         "forces that head for every record, and omitting it lets the asset's gate decide (B6)",
     )
     parser.add_argument(
+        "--prototypes",
+        default=None,
+        help="state_prototypes.json (JB-10): emit a 'strength' per prediction row — the "
+        "evidence signal training.fit_confidence maps to a confidence",
+    )
+    parser.add_argument(
         "--train-data",
         default=None,
         help="training records JSONL: splits accuracy into report['text_seen'] by whether "
@@ -266,6 +302,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         out_predictions=args.out_predictions,
         head_hint=args.head_hint,
         train_data=args.train_data,
+        prototypes_path=args.prototypes,
     )
     print(json.dumps(report["overall"], indent=2, sort_keys=True))
     return 0
