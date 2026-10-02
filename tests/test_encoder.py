@@ -157,16 +157,16 @@ def test_default_checkpoints_declare_base_and_adapter() -> None:
     assert multilingual.adapter == "munod/tachyone-multi"
 
 
-def test_english_context_reads_long_states_without_truncating_them() -> None:
-    """B-13 P1b: runtime truncation must cover the long-policy cases that motivated it.
+def test_english_context_matches_the_trained_length() -> None:
+    """B-13 P1b: runtime truncation stays at the trained 512 until training matches it.
 
-    The JevBench hard tier's states average 1,079 tokens (max 3,746); at the previous
-    512 the deciding facts never reached the encoder. 4096 covers that tier with margin
-    and stays inside ModernBERT-large's trained 8192 positions.
+    Raising it to 4096 (to cover JevBench's long-policy states) was measured on 231 public
+    items: net 0 accuracy (1 flip each way), p95 333 ms → 2,700 ms. The A/B record lives in
+    `.specs/features/jevbench/spec.md`; this assertion pins the decision, not the idea.
     """
     english = DEFAULT_CHECKPOINTS[ENGLISH]
-    assert english.context == 4096
-    assert english.context <= 8192
+    assert english.context == 512
+    assert english.context <= 8192  # ModernBERT-large's trained positions, if ever raised
     assert DEFAULT_CHECKPOINTS[MULTILINGUAL].context == 1024
 
 

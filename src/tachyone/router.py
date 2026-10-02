@@ -451,11 +451,13 @@ DEFAULT_CHECKPOINTS: dict[str, CheckpointInfo] = {
     ENGLISH: CheckpointInfo(
         id=ENGLISH,
         languages=["en"],
-        # Inference reads up to 4096 tokens (B-13 P1b, measured A/B): ModernBERT-large trains
-        # at 8192, and the JevBench hard tier's states average 1,079 tokens (max 3,746) — at
-        # the old 512 the deciding facts of a long policy were truncated before the encoder
-        # saw them. Training max_len (512) is unchanged; this only bounds runtime truncation.
-        context=4096,
+        # Runtime truncation stays at the *trained* length (512). The B-13 P1b A/B (2026-10-02)
+        # raised this to 4096 to cover the JevBench hard tier (states avg 1,079 tokens, max
+        # 3,746) and measured 231 public items: 1 item flipped right, 1 flipped wrong — net 0
+        # accuracy — while p95 went 333 ms → 2,700 ms (Speed axis 84.8 → 77.6). Seeing more
+        # text buys nothing until training teaches the model to use it; revisit together with a
+        # longer training max_len (see .specs/features/jevbench/spec.md, P1b).
+        context=512,
         size_params=395_000_000,
         base_model="answerdotai/ModernBERT-large",
         adapter="munod/tachyone-en",
