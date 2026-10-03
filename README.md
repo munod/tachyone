@@ -123,11 +123,14 @@ graceful fallback.
 
   | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
   | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank), support split | **1.000** | **1.000** | **1.000** | **1.000** | 0.000 |
+  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank), support split | **1.000** | **1.000** | **1.000** | **1.000** | 0.006 |
   | Multilingual (mmBERT-base + LoRA r=64 + fitted choice-head bank), five-domain split | **0.9975** | **0.992** | 1.000 | 1.000 | 0.001 |
 
   The English row is the support split; on the **five-domain** eval the same adapter also scores
-  **1.000** (every domain ≥ 0.999, gate strict 1.000, unseen-text rows 0.9987). This is the
+  **1.000** (every domain ≥ 0.999, gate strict 1.000, unseen-text rows 0.9987). Its ECE is the
+  confidence the runtime ships — since P3 that confidence is derived from evidence (how like the
+  training distribution the input is), so 0.006 here replaces an in-sample 0.000 that was fitted
+  on the rows it scored, and off-domain raw ECE roughly halves (XNLI 0.426 → 0.264). This is the
   **B-13 mixture retrain**: same recipe and seed as B-5, one factor changed — the training data
   (35,540 records: the 21,000 five-domain ones plus 11,000 pinned public records — MultiNLI,
   BoolQ, Banking77 — and 3,540 executable-rule-tree family records) — followed by the same

@@ -222,6 +222,35 @@ distributions. Proper scoring directly optimizes the quantity users consume (`co
 - Report ECE before/after; target is provisional (NFR-C06, `ECE ≤ 0.05` **[open]**).
 - Persist the fitted temperature with the checkpoint.
 
+### Evidence-conditioned confidence (P3)
+
+One temperature cannot serve two regimes: fitted where the model is saturated it sharpens to
+`T=0.05` and zeroes the axis off-domain (L-015), fitted where it is not, home calibration
+suffers. P3 therefore gives `noul` a confidence that depends on the *evidence*, in three
+committed steps — in this order, because the map is fitted **against** the bank:
+
+```bash
+# 1. the holdout: a stride sample of the real training set + never-trained source rows
+uv run python -m training.build_calibration_holdout --public-dir <jevbench>/datasets/public
+
+# 2. the evidence signal: k-means centroids of the checkpoint's own training states
+uv run python -m training.build_prototypes --data data/train_en_domains.jsonl \
+  --out checkpoints/en/state_prototypes.json --k 32 --adapter checkpoints/en
+
+# 3. natural predictions (no map) -> both assets
+uv run python -m training.predict --data data/calibration_holdout.jsonl \
+  --adapter checkpoints/en --prototypes checkpoints/en/state_prototypes.json \
+  --no-confidence --out-predictions data/calibration_holdout_preds.jsonl
+uv run python -m training.fit_confidence --predictions data/calibration_holdout_preds.jsonl \
+  --prototypes checkpoints/en/state_prototypes.json --out-dir checkpoints/en
+```
+
+`fit_confidence` writes `temperature_calibration.json` (the per-primitive grid fit, with
+**`score` pinned** — its answer *is* the expected value, so a temperature change would move
+the answer) and `confidence_calibration.json` (the bank embedded with the monotone `noul`
+knots). Rebuilding after a retrain means rerunning all three: the bank describes the states
+the checkpoint was trained on, and the map describes that bank.
+
 ---
 
 ## 5. Evaluation (`benchmarks/` + `training/evaluate.py`)

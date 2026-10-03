@@ -17,9 +17,11 @@ of the four new domains; fully localized per language, per-record RNG) · held-o
 five-domain runs) · 4 epochs English, **8 multilingual**, 6 English five-domain · the published
 multilingual artifact = that 8-epoch trunk + `choice` heads re-fitted on the **frozen** trunk
 (rank 128, 8 epochs, lr 1e-4; recipe in `choice_bank_fit.json`) · bf16 + gradient checkpointing.
-Calibrated ECE is after per-`(primitive, language)`
-temperature fitting on the held-out split (in-sample). The **noisy view** applies one surface edit
-(typo/accents/casing) to 15% of states (B-4).
+Calibrated ECE is the confidence the runtime actually ships: the English adapter has carried the
+P3 evidence map since 2026-10-02 (`confidence_calibration.json`, fitted on a never-trained
+holdout) and the multilingual one a per-`(primitive, language)` temperature fit on the held-out
+split (in-sample). The **noisy view** applies one surface edit (typo/accents/casing) to 15% of
+states (B-4).
 
 **Labels (B-11 + B-12 / [ADR-0014](adr/ADR-0014-noul-label-from-text.md) +
 [ADR-0015](adr/ADR-0015-score-choice-labels-from-text.md)):** every label in all three primitives is
@@ -47,16 +49,22 @@ lives in `.specs/project/BACKLOG.md` **B-12**). Provenance is stated with every 
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | **1.000** | 0.000 | 53.541 | 91.554 |
-| `choice` | 500 | **1.000** | 0.000 | 85.331 | 103.943 |
-| `noul` | 500 | **1.000** | 0.000 | 50.514 | 56.767 |
-| `score` | 500 | **1.000** | 0.000 | 52.147 | 61.229 |
+| overall | 1500 | **1.000** | 0.006 | 57.974 | 91.525 |
+| `choice` | 500 | **1.000** | 0.017 | 85.739 | 94.256 |
+| `noul` | 500 | **1.000** | 0.002 | 54.709 | 60.845 |
+| `score` | 500 | **1.000** | 0.000 | 57.271 | 62.797 |
 
-Noisy view (noise_rate 0.15): overall accuracy **0.997**, ECE **0.003**.
+Noisy view (noise_rate 0.15): overall accuracy **0.997**, ECE **0.006**.
 
-> **Latency re-measured 2026-10-02 on the same L4 reference box and path** — the B-5 artifact
-> measured 54.4 ms p50 beside these **53.5 ms** in the same session style; the columns are
-> box-bound, accuracy and ECE are not.
+> **Accuracy is byte-identical to the pre-P3 run; ECE is not, and the reason is published
+> rather than hidden.** Before P3 this column read 0.000 because the shipped temperature had
+> been fitted *on this very split* (L-015 — an in-sample fit buys a perfect axis at home and
+> zeroes it off-domain). The P3 confidence is fitted on a holdout the model never trained on,
+> so home ECE is what an honest fit leaves: **0.006** overall, every primitive ≤ 0.017. The
+> off-domain half of that trade is the point — see *Public probes* below and the JevBench
+> calibration axis in `.specs/features/jevbench/spec.md` (*P3 results*).
+> Latency re-measured 2026-10-02 on the same L4 reference box and path: **58.0 ms** p50
+> against the B-5 artifact's 54.4 ms — the columns are box-bound, accuracy and ECE are not.
 
 `noul` label audit of the same 500 rows: **0 contradictory** (241 request / 232 neutral / 27 empty,
 0 unreadable), positive rate 0.482. The whole history of this table in seven rows — weights ×
@@ -187,7 +195,9 @@ with a **3.76× p50 speedup** for the fast path (2.65× on the 3060 build).
 
 **The released B-13 artifact was checked in the same pass** (ModernBERT + the keyed bank,
 `benchmarks/results/fast_path_en.json`, re-measured 2026-10-02): **0 top-label flips**, max
-answer difference **0.000784**, **2.543×** p50 (17.31 → 6.81 ms). The gate and the per-domain
+answer difference **0.000784**, **2.504×** p50 (17.04 → 6.81 ms) — re-measured 2026-10-02 with
+the P3 assets in place; the confidence is applied *after* the encode, so the graphed path sees
+the same answers and the same flips (0). The gate and the per-domain
 heads run *after* the encode, so the CUDA-graph path neither sees nor perturbs them — which is
 what ADR-0016 predicted when it kept the head as plain JSON computed post-encode.
 
@@ -212,9 +222,9 @@ citations and the exact reproduction commands live in
 
 | Probe | Licence | n | Accuracy | Chance | ECE raw |
 | --- | --- | ---: | ---: | ---: | ---: |
-| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.367** | 0.20–0.50 | 0.578 |
-| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.051** | 0.017 | 0.583 |
-| XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.566** | 0.333 | 0.426 |
+| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.367** | 0.20–0.50 | 0.416 |
+| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.051** | 0.017 | 0.296 |
+| XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.566** | 0.333 | 0.264 |
 
 Evaluation only — no probe row has ever reached `training/`. Read each number against its
 **chance** level and against the in-sample 1.000 above, not against the other rows: these are the
@@ -256,6 +266,16 @@ stays sharp off-domain: `Conf` **0.945 / 0.992 / 0.634**, `ECE raw` **0.578 / 0.
 MASSIVE (0.005 → 0.038, T=11.6). The direction is finally right on accuracy while the
 calibration trade remains exactly where L-007 and L-015 say it is: the data bought
 *capability off-domain*, not *confidence off-domain*.
+
+**Re-run on the P3 confidence (2026-10-02, same adapter weights).** Only the confidence moved —
+every accuracy above is byte-identical — and it moved in the direction L-015 asked for: `ECE raw`
+**0.578 → 0.416**, **0.583 → 0.296**, **0.426 → 0.264** (typed-decisions / MASSIVE / XNLI), with
+mean confidence pulled back from **0.945 / 0.634 / 0.992** to **0.782 / 0.348 / 0.718** and
+`Brier` 1.189 / 1.470 / 0.857 → **0.968 / 1.194 / 0.709**. The harness's own per-probe fits relax
+with it (MASSIVE comes off the ceiling, T 11.6 → **7.55**; XNLI 20.0 → **3.10**) and `ECE cal`
+reads **0.029 / 0.050 / 0.121**. Read against the internal table, the honest summary is unchanged:
+the adapter is still *less* confident off-domain than on its own turf — that is what the evidence
+map is for — and it is no longer confident about being wrong.
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 
@@ -324,10 +344,10 @@ delta could be attributed (L-006/L-012).
 | `ecommerce` | 0.964 | **1.000** |
 | `voice` | 0.963 | **1.000** |
 | `choice` (gate strict) | 0.9996 (1.000) | **1.000 (1.000)** |
-| unseen text (n=791) | — | **0.9987** (ECE 0.001) |
+| unseen text (n=791) | — | **0.9987** (ECE 0.010) |
 
 **Gates: support 1.000 ≥ 0.85 ✓ · worst new domain 0.999 ≥ 0.70 ✓ · per-domain ECE
-0.000–0.001 (all five ≤ 0.05) ✓ · gate strict 1.000, 0 fell to shared, 0 wrong domain ✓.**
+0.006–0.013 (all five ≤ 0.05) ✓ · gate strict 1.000, 0 fell to shared, 0 wrong domain ✓.**
 
 **What the retrain bought outside this split (the number that matters).** On the 231 public
 JevBench items — evaluation-only, never trained on — the published artifact scores

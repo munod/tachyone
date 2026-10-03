@@ -121,12 +121,15 @@ because a benchmark run on someone else's training data measures domain coverage
 measures the engine — quoting only one of these tables would mislead in either direction.
 
 > **Quality rows re-scored 2026-10-01** against the published B-5 adapter (`munod/tachyone-en`
-> `c00c174d`): same rows, same metric code, only Tachyone's engine changed. The peer and LLM rows
-> are their own untouched artifacts — their models and the gold labels have not moved since B-12,
-> so re-running them would only re-measure run-to-run variance. The **performance** tables stay on
-> the original single-box measurement for all four engines; Tachyone's latency re-checked on the
-> L4 reference box reads **24.2 ms** p50 at home and **73.7 ms** on the 576-row probe (up to 77
-> options), so no latency figure here is quoted across boxes.
+> `c00c174d`), and **re-scored again 2026-10-02 after P3** (`f28103bf` plus the evidence-based
+> confidence): same rows, same metric code, only Tachyone's engine changed — and this time only
+> its *confidence* changed, so every accuracy in both tables is byte-identical to the B-13 run.
+> The peer and LLM rows are their own untouched artifacts — their models and the gold labels have
+> not moved since B-12, so re-running them would only re-measure run-to-run variance. The
+> **performance** tables stay on the original single-box measurement for all four engines;
+> Tachyone's latency re-checked on the L4 reference box reads **28.8 ms** p50 at home and
+> **79.8 ms** on the 576-row probe (up to 77 options), so no latency figure here is quoted across
+> boxes.
 
 #### A. Their distribution — `pngwn/system-one-decisions` test split, 64 rows per task family
 
@@ -137,14 +140,14 @@ They trained on this data; Tachyone and both LLMs are zero-shot here.
 | llm (ling-tiny) | 36 | 32 | 0.333 | 0.231 | 0.150 | 0.736 | 0.384 |
 | llm (ornith-9b) | 36 | 36 | 0.611 | 0.242 | 0.263 | 0.641 | 0.513 |
 | systemone-qwen3.5-4b | 576 | 576 | 0.705 | 0.134 | 0.046 | 0.373 | 0.746 |
-| **tachyone (encoder)** | 576 | 576 | **0.288** | 0.569 | 0.132 | 0.813 | 0.386 |
+| **tachyone (encoder)** | 576 | 576 | **0.288** | 0.259 | 0.059 | 0.921 | 0.535 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | llm (ling-tiny) | 1662.23 | 50326.40 | 0.1 | 0.889 | 9494 | 4836 |
 | llm (ornith-9b) | 6844.39 | 20876.05 | 0.1 | 1.000 | 8749 | 5512 |
 | systemone-qwen3.5-4b | 350.23 | 4660.68 | 0.9 | 1.000 | 9147 | 8921 |
-| **tachyone (encoder)** | 73.66 | 712.24 | 4.9 | 1.000 | 2940 | 3634 |
+| **tachyone (encoder)** | 79.76 | 712.24 | 4.9 | 1.000 | 2940 | 3634 |
 
 Accuracy by task family (calibrated):
 
@@ -169,7 +172,11 @@ the **B-5 adapter (2026-10-01: 0.233)** — where its five-synthetic-domain `cho
 0.406, `tickets_queue` 0.000 → 0.031, while `ag_news` 0.312 → 0.219 and `mmlu` 0.234 → 0.203
 drift down — real data moved the cells toward its own families, which is exactly what a
 domain-coverage number measures (L-007). The peers were never re-run — nothing about *their*
-data or *their* weights moves.
+data or *their* weights moves. **P3 (2026-10-02) moved only the confidence**, so the accuracy
+cells above stand unchanged and the calibration columns do not: raw ECE **0.569 → 0.259**,
+`Conf` **0.857 → 0.535**, `Brier` 1.259 → 0.921 on their turf; at home **0.000 → 0.005** and
+**1.000 → 0.995**. The evidence map is doing exactly what it was fitted to do — say less when
+the input is not like anything the model trained on.
 
 #### B. Tachyone's distribution — our English support records, 64 rows per primitive
 
@@ -188,14 +195,14 @@ validation rows for the temperature fit.
 | llm (ling-tiny) | 48 | 42 | 0.438 | 0.171 | 0.069 | 0.606 | 0.471 |
 | llm (ornith-9b) | 48 | 48 | 0.771 | 0.101 | 0.290 | 0.490 | 0.481 |
 | systemone-qwen3.5-4b | 192 | 192 | 0.604 | 0.130 | 0.099 | 0.512 | 0.590 |
-| **tachyone (encoder)** | 192 | 192 | **1.000** | 0.000 | 0.000 | 0.000 | 1.000 |
+| **tachyone (encoder)** | 192 | 192 | **1.000** | 0.005 | 0.000 | 0.000 | 0.995 |
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | llm (ling-tiny) | 1218.95 | 16085.12 | 0.2 | 0.875 | 5030 | 4832 |
 | llm (ornith-9b) | 3315.28 | 8622.10 | 0.2 | 1.000 | 5833 | 5510 |
 | systemone-qwen3.5-4b | 114.05 | 153.88 | 7.7 | 1.000 | 9149 | 8754 |
-| **tachyone (encoder)** | 24.19 | 60.94 | 24.4 | 1.000 | 2361 | 1751 |
+| **tachyone (encoder)** | 28.77 | 60.94 | 24.4 | 1.000 | 2361 | 1751 |
 
 Accuracy by primitive (calibrated):
 
@@ -225,14 +232,16 @@ Accuracy by primitive (calibrated):
   Failures still count as *wrong* in the accuracy column. When `ornith-9b` answers it is
   respectable (0.611 / 0.771) — at 3.3–6.8 s p50, i.e. **20–29× slower than the peer and
   93–145× slower than Tachyone**.
-- **Calibration has to be read with confidence.** Tachyone ships well-calibrated on its own turf
-  (ECE raw **0.000**, `Conf` **1.000**). Off-domain the B-13 head still carries little signal but
-  plenty of conviction: raw ECE **0.569**, the fit still pushes T into the 20.0 ceiling of the
-  grid, and mean confidence sits at **0.386** — sharp *in* domain and sharply wrong *out* of it
-  (the pre-B-13 adapters read 0.268 → 0.561 → 0.569 raw ECE across this table's history). A table
-  quoting only `ECE cal` (0.132) would still look *better* than the peer's 0.046 while being
-  useless — `Brier` (0.813 vs 0.373) and `Conf` expose it. **ECE alone is not a quality metric**
-  (L-015 owns the fix).
+- **Calibration has to be read with confidence.** Tachyone ships near-calibrated on its own turf
+  (ECE raw **0.005**, `Conf` **0.995**). Off-domain the B-13 head carried little signal but plenty
+  of conviction — raw ECE **0.569** with the fit pushed to the 20.0 grid ceiling — and **P3 is the
+  fix L-015 asked for**: the confidence now comes from how like the training distribution the input
+  is, so off-domain raw ECE reads **0.259** with `Conf` **0.535** (the fit comes off the ceiling to
+  T=16.65, `ECE cal` 0.132 → **0.059**). Across this table's history the raw numbers ran 0.268 →
+  0.561 → 0.569 → **0.259**. A table quoting only `ECE cal` would still look better than the
+  peer's 0.046 while being useless — `Brier` (**0.921** vs 0.373) and `Conf` expose the rest.
+  **ECE alone is not a quality metric**, and 0.921 against the peer's 0.373 is the honest residue:
+  we are less wrong off-domain than we were, not right.
 
 #### What the prompt fix (`B-10`) changed
 

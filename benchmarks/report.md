@@ -4,12 +4,12 @@
 
 ```json
 {
-  "git_commit": "740d90d41a53d40f2cb68521a3744296d1f5ef19",
+  "git_commit": "18bdc27eb9ed1e091cc3be65abb24519ae895794",
   "peft": "0.21.0",
   "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
   "pydantic": "2.13.5",
   "python": "3.12.3",
-  "tachyone": "0.6.0",
+  "tachyone": "0.7.0",
   "torch": "2.14.0+cu130",
   "transformers": "5.17.0"
 }
@@ -60,51 +60,51 @@ uv run python -m benchmarks.report --entry "english (ModernBERT-large + LoRA r=1
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 1.000 | 0.000 | 53.541 | 91.554 |
-| choice | 500 | 1.000 | 0.000 | 85.331 | 103.943 |
-| noul | 500 | 1.000 | 0.000 | 50.514 | 56.767 |
-| score | 500 | 1.000 | 0.000 | 52.147 | 61.229 |
-| lang:en | 1500 | 1.000 | 0.000 | 53.541 | 91.554 |
+| overall | 1500 | 1.000 | 0.006 | 57.974 | 91.525 |
+| choice | 500 | 1.000 | 0.017 | 85.739 | 94.256 |
+| noul | 500 | 1.000 | 0.002 | 54.709 | 60.845 |
+| score | 500 | 1.000 | 0.000 | 57.271 | 62.797 |
+| lang:en | 1500 | 1.000 | 0.006 | 57.974 | 91.525 |
 
-Worst language (accuracy): `en` — accuracy 1.000, ECE 0.000.
+Worst language (accuracy): `en` — accuracy 1.000, ECE 0.006.
 
-Noisy view (noise_rate 0.15) — overall: accuracy 0.997, ECE 0.003, p50 54.156 ms.
+Noisy view (noise_rate 0.15) — overall: accuracy 0.997, ECE 0.006, p50 57.777 ms.
 #### `noul` per language — accuracy beside the label audit
 
 | Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| en | 500 | 1.000 | 0.000 | 241 | 232 | 27 | 0 | 0 (0.0%) |
+| en | 500 | 1.000 | 0.002 | 241 | 232 | 27 | 0 | 0 (0.0%) |
 
 
-### english five-domain (B-13 JevBench-family fitted bank, frozen trunk)
+### english five-domain (B-13 JevBench-family fitted bank + P3 confidence, frozen trunk)
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 7500 | 1.000 | 0.000 | 22.388 | 61.270 |
-| choice | 2500 | 1.000 | 0.000 | 55.086 | 62.468 |
-| noul | 2500 | 1.000 | 0.000 | 20.423 | 22.113 |
-| score | 2500 | 1.000 | 0.000 | 22.371 | 24.254 |
-| lang:en | 7500 | 1.000 | 0.000 | 22.388 | 61.270 |
-| domain:agent_tools | 1500 | 1.000 | 0.000 | 22.424 | 57.421 |
-| domain:documents | 1500 | 0.999 | 0.001 | 22.424 | 57.199 |
-| domain:ecommerce | 1500 | 1.000 | 0.000 | 22.369 | 62.873 |
-| domain:support | 1500 | 1.000 | 0.000 | 22.399 | 56.345 |
-| domain:voice | 1500 | 1.000 | 0.000 | 22.314 | 56.823 |
+| overall | 7500 | 1.000 | 0.009 | 26.326 | 66.780 |
+| choice | 2500 | 1.000 | 0.026 | 60.330 | 67.534 |
+| noul | 2500 | 1.000 | 0.000 | 24.375 | 25.982 |
+| score | 2500 | 1.000 | 0.000 | 26.311 | 28.092 |
+| lang:en | 7500 | 1.000 | 0.009 | 26.326 | 66.780 |
+| domain:agent_tools | 1500 | 1.000 | 0.008 | 26.347 | 62.154 |
+| domain:documents | 1500 | 0.999 | 0.007 | 26.269 | 62.180 |
+| domain:ecommerce | 1500 | 1.000 | 0.013 | 26.390 | 67.718 |
+| domain:support | 1500 | 1.000 | 0.006 | 26.328 | 60.571 |
+| domain:voice | 1500 | 1.000 | 0.009 | 26.278 | 61.598 |
 
-Worst language (accuracy): `en` — accuracy 1.000, ECE 0.000.
+Worst language (accuracy): `en` — accuracy 1.000, ECE 0.009.
 
-Worst domain (accuracy): `documents` — accuracy 0.999, ECE 0.001.
+Worst domain (accuracy): `documents` — accuracy 0.999, ECE 0.007.
 #### domain x language
 
 | Cell | n | Accuracy | ECE |
 | --- | --- | --- | --- |
-| documents/en | 1500 | 0.999 | 0.001 |
-| agent_tools/en | 1500 | 1.000 | 0.000 |
-| ecommerce/en | 1500 | 1.000 | 0.000 |
-| support/en | 1500 | 1.000 | 0.000 |
-| voice/en | 1500 | 1.000 | 0.000 |
+| documents/en | 1500 | 0.999 | 0.007 |
+| agent_tools/en | 1500 | 1.000 | 0.008 |
+| ecommerce/en | 1500 | 1.000 | 0.013 |
+| support/en | 1500 | 1.000 | 0.006 |
+| voice/en | 1500 | 1.000 | 0.009 |
 
-Worst cell (accuracy): `documents/en` — accuracy 0.999, ECE 0.001.
+Worst cell (accuracy): `documents/en` — accuracy 0.999, ECE 0.007.
 
 #### `choice` gate
 

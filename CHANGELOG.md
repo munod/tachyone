@@ -6,6 +6,46 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Confidence from evidence (P3).** The English adapter ships two new assets.
+  `state_prototypes.json` — K=32 spherical k-means centroids of the checkpoint's own 21,000
+  training states, encoded through the runtime loader so they live in the inference space —
+  and `confidence_calibration.json`, which embeds that bank with the fitted `noul` map so the
+  two can never drift apart. A `noul` answer keeps its **direction** (the cosine still decides
+  yes/no) and takes its **magnitude** from `strength = max_k cos(state, centroid)`, clamped to
+  `[0.5, 1]`; `choice` and `score` are untouched by the map and their answers are asserted
+  byte-identical with and without it, so Intelligence is invariant by construction.
+- **The fit pipeline behind it** (all committed, all with co-located tests):
+  `training/build_calibration_holdout.py` → the two legal slices (a stride sample of
+  `data/train_en_domains.jsonl` + never-trained MultiNLI/BoolQ rows, 296 already-trained rows
+  dropped and counted, zero public-JevBench-item overlap asserted), `training/build_prototypes.py`
+  (numpy fast path — the pure-Python k-means needed 30 minutes of CPU for 21k×1024 — with the
+  two paths asserted equal to 1e-9 and farthest-point seeding after a seed-0 collapse),
+  `training/fit_confidence.py` (pooled temperature fit, **`score` pinned** because its answer is
+  the expected value, monotone map by pool-adjacent-violators, sha256 provenance of both
+  inputs), and `training.predict --prototypes/--no-confidence` to emit the evidence signal
+  beside each prediction.
+
+### Changed
+
+- **`munod/tachyone-en` gains the P3 confidence — accuracy byte-identical, confidence halved
+  off-domain.** In-domain: accuracy unchanged at 1.000 everywhere (support **1.000**, five-domain
+  **0.9999**, gate strict **1.000**, unseen text **0.9987**), ECE **0.000 → 0.006** (support) and
+  **0.000 → 0.009** (five-domain) — the old figure was an in-sample temperature fitted on the
+  very rows it scored (L-015), the new one is an honest fit. Off-domain, mean confidence drops to
+  match what the model knows: **XNLI `ECE raw` 0.426 → 0.264, typed-decisions 0.578 → 0.416,
+  MASSIVE 0.583 → 0.296** with `Brier` improving on all three, and the head-to-head's turf row
+  0.569 → **0.259** (`Conf` 0.857 → 0.535) while every accuracy in that table stands unchanged.
+  Fast path re-checked: **2.504× p50, 0 top-label flips**.
+- **JevBench public items (evaluation-only): Calibration axis 0.0 → 52.6, composite 1.59 → 4.28,
+  Intelligence unchanged at 15.0** (231/231, 0 failed, Brier 1.109 → 0.745). **The recorded P3
+  gate (≥ 60) was not met** — `.specs/features/jevbench/spec.md` *P3 results* records why: no
+  legal fit set can see bench difficulty (0.84 vs 0.36 at equal evidence), and the pre-registered
+  estimate came from inverting a saturated transform (**L-016**).
+- New lessons: **L-016** (inverting a saturating transform measures the quantization, not the
+  signal — prove the round trip before quoting a reconstruction).
+
 ## [0.7.0] - 2026-10-02
 
 ### Added

@@ -110,8 +110,8 @@ jointly, then `training/fit_choice_bank.py` re-fits the `choice` heads on cached
 
 | Checkpoint | Split | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- | --- |
-| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.000** | 0.000 | 53.5 |
-| English, five-domain split | 5 domains | **1.000** | 0.000 | 22.4 |
+| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.000** | 0.006 | 58.0 |
+| English, five-domain split | 5 domains | **1.000** | 0.009 | 26.3 |
 | Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.895** | 0.062 | 46.9 |
 | Multilingual, five-domain split | 5 domains | **0.9975** | 0.0014 | 18.6 |
 
@@ -119,6 +119,20 @@ Per primitive (English): `choice` **1.000**, `noul` **1.000**, `score` **1.000**
 five-domain): `choice` **0.9924**, `noul` **1.000**, `score` **1.000**. **Label audit:** every
 `noul` row is judged against its own text — **0 contradictory** in every eval set (positive
 rates 0.472–0.486), per language in `benchmarks/report.md`.
+
+**Confidence comes from evidence (P3, 2026-10-02).** The English adapter ships two extra assets:
+`state_prototypes.json` (K=32 centroids of its own 21,000 training states) and
+`confidence_calibration.json` (that bank plus a fitted `noul` map). A `noul` answer keeps its
+direction — the cosine still decides yes/no — and takes its magnitude from
+`strength = max_k cos(state, centroid)`, clamped to `[0.5, 1]`; `choice` runs at T=1.5 and
+`score` is pinned at 0.1 because its answer *is* the expected value. Consequences, all
+measured: accuracy is **byte-identical** to the previous revision everywhere (argmax and
+expected value never move), in-domain ECE reads **0.006 / 0.009** instead of an in-sample
+0.000 (L-015 — the old number was fitted on the very rows it scored), and off-domain
+confidence drops to match what the model actually knows: XNLI raw ECE **0.426 → 0.264**,
+typed-decisions **0.578 → 0.416**, MASSIVE **0.583 → 0.296**, JevBench's Calibration axis
+**0.0 → 52.6** on the 231 public items (its recorded gate of 60 was **not** met —
+`.specs/features/jevbench/spec.md` *P3 results* records why).
 
 **What the English B-13 row is (in-sample, stated plainly).** Both English splits read 1.000
 because the held-out synthetic sets share rows with training data (the known 81% `choice`

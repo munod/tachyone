@@ -2,7 +2,8 @@
 
 **Spec:** `.specs/features/jevbench/spec.md` (P0/P1 results live there; the P3 design is
 pre-registered in *P3 design*)
-**Status:** P0 + P1 + P2 done; **P3 in progress (JB-9 … JB-14)**; P4 open
+**Status:** P0 + P1 + P2 done; **P3 executed (JB-9 … JB-13) — adopted, its acceptance
+criterion recorded as NOT met (52.6 < 60); JB-14 (sweep + publish) in progress**; P4 open
 
 Commit-per-task, tests co-located (AGENTS.md hard rule 6), full gate before each commit:
 `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest -m "not e2e"`.
@@ -249,6 +250,14 @@ overlap with any trained record and **zero** normalized-text overlap with the 23
 items (the existing `--public-dir` assertion reused); composition documented in the spec.
 **Tests:** slice counts, disjointness assertions, determinism, overlap guard · **Gate:** full.
 **Commit:** `feat(training): build the P3 calibration holdout from legal slices`
+**Status:** **Done (2026-10-02), commit `570ab1b`.** Two slices, not the four planned: the
+2026-10-02 direction fixed the basis on `data/train_en_domains.jsonl` and ruled out the
+generated slices, so the anchor is a stride sample of the real training set (600 per
+primitive, ids `cal-trn-*`) and the off-domain slice is 600 MultiNLI + 600 BoolQ train rows
+the trainer never saw — **296 rows dropped as already trained, counted rather than
+re-sampled**. Byte-deterministic; zero public-item overlap asserted on both. The
+families/truncation slices built during exploration were deleted with that direction, and
+JB-13 records what their absence cost.
 
 ### JB-10: The prototype bank asset
 
@@ -265,6 +274,13 @@ bank reproduces the measured separation (in-domain strength ≥ 0.95, public ≤
 *AUC 1.000* result from the spec) on a 100-row sample.
 **Tests:** determinism, shape/norm, provenance fields, separation smoke test (small sample)
 · **Gate:** full. **Commit:** `feat(training): build the training-state prototype bank`
+**Status:** **Done (2026-10-02), commits `9882951` + `18bdc27`.** K=32 over the **21,000**
+states of `train_en_domains` encoded through the runtime loader: `state_prototypes.json`,
+dim 1024, 406 KB, basis sha256 `2f90fe14…`. The first build burned **30 minutes of CPU in
+pure Python k-means**, so the fit was vectorized (numpy fast path, Python fallback kept for
+the base install, the two paths asserted equal to 1e-9) and the seeding moved from uniform
+— which landed two starts in one cluster at seed 0 — to farthest-point after one seeded
+draw.
 
 ### JB-11: Runtime — evidence-conditioned `noul` confidence
 
@@ -284,6 +300,12 @@ distribution), absent assets are silent, corrupt assets warn (B-8).
 **Tests:** co-located in `tests/test_encoder.py` (≥6 cases) · **Gate:** full —
 `tests/test_contract_wire.py` **must stay untouched** (no wire change ⇒ hard rule 1 idle).
 **Commit:** `feat(backends): condition noul confidence on the training-state evidence`
+**Status:** **Done (2026-10-02), commit `9d31c3e`.** `ConfidenceCalibration` (bank + map,
+one file, B-8 discipline: absent silent, unusable warns by name and degrades), 14
+validation rejections, `prototype_strength` shared by runtime and fitter, and the invariant
+tested over edge states: **the noul direction never moves**, `choice`/`score` answers come
+out byte-identical, a bank of the wrong width is refused. `tests/test_contract_wire.py`
+untouched ✓.
 
 ### JB-12: The fitter
 
@@ -300,6 +322,13 @@ families, truncation) and per primitive, the fitted `choice` `T` and the `noul` 
 written with their provenance; `score` is pinned with the EV reason in the file itself.
 **Tests:** monotone map, clamping, grid fit on a synthetic fixture, score pin honoured
 · **Gate:** full. **Commit:** `feat(training): fit confidence on the legal P3 holdout`
+**Status:** **Done (2026-10-02), commits `31fb754` + `2c2d5ae`.** Fitted on the 3,000-row
+holdout (11 min including predictions): **choice T 0.05 → 1.5**, **noul T → 0.25** (kept
+only as the no-map fallback), **score pinned at 0.1** with the reason in the file, and the
+noul map as 10 knots from strength 0.410 → 0.9966 (confidence 0.567 → 1.0, monotone).
+Holdout diagnostics, both mechanisms: **noul map 0.0076 vs noul temperature 0.0467**,
+choice 0.0193, score 7e-06. Provenance carries the sha256 of the predictions and of the
+bank, and the bank is embedded in the asset so the pair cannot drift.
 
 ### JB-13: Gates — one public measurement
 
@@ -314,6 +343,40 @@ run the 231 public items **once**: `calibration(ece)` ≥ 60 (ECE ≤ 0.15), Int
 surfaces, and an explicit verdict (adopt or record the miss).
 **Tests:** — (measurement) · **Gate:** full.
 **Commit:** `docs(specs): record the P3 calibration measurement`
+**Status:** **Done (2026-10-02) — the in-domain gate PASSES, the P3 gate does NOT.**
+
+| surface | published (as shipped) | **P3** | gate |
+| --- | ---: | ---: | --- |
+| in-domain accuracy (`eval_en_domains`, n=7,500) | 0.999867 | **0.999867** (byte-identical, every primitive and domain) | must not move ✓ |
+| in-domain ECE choice / noul / score | 0.000007 / 0.000012 / 0.000366 | **0.025886 / 0.000004 / 0.000366** | each ≤ 0.05 ✓ |
+| public ECE (231 items) | 0.5393 | **0.2369** | ≤ 0.15 ✗ |
+| **`calibration(ece)`** | **0.0** | **52.6** | **≥ 60 ✗** |
+| Intelligence | 15.0 | **15.0** | unchanged ✓ |
+| Speed / Cost | 84.3 / 78.8 | 84.9 / 78.8 | — |
+| **composite** | 1.59 | **4.28** | — |
+
+Wire 231/231, **0 failed**; Brier 1.109 → **0.745**; `mkdocs` untouched by the run.
+Contribution to the 0.2369: **`choice` 0.1421** (conf 0.553 vs acc 0.360), **`noul` 0.0953**
+(map plateau 0.777 vs acc 0.486), **`score` 0.0201** (pinned — right call: natural score is
+worse, 0.392). Two findings recorded rather than smoothed over:
+
+1. **The design's own estimate was wrong, and why.** The pre-registration quoted "T=1 gives
+   public ECE 0.086" from a *reconstruction* of the pre-temperature distribution out of the
+   shipped `T=0.05` probabilities — precision is destroyed exactly there, so the simulated
+   "natural" distribution was nearly uniform. Measured properly from the P3 run, the natural
+   distribution gives **0.2376**, i.e. the fitted assets are as good as natural (52.6 vs
+   52.5), not 3× better. Lesson **L-016**.
+2. **The holdout cannot see bench difficulty.** At the same evidence level the model scores
+   **0.84** on never-trained MultiNLI and **0.36** on the bench, so no function of our
+   features separates "hard for us" from "easy off-domain" — the `noul` plateau (0.777) and
+   `choice`'s T (1.5, pooled optimum of a holdout whose own accuracy is 0.806) are both
+   *correct for the data we may legally fit on*. The one legal slice that does sit in the
+   bench's regime (the L-014 truncation slice: accuracy 0.379, strength 0.715) is the one
+   the 2026-10-02 direction removed. Reaching ≤ 0.15 needs either bench-difficulty legal
+   data or a capability fix (P2's leftover), not a different fit.
+**Verdict: adopt** — Intelligence is invariant, home is now honestly calibrated instead of
+in-sample-sharpened, Brier halves and the board composite goes 1.59 → 4.28; the recorded
+acceptance (≥ 60) stands **NOT met**.
 
 ### JB-14: Sweep, publish, close P3
 
@@ -330,6 +393,24 @@ new lesson recorded if the measurements earned one.
 ticked, and P4 is the only open phase.
 **Tests:** `tests/test_docs_site.py` · **Gate:** full.
 **Commit:** `docs: publish the P3 calibration set`
+**Status:** **Done (2026-10-02).** One set everywhere, every number re-measured on the
+adopted assets (accuracy byte-identical, only confidence moved):
+
+| surface | pre-P3 | **P3** |
+| --- | ---: | ---: |
+| in-domain support / five-domain ECE | 0.000 / 0.000 (in-sample) | **0.006 / 0.009** |
+| probes `ECE raw` (typed / MASSIVE / XNLI) | 0.578 / 0.583 / 0.426 | **0.416 / 0.296 / 0.264** |
+| head-to-head their turf `ECE raw` / `Conf` | 0.569 / 0.857 | **0.259 / 0.535** (accuracy 0.288 unchanged) |
+| head-to-head home `ECE raw` / `Conf` | 0.000 / 1.000 | **0.005 / 0.995** (accuracy 1.000 unchanged) |
+| fast path | 2.543× / 0 flips | **2.504× / 0 flips** |
+
+Rendered `benchmarks/report.md` (English entries now quote `en_p3.json` + the re-run support
+split) and `benchmarks/probes.md`; `docs/{benchmarks,compare,model-card,huggingface,training,
+architecture,roadmap}.md`, README and CHANGELOG carry the same set; `training/package_hf.py`
+ships the two new assets (tested). Published: **`munod/tachyone-en` [`1c88ebef`](https://huggingface.co/munod/tachyone-en/commit/1c88ebef8f15f68e8a6583c564d636221f22c29f) (8 files)** and
+**`munod/tachyone-multi` [`3693def1`](https://huggingface.co/munod/tachyone-multi/commit/3693def1bd04d8208216f05459c5b83388ff9fd6)** (model card) — **every file sha256-verified
+against the local build, no stale remote file**; `mkdocs build --strict` green; full gate
+green (696 passed).
 
 **Deferred (recorded, not scheduled):** `probability`, `ambiguous`, `tradeoff`,
 `adversarial`, `routing_hard` synthetic families (public n ≤ 10 each); source data for

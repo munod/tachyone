@@ -1,13 +1,16 @@
 # JevBench Preparation (B-13) Specification
 
 **Phase:** Post-M6 · **Spec accepted:** 2026-10-02
-**Status:** **JB-1 … JB-8 done (2026-10-02) — the B-13 artifact is adopted and published**
+**Status:** **JB-1 … JB-14 (P3) executed 2026-10-02 — the calibration assets are adopted;
+P3's acceptance (`calibration(ece)` ≥ 60) is recorded as NOT met at 52.6**; JB-1 … JB-8
+done (2026-10-02) — the B-13 artifact is adopted and published
 ([`munod/tachyone-en` `f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993),
 six files sha256-verified). Final record: Intelligence **8.4 → 15.0** on the 231 public items
 (control +0.6), all B-5 gates PASS, probes XNLI 0.566 / typed-decisions 0.367 / MASSIVE 0.051,
-head-to-head 0.288 (theirs) / 1.000 (ours). **P3 (calibration) design locked 2026-10-02 —
-see *P3 design* below; execution JB-9…JB-14.** P4 (the `[bench request]` issue) still open;
-the cycle's own I ≥ 50 target stands recorded as **not met**.
+head-to-head 0.288 (theirs) / 1.000 (ours). **P3 executed and adopted the same day — see
+*P3 results* below: Calibration 0.0 → 52.6 and composite 1.59 → 4.28 with Intelligence
+invariant at 15.0, but the recorded gate (≥ 60) stands NOT met.** P4 (the `[bench request]`
+issue) is the only open phase; the cycle's own I ≥ 50 target stands recorded as **not met**.
 
 **Context:** `.specs/project/BACKLOG.md` B-13 · external harness:
 <https://github.com/fstandhartinger/jevbench> (MIT — cloned to a local download for
@@ -222,13 +225,51 @@ lands where the public items are (0.379 vs 0.420).
 primitive ≤ 0.05 with accuracy byte-identical to the published set; `eval_en_domains`,
 probes and head-to-head accuracies unchanged; wire untouched (contract test unchanged).
 
+## P3 results (2026-10-02)
+
+Assets frozen first, public run measured **once**, in-domain gate checked against the
+published report:
+
+| surface | published | **P3** | gate |
+| --- | ---: | ---: | --- |
+| in-domain accuracy (n=7,500, every primitive and domain) | 0.999867 | **0.999867** | must not move ✓ |
+| in-domain ECE choice / noul / score | 0.000007 / 0.000012 / 0.000366 | **0.025886 / 0.000004 / 0.000366** | each ≤ 0.05 ✓ |
+| public ECE (231 items) | 0.5393 | **0.2369** | ≤ 0.15 ✗ |
+| **Calibration axis** | **0.0** | **52.6** | **≥ 60 ✗** |
+| Intelligence | 15.0 | **15.0** | invariant ✓ |
+| Brier | 1.109 | **0.745** | — |
+| **composite** | 1.59 | **4.28** | — |
+
+Wire 231/231, 0 failed. Fitted values: **choice T 0.05 → 1.5**, **noul map** (10 knots,
+strength 0.410 → 0.9966 ⇒ confidence 0.567 → 1.0) with T 0.25 kept only as the no-map
+fallback, **score pinned at 0.1** (its answer is the expected value). Contribution to the
+0.2369: `choice` 0.1421 · `noul` 0.0953 · `score` 0.0201.
+
+**Why the gate was missed — two facts, both recorded rather than smoothed:**
+
+- **The pre-registration's estimate was wrong.** "T=1 gives public ECE 0.086" came from
+  reconstructing the pre-temperature distribution out of *saturated* `T=0.05` output, where
+  precision is already gone; the simulated natural distribution was nearly uniform.
+  Measured properly: natural **0.2376** vs fitted **0.2369** — the assets are as good as
+  natural, not 3× better (**L-016**).
+- **No legal fit set can see bench difficulty.** At equal evidence the model scores 0.84 on
+  never-trained MultiNLI and 0.36 on the bench, so `choice`'s pooled-optimum T and the
+  `noul` plateau (0.777) are *correct for the data we may fit on*. The one legal slice in
+  the bench's regime (L-014 truncation slice: 0.379 accuracy, 0.715 strength) was removed by
+  the 2026-10-02 direction to build everything on `train_en_domains`. Passing ≤ 0.15 needs
+  bench-difficulty legal data or the P2 capability fix — not another fit.
+
+**Adopted** because Intelligence is invariant by construction, home moves from an
+in-sample 0.000116 to an honest 0.008508 at byte-identical accuracy, Brier halves and the
+board composite goes 1.59 → 4.28. The acceptance box stays unticked.
+
 ## Plan (P1–P4)
 
 | Phase | Work | Gate |
 | --- | --- | --- |
 | **P1** hardening | **DONE (2026-10-02)** — see *P1 results* above: wire audit green ×2, context A/B measured → reverted (L-014), serve fast-off, cost basis measured | 231/231 valid; A/B recorded |
 | **P2** Intelligence | family-shaped training data in two layers: **(a)** real public sources (MultiNLI/BoolQ/Banking77, + SST-5/AG News only after licence review — tev1 `DATA_SOURCES.md`) converted to our record shape with pinned provenance; **(b)** synthetic **executable rule trees** for `long_policy`/`multi_hop`/`temporal_numeric`/`trap` + the six original families | public items **evaluation-only**; targets: easy ≥ 0.95, standard ≥ 0.73 → **I ≥ 50**; ablation with control (L-006), one harness (L-013) |
-| **P3** Calibration | **DESIGN LOCKED — see *P3 design* above** (evidence-conditioned `noul` confidence from a training-prototype bank, global `choice` temperature, `score` pinned; all fitted on legal slices only) | `calibration(ece)` ≥ 60 (ECE ≤ 0.15) on the public run, in-domain ECE ≤ 0.05, answers byte-identical |
+| **P3** Calibration | **DONE (2026-10-02), adopted — see *P3 results*** (evidence-conditioned `noul` confidence from a training-prototype bank, `choice` T 1.5, `score` pinned; fitted on legal slices only) | **NOT met**: `calibration(ece)` 52.6 < 60 (ECE 0.2369 > 0.15). In-domain half met exactly: ECE ≤ 0.05, answers byte-identical ✓ |
 | **P4** submission | issue `[bench request]`: pinned `munod/tachyone-en` + base `answerdotai/ModernBERT-large`, licences, inference command, `temperature.json`, this diagnostic, cost basis; `docs/jevbench.md` + CHANGELOG | docs gate + issue filed |
 
 ## Out of scope

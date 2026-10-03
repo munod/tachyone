@@ -1,47 +1,56 @@
 # State
 
 **Last Updated:** 2026-10-02
-**Current Work:** **B-13 — JevBench preparation: JB-1…JB-8 COMPLETE, artifact adopted and
-published.** The treatment arm (`checkpoints/en_jev_bank`, the 35,540-record mixture retrain)
-was promoted to `checkpoints/en` (previous build kept at `checkpoints/en_prev_pub0.9637`) and
-uploaded as **`munod/tachyone-en` revision [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993)**
-— six files **sha256-verified one by one**, no stale remote files. Final one-set numbers:
-support **0.964 → 1.000** and five-domain **0.964 → 1.000** (gate strict **1.000**, held-out
-text 0.9987, per-domain ECE 0.000–0.001); **JevBench public items Intelligence 8.4 → 15.0**
-(control +0.6, bench score 0.43 → **1.59** as-shipped, Calibration 0 for every arm —
-**L-015**); probes **XNLI 0.341 → 0.566, typed-decisions 0.269 → 0.367, MASSIVE 0.039 →
-0.051**; fast path **2.543× / 0 flips**; head-to-head **re-run** — their turf **0.233 →
-0.288** (`banking77` 0.000 → 0.219), home **0.958 → 1.000**. The cycle's own target
-**I ≥ 50 stands recorded as NOT met (15.0)** — `noul` never reads the rubric, so `hard/trap`
-stays 0.000. Sweep surfaces all quote one set (`benchmarks/report.md`, `docs/benchmarks.md`,
-model card, `docs/compare.md` §3, `docs/huggingface.md`, README, roadmap, CHANGELOG);
-`mkdocs build --strict` green. **Open: P3** (calibration shrinkage — the Calibration axis is
-0 for all arms as shipped) **and P4** (the `[bench request]` issue itself); B-6 contrastive
-stays an optional experiment inside P3. Full record: `.specs/features/jevbench/`, BACKLOG
-**B-13**. Locked decisions unchanged: public items **evaluation-only for ever**, offline
-artifact submission, English checkpoint only.
-**P0/P1 record (earlier the same day):** the baseline was measured on the
-231 public items of [jevbench](https://github.com/fstandhartinger/jevbench) through its own
-`typesafe` adapter against a local `tachyone-serve` (`checkpoints/en`, explicit adapter —
-L-013). **Wire: 231/231 strict-valid, 0 failures** (the frozen contract needed nothing).
-**The gap: Intelligence 8.4 vs Laya's 45.8 on the same trunk class, Calibration 0.0 (ECE
-0.543 zeroes the axis), Speed 84.8, Cost 78.8 → composite 0.43** with the `(I/50)²`
-multiplier at 0.028. Per tier easy 0.500 / standard 0.361 / hard 0.288 (below chance);
-`noul` 0.473 (= binary chance — the runtime score reads only `cos(question, state)`, never
-the rubric), `choice` 0.309, `score` 0.222. Structural causes: rubric-blind `noul` and
-**English inference truncating at 512 tokens against hard states averaging 1,079 (max
-3,746)**. **P1 closed the same day:** wire re-audited **231/231 strict-valid**, and the
-long-context A/B (`512 → 4096`) measured **net 0 accuracy (1 flip each way, 82/231 both)
-against p95 333 ms → 2,700 ms / Speed 84.8 → 77.6 → reverted** — new lesson **L-014**;
-serving settles on **fast path off** (end-to-end slower at these shapes, OOMs at raised
-context), never `expandable_segments` (leaked 24.5 GiB on kill; GPU0 keeps 12.0 GiB free,
-the historical training envelope), and the cost basis is measured (510 input tokens/
-decision, $0.00510/1000 @ $0.01/M → Cost 78.8). **P2 (the next step at that point) was
-then executed and measured — see the Current Work above;** its targets were easy ≥ 0.95 /
-standard ≥ 0.73 → **I ≥ 50**, then P3 calibration shrinkage, P4 offline-artifact
-submission. Full record: `.specs/features/jevbench/spec.md`, BACKLOG
-**B-13**. Locked: public items **evaluation-only for ever**, submission as offline
-artifact, English checkpoint only, B-6 optional inside P3.
+**Current Work:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
+acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
+(spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
+**`state_prototypes.json`** (K=32 spherical k-means centroids of the 21,000 states of
+`data/train_en_domains.jsonl` — the right training basis per the 2026-10-02 direction —
+encoded through the runtime loader, 406 KB) and **`confidence_calibration.json`** (the bank
+embedded with the fitted `noul` map so the pair cannot drift). What changed: `noul` keeps
+its own direction and takes its *magnitude* from the evidence
+(`p = g(strength)` / `1 - g(strength)`, clamped to [0.5, 1]); `choice`'s temperature went
+0.05 → **1.5**; `score` is **pinned at 0.1** because its answer is the distribution's
+expected value (a temperature change would move Intelligence). One public run, after the
+assets were frozen:
+
+| | published | **P3** | gate |
+| --- | ---: | ---: | --- |
+| in-domain accuracy (7,500, every primitive/domain) | 0.999867 | **0.999867** (byte-identical) | must not move ✓ |
+| in-domain ECE choice / noul / score | 0.000007 / 0.000012 / 0.000366 | **0.025886 / 0.000004 / 0.000366** | each ≤ 0.05 ✓ |
+| public ECE (231) | 0.5393 | **0.2369** | ≤ 0.15 ✗ |
+| **Calibration axis** | **0.0** | **52.6** | **≥ 60 ✗** |
+| Intelligence / Brier / composite | 15.0 / 1.109 / 1.59 | **15.0 / 0.745 / 4.28** | invariant ✓ |
+
+231/231, 0 failed. Two findings are recorded rather than smoothed: the design's estimate
+came from **inverting a saturated transform** (natural is 0.2376, not 0.086 — **L-016**),
+and **no legal fit set can see bench difficulty** (0.84 vs 0.36 at equal evidence; the one
+legal slice in the bench's regime, the L-014 truncation slice, is the one the same day's
+"nothing generated, basis = `train_en_domains`" direction removed). Full record: spec
+*P3 results*, tasks JB-9…JB-13, BACKLOG **B-13** (acceptance box unticked).
+
+**Sweep + publish (JB-14, same day).** Every confidence-bearing surface re-measured on the
+adopted assets — accuracy byte-identical, only confidence moved: in-domain support/five-domain
+ECE **0.000-in-sample → 0.006 / 0.009**; probes `ECE raw` **0.578/0.583/0.426 → 0.416/0.296/0.264**
+(typed / MASSIVE / XNLI) with `Brier` better on all three; head-to-head their turf **0.569 → 0.259**
+(`Conf` 0.857 → 0.535, accuracy 0.288 unchanged) and home **0.000 → 0.005** (1.000 unchanged);
+fast path **2.504× / 0 flips**. Rendered `benchmarks/report.md` + `benchmarks/probes.md`, docs one
+set (`benchmarks`, `compare`, `model-card`, `huggingface`, `training`, `architecture`, `roadmap`,
+README, CHANGELOG). Published **`munod/tachyone-en` [`1c88ebef`](https://huggingface.co/munod/tachyone-en/commit/1c88ebef8f15f68e8a6583c564d636221f22c29f)** (8 files) and
+**`munod/tachyone-multi` [`3693def1`](https://huggingface.co/munod/tachyone-multi/commit/3693def1bd04d8208216f05459c5b83388ff9fd6)**
+(model card) — every file sha256-verified, no stale remote file; `mkdocs build --strict` green,
+full gate green. **Only P4 is open.**
+
+**B-13 record (same day, earlier):** P0 baseline **I 8.4 / Calibration 0.0 / composite
+0.43** on the 231 public items with the wire 231/231 strict-valid; P1 hardening (long
+context measured and reverted, **L-014**; serve fast-off; cost basis 510 tokens/decision);
+P2 family-shaped data (35,540 records) took **I 8.4 → 15.0** (control +0.6 vs treatment
++6.0, so the gain rides on the data), and JB-8 adopted it: `checkpoints/en` promoted,
+published as **`munod/tachyone-en` [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993)** with the full sweep re-measured
+(probes XNLI 0.566 / typed-decisions 0.367 / MASSIVE 0.051, head-to-head 0.288 / 1.000),
+docs one set, `mkdocs build --strict` green, **v0.7.0** released. **Open: P4** (the
+`[bench request]` issue) — and the cycle's own **I ≥ 50 stands recorded as NOT met (15.0)**.
+
 **B-5b remains closed** — see below; no change to its published numbers.
 
 **Previous (2026-10-01/02): Post-M6 backlog.** **B-5's structural decision (ADR-0016) executed and measured —
@@ -776,6 +785,29 @@ saturated, or make the temperature depend on input plausibility (the P3 shrinkag
 deferring to); when an asset can legitimately be absent, publish both numbers instead of one.
 **Prevents:** quoting a Calibration axis bought by an in-sample fit, reading an absent asset as
 "better calibrated", and comparing arms whose serving configuration differs.
+
+---
+
+### L-016: Inverting a saturating transform measures the quantization, not the signal
+
+**Context:** B-13 P3 design (2026-10-02). To sweep temperatures without re-running the
+server, the pre-temperature scores were reconstructed from the *shipped* probabilities:
+`scores = T_asset * log(p_shipped)` with `T_asset = 0.05`.
+**Problem:** at `T=0.05` the shipped probabilities are already saturated (0.99…, often
+`1 - 1e-9` or exactly `1.0` after JSON), so `log(p)` is either rounding noise or a clamped
+floor and the recovered "natural" distribution came out nearly uniform. The sweep then
+reported "public choice ECE 0.069, overall 0.086 at T=1", and the whole P3 design — the
+mechanism, the fit protocol, the acceptance estimate — was pre-registered on it. The real
+measurement (de-tempered from an *unsaturated* T=1.5 output) is **0.2376 natural vs 0.2369
+fitted**: the apparent 3x headroom never existed, and the ≤ 0.15 gate was unreachable with
+that plan. Caught only because the gate was finally measured for real (JB-13).
+**Solution:** measure a distribution where it is produced (`training.predict` with no
+`--temperature`, or a serve with the asset absent *and recorded as absent*, L-015's rule),
+never invert a transform whose output has already been quantized — and when a reconstruction
+is unavoidable, prove the round trip first: re-apply the known temperature to the
+reconstruction and compare it with the source before quoting any number derived from it.
+**Prevents:** committing a design to an artifact of float precision, and quoting headroom
+that lives only in the far end of a saturating transform.
 
 ---
 

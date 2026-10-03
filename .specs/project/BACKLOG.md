@@ -1026,7 +1026,7 @@ corrected labels" option is now *measured and closed* rather than open.
 
 ---
 
-## B-13 — JevBench preparation (score well on the public board) · **P0…JB-8 done (2026-10-02) — artifact adopted and published as `munod/tachyone-en` [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993); P3 + P4 open**
+## B-13 — JevBench preparation (score well on the public board) · **P0…JB-13 done (2026-10-02) — artifact published as `munod/tachyone-en` [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993); P3 executed and adopted with its gate recorded NOT met (52.6 < 60); P4 open**
 
 **Why.** [JevBench](https://github.com/fstandhartinger/jevbench) ranks Jev-class decision
 models on four equally-weighted axes (Intelligence chance-corrected per tier, Calibration =
@@ -1108,7 +1108,19 @@ Full record: `.specs/features/jevbench/tasks.md` JB-8.
       B-5 gates PASS** and public items evaluation-only for ever — **but the recorded
       target I ≥ 50 was not met (15.0)**; the data axis is proven (control +0.6 vs
       treatment +6.0), the remaining distance is a follow-up cycle, not a re-run.
-- [ ] P3: `calibration(ece)` ≥ 60 (ECE ≤ 0.15) on the public run.
+- [ ] P3: **NOT met (2026-10-02)** — `calibration(ece)` **52.6** (ECE 0.2369 > 0.15) on the
+      single public run after the assets were frozen. The in-domain half is met exactly
+      (accuracy byte-identical at 0.999867, per-primitive ECE 0.0259 / 0.000004 / 0.000366,
+      each ≤ 0.05) and Intelligence is invariant at 15.0, so the adoption is sound: Brier
+      1.109 → 0.745, composite 1.59 → **4.28**. Two causes, both recorded rather than
+      smoothed: (a) the pre-registered estimate "T=1 → ECE 0.086" was an artifact of
+      reconstructing a pre-temperature distribution from *saturated* `T=0.05` output —
+      measured properly, natural gives 0.2376, i.e. the fitted assets are as good as
+      natural (lesson **L-016**); (b) no legal fit set can see bench difficulty (0.84 vs
+      0.36 at equal evidence), and the one legal slice in the bench's regime — the L-014
+      truncation slice, accuracy 0.379 / strength 0.715 — is the one the 2026-10-02
+      direction removed. Reaching ≤ 0.15 needs bench-difficulty legal data or the P2
+      capability fix, not another fit. Full record: spec *P3 results*, tasks JB-13.
 - [ ] P4: `[bench request]` filed; `docs/jevbench.md` + CHANGELOG carry the same set.
 
 **Risks / notes.** Hard tier (30% weight) may stay at chance for a similarity encoder — it

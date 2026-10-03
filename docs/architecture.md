@@ -188,6 +188,11 @@ projeto_tachyone/
     head per `choice` question — caller hint → lexical signature match (pure Python, no encode,
     offline) → shared head (ADR-0016). The legacy single-scorer shape loads as a shared-only
     bank, so published adapters answer bit-for-bit as before.
+  - `ConfidenceCalibration` (P3): `confidence_calibration.json` — the training-state prototype
+    bank plus the fitted `noul` evidence map. `noul` keeps its direction (the cosine) and takes
+    its confidence from `g(strength)` where `strength = max_k cos(state, centroid_k)`;
+    `choice`/`score` keep their temperature path and come out byte-identical, so answers — and
+    therefore Intelligence — do not move. Absent asset = silent fallback (B-8).
 - **Dependencies:** torch/transformers, `router`, `calibration`, `agent`.
 - **Reuses:** `router.py` for checkpoint choice; `calibration.py` for confidence.
 

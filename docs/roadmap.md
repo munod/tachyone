@@ -209,6 +209,20 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   **0.269 → 0.367**. The cycle's own target (I ≥ 50) was **not** met — `noul` still never reads
   the rubric — and lesson **L-015** records why Calibration reads 0 for every arm as shipped.
 
+- **B-13/P3: confidence from evidence — adopted, its gate recorded NOT met** ⚠️ — the fix
+  L-015 asked for. The English adapter now ships `state_prototypes.json` (K=32 centroids of
+  its own 21,000 training states) and `confidence_calibration.json`: a `noul` answer keeps
+  its direction and takes its magnitude from `max_k cos(state, centroid)`, `choice` runs at
+  T=1.5 and `score` is pinned (its answer *is* the expected value, so a temperature would
+  move Intelligence). Measured: accuracy **byte-identical** everywhere, in-domain ECE
+  0.000-in-sample → **0.006 / 0.009** honest, off-domain raw ECE XNLI **0.426 → 0.264**,
+  typed-decisions **0.578 → 0.416**, MASSIVE **0.583 → 0.296**, JevBench Calibration
+  **0.0 → 52.6** and composite **1.59 → 4.28** with Intelligence invariant at 15.0. The
+  recorded gate (**≥ 60**) was **not** met: no legal fit set can see bench difficulty (0.84
+  vs 0.36 at the same evidence), and the design's estimate turned out to be an artifact of
+  inverting a saturated transform (lesson **L-016**). Open: **P4**, the `[bench request]`
+  issue itself.
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

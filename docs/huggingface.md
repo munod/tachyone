@@ -11,7 +11,24 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-02 (B-13, English)** — commit [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993)
+> **Latest revision: 2026-10-02 (P3, English assets + both model cards)** — commits
+> [`1c88ebef`](https://huggingface.co/munod/tachyone-en/commit/1c88ebef8f15f68e8a6583c564d636221f22c29f)
+> (`tachyone-en`, **8 files**) and
+> [`3693def1`](https://huggingface.co/munod/tachyone-multi/commit/3693def1bd04d8208216f05459c5b83388ff9fd6)
+> (`tachyone-multi`, model card only — its weights are untouched). The English adapter gains
+> the **evidence-based confidence** described [below](#the-confidence_calibrationjson-asset-p3):
+> `state_prototypes.json` + `confidence_calibration.json` (the bank and the fitted `noul` map
+> in one file) and a `temperature_calibration.json` refit on a never-trained holdout —
+> **`choice` 0.05 → 1.5, `score` pinned at 0.1, `noul` on the map**. Accuracy is byte-identical
+> to the previous revision everywhere (argmax and expected value never move); in-domain ECE
+> reads **0.006** (support) / **0.009** (five-domain) instead of an in-sample 0.000, and
+> off-domain confidence drops to match reality: XNLI `ECE raw` **0.426 → 0.264**,
+> typed-decisions **0.578 → 0.416**, MASSIVE **0.583 → 0.296**, JevBench Calibration
+> **0.0 → 52.6** (its recorded gate of 60 was **not** met —
+> `.specs/features/jevbench/spec.md` *P3 results*). Every uploaded file was sha256-verified
+> against the local build, and the remote holds no stale file.
+>
+> Previous revision **2026-10-02 (B-13, English)** — commit [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993)
 > (`tachyone-en`). The English adapter now ships the **mixture retrain**: the same B-5 recipe and
 > seed with **one factor changed — the training data** — 35,540 records (the 21,000 five-domain
 > ones plus 11,000 sha256-pinned public records: MultiNLI, BoolQ, Banking77, licences in
@@ -83,8 +100,10 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
   uv sync --extra train
   ```
 
-- Trained adapters under `checkpoints/en` and `checkpoints/multi` (see `docs/release.md`) and
-  a fitted `temperature_calibration.json` in each.
+- Trained adapters under `checkpoints/en` and `checkpoints/multi` (see `docs/release.md`), a
+  fitted `temperature_calibration.json` in each, and — for the English adapter, since P3 — the
+  `confidence_calibration.json` + `state_prototypes.json` pair described
+  [below](#the-confidence_calibrationjson-asset-p3).
 
 > **Network note:** pushing over SSH needs outbound access to `hf.co:22` (not
 > `huggingface.co`, whose SSH port times out on some networks). If port 22 is blocked, use
@@ -188,8 +207,44 @@ TACHYONE_OFFLINE=1 uv run tachyone --predict --backend encoder "..."   # cache-o
     (LocalEntryNotFoundError: ...); continuing without it
     ```
 
-    An adapter that simply does not ship `temperature_calibration.json` / `choice_head.json` in
-    normal (online) operation stays silent — that is a documented state, not a fault.
+    An adapter that simply does not ship `temperature_calibration.json` / `choice_head.json` /
+    `confidence_calibration.json` in normal (online) operation stays silent — that is a
+    documented state, not a fault.
+
+### The `confidence_calibration.json` asset (P3)
+
+Since the P3 calibration cycle the English adapter also ships **`confidence_calibration.json`**
+— one file holding two things that must never drift apart:
+
+| | |
+| --- | --- |
+| `prototypes` | the `state_prototypes.json` bank embedded verbatim (K=32 centroids of the checkpoint's own training states, spherical k-means, cosine metric) |
+| `noul.knots` | the fitted map from **evidence** (`strength = max_k cos(state, centroid_k)`) to confidence, monotone by construction |
+
+`noul` answers keep their own *direction* — the cosine still decides yes/no — and take their
+*magnitude* from that map: `p = g(strength)` when the cosine says yes, `1 − g(strength)` when
+it says no, clamped to `[0.5, 1]` because a binary confidence below half would invert the
+answer instead of expressing doubt. `choice` and `score` are untouched by it (their answers
+are byte-identical with and without the asset — asserted in `tests/test_encoder.py`), which
+is what makes Intelligence independent of the Calibration axis.
+
+The companion **`state_prototypes.json`** is the bank on its own, with its provenance (basis
+file, record count, sha256, model, adapter, seed) — it is what `training.fit_confidence`
+reads and embeds, and it ships so the fit stays auditable.
+
+```bash
+# rebuild both assets after retraining (order matters: the map is fitted *against* the bank)
+uv run python -m training.build_prototypes --data data/train_en_domains.jsonl \
+  --out checkpoints/en/state_prototypes.json --k 32 --adapter checkpoints/en
+uv run python -m training.predict --data data/calibration_holdout.jsonl \
+  --adapter checkpoints/en --prototypes checkpoints/en/state_prototypes.json \
+  --no-confidence --out-predictions data/calibration_holdout_preds.jsonl
+uv run python -m training.fit_confidence --predictions data/calibration_holdout_preds.jsonl \
+  --prototypes checkpoints/en/state_prototypes.json --out-dir checkpoints/en
+```
+
+An adapter without the asset (the multilingual one, and every adapter published before P3)
+falls back to the fitted temperature exactly as before.
 
 ### The `choice_head.json` asset has two shapes (ADR-0016)
 
