@@ -19,7 +19,7 @@ pipeline_tag: text-classification
 
 # Tachyone (System One decision engine)
 
-> **Status: released (`v0.7.0`), revision 2026-10-02 (B-13 English / B-5b multilingual).** Trained on a
+> **Status: released (`v0.8.0`), revision 2026-10-02 — English [`1c88ebef`](https://huggingface.co/munod/tachyone-en/commit/1c88ebef8f15f68e8a6583c564d636221f22c29f) (B-13 mixture + P3 evidence confidence), multilingual [`3693def1`](https://huggingface.co/munod/tachyone-multi/commit/3693def1bd04d8208216f05459c5b83388ff9fd6) (card).** Trained on a
 > single RTX 3060 12GB (B-5b and B-13 on NVIDIA L4 23GB) and published as LoRA adapters
 > ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
