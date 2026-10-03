@@ -2,8 +2,8 @@
 
 **Spec:** `.specs/features/jevbench/spec.md` (P0/P1 results live there; the P3 design is
 pre-registered in *P3 design*)
-**Status:** P0 + P1 + P2 done; **P3 executed (JB-9 … JB-13) — adopted, its acceptance
-criterion recorded as NOT met (52.6 < 60); JB-14 (sweep + publish) in progress**; P4 open
+**Status:** **B-13 complete (2026-10-02):** P0…JB-14 done (P3 adopted, its acceptance
+recorded as NOT met at 52.6 < 60) and **P4 filed**.
 
 Commit-per-task, tests co-located (AGENTS.md hard rule 6), full gate before each commit:
 `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest -m "not e2e"`.
@@ -416,3 +416,22 @@ green (696 passed).
 `adversarial`, `routing_hard` synthetic families (public n ≤ 10 each); source data for
 `easy`-tier only if JB-7 shows easy < 0.95 after the sources layer; a longer training
 `max_len` paired with a re-run of the P1b context A/B (L-014).
+
+---
+
+## P4 — Submission
+
+**Status:** **Done (2026-10-02) — [`fstandhartinger/jevbench#182`](https://github.com/fstandhartinger/jevbench/issues/182).**
+
+Delivered: `docs/jevbench.md` (the public-item diagnostic, every pin, reproduce commands,
+and both recorded misses) added to the site nav and the README doc table; the verbatim issue
+body kept at `.specs/features/jevbench/submission-issue.md`; CHANGELOG `[Unreleased]` carries
+the same set. What the issue contains, following the upstream `#158` pattern: candidate table
+(weights `1c88ebef`, base `answerdotai/ModernBERT-large` Apache-2.0, LoRA r=16 + head bank,
+licences of all three training sources), offline inference command (**smoke-tested against a
+local serve before filing**: `noul=0.7406` on a policy sentence), sha256 of the five shipped
+files, the public diagnostic (tiers, primitives, four axes, 231/231 strict-valid, cost basis
+$0.00510/1000 at 510 tokens/decision), the two disclosures — **no JevBench item, public or
+sealed, in training or calibration** (asserted by every builder) and **benchmark-directed data
+authoring** (the family taxonomy) — and the frozen method pin `bb05a335` with
+`METHOD-v1.5.md` sha256 `c25d3d8b…`. No endpoint, no credential, no sealed item.

@@ -2,15 +2,17 @@
 
 **Phase:** Post-M6 · **Spec accepted:** 2026-10-02
 **Status:** **JB-1 … JB-14 (P3) executed 2026-10-02 — the calibration assets are adopted;
-P3's acceptance (`calibration(ece)` ≥ 60) is recorded as NOT met at 52.6**; JB-1 … JB-8
+P3's acceptance (`calibration(ece)` ≥ 60) is recorded as NOT met at 52.6**; **P4 filed —
+[`fstandhartinger/jevbench#182`](' + URL + '), B-13 complete**; JB-1 … JB-8
 done (2026-10-02) — the B-13 artifact is adopted and published
 ([`munod/tachyone-en` `f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993),
 six files sha256-verified). Final record: Intelligence **8.4 → 15.0** on the 231 public items
 (control +0.6), all B-5 gates PASS, probes XNLI 0.566 / typed-decisions 0.367 / MASSIVE 0.051,
 head-to-head 0.288 (theirs) / 1.000 (ours). **P3 executed and adopted the same day — see
 *P3 results* below: Calibration 0.0 → 52.6 and composite 1.59 → 4.28 with Intelligence
-invariant at 15.0, but the recorded gate (≥ 60) stands NOT met.** P4 (the `[bench request]`
-issue) is the only open phase; the cycle's own I ≥ 50 target stands recorded as **not met**.
+invariant at 15.0, but the recorded gate (≥ 60) stands NOT met.** **P4 closed the same day:**
+[`fstandhartinger/jevbench#182`](' + URL + ') with `docs/jevbench.md` carrying the same set.
+The cycle's own I ≥ 50 target stands recorded as **not met**.
 
 **Context:** `.specs/project/BACKLOG.md` B-13 · external harness:
 <https://github.com/fstandhartinger/jevbench> (MIT — cloned to a local download for
@@ -270,7 +272,7 @@ board composite goes 1.59 → 4.28. The acceptance box stays unticked.
 | **P1** hardening | **DONE (2026-10-02)** — see *P1 results* above: wire audit green ×2, context A/B measured → reverted (L-014), serve fast-off, cost basis measured | 231/231 valid; A/B recorded |
 | **P2** Intelligence | family-shaped training data in two layers: **(a)** real public sources (MultiNLI/BoolQ/Banking77, + SST-5/AG News only after licence review — tev1 `DATA_SOURCES.md`) converted to our record shape with pinned provenance; **(b)** synthetic **executable rule trees** for `long_policy`/`multi_hop`/`temporal_numeric`/`trap` + the six original families | public items **evaluation-only**; targets: easy ≥ 0.95, standard ≥ 0.73 → **I ≥ 50**; ablation with control (L-006), one harness (L-013) |
 | **P3** Calibration | **DONE (2026-10-02), adopted — see *P3 results*** (evidence-conditioned `noul` confidence from a training-prototype bank, `choice` T 1.5, `score` pinned; fitted on legal slices only) | **NOT met**: `calibration(ece)` 52.6 < 60 (ECE 0.2369 > 0.15). In-domain half met exactly: ECE ≤ 0.05, answers byte-identical ✓ |
-| **P4** submission | issue `[bench request]`: pinned `munod/tachyone-en` + base `answerdotai/ModernBERT-large`, licences, inference command, `temperature.json`, this diagnostic, cost basis; `docs/jevbench.md` + CHANGELOG | docs gate + issue filed |
+| **P4** submission | **DONE (2026-10-02)** — [`fstandhartinger/jevbench#182`](' + URL + '): pinned `munod/tachyone-en` `1c88ebef` + base `answerdotai/ModernBERT-large`, licences, smoke-tested inference command, calibration assets + sha256, this diagnostic, cost basis, both disclosures; `docs/jevbench.md` + CHANGELOG carry the same set | **met**: docs gate green, issue filed ✓ |
 
 ## Out of scope
 

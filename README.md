@@ -221,6 +221,7 @@ Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/t
 | [`docs/docker.md`](docs/docker.md) | Image, Compose, healthcheck, config in containers |
 | [`docs/cookbook-handoff.md`](docs/cookbook-handoff.md) | Confidence thresholding + System-2 handoff |
 | [`docs/benchmarks.md`](docs/benchmarks.md) | Accuracy/ECE/latency numbers and limitations |
+| [`docs/jevbench.md`](docs/jevbench.md) | The external scoreboard: public-item diagnostic, pins, submission |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones, exit criteria, backlog |
 | [`docs/tasks.md`](docs/tasks.md) | Atomic task plan (M0–M6) |
 | [`docs/adr/`](docs/adr/) | Architecture decision records |

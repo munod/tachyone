@@ -39,7 +39,11 @@ set (`benchmarks`, `compare`, `model-card`, `huggingface`, `training`, `architec
 README, CHANGELOG). Published **`munod/tachyone-en` [`1c88ebef`](https://huggingface.co/munod/tachyone-en/commit/1c88ebef8f15f68e8a6583c564d636221f22c29f)** (8 files) and
 **`munod/tachyone-multi` [`3693def1`](https://huggingface.co/munod/tachyone-multi/commit/3693def1bd04d8208216f05459c5b83388ff9fd6)**
 (model card) — every file sha256-verified, no stale remote file; `mkdocs build --strict` green,
-full gate green. **Only P4 is open.**
+full gate green. **P4 closed the same day:** `docs/jevbench.md` (nav + README) and the issue —
+**[`fstandhartinger/jevbench#182`](https://github.com/fstandhartinger/jevbench/issues/182)**, offline artifact following the `#158` pattern,
+with the no-benchmark-items disclosure and the benchmark-directed-data disclosure, method pin
+`bb05a335` + `METHOD-v1.5.md` sha256, body kept verbatim in
+`.specs/features/jevbench/submission-issue.md`. **B-13 is complete.**
 
 **B-13 record (same day, earlier):** P0 baseline **I 8.4 / Calibration 0.0 / composite
 0.43** on the 231 public items with the wire 231/231 strict-valid; P1 hardening (long

@@ -104,6 +104,7 @@ nav:
       - Azure Functions: integrations/azure-functions.md
       - Docker: docker.md
   - Benchmarks: benchmarks.md
+  - JevBench: jevbench.md
   - Roadmap: roadmap.md
   - Tasks: tasks.md
   - Testing: testing.md

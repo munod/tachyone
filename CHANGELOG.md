@@ -27,6 +27,15 @@ All notable changes to this project are documented here. The format is based on
   inputs), and `training.predict --prototypes/--no-confidence` to emit the evidence signal
   beside each prediction.
 
+### Added
+
+- **JevBench submission (P4).** `docs/jevbench.md` carries the public-item diagnostic, every
+  pin (method `bb05a335` + METHOD sha256, weights `1c88ebef`, licences, cost basis) and the
+  reproduce commands; filed as **[`fstandhartinger/jevbench#182`](https://github.com/fstandhartinger/jevbench/issues/182)** — offline artifact,
+  no endpoint, no credential, no sealed item, with the benchmark-directed-data disclosure.
+  Both record the two misses instead of omitting them (Intelligence 15.0 against a ≥ 50 target,
+  Calibration 52.6 against ≥ 60).
+
 ### Changed
 
 - **`munod/tachyone-en` gains the P3 confidence — accuracy byte-identical, confidence halved

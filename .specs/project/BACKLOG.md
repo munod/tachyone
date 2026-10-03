@@ -1026,7 +1026,7 @@ corrected labels" option is now *measured and closed* rather than open.
 
 ---
 
-## B-13 — JevBench preparation (score well on the public board) · **P0…JB-13 done (2026-10-02) — artifact published as `munod/tachyone-en` [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993); P3 executed and adopted with its gate recorded NOT met (52.6 < 60); P4 open**
+## B-13 — JevBench preparation (score well on the public board) · **P0…JB-13 done (2026-10-02) — artifact published as `munod/tachyone-en` [`f28103bf`](https://huggingface.co/munod/tachyone-en/commit/f28103bf4a85bacd10df90c21125c84522c82993); P3 executed and adopted with its gate recorded NOT met (52.6 < 60); **P4 filed as #182 — B-13 complete**
 
 **Why.** [JevBench](https://github.com/fstandhartinger/jevbench) ranks Jev-class decision
 models on four equally-weighted axes (Intelligence chance-corrected per tier, Calibration =
@@ -1121,7 +1121,11 @@ Full record: `.specs/features/jevbench/tasks.md` JB-8.
       truncation slice, accuracy 0.379 / strength 0.715 — is the one the 2026-10-02
       direction removed. Reaching ≤ 0.15 needs bench-difficulty legal data or the P2
       capability fix, not another fit. Full record: spec *P3 results*, tasks JB-13.
-- [ ] P4: `[bench request]` filed; `docs/jevbench.md` + CHANGELOG carry the same set.
+- [x] P4: **done (2026-10-02)** — [`fstandhartinger/jevbench#182`](https://github.com/fstandhartinger/jevbench/issues/182) filed (offline
+      artifact: pinned weights `1c88ebef`, licences, inference command smoke-tested, asset
+      sha256s, the public diagnostic, cost basis, benchmark-directed-data disclosure, method
+      `bb05a335` + METHOD sha256); `docs/jevbench.md` and CHANGELOG carry the same set, and
+      `.specs/features/jevbench/submission-issue.md` keeps the verbatim body.
 
 **Risks / notes.** Hard tier (30% weight) may stay at chance for a similarity encoder — it
 contributes 0 rather than negative (cc clipped), so the multiplier is decided by
