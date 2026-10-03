@@ -32,6 +32,18 @@ def test_package_ships_the_bank_fit_recipe_when_the_asset_has_one(tmp_path: Path
     assert (out / "choice_head.json").exists()
 
 
+def test_package_ships_the_p3_confidence_assets(tmp_path: Path) -> None:
+    """P3: the confidence the runtime applies must travel with the adapter it was fit for."""
+    adapter = _fake_adapter(tmp_path)
+    (adapter / "state_prototypes.json").write_text(json.dumps({"k": 32}), encoding="utf-8")
+    (adapter / "confidence_calibration.json").write_text(
+        json.dumps({"version": 1}), encoding="utf-8"
+    )
+    out = package(adapter, tmp_path / "hf-p3", checkpoint_name="en")
+    assert json.loads((out / "state_prototypes.json").read_text(encoding="utf-8"))["k"] == 32
+    assert (out / "confidence_calibration.json").exists()
+
+
 def test_package_assembles_hf_layout(tmp_path: Path) -> None:
     adapter = _fake_adapter(tmp_path)
     out = package(adapter, tmp_path / "hf-en", checkpoint_name="en")

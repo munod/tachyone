@@ -22,6 +22,10 @@ _ADAPTER_FILES: tuple[str, ...] = (
     # which trunk it froze, so the published asset says what produced it.
     "choice_bank_fit.json",
     "choice_head.json",
+    # P3: the evidence signal and the confidence the runtime applies (the bank is embedded
+    # in the confidence asset too — shipping it separately keeps the fit auditable).
+    "state_prototypes.json",
+    "confidence_calibration.json",
 )
 
 
