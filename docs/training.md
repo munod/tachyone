@@ -88,6 +88,12 @@ Every stage is a committed script with a committed config and a fixed seed.
     and `data_noisy.json` regenerate byte-for-byte.
   `tests/test_training_generate.py` pins both rules with golden hashes and checks each committed
   data config against the dataset it documents.
+  *(Content expansion, Fase 2a — 2026-10-06: every bank ships **60 entities** and phrase banks
+  of **11/9/9/9/8** per language, roughly tripling the authored content — the lever that raises
+  distinct training states where raw volume could not: 21,000 en records went 3,981 → 9,787
+  distinct and 30,000 multi records 10,688 → 20,447, against a simulated ceiling of ~8x volume
+  buying only +554. Domain content feeds every record, so this recaptured all golden hashes and
+  regenerated every dataset as one set.)*
 - **Localization completeness (B-5b):** every committed domain ships a full table for each tag in
   `DEFAULT_LANGUAGES` (`en, pt, es, fr, de, it, nl`) — entities, instructions, levels, criteria,
   ≥ 4 option terms and ≥ 20-char descriptions per option, and all five phrase tones with their

@@ -540,15 +540,15 @@ def test_noise_cli_runs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
 #: not hold), and **recaptured after B-11** (only ``noul.target`` bytes moved) and again **after
 #: B-12** (``score`` loses the ``index % 13`` near-tie, ``choice``/``score`` empty states take
 #: their defaults, and ``ecommerce`` gains the ``other`` catch-all, which re-cycles its options),
-#: and once more **after the stride decoupling** (data audit 2026-10-05, Finding 1 and its
-#: distractor sibling): ``en`` has one language, so ``block == index`` and its bytes are
-#: identical; ``en_pt``/``noisy`` move because their option and hard-negative cycles no longer
-#: alias the language stride.
+#: again **after the stride decoupling** (data audit 2026-10-05, Finding 1 and its distractor
+#: sibling — ``en`` was byte-identical there, one language so ``block == index``), and once more
+#: **after the content expansion** (Fase 2a: entities 20 → 60 and phrase banks → 11/9/9/9/8 per
+#: language in all five domains — domain content feeds every record, so all three move).
 _GOLDEN_SINGLE_DOMAIN = {
-    "en": ("8181e7c4f9b56ddc", DataConfig(seed=42, per_type=50, languages=("en",))),
-    "en_pt": ("cd06b8ce7ce1b304", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
+    "en": ("43dc51504a396239", DataConfig(seed=42, per_type=50, languages=("en",))),
+    "en_pt": ("7bc8e173f745b2f4", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
     "noisy": (
-        "f7b5259255d59375",
+        "4a8d0795dcfbd26f",
         DataConfig(seed=7, per_type=30, languages=("en", "pt", "de"), noise_rate=0.15),
     ),
 }
