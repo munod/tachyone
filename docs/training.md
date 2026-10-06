@@ -54,6 +54,17 @@ Every stage is a committed script with a committed config and a fixed seed.
   ships one; `ecommerce` gained it in B-12, which re-cycled its four options into five). The empty
   boundary case therefore exists in all three primitives with a learnable default instead of an
   index-derived label.
+- **Sampler strides (data audit 2026-10-05):** the language cycle is
+  `index % len(languages)` (exact volume balance per language), while the `choice` option cycle
+  and the one-in-six hard-negative cycle run on `index // len(languages)` — the record's position
+  inside its language's own stream. Deriving two cycles from one `index` aliases them by `gcd`:
+  with six languages and four options each multilingual cell used to train only a subset of the
+  options as labels (and the eval recipes shared the defect, so the eval could not see it), and
+  every distractor clause of a six-language run used to land in the first language alone.
+  Single-language configs (`data_en*`) keep `block == index` and are byte-identical; the label is
+  still the option the emitted text names, never the stride (B-12). The two invariants are pinned
+  by `test_every_language_covers_every_option` and
+  `test_hard_negative_distractors_reach_every_language`.
 - **Domains (B-5):** every domain lives in its own committed file,
   `training/data/domains/<domain>.json`, holding its option labels, option terms and
   descriptions, entities, phrase banks, `score` levels, `noul` criteria and per-primitive

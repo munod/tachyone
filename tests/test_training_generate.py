@@ -247,6 +247,71 @@ def test_every_language_gets_equal_support() -> None:
         assert len(set(counts.values())) == 1
 
 
+def test_every_language_covers_every_option() -> None:
+    """Every committed recipe must emit **every** option of every domain as a ``choice`` target
+    in **every** ``(domain, language)`` cell (data audit 2026-10-05, Finding 1).
+
+    The old ``options[index % len(options)]`` stride was aliased with
+    ``languages[index % len(languages)]`` by ``gcd``: with six languages and four options each
+    multilingual cell trained only a subset of the options as labels — ``de``/``es``/``nl`` never
+    saw ``billing``/``sales`` in ``support`` — and the eval recipes carried the same defect, so
+    the eval could not see it (0 of 2,500 eval ``choice`` rows named an untrained label).
+    ``other`` counts as an option like any other.
+    """
+    from training.config import load_data_config
+
+    config_paths = sorted((_ROOT / "training" / "configs").glob("data*.json"))
+    assert config_paths, "committed data configs exist to audit"
+    for config_path in config_paths:
+        cells: dict[tuple[str, str], set[str]] = {}
+        for record in iter_records(load_data_config(config_path)):
+            if record["type"] == "choice":
+                key = (record.get("domain", DEFAULT_DOMAIN), record["lang"])
+                cells.setdefault(key, set()).add(record["target"])
+        for (domain, lang), targets in cells.items():
+            missing = set(DOMAINS[domain]["options"]) - targets
+            assert not missing, (
+                f"{config_path.name}: ({domain}, {lang}) never trains the label(s) {sorted(missing)}"
+            )
+
+
+def test_hard_negative_distractors_reach_every_language() -> None:
+    """The hard-negative cycle runs over the record's block within its own language, so every
+    language sees the distractor clause at the same ~1/``_HARD_NEGATIVE_RATE`` rate (data audit
+    2026-10-05, the stride sibling of Finding 1).
+
+    On the old ``index % _HARD_NEGATIVE_RATE`` with six languages the two strides collided
+    exactly: every distractor row landed in the first language alone (``pt`` 94.7%, the other
+    five 0%), so five of six languages never trained distractor rejection — and 94.7% of ``pt``
+    rows carried the ambiguous clause the generator keeps rare on purpose.
+    """
+    langs = ("pt", "es", "fr", "de", "it", "nl")
+    domain = DomainData.load(DEFAULT_DOMAIN)
+    clauses = {
+        lang: [
+            phrase.format(distractor=term)
+            for phrase in domain.phrases(lang)["distractor"]
+            for option in domain.options
+            for term in domain.option_terms(lang, option)
+        ]
+        for lang in langs
+    }
+    seen = dict.fromkeys(langs, 0)
+    totals = dict.fromkeys(langs, 0)
+    records = iter_records(DataConfig(seed=5, per_type=len(langs) * 60, languages=langs))
+    for record in records:
+        if record["type"] != "choice":
+            continue
+        totals[record["lang"]] += 1
+        if any(clause in record["state"] for clause in clauses[record["lang"]]):
+            seen[record["lang"]] += 1
+    for lang in langs:
+        assert totals[lang] == 60
+        # 10 of 60 blocks are flagged; at most one is emptied by the boundary state.
+        assert seen[lang] >= 7, f"{lang} sees only {seen[lang]} hard negatives"
+    assert max(seen.values()) - min(seen.values()) <= 3, seen
+
+
 def test_boundary_cases_present() -> None:
     records = _records(40)
     states = [record["state"] for record in records if record["type"] == "noul"]
@@ -352,12 +417,16 @@ def test_noise_cli_runs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
 #: guarantee from BACKLOG B-5: L-003/B-4 already cost days to a determinism assumption that did
 #: not hold), and **recaptured after B-11** (only ``noul.target`` bytes moved) and again **after
 #: B-12** (``score`` loses the ``index % 13`` near-tie, ``choice``/``score`` empty states take
-#: their defaults, and ``ecommerce`` gains the ``other`` catch-all, which re-cycles its options).
+#: their defaults, and ``ecommerce`` gains the ``other`` catch-all, which re-cycles its options),
+#: and once more **after the stride decoupling** (data audit 2026-10-05, Finding 1 and its
+#: distractor sibling): ``en`` has one language, so ``block == index`` and its bytes are
+#: identical; ``en_pt``/``noisy`` move because their option and hard-negative cycles no longer
+#: alias the language stride.
 _GOLDEN_SINGLE_DOMAIN = {
     "en": ("8181e7c4f9b56ddc", DataConfig(seed=42, per_type=50, languages=("en",))),
-    "en_pt": ("73a1752bfc4a7b7b", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
+    "en_pt": ("cd06b8ce7ce1b304", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
     "noisy": (
-        "03eff53b14b99b3c",
+        "f7b5259255d59375",
         DataConfig(seed=7, per_type=30, languages=("en", "pt", "de"), noise_rate=0.15),
     ),
 }

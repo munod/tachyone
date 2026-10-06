@@ -34,6 +34,24 @@ since it carries no signal), and ``choice`` from the option the state names (an 
 domain's catch-all ``other``). No label is a function of the loop index: the two that were — the
 ``noul`` parity rule and the ``score`` near-tie downgrade — capped accuracy at the label noise
 instead of at the model (L-008, L-010, ADR-0014, BACKLOG B-12).
+
+Sampler strides (data audit 2026-10-05, Finding 1)
+--------------------------------------------------
+Three cycles must not derive from the same ``index``, because ``index % len(languages)`` already
+picks the language and two strides over one index are aliased by ``gcd``:
+
+1. the **language** cycle stays ``index % len(languages)`` (exact volume balance per language);
+2. the **option** cycle runs on ``index // len(languages)`` — the record's position inside its
+   language's own stream. On the old ``index % len(options)`` a 6-language/4-option recipe has
+   ``gcd(6,4) = 2``, so every multilingual cell trained only a subset of the options as labels
+   (``de``/``es``/``nl`` never saw ``billing``/``sales`` in ``support``, and the eval recipes
+   carried the same defect, so the eval could not see it);
+3. the **hard-negative** cycle runs on the same ``block`` for the same reason: with
+   ``_HARD_NEGATIVE_RATE = 6 == len(languages)`` every distractor row landed in the first
+   language alone (``pt``) and the other five never saw one.
+
+Configs with a single language (``data_en*``) keep ``block == index`` and are byte-identical;
+the option the emitted text names is still what labels the row (B-12), never ``block`` itself.
 """
 
 from __future__ import annotations
@@ -237,7 +255,10 @@ def _boundary_state(index: int, base: str) -> str:
     return base
 
 
-def _noul_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
+def _noul_record(
+    domain: DomainData, index: int, lang: str, rng: random.Random, _block: int
+) -> dict[str, Any]:
+    # ``_block`` is unused: only ``choice`` cycles content over the record's language stream.
     entity = rng.choice(domain.entities(lang))
     tone = rng.choice(("request", "neutral"))
     state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
@@ -272,15 +293,22 @@ def _default_option(options: tuple[str, ...]) -> str:
     return "other" if "other" in options else options[0]
 
 
-def _choice_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
+def _choice_record(
+    domain: DomainData, index: int, lang: str, rng: random.Random, block: int
+) -> dict[str, Any]:
     # Cycle options deterministically (so every option, including the catch-all, is well
-    # represented) and regularly pick a distractor term from a different option as a hard negative.
+    # represented) and regularly pick a distractor term from a different option as a hard
+    # negative. Both cycles run over ``block`` — the record's position inside its own
+    # language's stream — and never over ``index``: ``index % len(languages)`` already picks
+    # the language, so a second stride over ``index`` is aliased with it by ``gcd`` (module
+    # docstring, "Sampler strides"). The label still comes from the emitted text below (B-12):
+    # ``block`` only decides which text is emitted, never what it is called.
     options = domain.options
-    option = options[index % len(options)]
+    option = options[block % len(options)]
     term = rng.choice(domain.option_terms(lang, option))
     request_phrase = rng.choice(domain.phrases(lang)["request"])
     state = request_phrase.format(entity=term)
-    if index % _HARD_NEGATIVE_RATE == 0:
+    if block % _HARD_NEGATIVE_RATE == 0:
         other = rng.choice([candidate for candidate in options if candidate != option])
         distractor = rng.choice(domain.option_terms(lang, other))
         distractor_phrase = rng.choice(domain.phrases(lang)["distractor"])
@@ -301,7 +329,10 @@ def _choice_record(domain: DomainData, index: int, lang: str, rng: random.Random
     }
 
 
-def _score_record(domain: DomainData, index: int, lang: str, rng: random.Random) -> dict[str, Any]:
+def _score_record(
+    domain: DomainData, index: int, lang: str, rng: random.Random, _block: int
+) -> dict[str, Any]:
+    # ``_block`` is unused: only ``choice`` cycles content over the record's language stream.
     entity = rng.choice(domain.entities(lang))
     tone = rng.choice(("calm", "neutral", "request", "urgent"))
     state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
@@ -386,7 +417,10 @@ def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
             for index in range(count):
                 language = languages[index % len(languages)]
                 rng = random.Random(f"{base}:{kind}:{index}:{language}")
-                record = generator(domain, index, language, rng)
+                # ``block`` = this record's position within its language's own stream (see
+                # the module docstring, "Sampler strides"): the option and hard-negative
+                # cycles must not derive from ``index``, whose modulo selects the language.
+                record = generator(domain, index, language, rng, index // len(languages))
                 record["source"] = config.source
                 if writes_domain:
                     record["domain"] = domain_name
