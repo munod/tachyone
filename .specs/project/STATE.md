@@ -1,9 +1,9 @@
 # State
 
 **Last Updated:** 2026-10-06
-**Current Work:** **Fases 0 e 1 da correção das receitas de dados — stride do sampler e eval
-leave-one-template-out — executadas localmente 2026-10-06 na branch `fix/sampler-stride`.
-Nothing leaves this machine:** the JevBench
+**Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
+leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
+`fix/sampler-stride`. Nothing leaves this machine:** the JevBench
 submission is evaluated from the remote (submission commit `164ed3b`, v0.8.0), so every
 correction in this cycle stays local — no `git push`, no Hub upload, no republication of
 `munod/tachyone-*`, gates measured but **not published** — until the benchmark has run.
@@ -24,10 +24,23 @@ rows share a `(kind, template)` with the `train` split — overall and per langu
 the ~99% the seed-drawn evals carry (89.5%/61.0% identical rows, declared a ceiling in the
 model card). The split also drops sentences that are hold-outs in *another* bank of the same
 language: 21 rows leaked through cross-domain identical phrasing before that rule, now 0.
-Current evals and all training sets are untouched — training adopts `train` with the Fase 2b
-recomposition, and `benchmarks/report.md` is re-rendered **then** as one set (a holdout run
-against today's adapters, trained on all phrases, would be in-sample). Full suite **706
-passed**. Next: Fase 2a (content expansion, zero GPU), then 2b.
+Current evals are untouched, and training adopts the `train` split with the Fase 2b
+recomposition — which is also when `benchmarks/report.md` is re-rendered as one set (a holdout
+run against adapters trained on all phrases would be in-sample).
+**Fase 2a (conteúdo, zero GPU)** — every domain file expanded ×3: **entities 20 → 60** and
+phrase banks **request/neutral/calm/urgent/distractor = 11/9/9/9/8** per language, all seven
+languages, authored (`support`) and drafted+reviewed (`ecommerce`, `agent_tools`, `documents`,
+`voice`) under one validator: placeholders, no phrase in two banks of a language, no
+cross-domain sentence in two different tones, determiner/gender conventions per language
+(one caught defect: `documents`/`nl` entities carried `de ` while its phrases add it too —
+stripped before injection). Domain content feeds every record, so **all three goldens and all
+eleven datasets regenerated as one set** (en included this time — recomposition, as planned).
+Measured against the projections: en 21,000 rows **3,981 → 9,787 distinct (46.6%)** (`noul`
+1,131 → 3,855 vs projected 3,858; `score` 1,852 → 4,839 vs 4,840), multi 30,000 rows
+**10,688 → 20,447 (68.2%)** (`noul` 76%, `score` 84% — the projected 76%/84%). Full suite
+**706 passed**; ruff/pyright/`mkdocs --strict` clean. Holdout sets regenerated on the new last
+phrases (the positional hold-out moves with the content — by design). Next: Fase 2b (volume
+1,7×, needs the GPU window).
 **Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
 acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
 (spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
