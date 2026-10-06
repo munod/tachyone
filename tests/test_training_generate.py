@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,9 @@ from training.generate_data import (
     DOMAINS,
     DataConfig,
     DomainData,
+    _holdout_strings,
     _line,
+    _split_bank,
     domain_signatures,
     generate,
     iter_records,
@@ -312,6 +315,125 @@ def test_hard_negative_distractors_reach_every_language() -> None:
     assert max(seen.values()) - min(seen.values()) <= 3, seen
 
 
+# --- Fase 1: leave-one-template-out eval (data audit 2026-10-05, Finding 3) --------------
+
+#: holdout eval config → the training config whose ``train`` split it must not overlap.
+_SPLIT_PAIRS = [
+    ("data_eval_en_domains_holdout.json", "data_en_domains.json"),
+    ("data_eval_multi_domains_holdout.json", "data_multi_domains.json"),
+]
+
+#: (domain, lang) → entities + option terms, longest first, for template masking.
+_TERM_CACHE: dict[tuple[str, str], tuple[str, ...]] = {}
+
+
+def _template(state: str, domain: str, lang: str) -> str:
+    """Mask a state down to its phrasing: entities and option terms become ``{X}`` and a
+    boundary long state (the base repeated 40x) collapses to one copy of the base."""
+    if not state:
+        return ""
+    key = (domain, lang)
+    terms = _TERM_CACHE.get(key)
+    if terms is None:
+        spec = DOMAINS[domain]["languages"].get(lang, DOMAINS[domain]["languages"]["en"])
+        collected = set(spec["entities"])
+        for table in spec["option_terms"].values():
+            collected.update(table)
+        terms = tuple(sorted(collected, key=len, reverse=True))
+        _TERM_CACHE[key] = terms
+    masked = state
+    for term in terms:
+        masked = masked.replace(term, "{X}")
+    words = masked.split()
+    for unit in range(1, len(words) // 2 + 1):
+        head = words[:unit]
+        if len(words) % unit == 0 and words == head * (len(words) // unit):
+            return " ".join(head)
+    return masked
+
+
+def test_template_split_slices_are_disjoint() -> None:
+    """``train`` and ``holdout`` never emit the same sentence.
+
+    The hold-out of a bank is its last phrase, and ``train`` additionally drops any sentence
+    that is a hold-out in **another** bank of the same language — identical phrasing is
+    authored across domains (``Sem pressa com {entity}.`` sits in three pt banks), and without
+    the drop it reaches training through a foreign non-hold-out slot while its twin evaluates
+    as unseen (measured: 21 leaking rows, all of them that case).
+    """
+    for domain, spec in DOMAINS.items():
+        for lang, bank in spec["languages"].items():
+            held = _holdout_strings(lang)
+            for tone, phrases in bank["phrases"].items():
+                assert len(phrases) >= 2, (domain, lang, tone)
+                train = _split_bank(phrases, "train", lang)
+                holdout = _split_bank(phrases, "holdout", lang)
+                assert list(holdout) == [phrases[-1]]
+                assert set(train).isdisjoint(holdout), (domain, lang, tone)
+                dropped = set(phrases) - set(train)
+                assert dropped == {phrase for phrase in phrases if phrase in held}, (
+                    domain,
+                    lang,
+                    tone,
+                )
+
+
+def test_holdout_eval_shares_almost_no_template_with_training() -> None:
+    """Fase 1 gate: at most 5% of non-empty holdout eval rows may carry a ``(kind, template)``
+    that training emits — the seed-drawn evals sit at ~99% (89.5%/61.0% identical rows), which
+    is exactly why no gain below the ceiling was measurable on them.
+
+    Training is generated from the same configs in ``train`` mode — the split the training
+    configs adopt when the data is next recomposed. Empty boundary states (5.3% of rows) share
+    one template by construction and are excluded; every other row must be phrasing the split
+    never emits. Exact ``(kind, state)`` rows must not coincide at all.
+    """
+    from training.config import load_data_config
+
+    for eval_name, train_name in _SPLIT_PAIRS:
+        train_records = [
+            record
+            for record in iter_records(
+                replace(
+                    load_data_config(_ROOT / "training" / "configs" / train_name),
+                    template_split="train",
+                )
+            )
+            if record["state"]
+        ]
+        templates_by_lang: dict[str, set[tuple[str, str]]] = {}
+        states: set[tuple[str, str]] = set()
+        for record in train_records:
+            domain = record.get("domain", DEFAULT_DOMAIN)
+            templates_by_lang.setdefault(record["lang"], set()).add(
+                (record["type"], _template(record["state"], domain, record["lang"]))
+            )
+            states.add((record["type"], record["state"]))
+
+        eval_records = list(
+            iter_records(load_data_config(_ROOT / "training" / "configs" / eval_name))
+        )
+        nonempty = [record for record in eval_records if record["state"]]
+        assert nonempty, eval_name
+        per_lang: dict[str, list[int]] = {}
+        exact = 0
+        for record in nonempty:
+            domain = record.get("domain", DEFAULT_DOMAIN)
+            bucket = per_lang.setdefault(record["lang"], [0, 0])
+            bucket[1] += 1
+            key = (record["type"], _template(record["state"], domain, record["lang"]))
+            if key in templates_by_lang[record["lang"]]:
+                bucket[0] += 1
+            if (record["type"], record["state"]) in states:
+                exact += 1
+        for lang, (hit, total) in sorted(per_lang.items()):
+            assert hit / total <= 0.05, f"{eval_name}: {lang} leaks {100 * hit / total:.1f}%"
+        hit = sum(count for count, _ in per_lang.values())
+        total = sum(count for _, count in per_lang.values())
+        assert hit / total <= 0.05, f"{eval_name}: {100 * hit / total:.2f}% template overlap"
+        assert exact == 0, f"{eval_name}: {exact} non-empty rows are byte-identical to training"
+
+
 def test_boundary_cases_present() -> None:
     records = _records(40)
     states = [record["state"] for record in records if record["type"] == "noul"]
@@ -443,6 +565,8 @@ _SHIPPED = [
     ("data_eval_en_domains.json", "data/eval_en_domains.jsonl"),
     ("data_multi_domains.json", "data/train_multi_domains.jsonl"),
     ("data_eval_multi_domains.json", "data/eval_multi_domains.jsonl"),
+    ("data_eval_en_domains_holdout.json", "data/eval_en_domains_holdout.jsonl"),
+    ("data_eval_multi_domains_holdout.json", "data/eval_multi_domains_holdout.jsonl"),
 ]
 
 _FIVE = ("support", "ecommerce", "agent_tools", "documents", "voice")

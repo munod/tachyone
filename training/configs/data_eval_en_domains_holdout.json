@@ -1,0 +1,16 @@
+{
+  "domains": [
+    "support",
+    "ecommerce",
+    "agent_tools",
+    "documents",
+    "voice"
+  ],
+  "languages": [
+    "en"
+  ],
+  "per_type": 500,
+  "seed": 2,
+  "source": "synthetic",
+  "template_split": "holdout"
+}

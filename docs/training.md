@@ -65,6 +65,17 @@ Every stage is a committed script with a committed config and a fixed seed.
   still the option the emitted text names, never the stride (B-12). The two invariants are pinned
   by `test_every_language_covers_every_option` and
   `test_hard_negative_distractors_reach_every_language`.
+- **Template splits (leave-one-template-out eval):** `DataConfig.template_split`
+  (`--template-split` on the CLI) selects the phrase-bank slice a run draws from: `all` (the
+  default — every shipped dataset is byte-identical), `train` (each bank minus its hold-out
+  phrase, plus any sentence that is a hold-out elsewhere in the same language) or `holdout`
+  (only the hold-out phrase — a bank's **last** phrase, positional so it is reviewable).
+  `data/eval_en_domains_holdout.jsonl` and `data/eval_multi_domains_holdout.jsonl` are built
+  with `holdout`: **0%** of their non-empty rows share a `(kind, template)` with the training
+  split (gate: `test_holdout_eval_shares_almost_no_template_with_training`, ≤ 5%), against the
+  ~99% the seed-drawn evals carry by construction — those stay the declared ceiling
+  (`docs/model-card.md`) and are never silently substituted. The training configs adopt `train`
+  when the data is next recomposed; holdout sets only measure models trained on that split.
 - **Domains (B-5):** every domain lives in its own committed file,
   `training/data/domains/<domain>.json`, holding its option labels, option terms and
   descriptions, entities, phrase banks, `score` levels, `noul` criteria and per-primitive

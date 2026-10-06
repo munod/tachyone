@@ -52,6 +52,19 @@ picks the language and two strides over one index are aliased by ``gcd``:
 
 Configs with a single language (``data_en*``) keep ``block == index`` and are byte-identical;
 the option the emitted text names is still what labels the row (B-12), never ``block`` itself.
+
+Template splits (Fase 1 of the data-recipe plan)
+------------------------------------------------
+``DataConfig.template_split`` selects the slice of every phrase bank a run draws from:
+``"all"`` (the default — every shipped dataset is byte-identical), ``"train"`` (each bank minus
+its hold-out phrase, minus any sentence that is a hold-out anywhere else in the same language)
+and ``"holdout"`` (only the hold-out phrase). The hold-out of a bank is its **last** phrase:
+positional, deterministic, reviewable — reorder a bank to choose what is held out. The two
+slices are disjoint, so a ``holdout`` eval measures phrasing the ``train`` split has never
+emitted: the eval sets built with ``template_split="holdout"`` (``data/eval_*_holdout.jsonl``)
+share only the empty and boundary states with training, against the ~99% template overlap the
+seed-drawn evals carry by construction (data audit 2026-10-05, Finding 3 — declared in
+``docs/model-card.md`` as a ceiling, never substituted silently).
 """
 
 from __future__ import annotations
@@ -60,7 +73,7 @@ import argparse
 import json
 import random
 import unicodedata
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
@@ -194,6 +207,10 @@ def domain_signatures(name: str, languages: Iterable[str] = ("en",)) -> tuple[st
     return tuple(seen)
 
 
+#: The slice of every phrase bank a run may draw from (``DataConfig.template_split``).
+_TEMPLATE_SPLITS = ("all", "train", "holdout")
+
+
 @dataclass(frozen=True, slots=True)
 class DataConfig:
     """Inputs to a data-generation run."""
@@ -212,6 +229,19 @@ class DataConfig:
     #: Fraction of records whose ``state`` gets one surface-noise edit (typos/accents/casing).
     #: ``0.0`` (default) reproduces the clean dataset byte-for-byte (B-4).
     noise_rate: float = 0.0
+    #: Which slice of every phrase bank the run draws states from: ``"all"`` (default — every
+    #: shipped dataset, byte-identical), ``"train"`` (each bank minus its hold-out phrase) or
+    #: ``"holdout"`` (only each bank's hold-out phrase). The holdout eval sets use the latter;
+    #: the training configs flip to ``"train"`` when the data is next recomposed, which is what
+    #: makes a holdout eval measure phrasing training never emitted (data audit Finding 3).
+    template_split: str = "all"
+
+    def __post_init__(self) -> None:
+        if self.template_split not in _TEMPLATE_SPLITS:
+            raise ValueError(
+                f"template_split must be one of {sorted(_TEMPLATE_SPLITS)}, "
+                f"got {self.template_split!r}"
+            )
 
 
 def _strip_accents(text: str) -> str:
@@ -256,12 +286,13 @@ def _boundary_state(index: int, base: str) -> str:
 
 
 def _noul_record(
-    domain: DomainData, index: int, lang: str, rng: random.Random, _block: int
+    domain: DomainData, index: int, lang: str, rng: random.Random, _block: int, split: str
 ) -> dict[str, Any]:
     # ``_block`` is unused: only ``choice`` cycles content over the record's language stream.
     entity = rng.choice(domain.entities(lang))
     tone = rng.choice(("request", "neutral"))
-    state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
+    phrases = _split_bank(domain.phrases(lang)[tone], split, lang)
+    state = _boundary_state(index, rng.choice(phrases).format(entity=entity))
     # B-11 (L-008): derive the label from the text just emitted, never from the loop index.
     # A request-toned state is a positive example and a neutral-toned one is negative; the empty
     # boundary state reads as neither, so it is negative too (deterministically, "" -> 0). The
@@ -293,8 +324,41 @@ def _default_option(options: tuple[str, ...]) -> str:
     return "other" if "other" in options else options[0]
 
 
+def _split_bank(phrases: Sequence[str], split: str, lang: str) -> Sequence[str]:
+    """The slice of one phrase bank a run with ``split`` draws from.
+
+    The hold-out of a bank is its **last** phrase: positional, so it is deterministic and
+    reviewable (reorder a bank to choose what is held out) and it exists in every tone of every
+    committed language, which a content hash would not guarantee. A ``train`` run additionally
+    drops any sentence that is a hold-out **anywhere** in the same language
+    (:func:`_holdout_strings`) — identical phrasing is authored across domains (``Sem pressa
+    com {entity}.`` sits in three pt banks), and without the drop it would reach training
+    through another domain's non-hold-out slot while its twin evaluates as "unseen". The two
+    slices are therefore disjoint, which is the property the eval gate rests on.
+    """
+    if split == "holdout":
+        return phrases[-1:]
+    if split == "train":
+        held = _holdout_strings(lang)
+        return tuple(phrase for phrase in phrases[:-1] if phrase not in held)
+    return phrases
+
+
+@cache
+def _holdout_strings(lang: str) -> frozenset[str]:
+    """Every hold-out sentence of ``lang``: the last phrase of every tone bank of every
+    committed domain. A sentence held out anywhere is never emitted by a ``train`` run
+    anywhere."""
+    held: set[str] = set()
+    for spec in DOMAINS.values():
+        bank = spec["languages"].get(lang, spec["languages"]["en"])
+        for phrases in bank["phrases"].values():
+            held.add(phrases[-1])
+    return frozenset(held)
+
+
 def _choice_record(
-    domain: DomainData, index: int, lang: str, rng: random.Random, block: int
+    domain: DomainData, index: int, lang: str, rng: random.Random, block: int, split: str
 ) -> dict[str, Any]:
     # Cycle options deterministically (so every option, including the catch-all, is well
     # represented) and regularly pick a distractor term from a different option as a hard
@@ -306,12 +370,12 @@ def _choice_record(
     options = domain.options
     option = options[block % len(options)]
     term = rng.choice(domain.option_terms(lang, option))
-    request_phrase = rng.choice(domain.phrases(lang)["request"])
+    request_phrase = rng.choice(_split_bank(domain.phrases(lang)["request"], split, lang))
     state = request_phrase.format(entity=term)
     if block % _HARD_NEGATIVE_RATE == 0:
         other = rng.choice([candidate for candidate in options if candidate != option])
         distractor = rng.choice(domain.option_terms(lang, other))
-        distractor_phrase = rng.choice(domain.phrases(lang)["distractor"])
+        distractor_phrase = rng.choice(_split_bank(domain.phrases(lang)["distractor"], split, lang))
         state = f"{state} {distractor_phrase.format(distractor=distractor)}"
     state = _boundary_state(index, state)
     # B-12: the label comes from the text, not the index. A non-empty state names its option (the
@@ -330,12 +394,13 @@ def _choice_record(
 
 
 def _score_record(
-    domain: DomainData, index: int, lang: str, rng: random.Random, _block: int
+    domain: DomainData, index: int, lang: str, rng: random.Random, _block: int, split: str
 ) -> dict[str, Any]:
     # ``_block`` is unused: only ``choice`` cycles content over the record's language stream.
     entity = rng.choice(domain.entities(lang))
     tone = rng.choice(("calm", "neutral", "request", "urgent"))
-    state = _boundary_state(index, rng.choice(domain.phrases(lang)[tone]).format(entity=entity))
+    phrases = _split_bank(domain.phrases(lang)[tone], split, lang)
+    state = _boundary_state(index, rng.choice(phrases).format(entity=entity))
     # B-11/B-12: the level comes from the tone the text was written in, and an empty state — which
     # carries no tone at all — takes the middle level. The old `index % 13` "near-tie" downgrade
     # contradicted 7.8% of rows and capped `score` at ~0.888 whatever the model learned.
@@ -420,7 +485,14 @@ def iter_records(config: DataConfig) -> Iterator[dict[str, Any]]:
                 # ``block`` = this record's position within its language's own stream (see
                 # the module docstring, "Sampler strides"): the option and hard-negative
                 # cycles must not derive from ``index``, whose modulo selects the language.
-                record = generator(domain, index, language, rng, index // len(languages))
+                record = generator(
+                    domain,
+                    index,
+                    language,
+                    rng,
+                    index // len(languages),
+                    config.template_split,
+                )
                 record["source"] = config.source
                 if writes_domain:
                     record["domain"] = domain_name
@@ -475,6 +547,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.0,
         help="fraction of records whose state gets one surface-noise edit (0.0 disables)",
     )
+    parser.add_argument(
+        "--template-split",
+        default="all",
+        choices=_TEMPLATE_SPLITS,
+        help="phrase-bank slice: all (default), train (each bank minus its hold-out phrase), "
+        "holdout (only the hold-out phrase)",
+    )
     parser.add_argument("--out", required=True, help="output JSONL path")
     return parser
 
@@ -502,6 +581,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         per_domain=_parse_per_domain(args.per_domain),
         source=args.source,
         noise_rate=args.noise_rate,
+        template_split=args.template_split,
     )
     written = generate(config, args.out)
     print(f"wrote {written} records to {args.out}")

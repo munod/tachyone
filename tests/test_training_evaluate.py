@@ -355,7 +355,13 @@ def test_noul_label_audit_does_not_judge_states_it_cannot_read() -> None:
 
 @pytest.mark.parametrize(
     "dataset",
-    ["data/eval_en.jsonl", "data/eval_multi.jsonl", "data/eval_en_domains.jsonl"],
+    [
+        "data/eval_en.jsonl",
+        "data/eval_multi.jsonl",
+        "data/eval_en_domains.jsonl",
+        "data/eval_en_domains_holdout.jsonl",
+        "data/eval_multi_domains_holdout.jsonl",
+    ],
 )
 def test_shipped_eval_sets_carry_no_contradictory_noul_labels(dataset: str) -> None:
     """The B-11 acceptance, on the shipped eval sets themselves (they are gitignored: skipped
