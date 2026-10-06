@@ -1162,6 +1162,52 @@ evidence.
 
 ---
 
+## B-14 · Recompose retrain (Fases 0–2b of the data-recipe plan) · **In progress — gates fixed 2026-10-06, before training**
+
+**Why.** The 2026-10-05 data audit confirmed the structural defects the plan was written for:
+Fase 0 (option and hard-negative strides aliased with the language stride — 24/30 incomplete
+cells, every six-language distractor in `pt`), Fase 1 (the eval shares ~99% of templates with
+training, so nothing below the ceiling was measurable) and Fase 2 (authored content covered
+19–36% distinct states; volume alone simulated +554 `noul` texts at 8×). Fases 0/1/2a/2b landed
+on `fix/sampler-stride` — **local only: the JevBench submission is evaluated from the remote
+`164ed3b`, so no push, no Hub upload, no publication until the benchmark has run.** The
+recomposed `data/eval_multi_domains.jsonl` has different rows, so B-5b's old-row anchors cannot
+be reused verbatim: the baseline is **re-fixed on the same rows and the same harness the arms
+will use, before any training** (B5B-4 discipline).
+
+**Baseline (released `checkpoints/multi`, explicit adapter, calibration refit per arm,
+recomposed rows — `benchmarks/results/multi_domains_recompose_baseline.json`, local):**
+
+| cell | baseline (fixed before the run) |
+| --- | ---: |
+| overall | **0.8401** (ECE 0.0267; raw 0.3163 before refit) |
+| `support` | **0.7887** (ECE 0.0853) ← no-regression anchor |
+| `ecommerce` | 0.9500 (ECE 0.0997) |
+| `voice` | 0.8500 (ECE 0.0412) |
+| `documents` | 0.8080 (ECE 0.0601) |
+| `agent_tools` | 0.8040 (ECE 0.0497) |
+| worst `domain/lang` | `support/it` 0.7590 |
+| per language | `fr` 0.8546 · `es` 0.8516 · `de` 0.8402 · `it` 0.8337 · `pt` 0.8310 · `nl` 0.8297 |
+| seen / unseen text | 0.7870 / 0.8708 |
+
+**Fixed gates for this cycle (recorded before the launch):**
+1. `support` ≥ **0.7887** — same harness, same rows, baseline-first (B-5b's anchor rule).
+2. worst new domain ≥ **0.70** — absolute, unchanged from B-5b.
+3. per-domain ECE ≤ **0.05**, exceptions declared — unchanged.
+4. gate strict = **1.000** (0 to shared, 0 wrong domain) over the `choice` rows — unchanged.
+5. **no language regresses**: each of the six ≥ its baseline above (B-1's rule: gate on the
+   worst language, not the average). Measured but **not** gated: per-language ECE ≤ 0.05 —
+   B-1's open acceptance closes only with evidence, never by re-fixing a gate.
+
+**Run.** Recipe unchanged (`training/configs/finetune_multi_domains.json`: 8 epochs, r=64,
+`choice_rank` 128 → `checkpoints/multi_b5b`; the previous build is kept as
+`checkpoints/multi_b5b_precompose`), then `fit_bank_multi_domains.json`, then the B5B-6
+harness pattern (explicit adapter, calibration refit per arm) against these gates. Artifacts
+stay local (`benchmarks/results/` and `data/preds_*` are gitignored); the `benchmarks/report.md`
+re-render and any publication happen as **one set** after JevBench.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
