@@ -10,9 +10,9 @@
     "en"
   ],
   "per_domain": {
-    "support": 3000
+    "support": 4000
   },
-  "per_type": 1000,
+  "per_type": 2000,
   "seed": 1,
   "source": "synthetic"
 }

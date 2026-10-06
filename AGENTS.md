@@ -68,8 +68,8 @@ weights need the `train` extra (`uv sync --extra train`); the decision math and 
 without it. Weights are fetched on demand (ADR-0010); tests use an injected fake encoder.
 
 Training lives in `training/` (not installed):
-`uv run python -m training.generate_data --languages en --per-type 3000 --out data/train_en.jsonl`,
-`uv run python -m training.generate_data --languages en --per-type 1000 --domains support,ecommerce,agent_tools,documents,voice --per-domain support=3000 --out data/train_en_domains.jsonl`
+`uv run python -m training.generate_data --languages en --per-type 4000 --out data/train_en.jsonl`,
+`uv run python -m training.generate_data --languages en --per-type 2000 --domains support,ecommerce,agent_tools,documents,voice --per-domain support=4000 --out data/train_en_domains.jsonl`
 (five domains, B-5; domain content lives in `training/data/domains/*.json`),
 `uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json --dry-run`,
 `uv run python -m training.fit_calibration --calibration data/preds_en.jsonl --out temperature.json`,

@@ -651,12 +651,14 @@ def test_multilingual_five_domain_datasets_preserve_the_incumbent() -> None:
         pytest.skip("gitignored datasets not present")
     train_multi, train_solo, eval_multi, eval_solo = (_load_jsonl(path) for path in paths)
 
-    # Counts: support keeps its 18k incumbent volume, four new domains add 3k each (30k total);
-    # eval mirrors the English split at 1,500 per domain (7,500 total).
+    # Counts: support keeps its 23.4k incumbent volume (7,800 per primitive), four new domains
+    # add 7.2k each (52.2k total); eval mirrors the English split at 1,500 per domain (7,500
+    # total). Fase 2b sizes: per-domain counts stay divisible by len(languages) x len(options)
+    # (24 for four-option domains, 30 for ecommerce) so every cell balances exactly.
     train_domains: dict[str, int] = {}
     for record in train_multi:
         train_domains[record["domain"]] = train_domains.get(record["domain"], 0) + 1
-    assert train_domains == {"support": 18000, **dict.fromkeys(_FIVE[1:], 3000)}
+    assert train_domains == {"support": 23400, **dict.fromkeys(_FIVE[1:], 7200)}
     eval_domains: dict[str, int] = {}
     for record in eval_multi:
         eval_domains[record["domain"]] = eval_domains.get(record["domain"], 0) + 1

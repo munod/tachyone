@@ -93,7 +93,11 @@ Every stage is a committed script with a committed config and a fixed seed.
   distinct training states where raw volume could not: 21,000 en records went 3,981 → 9,787
   distinct and 30,000 multi records 10,688 → 20,447, against a simulated ceiling of ~8x volume
   buying only +554. Domain content feeds every record, so this recaptured all golden hashes and
-  regenerated every dataset as one set.)*
+  regenerated every dataset as one set. The Fase 2b volume step then took the recipes to
+  **36,000 en / 52,200 multi** records — support 4,000/7,800 per primitive, every per-domain
+  count divisible by `languages x options` (24 for four-option domains, 30 for `ecommerce`) so
+  each `(domain, language)` cell balances exactly — landing at 13,334 (37.0%) and 33,551
+  (64.3%) distinct states.)*
 - **Localization completeness (B-5b):** every committed domain ships a full table for each tag in
   `DEFAULT_LANGUAGES` (`en, pt, es, fr, de, it, nl`) — entities, instructions, levels, criteria,
   ≥ 4 option terms and ≥ 20-char descriptions per option, and all five phrase tones with their

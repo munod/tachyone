@@ -15,9 +15,9 @@
     "nl"
   ],
   "per_domain": {
-    "support": 6000
+    "support": 7800
   },
-  "per_type": 1000,
+  "per_type": 2400,
   "seed": 1,
   "source": "synthetic"
 }
