@@ -1,7 +1,20 @@
 # State
 
-**Last Updated:** 2026-10-02
-**Current Work:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
+**Last Updated:** 2026-10-06
+**Current Work:** **Fase 0 of the data-recipe plan — sampler stride fix — executed locally
+2026-10-06 on branch `fix/sampler-stride`. Nothing leaves this machine:** the JevBench
+submission is evaluated from the remote (submission commit `164ed3b`, v0.8.0), so every
+correction in this cycle stays local — no `git push`, no Hub upload, no republication of
+`munod/tachyone-*`, gates measured but **not published** — until the benchmark has run.
+Regenerated locally: the five six-language datasets (`train_multi`, `train_multi_noisy`,
+`eval_multi`, `train_multi_domains`, `eval_multi_domains`); the four English ones did not move
+a byte (`block == index` for one language), so the English arm and its published numbers are
+untouched. Full suite **700 passed**. Measured after the fix on every committed recipe: 0
+incomplete `(domain, language)` cells (was 6/6 and 24/30), `other` share 0.277–0.298 per
+language in `support` (was 0.527 vs 0.053), distractor ≈ 1/6 in **every** language (was 100%
+`pt`), `noul` contradictions 0, volume per language unchanged. Record: **L-017**. Next: Fase 1
+(eval leave-one-template-out), then 2a content expansion.
+**Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
 acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
 (spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
 **`state_prototypes.json`** (K=32 spherical k-means centroids of the 21,000 states of
@@ -814,6 +827,38 @@ reconstruction and compare it with the source before quoting any number derived 
 that lives only in the far end of a saturating transform.
 
 ---
+
+### L-017: Two cycles over one loop index are aliased by gcd — and the eval is built from the same sampler
+
+**Context:** data audit 2026-10-05 (external review) + Fase 0 of the data-recipe plan,
+executed 2026-10-06 on branch `fix/sampler-stride` (local only — see *Current Work*).
+**Problem:** `language = languages[index % len(languages)]` already owns `index % L`, so a
+second stride over the same `index` is aliased by `gcd`. `option = options[index % len(options)]`
+with six languages and four options (`gcd = 2`) left **every** multilingual `(domain, language)`
+cell training only a subset of the options as labels — `de`/`es`/`nl` never saw
+`billing`/`sales` in `support`, `pt`/`fr`/`it` never saw `technical` (24/30 incomplete cells in
+`data_multi_domains` *and* in its eval). The measured prior: `other` was 52.7% of `support`
+`choice` rows in `de`/`es`/`nl` against 5.3% in `pt`/`fr`/`it` (eval majority baseline 0.47 vs
+0.095). The eval could not see it — 0 of 2,500 eval `choice` rows named a label that cell never
+trained — because it is drawn by the same sampler with the same strides. The sibling nobody had
+checked: `_HARD_NEGATIVE_RATE = 6 == len(languages)` put **every** distractor row of every
+six-language recipe in `pt` alone (94.7% of `pt`'s `choice` rows, 0% of the other five): five
+languages never trained distractor rejection, and the one that did carried 6× the intended
+ambiguity rate on the clause the generator keeps rare on purpose.
+**Solution:** option and hard-negative cycles run on `index // len(languages)` — the record's
+position inside its own language's stream — while language keeps `index % len(languages)` and
+the label still comes from the emitted text (B-12/ADR-0014: the stride decides which text is
+emitted, never what it is called). One-language configs keep `block == index`, so the English
+arm, its datasets and its published numbers are byte-identical. Post-fix gates on every
+committed recipe: 0 incomplete cells, `other` 0.277–0.298 per language, distractor ≈ 1/6 per
+language, `noul` contradictions 0, per-language volume unchanged; pinned by
+`test_every_language_covers_every_option` and
+`test_hard_negative_distractors_reach_every_language`.
+**Prevents:** assuming a second cyclic assignment is independent of the first — and assuming
+the eval would have caught it. Any future stride is checked against `gcd(stride,
+len(languages))`; an eval drawn by the same sampler can only expose a defect the sampler
+hides symmetrically, which is why Fase 1 (leave-one-template-out eval) precedes every
+measurement that matters.
 
 ---
 
