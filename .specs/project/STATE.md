@@ -39,8 +39,23 @@ Measured against the projections: en 21,000 rows **3,981 → 9,787 distinct (46.
 1,131 → 3,855 vs projected 3,858; `score` 1,852 → 4,839 vs 4,840), multi 30,000 rows
 **10,688 → 20,447 (68.2%)** (`noul` 76%, `score` 84% — the projected 76%/84%). Full suite
 **706 passed**; ruff/pyright/`mkdocs --strict` clean. Holdout sets regenerated on the new last
-phrases (the positional hold-out moves with the content — by design). Next: Fase 2b (volume
-1,7×, needs the GPU window).
+phrases (the positional hold-out moves with the content — by design).
+
+**Fase 2b (volume 1,7×)** — configs raised in lockstep so the incumbent row-invariants hold:
+en support 3,000 → **4,000** per primitive and `per_type` 1,000 → **2,000** (`train_en`
+12,000, `train_en_domains` **36,000**); multi support 6,000 → **7,800** and `per_type` 1,000 →
+**2,400** (`train_multi` 23,400, `train_multi_domains` **52,200**). Evals stay 7,500 — they
+needed construction, not size (Fase 1). Sizing rule corrected against the plan: exact per-cell
+balance needs `count % (languages × options) == 0` → **÷24** for four-option domains, **÷30**
+for `ecommerce`, not ÷12 (the chosen numbers already satisfied it; the written rule did not).
+Measured: en **13,334 distinct (37.0%)** vs projected ~13k, multi **33,551 (64.3%)** vs ~30k;
+per-language `choice` volume exact **2,900** (was 1,664–1,668); `other` share 0.289–0.290 in
+all six languages (the `en` reference band); B5B-02 multi incumbent green and `train_en`
+support rows byte-identical to `train_en_domains`' (4,000). AGENTS examples updated. Suite
+**706 passed**. Left untouched by design: `data_noisy` and legacy `data.json` (outside the
+plan's table); `preds_*`/reports still describe pre-2b datasets — recomputed with the retrain.
+Next: pre-register the gates and run the GPU retrain, or Fase 3's teacher pilot — both need a
+decision on the GPU window (5–10 h per arm).
 **Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
 acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
 (spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
