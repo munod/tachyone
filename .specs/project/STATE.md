@@ -1,19 +1,33 @@
 # State
 
 **Last Updated:** 2026-10-06
-**Current Work:** **Fase 0 of the data-recipe plan — sampler stride fix — executed locally
-2026-10-06 on branch `fix/sampler-stride`. Nothing leaves this machine:** the JevBench
+**Current Work:** **Fases 0 e 1 da correção das receitas de dados — stride do sampler e eval
+leave-one-template-out — executadas localmente 2026-10-06 na branch `fix/sampler-stride`.
+Nothing leaves this machine:** the JevBench
 submission is evaluated from the remote (submission commit `164ed3b`, v0.8.0), so every
 correction in this cycle stays local — no `git push`, no Hub upload, no republication of
 `munod/tachyone-*`, gates measured but **not published** — until the benchmark has run.
-Regenerated locally: the five six-language datasets (`train_multi`, `train_multi_noisy`,
-`eval_multi`, `train_multi_domains`, `eval_multi_domains`); the four English ones did not move
-a byte (`block == index` for one language), so the English arm and its published numbers are
-untouched. Full suite **700 passed**. Measured after the fix on every committed recipe: 0
-incomplete `(domain, language)` cells (was 6/6 and 24/30), `other` share 0.277–0.298 per
-language in `support` (was 0.527 vs 0.053), distractor ≈ 1/6 in **every** language (was 100%
-`pt`), `noul` contradictions 0, volume per language unchanged. Record: **L-017**. Next: Fase 1
-(eval leave-one-template-out), then 2a content expansion.
+**Fase 0 (stride)** — option and hard-negative cycles decoupled from the language stride
+(`index // len(languages)`); goldens recaptured for `en_pt`/`noisy` only — `en` is
+byte-identical, so the English arm and its published numbers did not move. Regenerated
+locally: the five six-language datasets (`train_multi`, `train_multi_noisy`, `eval_multi`,
+`train_multi_domains`, `eval_multi_domains`). Gates on every committed recipe: 0 incomplete
+`(domain, language)` cells (was 6/6 and 24/30), `other` share 0.277–0.298 per language in
+`support` (was 0.527 vs 0.053), distractor ≈ 1/6 in **every** language (was 100% `pt`),
+`noul` contradictions 0, volume per language unchanged. Record: **L-017**.
+
+**Fase 1 (eval leave-one-template-out)** — `DataConfig.template_split` (`all`/`train`/
+`holdout`; default `all`, every shipped dataset byte-identical) plus two holdout eval configs
+→ `data/eval_{en,multi}_domains_holdout.jsonl` (7,500 rows each, regenerated locally). Gate
+`test_holdout_eval_shares_almost_no_template_with_training`: **0.00%** of non-empty holdout
+rows share a `(kind, template)` with the `train` split — overall and per language — against
+the ~99% the seed-drawn evals carry (89.5%/61.0% identical rows, declared a ceiling in the
+model card). The split also drops sentences that are hold-outs in *another* bank of the same
+language: 21 rows leaked through cross-domain identical phrasing before that rule, now 0.
+Current evals and all training sets are untouched — training adopts `train` with the Fase 2b
+recomposition, and `benchmarks/report.md` is re-rendered **then** as one set (a holdout run
+against today's adapters, trained on all phrases, would be in-sample). Full suite **706
+passed**. Next: Fase 2a (content expansion, zero GPU), then 2b.
 **Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
 acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
 (spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
