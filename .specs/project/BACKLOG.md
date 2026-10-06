@@ -1206,6 +1206,30 @@ harness pattern (explicit adapter, calibration refit per arm) against these gate
 stay local (`benchmarks/results/` and `data/preds_*` are gitignored); the `benchmarks/report.md`
 re-render and any publication happen as **one set** after JevBench.
 
+**English arm — same discipline, second L4 (gates fixed 2026-10-06, before its run).**
+Baseline = the released `checkpoints/en` (the B-13 mixture artifact) on the recomposed
+`data/eval_en_domains.jsonl`, same explicit-adapter harness with calibration refit
+(`benchmarks/results/en_domains_recompose_baseline.json`, local):
+
+| cell | baseline (fixed before the run) |
+| --- | ---: |
+| overall | **0.9616** (ECE 0.0190; raw 0.1370 before refit) |
+| `support` | **0.9733** (ECE 0.0110) ← no-regression anchor |
+| `ecommerce` | 0.9767 (ECE 0.0073) |
+| `documents` | 0.9787 (ECE 0.0068) |
+| `agent_tools` | 0.9520 (ECE 0.0219) |
+| `voice` | 0.9273 (ECE 0.0527) ← already above 0.05, exception carried |
+| seen / unseen text | 0.9649 / 0.9530 |
+| gate strict | 1.0000 (0 shared, 0 wrong, n = 2,500) |
+
+Fixed gates: `support` ≥ **0.9733** · worst new domain ≥ **0.70** · per-domain ECE ≤ **0.05**
+with declared exceptions (baseline already posts `voice` 0.0527) · gate strict = **1.0000**.
+Single-language arm, so there is no per-language gate; `seen`/`unseen` is reported, not gated.
+Run: `finetune_en_domains.json` (run-5 recipe: r=16, `choice_rank` 128, 6 epochs →
+`checkpoints/en_domains`, previous build kept as `checkpoints/en_domains_precompose`) on the
+second L4 while the multi arm occupies the first; the `fit_bank_en_domains.json` trunk pointer
+moves from `en_domains_r5` to the freshly trained `en_domains` when the fit runs.
+
 ---
 
 ## Carried over (from earlier planning)
