@@ -10,6 +10,6 @@
   "max_len": 512,
   "model_id": "answerdotai/ModernBERT-large",
   "seed": 2,
-  "trunk_adapter": "checkpoints/en_domains_r5",
+  "trunk_adapter": "checkpoints/en_domains",
   "val_split": 0.1
 }
