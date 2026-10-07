@@ -10,8 +10,11 @@ import pytest
 
 from training.finetune_rlcd import (
     FinetuneConfig,
+    bucket_by_cell,
+    cell_of,
     choice_domains,
     choice_head_payload,
+    format_worst_cells,
     load_config,
     read_records,
     require_committed_domains,
@@ -19,6 +22,7 @@ from training.finetune_rlcd import (
     shuffled,
     split_records,
     summarize_dataset,
+    worst_cell,
 )
 from training.generate_data import DataConfig, generate
 
@@ -185,3 +189,50 @@ def test_shuffled_is_deterministic_a_permutation_and_pure() -> None:
     assert sorted(first) == items
     assert items == list(range(50))  # the input is untouched
     assert shuffled([], seed=1) == []
+
+
+def test_cell_of_is_primitive_domain_lang_with_a_domainless_fallback() -> None:
+    assert cell_of({"type": "noul", "domain": "support", "lang": "it"}) == "noul:support/it"
+    # legacy single-domain records carry no domain: one cell per primitive/language, not a crash
+    assert cell_of({"type": "score", "lang": "en"}) == "score:-/en"
+    assert cell_of({"type": "choice", "domain": "", "lang": "pt"}) == "choice:-/pt"
+
+
+def test_bucket_by_cell_groups_and_sorts_keys() -> None:
+    records = [
+        {"type": "noul", "domain": "voice", "lang": "it"},
+        {"type": "noul", "domain": "support", "lang": "it"},
+        {"type": "noul", "domain": "voice", "lang": "it"},  # same cell as the first row
+    ]
+    buckets = bucket_by_cell(records)
+    assert list(buckets) == ["noul:support/it", "noul:voice/it"]  # sorted, stable output
+    assert len(buckets["noul:voice/it"]) == 2
+    assert buckets["noul:support/it"] == [records[1]]  # rows keep their identity
+    assert bucket_by_cell([]) == {}
+
+
+def test_worst_cell_picks_the_highest_loss_of_that_primitive_only() -> None:
+    cells = {
+        "noul:support/it": 0.3612,
+        "noul:support/de": 0.0010,
+        "choice:support/it": 0.9000,  # another primitive must not hijack the noul pick
+        "score:voice/pt": 0.0100,
+    }
+    assert worst_cell(cells, "noul") == ("noul:support/it", 0.3612)
+    assert worst_cell(cells, "choice") == ("choice:support/it", 0.9000)
+    assert worst_cell(cells, "score") == ("score:voice/pt", 0.0100)
+    assert worst_cell(cells, "missing") is None
+    # deterministic tie-break on the cell name, not on dict order
+    tie = {"noul:a/x": 0.5, "noul:b/y": 0.5}
+    assert worst_cell(tie, "noul") == ("noul:b/y", 0.5)
+    assert worst_cell({}, "noul") is None
+
+
+def test_format_worst_cells_is_one_line_with_the_primitive_prefix_stripped() -> None:
+    cells = {
+        "noul:support/it": 0.3612,
+        "noul:voice/de": 0.0010,
+        "choice:ecommerce/fr": 0.0042,
+    }
+    assert format_worst_cells(cells) == "noul=support/it@0.3612 choice=ecommerce/fr@0.0042"
+    assert format_worst_cells({}) == ""  # no rows at all: empty line, never a crash

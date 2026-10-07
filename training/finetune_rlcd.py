@@ -159,6 +159,47 @@ def shuffled[T](items: Sequence[T], *, seed: int | str) -> list[T]:
     return order
 
 
+def cell_of(record: Mapping[str, Any]) -> str:
+    """The validation-monitor cell: ``<primitive>:<domain>/<lang>`` (``-`` when domainless).
+
+    B-14's `noul`/`support`/`it` cell inverted while the aggregate ``val_loss`` kept
+    improving — a collapse at this grain only becomes visible when validation is bucketed by
+    exactly it.
+    """
+    return f"{record['type']}:{record.get('domain') or '-'}/{record['lang']}"
+
+
+def bucket_by_cell(records: Iterable[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """Group ``records`` by :func:`cell_of`, keys sorted so the monitor output is stable."""
+    buckets: dict[str, list[dict[str, Any]]] = {}
+    for record in records:
+        buckets.setdefault(cell_of(record), []).append(record)
+    return dict(sorted(buckets.items()))
+
+
+def worst_cell(cell_loss: Mapping[str, float], primitive: str) -> tuple[str, float] | None:
+    """The highest-loss cell of one primitive; ``None`` when that primitive has no rows.
+
+    Ties break on the cell name so the printed line is deterministic.
+    """
+    prefix = f"{primitive}:"
+    candidates = [(key, loss) for key, loss in cell_loss.items() if key.startswith(prefix)]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: (item[1], item[0]))
+
+
+def format_worst_cells(cell_loss: Mapping[str, float]) -> str:
+    """The one line a human reads each epoch, e.g. ``noul=support/it@0.3612 score=...``."""
+    parts = []
+    for primitive in ("noul", "choice", "score"):
+        found = worst_cell(cell_loss, primitive)
+        if found is not None:
+            name, loss = found
+            parts.append(f"{primitive}={name.split(':', 1)[1]}@{loss:.4f}")
+    return " ".join(parts)
+
+
 def summarize_dataset(path: str | Path, *, limit: int | None = None) -> dict[str, Any]:
     """Count records per primitive and language (pure; no torch)."""
     per_type: dict[str, int] = {}
@@ -347,7 +388,34 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
                     count += len(chunk)
         return total / count if count else float("nan")
 
+    def evaluate_cells(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        """Per-cell validation loss, bucketed by :func:`cell_of` (the B-14 monitor).
+
+        A cell collapse (one `(primitive, domain, language)` inverting) contributes ~0.01 to
+        the aggregate and hides behind it, so the same ``batch_loss`` is reported at the cell
+        grain every epoch. Runs under ``no_grad`` with dropout off: it cannot move a weight
+        or a random stream, so the trained artifact stays byte-identical to a run without it.
+        """
+        model.eval()  # type: ignore[attr-defined]
+        cells: dict[str, dict[str, Any]] = {}
+        with torch.no_grad():
+            for key, rows in bucket_by_cell(items).items():
+                kind = str(rows[0]["type"])
+                total = 0.0
+                for start in range(0, len(rows), config.batch_size):
+                    chunk = rows[start : start + config.batch_size]
+                    total += float(batch_loss(kind, chunk).item()) * len(chunk)
+                cells[key] = {"loss": total / len(rows), "n": len(rows)}
+        return cells
+
+    output_dir = Path(config.out_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    monitor_path = output_dir / "cell_monitor.jsonl"
+    # A rerun into the same out_dir starts a fresh monitor instead of appending to a dead one.
+    monitor_path.write_text("", encoding="utf-8")
+
     epochs_run = 0
+    cells: dict[str, dict[str, Any]] = {}
     for epoch in range(config.epochs):
         model.train()  # type: ignore[attr-defined]
         optimizer.zero_grad(set_to_none=True)
@@ -381,9 +449,17 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
             f"{kind}={epoch_loss[kind] / max(1, epoch_seen[kind]):.4f}" for kind in epoch_loss
         )
         print(f"epoch {epochs_run}/{config.epochs} train_loss {means}", flush=True)
+        # The cell monitor (B-14): validation bucketed per (primitive, domain, language),
+        # one JSONL line per epoch plus the worst cell of each primitive on stdout.
+        cells = evaluate_cells(val_records)
+        cell_loss = {key: float(values["loss"]) for key, values in cells.items()}
+        with monitor_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"epoch": epochs_run, "cells": cells}, sort_keys=True) + "\n")
+        print(
+            f"epoch {epochs_run}/{config.epochs} cell_monitor {format_worst_cells(cell_loss)}",
+            flush=True,
+        )
 
-    output_dir = Path(config.out_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(output_dir))
 
     languages = tuple(sorted({str(record["lang"]) for record in train_records}))
@@ -424,6 +500,7 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
     report["checkpoint"] = str(output_dir)
     report["temperature"] = fitted_temperature
     report["val_loss"] = evaluate_loss(val_records)
+    report["val_cells"] = cells  # last epoch's per-cell validation loss (the B-14 monitor)
     return report
 
 
