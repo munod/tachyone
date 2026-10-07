@@ -1403,12 +1403,17 @@ fully recovers its siblings (raw `choice` 0.9928) — kept as evidence, not a pu
 candidate. **The multi publish arm is `checkpoints/tmp_il_orig` (+ its fitted bank); the en
 arm is unaffected.**
 
-**Remainder of this defect (the only open piece):** (c) the per-`(domain, lang, primitive)`
-val monitor in `training/finetune_rlcd.py`, so a cell collapse can never hide behind the
-aggregate again — a repo change with co-located tests, not yet written. Also pending for
-reproducibility: decide where the continuation script lives (it currently exists only in
-`/tmp/opencode/finetune_interleave.py`; the publish arm cannot be rebuilt from the repo
-without it).
+**Remainder of this defect — both items LANDED (2026-10-07):**
+(c) the per-`(domain, lang, primitive)` val monitor is now in the fine-tune loop: every epoch
+buckets validation by `cell_of`, appends one `cell_monitor.jsonl` line to `out_dir`, prints the
+worst cell of each primitive next to the train loss, and ships the last epoch's cells in
+`report["val_cells"]` — smoke-verified end-to-end (commit `f57343f`, tests in
+`tests/test_training_finetune.py`); and the continuation script lives in the repo as
+`training/interleave_continue.py` (commit `e9d49e4`, tests in
+`tests/test_training_interleave.py`) — resolved hyperparameters from CLI >
+`finetune_config.json` > `adapter_config.json`, sha256 before/after with a loud failure when
+nothing trained. Bitwise parity with the original `/tmp` run is impossible on this GPU (two
+identical runs differ Δ0.028 in adapter weights): recorded as **L-018**, parity is behavioral.
 
 **Deferred to the publication cycle (post-JevBench, one set — B5B-8's rule):** promotion to
 `checkpoints/multi` / `checkpoints/en`, `benchmarks/report.md` re-render, Hub upload. Nothing

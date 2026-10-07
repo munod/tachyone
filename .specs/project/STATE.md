@@ -91,10 +91,10 @@ a **joint continuation with round-robin primitive batches from the original inve
 (raw overall 0.9796 → 0.9985). Fit + calibration + harness: **`support` 0.9993 ≥ 0.7887, worst
 new domain 0.9987 ≥ 0.70, per-domain ECE 0.0001–0.0011 ≤ 0.05 (zero exceptions), strict 1.000,
 every language ≥ baseline; overall 0.9995 / ECE 0.0004** — all five PASS. **Publish arm =
-`checkpoints/tmp_il_orig` + its fitted bank; en unaffected.** Remainder: the trainer's
-per-`(domain, lang, primitive)` val monitor (hard rule 6: with tests) and the continuation
-script's repo home (today only `/tmp/opencode/finetune_interleave.py`). Full trail: BACKLOG
-**B-14**. Everything still local.
+`checkpoints/tmp_il_orig` + its fitted bank; en unaffected.** Both remainders landed the same
+day: the trainer's per-cell val monitor (`cell_monitor.jsonl` + worst-cell line per epoch,
+commit `f57343f`) and the recipe script `training/interleave_continue.py` (commit `e9d49e4`);
+GPU parity lesson **L-018**. Full trail: BACKLOG **B-14**. Everything still local.
 **Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
 acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
 (spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
@@ -940,6 +940,33 @@ the eval would have caught it. Any future stride is checked against `gcd(stride,
 len(languages))`; an eval drawn by the same sampler can only expose a defect the sampler
 hides symmetrically, which is why Fase 1 (leave-one-template-out eval) precedes every
 measurement that matters.
+
+---
+
+### L-018: Two identical GPU runs are not the same experiment — parity is behavioral, never bitwise
+
+**Context:** B-14 defect closure (2026-10-07): the interleaved-continuation script that fixed
+the `support/it` cell existed only in `/tmp`; hard rule 6 moved it into
+`training/interleave_continue.py`, and the refactored module had to be proven to reproduce the
+original experiment.
+**Problem:** the recipe claims "same loss math, same split, same shuffle seeds" — so the
+re-run should match `checkpoints/tmp_il_orig` epoch 8 (`noul=0.0144 choice=0.0260
+score=0.0312`). It did not: the module's run gave `choice=0.0058`, adapter weights off by max
+**Δ0.0360** from the original. A normalized diff of the setup, `encode` and `batch_loss`
+showed zero logic difference — and a second run *of the same module* differed from the first
+by max **Δ0.0279** (losses `choice=0.0058` vs `0.0072`): the run-to-run floor of the L4 with
+bf16 autocast accounts for the original gap. Two scripts cannot be compared bitwise on this
+hardware; only a behavioral comparison (loss scale, cell probe, gates) means anything.
+**Solution:** parity for `training/interleave_continue.py` is asserted as (a) a mechanical
+diff of the loss math, (b) identical resolved hyperparameters (CLI > the trunk's
+`finetune_config.json` > PEFT's `adapter_config.json` — never the directory name: the
+`multi`-substring trap), (c) identical seeds and batch order (unit-tested),
+(d) the sha256 before/after guard proving training happened, and (e) behavioral agreement
+within the observed nondeterminism band. A trained arm's provenance is the artifact's own
+hashes plus the gates, never the run log.
+**Prevents:** burning hours chasing a "logic bug" that is GPU noise; claiming bitwise
+reproducibility of a training run; comparing two training runs by loss deltas smaller than
+the measured nondeterminism floor (≈Δ0.03 in adapter weights after one epoch here).
 
 ---
 
