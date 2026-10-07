@@ -33,6 +33,12 @@ reseeded separately in B-9 (overall 0.859). Spec/tasks: `.specs/features/multili
    calibration mapping; the scalar per-language temperature already exists.
 2. [x] Republished the r=64 multilingual adapter to the Hub (`munod/tachyone-multi`, commit `599df58`).
 3. Keep per-language accuracy/ECE reporting and gate on the worst language, not the average.
+4. **Open defect (2026-10-07): per-language `noul` inverted.** The B-14 multi arm scores
+   `noul`/`support`/`it` at **0.0723** on `eval_multi` (other languages 1.000) and anti-fits its
+   own training rows (10%) — full evidence trail, what was ruled out and the epoch snapshots in
+   flight are in **B-14** (*Open defect*). Per-language `noul` was never gated here (the
+   acceptance below covers `choice`/`score`); it is explicitly on the list now, and the
+   multi arm does not publish until it closes.
 
 **Acceptance.**
 - Multilingual `choice` accuracy ≥ 0.60 on the held-out synthetic set.
@@ -1293,6 +1299,26 @@ own run before replacing them.
 must keep reproducing its own bytes), regenerate, retrain both arms (one evening of the two
 L4s), score holdout: that model has never seen the held-out phrases, so its holdout row is a
 pure phrasing-generalization measurement.
+
+**Open defect (found 2026-10-07 while detailing B-1): `noul` in `support`/`it` is inverted in
+the multi publish arm — no publication until it closes.** The joint trunk **and** the fitted
+bank score their own 1,192 training rows at **10% accuracy** (`P|1)` = 0.456 vs `P|0)` = 0.715);
+`eval_multi` reports `noul`/`it` **0.0723** (every other language 1.000), dragging `support/it`
+to 0.6787 / ECE 0.3065 — while `it` in the other four domains is 1.000 and `choice`/`score`
+stay healthy, which is why the pre-registered gates still passed (they cover overall cells and
+per-language accuracy, not per-language `noul`). Ruled out by direct test, each with a
+measurement: labels (B-11 audit clean on the train file: neutral→0, request→1), split
+membership (1,192 rows in train, zero duplicate ids), question-text parity between training and
+runtime (identical cosines −0.1958 both paths), `noul` math (same cosine, positive temperature
+— sign only), content age (inversion uniform across pre-expansion and expansion phrases and
+entities), the fit/export path (joint trunk inverted identically), and epoch 1 (cosines healthy
+— `it` request +0.9735, neutral +0.9431, same as `de`; no separation yet): **the flip happens
+between epoch 1 and 8.** Question-side signature: the empty-state baseline of this cell alone
+is 0.707, against 0.437–0.444 in the other 14 cells. The released adapter and the pre-B-14
+trunk both score these rows **0.892 correct-direction** — so this is a regression of the B-14
+training run, not of the data or of the era. Snapshot runs at epoch 2 and epoch 4 (same seed,
+own sessions) are running to localize the flip; next steps after localization: seed rerun
+(is it deterministic?) and only then a training-schedule change.
 
 **Deferred to the publication cycle (post-JevBench, one set — B5B-8's rule):** promotion to
 `checkpoints/multi` / `checkpoints/en`, `benchmarks/report.md` re-render, Hub upload. Nothing
