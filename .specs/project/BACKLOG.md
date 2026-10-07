@@ -1230,6 +1230,41 @@ Run: `finetune_en_domains.json` (run-5 recipe: r=16, `choice_rank` 128, 6 epochs
 second L4 while the multi arm occupies the first; the `fit_bank_en_domains.json` trunk pointer
 moves from `en_domains_r5` to the freshly trained `en_domains` when the fit runs.
 
+**Results (2026-10-07) — both runs `exit=0` under the L-009 detached launch (the first,
+harness-launched attempts died silently mid-run, exactly the documented reap), fits `exit=0`,
+harness = predict → calibration refit → predict per arm:**
+
+| arm | overall | ECE | `support` | worst new domain | gate strict | seen / unseen | verdict |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| multi baseline (released) | 0.8401 | 0.0267 | 0.7887 | 0.8040 | 1.000 | 0.787 / 0.871 | — |
+| multi joint bank | 0.9796 | 0.0095 | 0.9300 | 0.9853 | 1.000 | 0.968 / 0.986 | PASS |
+| **multi fitted bank (publish)** | **0.9863** | **0.0080** | **0.9413** | **0.9913** | **1.000** | 0.978 / 0.991 | **PASS** |
+| multi fitted shared | 0.9863 | 0.0080 | 0.9413 | 0.9913 | n/a (no gate) | 0.978 / 0.991 | ties the bank — L-012, third replication |
+| en baseline (released B-13) | 0.9616 | 0.0190 | 0.9733 | 0.9273 | 1.000 | 0.965 / 0.953 | — |
+| en joint bank | 0.8209 | 0.0282 | **0.8200 ✗** | 0.7653 | 1.000 | 0.817 / 0.830 | fails the support anchor — not the publish lineage (val_loss 0.666 vs multi's 0.097; the B5B joint-exposure pattern) |
+| **en fitted bank (publish)** | **0.9993** | **0.0003** | **0.9987** | **0.9980** | **1.000** | 1.000 / 0.998 | **PASS** |
+| en fitted shared | 0.9988 | 0.0007 | 0.9980 | 0.9973 | n/a (no gate) | 1.000 / 0.996 | ties the bank |
+
+**Gate by gate (publish arm):** multi — `support` 0.9413 ≥ 0.7887 ✓ · worst new domain
+0.9913 ≥ 0.70 ✓ · per-domain ECE 0.0026–0.0531 → **one declared exception (`support`
+0.0531)** ✓ · strict 1.000 (0 fell, 0 wrong) ✓ · every language ≥ baseline — `de` 1.0000,
+`nl` 1.0000, `fr` 0.9984, `pt` 0.9976, `es` 0.9857, `it` 0.9357, against baselines 0.830–0.855
+✓. en — `support` 0.9987 ≥ 0.9733 ✓ · worst new domain 0.9980 ≥ 0.70 ✓ · per-domain ECE
+0.0003–0.0017, **zero exceptions** ✓ · strict 1.000 ✓. Shared-only arms show `strict` n/a
+(no gate to route through — the B5B table's convention), not a failure.
+
+**Measured, not gated (B-1):** per-language ECE on the multi publish arm — `pt` 0.0014,
+`fr` 0.0016, `nl` 0.0029, `de` 0.0035, `es` 0.0058, **`it` 0.0548**: five of six ≤ 0.05 on
+these rows (`nl` was 0.104 at B-1), `it` keeps B-1 open — and these are in-domain synthetic
+rows either way. The honest yardstick is the Fase 1 holdout eval, which becomes actionable
+only once the training configs adopt `template_split: "train"` **and the arm retrained on it**
+(B-14 trained on `all`, so its provenance pins `all`; the flip is deferred with the next data
+decision rather than silently invalidating this run).
+
+**Deferred to the publication cycle (post-JevBench, one set — B5B-8's rule):** promotion to
+`checkpoints/multi` / `checkpoints/en`, `benchmarks/report.md` re-render, Hub upload. Nothing
+of the sort happens while the submission is being evaluated from the remote.
+
 ---
 
 ## Carried over (from earlier planning)

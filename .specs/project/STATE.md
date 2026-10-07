@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-10-06
+**Last Updated:** 2026-10-07
 **Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
 leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
 `fix/sampler-stride`. Nothing leaves this machine:** the JevBench
@@ -24,9 +24,11 @@ rows share a `(kind, template)` with the `train` split — overall and per langu
 the ~99% the seed-drawn evals carry (89.5%/61.0% identical rows, declared a ceiling in the
 model card). The split also drops sentences that are hold-outs in *another* bank of the same
 language: 21 rows leaked through cross-domain identical phrasing before that rule, now 0.
-Current evals are untouched, and training adopts the `train` split with the Fase 2b
-recomposition — which is also when `benchmarks/report.md` is re-rendered as one set (a holdout
-run against adapters trained on all phrases would be in-sample).
+Current evals are untouched, and training adopts the `train` split only when the data is next
+recomposed **and the arms are retrained on it** (B-14 trained on `all` — its provenance pins
+`all`, so the flip waits for the next data decision instead of invalidating the run);
+`benchmarks/report.md` is re-rendered as one set at publication (a holdout run against
+adapters trained on all phrases would be in-sample).
 **Fase 2a (conteúdo, zero GPU)** — every domain file expanded ×3: **entities 20 → 60** and
 phrase banks **request/neutral/calm/urgent/distractor = 11/9/9/9/8** per language, all seven
 languages, authored (`support`) and drafted+reviewed (`ecommerce`, `agent_tools`, `documents`,
@@ -54,6 +56,25 @@ all six languages (the `en` reference band); B5B-02 multi incumbent green and `t
 support rows byte-identical to `train_en_domains`' (4,000). AGENTS examples updated. Suite
 **706 passed**. Left untouched by design: `data_noisy` and legacy `data.json` (outside the
 plan's table); `preds_*`/reports still describe pre-2b datasets — recomputed with the retrain.
+
+**B-14 (recompose retrain) — complete 2026-10-07, all gates PASS on both publish arms.**
+Gates were committed before any training (`d8e94fc` multi, `85a2f05` en, baselines re-fixed on
+the recomposed rows). The first launches died silently mid-run — the documented **L-009**
+harness reap (no traceback, no `exit=`) — and were relaunched `setsid nohup` with per-run
+session, RAM/VRAM sampling and `.done` markers: multi `exit=0` at 22:35 (52,200 records, 8
+epochs), en `exit=0` at 21:05 (36,000, 6 epochs); `fit_choice_bank` `exit=0` both arms; the
+B5B-6 harness (predict → calibration refit → predict per arm) produced six candidate reports.
+**Publish arm = fitted bank: multi 0.9863 / ECE 0.0080 / `support` 0.9413 ≥ 0.7887 / worst new
+0.9913 / strict 1.000 / every language ≥ baseline (0.936–1.000 vs 0.830–0.855); en 0.9993 /
+ECE 0.0003 / `support` 0.9987 ≥ 0.9733 / worst new 0.9980 / strict 1.000 / zero ECE
+exceptions.** Declared: one multi ECE exception (`support` 0.0531). Findings recorded rather
+than smoothed: the **en joint trunk fails the support anchor (0.8200 < 0.9733, val_loss 0.666)**
+and is not the publish lineage (B5B's joint-exposure pattern, L-012 third replication via the
+fitted-bank/shared tie); per-language ECE 5/6 ≤ 0.05 (`it` 0.0548) keeps **B-1 open on the
+honest yardstick** — the holdout eval, which needs a `train`-split retrain to be actionable.
+Full tables in BACKLOG **B-14**. Everything local: no promotion, no re-render, no upload until
+JevBench runs. Next: en/multi publication cycle is deferred; open decision = Fase 3 teacher
+pilot (the second L4 makes the Qwen3.5:35b Q4 fit plausible) vs the cheap B-1 competitors.
 Next: pre-register the gates and run the GPU retrain, or Fase 3's teacher pilot — both need a
 decision on the GPU window (5–10 h per arm).
 **Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
