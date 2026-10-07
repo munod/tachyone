@@ -1261,6 +1261,39 @@ only once the training configs adopt `template_split: "train"` **and the arm ret
 (B-14 trained on `all`, so its provenance pins `all`; the flip is deferred with the next data
 decision rather than silently invalidating this run).
 
+**Holdout probe (2026-10-07) — how much of the ceiling survives genuinely unseen phrasing.**
+Both publish arms and both released adapters ran on the Fase 1 holdout evals (same harness,
+calibration refit; `benchmarks/results/{multi,en}_holdout_*.json`):
+
+| adapter | all-split eval | **holdout eval** | Δ |
+| --- | ---: | ---: | ---: |
+| multi B-14 fitted bank (trained on `all`) | 0.9863 | **0.9876** | +0.001 |
+| en B-14 fitted bank (trained on `all`) | 0.9993 | **0.9995** | +0.001 |
+| multi released (never saw the expansion's phrases) | 0.8401 | **0.7623** | **−0.078** — worst new domain 0.638, *below* the 0.70 gate line |
+| en released (never saw them either) | 0.9616 | **0.8508** | **−0.111** — `voice` 0.515, ECE 0.069 |
+
+Two readings, both recorded. (1) **The 0.9863/0.9993 is recognition**: the holdout cannot bite
+an arm trained on `all`, and indeed its score does not move — in-domain and holdout are the
+same measurement for B-14. (2) An adapter that genuinely never saw those phrases pays **8–11
+points for novel phrasing inside the same family** and would fail the worst-new-domain gate —
+real generalization, mid-family: far above the external-probe floor (XNLI 0.566,
+typed-decisions 0.367, peer's turf 0.288) and far below the in-domain ceiling. Caveat: for the
+released adapters `text_seen` is computed against *today's* train file, not their actual
+pre-expansion training data, so only their overall column is comparable.
+
+**Provenance pin (before any regeneration):** B-14 trained on these exact bytes —
+`train_en` `c4101fc8037bef85`, `train_en_domains` `9212e46d6a7994dc`, `train_multi`
+`de1bcca1e81190a6`, `train_multi_domains` `97a3ca3d5e56644f`, evaluated on `eval_en_domains`
+`934145c047375133` / `eval_multi_domains` `92b526f99fe60187` (sha256[:16], split `all`).
+Any later flip to `template_split: "train"` must reproduce *these* bytes to re-verify B-14's
+own run before replacing them.
+
+**Estágio 2 (the clean number, not yet run):** flip the four training configs to
+`template_split: "train"`, pin today's B-14 training sets by hash first (provenance — B-14
+must keep reproducing its own bytes), regenerate, retrain both arms (one evening of the two
+L4s), score holdout: that model has never seen the held-out phrases, so its holdout row is a
+pure phrasing-generalization measurement.
+
 **Deferred to the publication cycle (post-JevBench, one set — B5B-8's rule):** promotion to
 `checkpoints/multi` / `checkpoints/en`, `benchmarks/report.md` re-render, Hub upload. Nothing
 of the sort happens while the submission is being evaluated from the remote.
