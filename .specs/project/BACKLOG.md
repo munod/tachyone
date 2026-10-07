@@ -1316,9 +1316,30 @@ entities), the fit/export path (joint trunk inverted identically), and epoch 1 (
 between epoch 1 and 8.** Question-side signature: the empty-state baseline of this cell alone
 is 0.707, against 0.437–0.444 in the other 14 cells. The released adapter and the pre-B-14
 trunk both score these rows **0.892 correct-direction** — so this is a regression of the B-14
-training run, not of the data or of the era. Snapshot runs at epoch 2 and epoch 4 (same seed,
-own sessions) are running to localize the flip; next steps after localization: seed rerun
-(is it deterministic?) and only then a training-schedule change.
+training run, not of the data or of the era.
+
+**Localized (2026-10-07, seed-42 snapshots): the cell learns correctly, then late-training
+interference inverts it.**
+
+| snapshot | `support/it` `noul` | control `support/de` | val_loss (aggregate) |
+| --- | ---: | ---: | ---: |
+| epoch 1 | 0.500 (everything uniform) | 0.500 | 0.839 |
+| **epoch 2** | **1.000** (`P\|1` 0.727 / `P\|0` 0.422) | 1.000 | 0.713 |
+| **epoch 4** | **0.793, degrading** (0.584 / 0.494 — its *own* gradient still points to recovery) | 1.000 | 0.620 |
+| epoch 8 (B-14) | **0.100 inverted** (0.457 / 0.715) | 1.000 | **0.097** |
+
+The cell was correct at epoch 2 and dies while its own gradient still points the right way —
+the signature of **catastrophic interference through the shared trunk**, driven by the other
+streams (choice/score still converging after epoch 4), not by anything in the cell's own data.
+Aggregate `val_loss` improves throughout (this cell is only ~0.010 of the final 0.097) and the
+epoch-4 model already reads `noul` **0.9884** / `score` 0.9928 on the full eval — but its joint
+`choice` is 0.3016 (fit-dependent) and its val_loss 0.620, so "stop early" is not a free fix.
+**Options recorded:** (a) seed rerun — is the flip seed-specific? (b) a short `noul`-only
+continuation from the epoch-4 checkpoint (analogous to the fit's head-only step) to test
+whether choice/score gradients are the driver, then re-fit the bank and re-gate; (c) a
+per-`(domain, lang, primitive)` val monitor in the trainer so this class of cell collapse can
+never hide behind the aggregate again. The multi arm stays unpublished until one of (a)–(c)
+lands with the gates green.
 
 **Deferred to the publication cycle (post-JevBench, one set — B5B-8's rule):** promotion to
 `checkpoints/multi` / `checkpoints/en`, `benchmarks/report.md` re-render, Hub upload. Nothing
