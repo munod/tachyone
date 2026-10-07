@@ -1341,6 +1341,20 @@ per-`(domain, lang, primitive)` val monitor in the trainer so this class of cell
 never hide behind the aggregate again. The multi arm stays unpublished until one of (a)–(c)
 lands with the gates green.
 
+**Driver test (b) run and CONCLUSIVE (2026-10-07): choice/score gradients are the driver.**
+Continuing the epoch-4 adapter for four `noul`-only epochs (same split, same per-epoch shuffle
+seeds, same loss math) yields **`support/it` = 1.000** (`P|1)` 0.731 / `P|0)` 0.269) with
+**zero** cells below 0.95 — while the real run's choice/score stream drives the same cell to
+0.100 over the same epochs. The cell not only survives without them, it fully recovers.
+**Trap recorded (it invalidated the first attempt):** `PeftModel.from_pretrained` defaults to
+`is_trainable=False`, so the first continuation trained only the fresh temperature parameter
+and saved input-identical weights — caught by hashing `adapter_model.safetensors` after the
+run (`sha256` identical to the input) and fixed with `is_trainable=True`. Rule for any
+continuation/repair script: **hash the adapter before and after; identical hashes mean nothing
+trained.** Open decision now: (1) `noul`-only repair from the final trunk + bank re-fit + full
+re-gate (~2 h, artifact recipe gains a documented touch-up step), (2) clean retrain with a
+per-cell monitor and/or schedule mitigation (~5 h), (3) seed rerun first.
+
 **Deferred to the publication cycle (post-JevBench, one set — B5B-8's rule):** promotion to
 `checkpoints/multi` / `checkpoints/en`, `benchmarks/report.md` re-render, Hub upload. Nothing
 of the sort happens while the submission is being evaluated from the remote.
