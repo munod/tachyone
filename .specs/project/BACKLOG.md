@@ -1300,8 +1300,10 @@ must keep reproducing its own bytes), regenerate, retrain both arms (one evening
 L4s), score holdout: that model has never seen the held-out phrases, so its holdout row is a
 pure phrasing-generalization measurement.
 
-**Open defect (found 2026-10-07 while detailing B-1): `noul` in `support`/`it` is inverted in
-the multi publish arm — no publication until it closes.** The joint trunk **and** the fitted
+**RESOLVED (2026-10-07): `noul` in `support`/`it` was inverted in the multi publish arm —
+closed the same day by the interleaved joint continuation recorded below (all five
+pre-registered gates green). Publication itself stays deferred to the post-JevBench cycle.**
+(Found 2026-10-07 while detailing B-1.) The joint trunk **and** the fitted
 bank score their own 1,192 training rows at **10% accuracy** (`P|1)` = 0.456 vs `P|0)` = 0.715);
 `eval_multi` reports `noul`/`it` **0.0723** (every other language 1.000), dragging `support/it`
 to 0.6787 / ECE 0.3065 — while `it` in the other four domains is 1.000 and `choice`/`score`
@@ -1354,6 +1356,59 @@ continuation/repair script: **hash the adapter before and after; identical hashe
 trained.** Open decision now: (1) `noul`-only repair from the final trunk + bank re-fit + full
 re-gate (~2 h, artifact recipe gains a documented touch-up step), (2) clean retrain with a
 per-cell monitor and/or schedule mitigation (~5 h), (3) seed rerun first.
+
+**Path (1) executed and REJECTED by its own gates (2026-10-07).** The `noul`-only repair from
+the final trunk (`checkpoints/multi_b5b_noulfix`) closed the cell (train `it`/`support`
+0.100 → 1.000, every language's `noul` 1.000) but was zero-sum through the shared trunk: on
+the same harness the fitted bank fell overall 0.9863 → 0.9391, `choice` 1.000 → 0.9056,
+`score` 0.9956 → 0.9116, and per-domain ECE rose to 0.063–0.102 against the 0.05 gate — the
+pre-registered gates caught the repair exactly as they were fixed to do
+(`benchmarks/results/multi_b14fix.json`, local).
+
+**Resolution — interleaved joint continuation: defect CLOSED, all five gates PASS
+(2026-10-07).** The hypothesis the driver test left standing, stated precisely: the trainer's
+epoch runs *sequential phases* (all `noul` → all `choice` → all `score`, `score` last), so
+each primitive gets ~490 consecutive pure steps through the shared trunk; the fix is
+round-robin batches (`noul`, `choice`, `score`, `noul`, …). The test continues the
+**original inverted trunk** (`checkpoints/multi_b5b`) for two more epochs with the same loss
+math, split and per-epoch shuffle seeds — resume with `is_trainable=True`, adapter sha256
+`9f646f3e…` → `b8e9c1b6…` (so training provably moved), script
+`/tmp/opencode/finetune_interleave.py`, checkpoint `checkpoints/tmp_il_orig`:
+
+| axis | e8 trunk | interleaved (+2 ep) |
+| --- | ---: | ---: |
+| train cell `noul`/`it`/`support` | 0.0977 | **0.9977** |
+| `eval_multi` `noul`/`it` (the 0.0723 defect term) | 0.0723 | **0.9880** |
+| `eval_multi_domains` `noul`/`it` | 0.8145 | **0.9976** |
+| `choice` (raw eval) | 0.9800 | 0.9968 |
+| `score` (raw eval) | 0.9956 | 0.9996 |
+| overall (raw eval) | 0.9796 | 0.9985 |
+
+The interleaving fixed **both directions of the interference in one run**: the inverted cell
+recovered while the healthy siblings not only survived but improved — so paths (a) seed
+rerun and (b) further schedule work are no longer needed. Fit + calibration + harness on
+both evals (`checkpoints/tmp_il_orig_fit_bank`, config retarget commit; reports
+`benchmarks/results/multi_b14il{,_evalsupport}.json`, local):
+
+1. `support` **0.9993** ≥ 0.7887 — PASS
+2. worst new domain `voice` **0.9987** ≥ 0.70 — PASS
+3. per-domain ECE **0.0001–0.0011** ≤ 0.05 — PASS, zero exceptions needed
+4. gate strict **1.0000** (0 fell to shared, 0 wrong domain) — PASS
+5. no language regresses: `de` 1.0000 · `es` 1.0000 · `fr` 1.0000 · `it` 0.9984 ·
+   `nl` 0.9992 · `pt` 0.9992 — every one ≥ baseline (0.830–0.855) — PASS
+
+overall **0.9995 / ECE 0.0004** (B-14's first fit: 0.9863 / 0.0080). The control variant
+continued from the *repaired* trunk (`checkpoints/tmp_il_fix`) is also healthy but never
+fully recovers its siblings (raw `choice` 0.9928) — kept as evidence, not a publish
+candidate. **The multi publish arm is `checkpoints/tmp_il_orig` (+ its fitted bank); the en
+arm is unaffected.**
+
+**Remainder of this defect (the only open piece):** (c) the per-`(domain, lang, primitive)`
+val monitor in `training/finetune_rlcd.py`, so a cell collapse can never hide behind the
+aggregate again — a repo change with co-located tests, not yet written. Also pending for
+reproducibility: decide where the continuation script lives (it currently exists only in
+`/tmp/opencode/finetune_interleave.py`; the publish arm cannot be rebuilt from the repo
+without it).
 
 **Deferred to the publication cycle (post-JevBench, one set — B5B-8's rule):** promotion to
 `checkpoints/multi` / `checkpoints/en`, `benchmarks/report.md` re-render, Hub upload. Nothing

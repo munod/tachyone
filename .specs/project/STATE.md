@@ -77,6 +77,24 @@ JevBench runs. Next: en/multi publication cycle is deferred; open decision = Fas
 pilot (the second L4 makes the Qwen3.5:35b Q4 fit plausible) vs the cheap B-1 competitors.
 Next: pre-register the gates and run the GPU retrain, or Fase 3's teacher pilot — both need a
 decision on the GPU window (5–10 h per arm).
+
+**B-14 open defect — CLOSED 2026-10-07, replacement arm green on all five gates.** The multi
+publish arm's `noul`/`support`/`it` cell was inverted (train **0.100**, `eval_multi`
+**0.0723**) and blocked publication. Trail: seed-42 snapshots localized the flip (healthy
+1.000 at epoch 2 → 0.793 at epoch 4 → inverted 0.100 at epoch 8); the driver test proved
+choice/score gradients through the shared trunk are the driver (`noul`-only continuation
+recovers to 1.000); the noul-only repair closed the cell but **failed its own pre-registered
+gates** (choice 1.000 → 0.9056, score → 0.9116, per-domain ECE 0.063–0.102); the final fix is
+a **joint continuation with round-robin primitive batches from the original inverted trunk**
+(`checkpoints/tmp_il_orig`, 2 epochs, same loss math/split/seeds): train cell 0.0977 →
+**0.9977**, `eval_multi` `noul`/`it` 0.0723 → **0.9880**, and every sibling axis *improved*
+(raw overall 0.9796 → 0.9985). Fit + calibration + harness: **`support` 0.9993 ≥ 0.7887, worst
+new domain 0.9987 ≥ 0.70, per-domain ECE 0.0001–0.0011 ≤ 0.05 (zero exceptions), strict 1.000,
+every language ≥ baseline; overall 0.9995 / ECE 0.0004** — all five PASS. **Publish arm =
+`checkpoints/tmp_il_orig` + its fitted bank; en unaffected.** Remainder: the trainer's
+per-`(domain, lang, primitive)` val monitor (hard rule 6: with tests) and the continuation
+script's repo home (today only `/tmp/opencode/finetune_interleave.py`). Full trail: BACKLOG
+**B-14**. Everything still local.
 **Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
 acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
 (spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
