@@ -6,6 +6,63 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-08
+
+### Added
+
+- **Per-cell validation monitor in the fine-tune loop.** Every epoch buckets validation by
+  `(primitive, domain, language)`, appends `cell_monitor.jsonl` to the output directory,
+  prints the worst cell of each primitive beside the train loss and ships the last epoch's
+  cells in the report — a cell collapse can no longer hide behind an improving aggregate
+  (that is exactly how the B-14 defect survived to epoch 8).
+- **`training/interleave_continue.py`** — resumes a trained trunk with round-robin primitive
+  batches (same loss math, split and shuffle seeds). This is the recipe of the published
+  multilingual lineage; it hashes the adapter before/after and fails loudly if nothing trained.
+- **Template-holdout measurement (B-15, Estágio 2).** Two committed eval configs
+  (`template_split: "train"`) plus a mirror gate test make the honest yardstick standing:
+  training and evaluation share **0.00%** of templates, so the holdout column measures
+  phrasing generalization instead of recognition.
+
+### Changed
+
+- **Data-recipe corrections (Fases 0–2b), every dataset regenerated as one set.** Sampler
+  strides decoupled from the language stride (`option` and hard-negative cycles on
+  `index // len(languages)` — previously some six-language cells never saw particular labels
+  at all and every distractor row landed in `pt`), evals made leave-one-template-out
+  (0.00% template overlap with training, against ~99% before), content ×3 (60 entities per
+  language, phrase banks 11/9/9/9/8 across all five domains) and volume 1.7× (en 36,000 /
+  multi 52,200) with the corrected divisibility rule. Label audit unchanged: **0 contradictory
+  rows**, labels still derived from the text (ADR-0014/0015).
+- **Both checkpoints retrained on `template_split: "train"` — the holdout number is honest
+  for the first time.** The previous arms trained on *all* templates, so their holdout score
+  (0.9876 / 0.9995) was in-sample. The new artifacts: overall **0.9885 / ECE 0.0069**
+  (multilingual) and **0.9980 / ECE 0.0009** (English) on the unchanged current benchmark —
+  all pre-registered gates pass, zero ECE exceptions — against **0.8892** and **0.9821** on
+  never-seen phrasing: **+0.127 / +0.131 over the released adapters** with an in-template →
+  holdout gap of **−0.1105 (multilingual) / −0.0179 (English)**. The signature gate is
+  untouched by unseen phrasing (`wrong_domain` 0, `fell_to_shared` 0, strict 1.000).
+- **Published artifacts rebuilt on the new lineages.** `munod/tachyone-en`: the five-domain
+  B-15 fitted bank over the new trunk, with the P3 stack rebuilt on it — `state_prototypes.json`
+  (K=32 centroids of the checkpoint's own states), `confidence_calibration.json` (bank +
+  fitted `noul` map, sha256 provenance) and `temperature_calibration.json` fitted on the
+  rebuilt never-trained holdout (`choice` 10.0, `noul` 0.75, `score` **pinned at 0.1**).
+  `munod/tachyone-multi`: the B-15 fitted bank with a pooled temperature fit over 15,000
+  in-template + holdout predictions (`choice` 6.0, `noul` 0.25, `score` 0.25 — fitted where
+  the model is *not* saturated, per L-015, instead of the old in-sample fit).
+- **The multilingual `noul` inversion is fixed (B-14).** The cell `support`/`it` reached 10%
+  accuracy against its own training rows; the driver was the trainer's sequential primitive
+  phases, proven both directions — a `noul`-only continuation recovered the cell, and the
+  interleaved continuation recovered it (0.0977 → 0.9977) while *improving* every sibling axis.
+- **JevBench deferral lifted by decision** — its maintainer changed the submission
+  methodology upstream; the benchmark is set aside and development continues.
+- **Not met, recorded (never re-fixed):** B-1's per-language ECE ≤ 0.05 for `choice`/`score`
+  on the honest yardstick fails for the multilingual arm (`choice` `es` 0.0753 / `it` 0.0968 /
+  `pt` 0.1014; `score` `de` 0.0540 / `es` 0.0951 / `it` 0.1495 / `nl` 0.0577; English passes
+  at 0.0155 / 0.0067). B-1 stays open with the published numbers.
+- New lessons: **L-018** (two identical GPU runs differ — parity with a training run is
+  behavioral, never bitwise) and **L-019** (an eval id is not a row key — domain cells come
+  from the report, never an id join).
+
 ## [0.8.0] - 2026-10-02
 
 ### Added
@@ -531,7 +588,10 @@ TypeSafe Jev `/v1/systemone` wire protocol as a drop-in.
 
 Specification baseline (documentation only, no code).
 
-[Unreleased]: https://github.com/munod/tachyone/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/munod/tachyone/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/munod/tachyone/releases/tag/v0.9.0
+[0.8.0]: https://github.com/munod/tachyone/releases/tag/v0.8.0
+[0.7.0]: https://github.com/munod/tachyone/releases/tag/v0.7.0
 [0.6.0]: https://github.com/munod/tachyone/releases/tag/v0.6.0
 [0.5.0]: https://github.com/munod/tachyone/releases/tag/v0.5.0
 [0.4.0]: https://github.com/munod/tachyone/releases/tag/v0.4.0
