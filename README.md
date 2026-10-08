@@ -12,7 +12,7 @@ Tachyone answers atomic structured questions — `choice`, `score`, and `noul` �
 values with probabilities and calibrated confidence. Point an existing Jev client at a Tachyone
 server and it works unchanged; run the local encoder backend for fully offline inference.
 
-**Status: `v0.5.0` released.** All milestones M0–M6 are complete, plus the post-M6
+**Status: `v0.9.0` released.** All milestones M0–M6 are complete, plus the post-M6
 **B-1 multilingual quality** work (localized data, per-`(primitive, language)` temperature, and a
 multilingual LoRA raised to rank 64), **B-2 fast path** (per-shape CUDA graphs with bf16 weights),
 **B-3 confidence thresholding / System-2 handoff**, and **B-4
@@ -28,7 +28,15 @@ and the label audit published beside the accuracy), and **B-5 / ADR-0016**, whic
 per-domain `choice`-head bank and its deterministic gate, the optional `choice_head` request hint,
 the frozen-trunk bank fitter, and republished `tachyone-en` as the **five-domain** adapter
 (`choice` 1.000 and every domain ≥ 0.963, with the support `noul`/`score` trade published beside
-it rather than summarized). The wire
+it rather than summarized). Then **B-13 + P3** (the English mixture retrain; evidence-based
+confidence with its gate recorded NOT met), the **data-recipe corrections (Fases 0–2b)** —
+sampler strides decoupled, leave-one-template-out evals (0.00% template overlap), content ×3,
+volume 1.7× —, **B-14** (the recompose retrain, whose `noul`/`support`/`it` cell inversion was
+root-caused to the trainer's sequential primitive phases and fixed by the interleaved
+continuation, with a per-cell validation monitor added to the trainer), and **B-15** — both
+checkpoints retrained on `template_split: "train"`, the first **honest holdout number**
+(multi **0.8355** / en **0.9825**; +0.127 / +0.131 over the previous release), with the two
+NOT-met results disclosed rather than smoothed (see the model card). The wire
 contract, an OpenAI-compatible LLM backend, a local encoder
 (ModernBERT/mmBERT + LoRA), an ONNX backend, FastAPI serving, an SDK/CLI, MCP + LangChain
 integrations, a training pipeline, and a docs site all ship. LoRA adapters are published on the
@@ -118,32 +126,29 @@ graceful fallback.
 
 - Adapters: [`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en) ·
   [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)
-- Measured on a single RTX 3060 12GB (B-5b and B-13 training on NVIDIA L4 23GB; full tables:
-  [`benchmarks/report.md`](benchmarks/report.md)):
+- Measured on NVIDIA L4 23GB through the routed runtime (both checkpoints pinned — full tables
+  and reproduction commands: [`benchmarks/report.md`](benchmarks/report.md)):
 
-  | Checkpoint | Overall | `choice` | `noul` | `score` | ECE |
-  | --- | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank), support split | **1.000** | **1.000** | **1.000** | **1.000** | 0.006 |
-  | Multilingual (mmBERT-base + LoRA r=64 + fitted choice-head bank), five-domain split | **0.9975** | **0.992** | 1.000 | 1.000 | 0.001 |
+  | Checkpoint | Split | Overall | ECE | p50 |
+  | --- | --- | --- | --- | --- |
+  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.188 | 57.7 ms |
+  | English, five-domain | 5 domains | **0.9983** | 0.191 | 57.7 ms |
+  | English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.188 | 58.0 ms |
+  | Multilingual (mmBERT-base + LoRA r=64 + fitted bank), routed | support | **0.9107** | 0.051 | 47.4 ms |
+  | Multilingual, five-domain | 5 domains | **0.9156** | 0.019 | 48.0 ms |
+  | Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.8355** | 0.103 | 47.8 ms |
 
-  The English row is the support split; on the **five-domain** eval the same adapter also scores
-  **1.000** (every domain ≥ 0.999, gate strict 1.000, unseen-text rows 0.9987). Its ECE is the
-  confidence the runtime ships — since P3 that confidence is derived from evidence (how like the
-  training distribution the input is), so 0.006 here replaces an in-sample 0.000 that was fitted
-  on the rows it scored, and off-domain raw ECE roughly halves (XNLI 0.426 → 0.264). This is the
-  **B-13 mixture retrain**: same recipe and seed as B-5, one factor changed — the training data
-  (35,540 records: the 21,000 five-domain ones plus 11,000 pinned public records — MultiNLI,
-  BoolQ, Banking77 — and 3,540 executable-rule-tree family records) — followed by the same
-  frozen-trunk `choice`-bank fit. These splits are in-sample synthetic (shared rows), so the
-  external check is the public one: on the 231 JevBench items (evaluation-only, never trained
-  on) Intelligence moves **8.4 → 15.0** against a fresh same-recipe control's **+0.6**, XNLI
-  **0.341 → 0.566**, typed-decisions **0.269 → 0.367**.
-  **B-5b (multilingual)** went the other way around: the previous adapter scores **0.561**
-  zero-shot on the same five-domain rows (worst new domain 0.438), and the published artifact
-  posts **0.9975** with every domain ≥ 0.993, gate strict **1.000**, all six languages at
-  ECE ≤ 0.004, and 0.996 on held-out text — on the support-only *routed* split the product-level
-  number moves 0.743 → **0.895**. The whole trade-off is tabled in
-  [`docs/benchmarks.md`](docs/benchmarks.md).
+  The two **holdout** rows are the honest generalization number (v0.9.0, B-15): training and
+  those evals share **0%** of templates, so the score measures phrasing generalization instead
+  of recognition — **+0.127 / +0.131 over the previously released adapters**, with the
+  in-template → holdout gap at −0.1105 / −0.0179. Two results are published **NOT met** rather
+  than smoothed: the English confidence fit's in-domain acceptance (`choice` T pegged at 10.0,
+  in-domain `choice` ECE 0.5243, accuracy untouched) and B-1's per-language ECE ≤ 0.05 on
+  holdout for the multilingual arm — numbers in the [model card](docs/model-card.md) and
+  `BACKLOG.md` **B-15**. The English ECE column is that pooled never-trained fit; the
+  multilingual rows are the routed product (~13–15% of rows fall through to the English
+  checkpoint by design — L-013 — and the multilingual checkpoint itself answers **0.9885** when
+  it answers everything).
 
   Every label comes from the text it accompanies (B-11 + B-12 / ADR-0014 + ADR-0015): `noul` from
   its phrase bank, `score` from the tone's level, `choice` from the option the state names, with
@@ -151,12 +156,13 @@ graceful fallback.
   contradictory rows** (the pre-B-11 labels contradicted 121 of 241 request-toned English rows, and
   7.8% of `score` rows carried a "near-tie" the text never showed). The dedicated `choice` head
   (L-002) and localized per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance);
-  on the five-domain split all six languages meet ECE ≤ 0.05, but on the support-only routed
-  split `nl` (ECE 0.167) — with `de` 0.083 and `it` 0.056 — is still above the 0.05 target
-  (NFR-C06, BACKLOG B-1). The CUDA-graph fast path (`TACHYONE_FAST=1`) improves p50 by **2.6×**
-  on English (17.63 → 6.81 ms) and **3.7×** on the multilingual five-domain path
-  (13.97 → 3.82 ms), always with **0 top-label changes** — the keyed gate and the per-domain
-  heads run after the encode, which the graphed path never sees.
+  on the current five-domain split every language sits at ECE ≤ 0.053, and on the support-only
+  routed split the per-language ECE target (NFR-C06 / BACKLOG B-1) remains open. The CUDA-graph
+  fast path (`TACHYONE_FAST=1`) improves p50 by **2.6×** on English and **3.7×** on the
+  multilingual five-domain path, always with **0 top-label changes** — measured on the v0.8.0
+  artifacts, re-measurement on v0.9.0 pending (as are the external probes: JevBench was set
+  aside by decision after its maintainer changed the submission methodology; the earlier
+  Intelligence **8.4 → 15.0** and XNLI/typed-decisions deltas belong to the v0.8.0 artifact).
 
 ## Architecture at a glance
 
@@ -202,6 +208,12 @@ uv run mkdocs build --strict        # docs site (uv sync --group docs)
 | B-3 | Confidence thresholding / System-2 handoff | ✅ (`v0.3.0`) |
 | B-4 | Input-noise robustness + clean/noisy split | ✅ (`v0.3.0`) |
 | — | Multilingual LoRA rank 16 → 64 | ✅ (`v0.3.0`) |
+| B-11 + B-12 | Labels derived from the text (ADR-0014/0015) | ✅ (`v0.5.0`) |
+| B-5 / ADR-0016 | Per-domain `choice`-head bank + deterministic gate | ✅ (`v0.5.0`) |
+| B-5b | Multilingual five-domain coverage | ✅ (`v0.6.0`) |
+| B-13 + P3 | English mixture retrain + evidence-based confidence | ✅ (`v0.7.0` / `v0.8.0`) |
+| Fases 0–2b + B-14 | Data-recipe corrections + recompose retrain (cell-inversion fix, per-cell monitor) | ✅ (`v0.9.0`) |
+| B-15 | `template_split: "train"` retrain — honest holdout number | ✅ (`v0.9.0`) |
 
 Details: [`docs/roadmap.md`](docs/roadmap.md) · Tasks: [`docs/tasks.md`](docs/tasks.md).
 

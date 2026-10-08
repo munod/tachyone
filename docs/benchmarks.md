@@ -8,20 +8,26 @@ For the **head-to-head** against the open System One scorer and two local LLMs (
 Brier, latency, throughput, memory and contract compliance on two evaluation sets), see
 [`compare.md`](compare.md).
 
-**Setup:** single RTX 3060 12GB (the **B-5b** multilingual training and head fit ran on a single
-NVIDIA L4 23GB) · 9,000 English / 21,000 English five-domain / 30,000 multilingual five-domain
-deterministic synthetic train records (multilingual keeps support's 18,000 and adds 3,000 for each
-of the four new domains; fully localized per language, per-record RNG) · held-out evals of
-1,500 / 1,500 support rows (en / multi) and 7,500 / 7,500 five-domain rows (en / multi) · LoRA
-(r=16 English, **r=64 multilingual**) plus a low-rank `choice` head (r=32; r=128 for both
-five-domain runs) · 4 epochs English, **8 multilingual**, 6 English five-domain · the published
-multilingual artifact = that 8-epoch trunk + `choice` heads re-fitted on the **frozen** trunk
-(rank 128, 8 epochs, lr 1e-4; recipe in `choice_bank_fit.json`) · bf16 + gradient checkpointing.
-Calibrated ECE is the confidence the runtime actually ships: the English adapter has carried the
-P3 evidence map since 2026-10-02 (`confidence_calibration.json`, fitted on a never-trained
-holdout) and the multilingual one a per-`(primitive, language)` temperature fit on the held-out
-split (in-sample). The **noisy view** applies one surface edit (typo/accents/casing) to 15% of
-states (B-4).
+**Setup (v0.9.0, B-15):** NVIDIA L4 23GB · 12,000 English support / 36,000 English
+five-domain / 23,400 multilingual support / 52,200 multilingual five-domain deterministic
+synthetic train records, all generated with `template_split: "train"` (the holdout evals share
+**0%** of training templates; fully localized per language, per-record RNG) · evals of
+1,500 / 1,500 support rows (en / multi), 7,500 / 7,500 five-domain rows, **7,500 / 7,500
+holdout rows (phrasing never in training)** and 7,500 / 7,500 in-template rows · LoRA
+(r=16 English, **r=64 multilingual**) plus a low-rank `choice` head (r=128 for both five-domain
+runs) · **6 epochs English / 8 multilingual** (the multi trunk also carries a 2-epoch
+interleaved touch-up, `training/interleave_continue.py`) · the published multilingual artifact
+= that trunk + `choice` heads re-fitted on the **frozen** trunk (rank 128, 8 epochs, lr 1e-4;
+recipe in `choice_bank_fit.json`) · bf16 + gradient checkpointing + a per-cell validation
+monitor. Calibrated ECE is the confidence the runtime actually ships: the English adapter
+carries the **P3 stack rebuilt on the new trunk** (holdout regenerated 2026-10-08 against the
+new training file; `choice` **T=10.0** — the pooled fit pegged the grid, in-domain `choice`
+ECE **0.5243** recorded **NOT met** with accuracy untouched — `noul` 0.75, `score` pinned 0.1)
+and the multilingual one a temperature fitted on **15,000 pooled in-template + holdout
+predictions** (`choice` 6.0, `noul` 0.25, `score` 0.25 — never in-sample, L-015). Tables in
+the dated sections below were measured on the **v0.8.0 artifacts** (single RTX 3060 12GB for
+the speed rows) and are kept as history. The **noisy view** applies one surface edit
+(typo/accents/casing) to 15% of states (B-4).
 
 **Labels (B-11 + B-12 / [ADR-0014](adr/ADR-0014-noul-label-from-text.md) +
 [ADR-0015](adr/ADR-0015-score-choice-labels-from-text.md)):** every label in all three primitives is
@@ -45,7 +51,54 @@ adapter now publishes the **B-5b fitted bank** — the 30k five-domain joint run
 heads re-fitted on its frozen trunk — superseding the B-12 retrain (its weights × labels ladder
 lives in `.specs/project/BACKLOG.md` **B-12**). Provenance is stated with every table.
 
-## English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) — B-13 artifact
+## v0.9.0 — B-15: template-train retrain and the honest holdout
+
+Both checkpoints retrained on `template_split: "train"` after the data-recipe corrections
+(sampler strides decoupled, leave-one-template-out evals, content ×3, volume 1.7×). Measured
+through the **routed runtime with both local checkpoints pinned** — the router sends empty or
+no-signal states to the English checkpoint by design (**L-013**, ~13–15% of five-domain
+multilingual rows), so the measured pair is the published pair.
+
+| Checkpoint | Split | Overall | ECE | p50 (ms) |
+| --- | --- | --- | --- | --- |
+| English, support split | 1 domain | **1.0000** | 0.188 | 57.7 |
+| English, five-domain | 5 domains | **0.9983** | 0.191 | 57.7 |
+| English, **holdout phrasing** | 5 domains | **0.9825** | 0.188 | 58.0 |
+| Multilingual, support split (routed) | 1 domain | **0.9107** | 0.051 | 47.4 |
+| Multilingual, five-domain (routed) | 5 domains | **0.9156** | 0.019 | 48.0 |
+| Multilingual, **holdout phrasing** (routed) | 5 domains | **0.8355** | 0.103 | 47.8 |
+
+Per language — five-domain current → holdout (accuracy / ECE):
+
+| lang | current | holdout |
+| --- | --- | --- |
+| `pt` | 0.9611 / 0.0173 | 0.8405 / 0.1204 |
+| `fr` | 0.9454 / 0.0238 | 0.9221 / 0.0556 |
+| `es` | 0.9444 / 0.0280 | 0.8008 / 0.1458 |
+| `it` | 0.9141 / 0.0523 | 0.7976 / 0.1622 |
+| `de` | 0.9116 / 0.0262 | 0.8940 / 0.0519 |
+| `nl` | 0.8161 / 0.0413 | 0.7582 / 0.1127 |
+| `en` (English ckpt) | 0.9983 / 0.1906 | 0.9825 / 0.1884 |
+
+**Gates.** Current benchmark — all pre-registered gates PASS (multilingual `support` 0.9760 ≥
+0.7887, worst domain 0.9747 ≥ 0.70, per-domain ECE 0.0019–0.0202 ≤ 0.05 with **zero
+exceptions**, strict 1.000, every language ≥ baseline; English `support` 1.0000 ≥ 0.9733).
+Holdout — B-1's `choice` ≥ 0.60 PASS (0.9248), English overall ≥ 0.72 PASS, the `noul`
+per-language tripwire ≥ 0.60 PASS everywhere (worst 0.7807), `wrong_domain` = 0 with
+`fell_to_shared` = 0. **NOT met, recorded:** B-1's per-language ECE ≤ 0.05 for
+`choice`/`score` on holdout (multilingual: `choice` es/it/pt, `score` de/es/it/nl, worst
+`score/it` 0.1495; English passes at 0.0155 / 0.0067) and P3's in-domain ≤ 0.05 for the
+rebuilt confidence asset (English `choice` 0.5243). Never re-fixed — full trail in
+`.specs/project/BACKLOG.md` **B-15**.
+
+**Reference points.** The previously released adapters score **0.7623** (multilingual) and
+**0.8508** (English) on the same holdout rows — B-15 is **+0.127 / +0.131** over them. The
+v0.8.0 arm's holdout score (0.9876 / 0.9995) is **in-sample** (it trained on all templates)
+and never was a generalization number. The in-template → holdout gap for B-15 itself is
+**−0.1105** (multilingual) / **−0.0179** (English). Full report with reproduction commands:
+[`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
+
+## English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) — B-13 artifact (v0.8.0, history)
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
@@ -100,7 +153,7 @@ Two lessons from the history above still stand: the labels were the cap, not the
 (`noul` 0.718 → 0.946 by relabeling alone); and the retraining *gamble* is real — the
 control differs from the retrain only in `out_dir` and lands 13 points lower.
 
-## Multilingual (mmBERT-base + LoRA r=64 + choice head, 8 epochs) — B-5b fitted bank, five domains
+## Multilingual (mmBERT-base + LoRA r=64 + choice head, 8 epochs) — B-5b fitted bank, five domains (v0.8.0, history)
 
 The published multilingual artifact is the **B-5b cycle**: one joint mmBERT run on **30,000
 five-domain multilingual records** (8 epochs, LoRA r=64) whose `choice` heads were then re-fitted
@@ -176,7 +229,7 @@ per language).
 > split's 46.9 ms p50 is *not* comparable with the 16.0 ms the pre-B-5b table showed on the RTX
 > 3060 build; accuracy and ECE are machine-independent and are what the comparisons rest on.
 
-## Fast path (CUDA graphs)
+## Fast path (CUDA graphs) — measured on the v0.8.0 artifacts, re-measurement on v0.9.0 pending
 
 mmBERT + `checkpoints/multi` (the adapter as it stood on 2026-10-01 — the B-12 retrain, replaced
 by the B-5b bank on 2026-10-02), 189 held-out states, batch=1; `TACHYONE_FAST=1` uses per-shape CUDA
@@ -210,7 +263,7 @@ The earlier runs stay where they were: the support-split run in the table above 
 the weights B-5b replaced) at **3.762× / 0 flips**, and the English run at **2.59× / 0 flips**
 (`fast_path_en_b5.json`, the B-5 weights the B-13 retrain replaced).
 
-## Public probes (B-7)
+## Public probes (B-7) — measured on the v0.8.0 artifacts, re-measurement pending
 
 Three public datasets Tachyone did **not** train on, scored through the same metric code as
 everything else. (B-13's mixture trains on MultiNLI's **train** split; XNLI's test pairs are
@@ -361,11 +414,21 @@ public-probe deltas in the section above.
 
 ## Known limitations
 
-- Per-language ECE (NFR-C06): on the five-domain split **all six** multilingual languages meet the
-  `0.05` target for the first time (ECE 0.001–0.004); on the support-only **routed** split three
-  are still above it — `de` 0.083, `it` 0.056 and worst `nl` **0.167** (open, backlog **B-1**).
-  That split's aggregate ECE is declared alongside (`choice` 0.032, `noul` 0.099, `score` 0.056,
-  overall 0.062).
+- Per-language ECE (NFR-C06 / backlog **B-1**): on the v0.9.0 five-domain split five of six
+  multilingual languages sit at ≤ 0.05 (`it` 0.0523 is the exception); on the **holdout** — the
+  honest yardstick — the B-1 acceptance (per-language `choice`/`score` ≤ 0.05) is **NOT met**:
+  `choice` `es` 0.0753 / `it` 0.0968 / `pt` 0.1014, `score` `de` 0.0540 / `es` 0.0951 /
+  `it` 0.1495 / `nl` 0.0577 (English passes at 0.0155 / 0.0067). Recorded with the numbers,
+  never re-fixed — `.specs/project/BACKLOG.md` **B-15**.
+- **The English confidence fit is pooled by design (L-015) and its in-domain cost is real:**
+  the pooled fit pegged `choice` at the grid's top (**T = 10.0**) to calibrate held-out rows,
+  and the price is an in-domain `choice` ECE of **0.5243** (accuracy untouched). P3's
+  in-domain ≤ 0.05 acceptance is recorded **NOT met** for the rebuilt asset; the follow-up is
+  a fit-basis redesign, not another fit.
+- **The routed numbers include the router.** ~13–15% of five-domain multilingual rows fall
+  through to the English checkpoint by design (empty state or no Latin-language signal,
+  **L-013**): the tables show the product as served, while the multilingual checkpoint itself
+  answers **0.9885** when it answers everything.
 - **`choice` was the weak primitive everywhere multilingual** (0.468 on the superseded B-12
   weights — the ladder lives in BACKLOG **B-12**): the corrected labels made `noul`/`score` easy
   and the shared trunk spent itself on them. B-5b fixed it the way the English side did — by
@@ -374,8 +437,11 @@ public-probe deltas in the section above.
   0.964 on the support routed split, with `noul`/`score` at 1.000/1.000 on the five-domain split.
   The English fix cost `noul`/`score` on support (0.992/0.978 → 0.946/0.946), which is why that
   published row shows both numbers instead of the best one.
-- Calibrated ECE is measured in-sample on the held-out synthetic split. The public probes above
-  are the opposite case — public distributions, evaluation-only, no shared states with training.
+- Calibrated ECE reflects the assets the runtime ships: the multilingual temperature is fitted
+  on **pooled in-template + holdout** predictions (never in-sample), the English one on the
+  never-trained P3 holdout. The public probes above are the opposite case — public
+  distributions, evaluation-only, no shared states with training (measured on the v0.8.0
+  artifacts; re-measurement pending).
 - **Domain coverage is narrow.** Run against an external public probe (the peer scorer's own nine
   families — news, banking intents, emotions, MMLU, reviews, tickets), the released English
   adapter scores **0.288** while scoring **1.000** on its own support records. That is the

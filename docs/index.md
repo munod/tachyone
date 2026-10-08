@@ -23,8 +23,8 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 
 <div class="tachyone-metrics">
 <div class="tachyone-metric"><span class="tachyone-metric__value">3.39 ms</span><span class="tachyone-metric__label">p50 fast path (CUDA graphs, RTX 3060, mmBERT, batch=1)</span></div>
-<div class="tachyone-metric"><span class="tachyone-metric__value">97.2%</span><span class="tachyone-metric__label">English overall accuracy (held-out synthetic split)</span></div>
-<div class="tachyone-metric"><span class="tachyone-metric__value">99.2%</span><span class="tachyone-metric__label">English <code>noul</code> accuracy — labels derived from the text (B-11/B-12)</span></div>
+<div class="tachyone-metric"><span class="tachyone-metric__value">99.8%</span><span class="tachyone-metric__label">English five-domain accuracy (v0.9.0, B-15)</span></div>
+<div class="tachyone-metric"><span class="tachyone-metric__value">98.3%</span><span class="tachyone-metric__label">English accuracy on phrasing <em>never seen in training</em> (holdout, 0% template overlap)</span></div>
 <div class="tachyone-metric"><span class="tachyone-metric__value">0.000559</span><span class="tachyone-metric__label">fast-path probability parity Δ (0 top-label flips)</span></div>
 </div>
 
@@ -147,19 +147,31 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 
 ## Benchmarks
 
-Measured on a single RTX 3060 12GB (full tables and reproduction commands in the
+Measured on NVIDIA L4 23GB (v0.9.0, B-15; full tables and reproduction commands in the
 [benchmark report](https://github.com/munod/tachyone/blob/main/benchmarks/report.md)).
 
-**Overall accuracy by language — multilingual checkpoint**
+**Overall accuracy by language — multilingual, five-domain split (routed pair)**
 
 <div class="tachyone-chart">
-<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:92.1%"></span></span><span class="tachyone-bar__value">92.1%</span></div>
-<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:79.9%"></span></span><span class="tachyone-bar__value">79.9%</span></div>
-<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:77.8%"></span></span><span class="tachyone-bar__value">77.8%</span></div>
-<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:67.5%"></span></span><span class="tachyone-bar__value">67.5%</span></div>
-<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:66.7%"></span></span><span class="tachyone-bar__value">66.7%</span></div>
-<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:61.8%"></span></span><span class="tachyone-bar__value">61.8%</span></div>
-<p class="tachyone-chart__caption">Held-out synthetic split on the B-12 labels (all three primitives derived from the text, 0 contradictory); temperature fitted per (primitive, language). Calibrated ECE is in-sample. Multilingual LoRA at rank 64, 8 epochs.</p>
+<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:96.1%"></span></span><span class="tachyone-bar__value">96.1%</span></div>
+<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:94.5%"></span></span><span class="tachyone-bar__value">94.5%</span></div>
+<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:94.4%"></span></span><span class="tachyone-bar__value">94.4%</span></div>
+<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:91.4%"></span></span><span class="tachyone-bar__value">91.4%</span></div>
+<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:91.2%"></span></span><span class="tachyone-bar__value">91.2%</span></div>
+<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:81.6%"></span></span><span class="tachyone-bar__value">81.6%</span></div>
+<p class="tachyone-chart__caption">Both published checkpoints pinned (the router sends empty or no-signal states to the English one by design — L-013 — ~13–15% of rows; the multilingual checkpoint alone answers 98.9% when it answers everything). Labels are derived from the text (B-11/B-12, 0 contradictory); temperature fitted per (primitive, language).</p>
+</div>
+
+**The honest generalization number — holdout phrasing, 0% of templates shared with training**
+
+<div class="tachyone-chart">
+<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:92.2%"></span></span><span class="tachyone-bar__value">92.2%</span></div>
+<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:89.4%"></span></span><span class="tachyone-bar__value">89.4%</span></div>
+<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:84.1%"></span></span><span class="tachyone-bar__value">84.1%</span></div>
+<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:80.1%"></span></span><span class="tachyone-bar__value">80.1%</span></div>
+<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:79.8%"></span></span><span class="tachyone-bar__value">79.8%</span></div>
+<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:75.8%"></span></span><span class="tachyone-bar__value">75.8%</span></div>
+<p class="tachyone-chart__caption">B-15's holdout evals: training excluded the holdout template pool, so this measures phrasing generalization instead of recognition (overall 83.6% multilingual / 98.3% English). The distance between the two charts is the generalization gap — and B-1's per-language ECE ≤ 0.05 target is recorded <strong>NOT met</strong> on this set (numbers in BACKLOG B-15; disclosed, never re-fixed).</p>
 </div>
 
 **p50 latency — stock forward vs CUDA-graph fast path**
@@ -167,7 +179,7 @@ Measured on a single RTX 3060 12GB (full tables and reproduction commands in the
 <div class="tachyone-chart">
 <div class="tachyone-bar"><span>stock</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill tachyone-bar__fill--muted" style="width:74.8%"></span></span><span class="tachyone-bar__value">8.97 ms</span></div>
 <div class="tachyone-bar"><span>fast</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:28.2%"></span></span><span class="tachyone-bar__value">3.39 ms</span></div>
-<p class="tachyone-chart__caption">mmBERT + <code>checkpoints/multi</code>, batch=1, 189 states. 2.65× p50 speedup; p95 10.08 → 4.47 ms.</p>
+<p class="tachyone-chart__caption">mmBERT + <code>checkpoints/multi</code>, batch=1, 189 states. 2.65× p50 speedup; p95 10.08 → 4.47 ms. Measured on the v0.8.0 artifact (RTX 3060); re-measurement on v0.9.0 pending — the fast path itself is unchanged.</p>
 </div>
 
 ## How it compares

@@ -1,5 +1,12 @@
 # Compare
 
+> **Status (2026-10-08):** JevBench was **set aside by decision** — its maintainer
+> changed the submission methodology upstream and Tachyone development continued
+> (`.specs/project/STATE.md`). Every JevBench number on this page belongs to the
+> **v0.8.0 artifact** and is kept as a measurement of that revision; it is **not**
+> re-measured for v0.9.0. The current release's numbers are in
+> [`benchmarks.md`](benchmarks.md) and [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
+
 **LLMs generate text. Tachyone produces calibrated decisions.**
 
 Three questions decide most evaluations of a decision engine. This page answers them with

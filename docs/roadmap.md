@@ -220,8 +220,33 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   **0.0 → 52.6** and composite **1.59 → 4.28** with Intelligence invariant at 15.0. The
   recorded gate (**≥ 60**) was **not** met: no legal fit set can see bench difficulty (0.84
   vs 0.36 at the same evidence), and the design's estimate turned out to be an artifact of
-  inverting a saturated transform (lesson **L-016**). Open: **P4**, the `[bench request]`
-  issue itself.
+  inverting a saturated transform (lesson **L-016**). ~~Open: **P4**, the `[bench request]`
+  issue itself.~~ **Superseded 2026-10-08:** the JevBench maintainer changed the submission
+  methodology upstream and the owner set the benchmark aside to continue development
+  (`.specs/project/STATE.md` *Current Work*); the submission record stays in
+  `docs/jevbench.md` as a measurement of the v0.8.0 artifact.
+
+- **Data-recipe corrections + B-14 recompose retrain — published** ✅ (`v0.9.0`) — the
+  sampler's option/hard-negative strides were aliased with the language stride (some
+  six-language cells never saw particular labels at all; every distractor row landed in `pt`),
+  the evals shared ~99% of their templates with training, content was thin and volume low:
+  Fases 0–2b fixed all four (0 incomplete cells, **0.00%** template overlap, content ×3,
+  volume 1.7× — 36,000 en / 52,200 multi). Both arms retrained on the recomposed data; the
+  run's `noul`/`support`/`it` inversion was root-caused to the trainer's **sequential
+  primitive phases** and repaired by the interleaved continuation
+  (`training/interleave_continue.py`), with a **per-cell validation monitor** added to the
+  trainer so one cell can never hide behind the aggregate again.
+
+- **B-15: `template_split: "train"` retrain — the honest holdout number** ✅ (`v0.9.0`) —
+  both checkpoints retrained excluding the holdout template pool, so the holdout evals (0%
+  template overlap) finally measure phrasing generalization: multilingual **0.8355**, English
+  **0.9825** — **+0.127 / +0.131** over the released adapters. All pre-registered gates pass
+  on the unchanged current benchmark (multi 0.9885 / ECE 0.0069 with zero exceptions when its
+  checkpoint answers everything; en 0.9983). Recorded **NOT met**, never re-fixed: P3's
+  in-domain ≤ 0.05 for the rebuilt confidence asset (pooled fit pegged `choice` at grid max
+  T=10 → in-domain ECE 0.5243, accuracy untouched) and B-1's per-language holdout ECE for
+  multilingual (worst `score/it` 0.1495). Both disclosed on the model card; follow-ups in
+  `BACKLOG.md` **B-15**.
 
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
