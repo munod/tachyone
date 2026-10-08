@@ -1,8 +1,8 @@
 {
-  "bank_dir": "checkpoints/tmp_il_orig_fit_bank",
+  "bank_dir": "checkpoints/multi_tt_il_fit_bank",
   "batch_size": 64,
   "choice_rank": 128,
-  "control_dir": "checkpoints/tmp_il_orig_fit_ctrl",
+  "control_dir": "checkpoints/multi_tt_il_fit_ctrl",
   "data_path": "data/train_multi_domains.jsonl",
   "device": "auto",
   "epochs": 8,
@@ -10,6 +10,6 @@
   "max_len": 1024,
   "model_id": "jhu-clsp/mmBERT-base",
   "seed": 42,
-  "trunk_adapter": "checkpoints/tmp_il_orig",
+  "trunk_adapter": "checkpoints/multi_tt_il",
   "val_split": 0.1
 }

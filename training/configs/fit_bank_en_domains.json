@@ -1,8 +1,8 @@
 {
-  "bank_dir": "checkpoints/en_domains_bank",
+  "bank_dir": "checkpoints/en_tt_fit_bank",
   "batch_size": 64,
   "choice_rank": 128,
-  "control_dir": "checkpoints/en_domains_bank_ctrl",
+  "control_dir": "checkpoints/en_tt_fit_ctrl",
   "data_path": "data/train_en_domains.jsonl",
   "device": "auto",
   "epochs": 8,
@@ -10,6 +10,6 @@
   "max_len": 512,
   "model_id": "answerdotai/ModernBERT-large",
   "seed": 2,
-  "trunk_adapter": "checkpoints/en_domains",
+  "trunk_adapter": "checkpoints/en_tt",
   "val_split": 0.1
 }
