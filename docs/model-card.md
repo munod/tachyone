@@ -173,20 +173,24 @@ redesign, not another fit — see `.specs/features/jevbench/spec.md` *P3 results
 legal fit set can see bench difficulty). The multilingual adapter has no evidence stack; its
 served `temperature_calibration.json` is fitted on **15,000 pooled in-template + holdout
 predictions** (`choice` 6.0, `noul` 0.25, `score` 0.25 — fitted where the model is *not*
-saturated, per L-015). The v0.8.0 off-domain probe deltas (XNLI raw ECE 0.426 → 0.264,
-typed-decisions 0.578 → 0.416, MASSIVE 0.583 → 0.296, JevBench Calibration 0.0 → 52.6 with
-its recorded gate of 60 **not** met) were measured on the **v0.8.0 artifact** and are **not
-re-measured** for v0.9.0 — re-probing is recorded as pending.
+saturated, per L-015). The public probes were **re-measured on this v0.9.0 artifact
+(2026-10-08)**: XNLI 0.566 → **0.333** (exactly chance — the B-13 mixture's MultiNLI layer was
+not carried into the recomposed recipe, follow-up recorded in `.specs/project/BACKLOG.md`
+**B-15**; published, never re-fixed), typed-decisions 0.367 → **0.306**, MASSIVE 0.051 →
+**0.074** (chance 0.017, the best reading yet), with off-domain `ECE raw` down across the board
+(**0.096 / 0.042 / 0.068**). JevBench Calibration 0.0 → 52.6 with its recorded gate of 60
+**not** met remains a **v0.8.0-artifact** measurement — JevBench was set aside by decision
+after its maintainer changed the submission methodology.
 
 **What the English rows mean (in-sample, stated plainly).** The support and five-domain splits
 read 1.0000 / 0.9983 because their phrasing is *seen* — training excluded the holdout template
 pool, but these splits still draw the seen templates — so saturation here is a ceiling, not a
 claim. The honest number is the **holdout row: 0.9825** overall (`choice` 0.9600), phrasing no
 training ever emitted. The external checks quoted by earlier revisions — JevBench Intelligence
-**8.4 → 15.0** against a fresh control's **+0.6**, XNLI **0.566**, typed-decisions **0.367** —
-were measured on the **v0.8.0 mixture artifact** and are **not re-measured** for v0.9.0
-(JevBench was set aside by decision after its maintainer changed the submission methodology);
-re-probing both adapters is recorded as pending. Full tables:
+**8.4 → 15.0** against a fresh control's **+0.6** — were measured on the **v0.8.0 mixture
+artifact** (JevBench set aside by decision after its maintainer changed the submission
+methodology). The probes **were** re-measured on this artifact (2026-10-08): XNLI **0.333**
+(chance 0.333), typed-decisions **0.306**, MASSIVE **0.074** (chance 0.017). Full tables:
 [`docs/benchmarks.md`](https://github.com/munod/tachyone/blob/main/docs/benchmarks.md).
 
 **The v0.8.0 multilingual gates (B-5b — history; v0.9.0's gates are B-15's).** The previous adapter measured
@@ -204,9 +208,10 @@ rows fall through to the English checkpoint by language routing, `.specs/project
 0.05 ECE target on that split, and on the **holdout** the B-1 per-language ECE criterion is
 **NOT met** (recorded with numbers in BACKLOG **B-1**) — open under NFR-C06 / BACKLOG B-1.
 The CUDA-graph fast path
-(`TACHYONE_FAST=1`) gave **2.54×** p50 on English (17.31 → 6.81 ms) and **3.66×** on the
-multilingual five-domain path (13.97 → 3.82 ms), both with **0 top-label flips** — measured on
-the v0.8.0 artifacts, pending re-measurement on v0.9.0. The gate and
+(`TACHYONE_FAST=1`) gives **2.53×** p50 on English (17.31 → 6.83 ms) and **3.71×** on the
+multilingual five-domain path (14.23 → 3.84 ms) — re-measured on the v0.9.0 artifacts
+(2026-10-08): **0 top-label flips** multilingual, **1 of 16 sampled** on English with max
+answer-probability difference 0.024 (disclosed as measured; NFR-P01 met by both paths). The gate and
 the keyed heads execute after the encode, which the graphed path never sees.
 
 **Robustness (B-4).** On a noisy view (one surface edit — typo/accents/casing — applied to 15% of

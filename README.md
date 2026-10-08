@@ -158,11 +158,16 @@ graceful fallback.
   (L-002) and localized per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance);
   on the current five-domain split every language sits at ECE ≤ 0.053, and on the support-only
   routed split the per-language ECE target (NFR-C06 / BACKLOG B-1) remains open. The CUDA-graph
-  fast path (`TACHYONE_FAST=1`) improves p50 by **2.6×** on English and **3.7×** on the
-  multilingual five-domain path, always with **0 top-label changes** — measured on the v0.8.0
-  artifacts, re-measurement on v0.9.0 pending (as are the external probes: JevBench was set
-  aside by decision after its maintainer changed the submission methodology; the earlier
-  Intelligence **8.4 → 15.0** and XNLI/typed-decisions deltas belong to the v0.8.0 artifact).
+  fast path (`TACHYONE_FAST=1`) improves p50 by **2.5×** on English (17.31 → 6.83 ms) and
+  **3.7×** on the multilingual five-domain path (14.23 → 3.84 ms) — re-measured on the v0.9.0
+  artifacts (2026-10-08), with **0 top-label changes** on multilingual and **1 of 16 sampled**
+  on English (disclosed as measured; NFR-P01 met by both paths). The external probes were
+  re-measured the same day: XNLI **0.333** (exactly chance — the B-13 mixture's MultiNLI layer
+  is not in the recomposed recipe), typed-decisions **0.306**, MASSIVE **0.074** against its
+  0.017 chance, with off-domain `ECE raw` down across the board (details in
+  [`docs/benchmarks.md`](docs/benchmarks.md)). JevBench remains set aside by decision after
+  its maintainer changed the submission methodology (Intelligence **8.4 → 15.0** belongs to
+  the v0.8.0 artifact).
 
 ## Architecture at a glance
 

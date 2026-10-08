@@ -1564,8 +1564,21 @@ report's `per_domain_language`; never join by id.
   multilingual checkpoint itself answers **0.9885** when it answers everything), holdout
   **0.8355 / 0.1032**, support **0.9107 / 0.0506** (noisy 0.9087); en support **1.0000**,
   five-domain **0.9983**, holdout **0.9825** (ECE ~0.19 — the T=10 disclosure above).
-- External probes (XNLI/typed-decisions/MASSIVE/JevBench) and the fast-path figures remain
-  **v0.8.0-artifact measurements** — pending re-measurement, recorded on the card.
+- **Probes + fast path re-measured on the v0.9.0 artifacts (2026-10-08), closing the four
+  pending disclosures.** Local published pair pinned via `TACHYONE_ADAPTERS` (byte-identical to
+  Hub `e47d6393` / `c5c05fd2`); v0.8.0 artifacts archived as `*_preb15.json`; GPU runs detached
+  per L-009. **Probes:** XNLI **0.566 → 0.333** (exactly chance — the recomposed recipe is
+  synthetic-only, so the B-13 mixture's MultiNLI/BoolQ/Banking77 layer is gone; **follow-up:
+  carry the real-source layer (`training/configs/jev_mixture.json`) into the next data cycle**
+  — recorded, never re-fixed), typed-decisions **0.367 → 0.306** (per-config mix moved:
+  0.274/0.450/0.290/0.456 → 0.256/0.260/0.446/0.262 — not a collapse), MASSIVE **0.051 →
+  0.074** vs 0.017 chance (best yet, every language 0.057–0.104); off-domain `ECE raw`
+  0.416/0.296/0.264 → **0.096/0.042/0.068**, mean confidence 0.782/0.348/0.718 → **0.398/0.107/
+  0.401**. **Fast path (L4):** support **3.636×** / 0 flips (ans 0.001120), English **2.533×**
+  with **1 of 16 sampled top-label flips** (max abs 0.024133 — first non-zero flip ever,
+  disclosed as measured), five-domain **3.708×** / 0 flips; NFR-P01 met by both paths. JevBench
+  stays a **v0.8.0-artifact** measurement (set aside by decision; the dry-run re-run was
+  deferred by the owner, 2026-10-08).
 
 **Executed 2026-10-08 as one set (B5B-8; the JevBench deferral was lifted by decision — see
 STATE *Current Work*):** promotion → `benchmarks/report.md` re-render (six entries, holdout

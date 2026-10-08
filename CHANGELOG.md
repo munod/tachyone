@@ -15,6 +15,18 @@ All notable changes to this project are documented here. The format is based on
   series, monitor lines, sha256 provenance) quoted into the page so the evidence outlives
   `/tmp`. Linked from the roadmap and the training guide.
 
+### Changed
+
+- **Probes and fast path re-measured on the v0.9.0 artifacts (2026-10-08)** — all four
+  "measured on v0.8.0, re-measurement pending" disclosures are closed. MASSIVE **0.051 →
+  0.074** (chance 0.017, best yet), typed-decisions **0.367 → 0.306**, XNLI **0.566 → 0.333**
+  (exactly chance: the recomposed recipe does not carry the B-13 mixture's MultiNLI layer —
+  follow-up recorded in BACKLOG B-15, published, never re-fixed); off-domain `ECE raw` down
+  across the board (0.416/0.296/0.264 → 0.096/0.042/0.068). Fast path: **3.64×** support /
+  **2.53×** English / **3.71×** five-domain, **0 flips** on multilingual and **1 of 16
+  sampled** on English (disclosed as measured). JevBench remains a v0.8.0 measurement (set
+  aside by decision). v0.8.0 artifacts archived as `*_preb15.json`.
+
 ## [0.9.0] - 2026-10-08
 
 ### Added

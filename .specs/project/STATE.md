@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-10-07
+**Last Updated:** 2026-10-08
 **Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
 leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
 `fix/sampler-stride`.** ~~Nothing leaves this machine~~ **Deferral LIFTED 2026-10-08 by
@@ -27,6 +27,25 @@ alone 0.9885), en 0.9983 / 0.9825. Details in BACKLOG **B-15**. **Shipped:** `ma
 Hub uploads committed — `tachyone-en` **`e47d6393`** (8 files) and `tachyone-multi`
 **`c5c05fd2`** (6 files) — every file sha256-verified against the local build (8/8, 6/6) with
 identical inventories (no stale remote file), revision recorded in `docs/huggingface.md`.
+
+**Probes + fast path re-measured on the v0.9.0 artifacts (2026-10-08 — the pending-disclosure
+closure; JevBench dry run deferred by the owner).** Local published pair pinned via
+`TACHYONE_ADAPTERS` (byte-identical to Hub `e47d6393` / `c5c05fd2`); v0.8.0 artifacts archived
+as `*_preb15.json`; every GPU run detached per **L-009** (`setsid` + `exit=` markers, no silent
+death — the driver was also upgraded mid-cycle, 595.91.07 → 595.99.02, reloaded before use).
+Probes: XNLI 0.566 → **0.333** (exactly chance — the recomposed recipe is synthetic-only and
+does not carry the B-13 mixture's MultiNLI layer; **follow-up registered in BACKLOG B-15:
+real-source layer into the next data cycle**), typed-decisions 0.367 → **0.306** (per-config
+mix moved, not a collapse), MASSIVE 0.051 → **0.074** vs 0.017 chance (best yet, all seven
+languages above), off-domain `ECE raw` **0.096 / 0.042 / 0.068** with mean confidence
+**0.398 / 0.107 / 0.401** — the shipped stack is no longer sharply wrong off-domain. Fast path
+(L4): support **3.636×** / 0 flips, English **2.533×** with **1 of 16 sampled top-label flips**
+(max abs 0.024133 — disclosed as measured, the first non-zero flip ever), five-domain
+**3.708×** / 0 flips; NFR-P01 met by both paths everywhere. JevBench remains a v0.8.0
+measurement (set aside by decision). Docs updated as one set (`benchmarks.md`, `model-card.md`,
+`index.md`, `README.md`, `probes.md` re-render) — all four "re-measurement pending"
+disclosures closed. Record: BACKLOG **B-15**.
+
 **Fase 0 (stride)** — option and hard-negative cycles decoupled from the language stride
 (`index // len(languages)`); goldens recaptured for `en_pt`/`noisy` only — `en` is
 byte-identical, so the English arm and its published numbers did not move. Regenerated

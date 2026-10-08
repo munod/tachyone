@@ -229,41 +229,43 @@ per language).
 > split's 46.9 ms p50 is *not* comparable with the 16.0 ms the pre-B-5b table showed on the RTX
 > 3060 build; accuracy and ECE are machine-independent and are what the comparisons rest on.
 
-## Fast path (CUDA graphs) — measured on the v0.8.0 artifacts, re-measurement on v0.9.0 pending
+## Fast path (CUDA graphs) — v0.9.0 artifacts, re-measured 2026-10-08
 
-mmBERT + `checkpoints/multi` (the adapter as it stood on 2026-10-01 — the B-12 retrain, replaced
-by the B-5b bank on 2026-10-02), 189 held-out states, batch=1; `TACHYONE_FAST=1` uses per-shape CUDA
-graphs with bf16-resident weights. Capture is warmed before timing. Re-measured 2026-10-01 on the
-L4 reference box (`benchmarks/results/fast_path.json`) — latency is box-bound (the columns before
-this date were the RTX 3060 build); the speedup ratio and the parity are not.
+mmBERT + `checkpoints/multi` (the B-15 arm as published), 189 held-out states, batch=1;
+`TACHYONE_FAST=1` uses per-shape CUDA graphs with bf16-resident weights. Capture is warmed
+before timing. Re-measured 2026-10-08 on the L4 reference box (`benchmarks/results/fast_path.json`;
+the v0.8.0 artifacts are archived as `*_preb15.json`) — latency is box-bound; the speedup ratio
+and the parity are not.
 
 | Path | p50 (ms) | p95 (ms) | Throughput b1 (items/s) | b4 | b16 |
 | --- | --- | --- | --- | --- | --- |
-| stock (fp32) | 14.381 | 16.549 | 68.8 | 158.4 | 76.2 |
-| fast (CUDA graphs, bf16) | 3.823 | 3.930 | 250.7 | 572.3 | 208.9 |
+| stock (fp32) | 13.907 | 15.877 | 70.6 | 159.3 | 74.4 |
+| fast (CUDA graphs, bf16) | 3.824 | 3.940 | 250.3 | 554.4 | 202.7 |
 
-**Parity:** max absolute answer-probability difference **0.000372** with **0 top-label flips** (16
+**Parity:** max absolute answer-probability difference **0.001120** with **0 top-label flips** (16
 questions); response shape unchanged. **NFR-P01** (p50 ≤ 20 ms, p95 ≤ 50 ms) is met by both paths,
-with a **3.76× p50 speedup** for the fast path (2.65× on the 3060 build).
+with a **3.64× p50 speedup** for the fast path (3.76× on the same box with the v0.8.0 weights,
+2.65× on the 3060 build).
 
-**The released B-13 artifact was checked in the same pass** (ModernBERT + the keyed bank,
-`benchmarks/results/fast_path_en.json`, re-measured 2026-10-02): **0 top-label flips**, max
-answer difference **0.000784**, **2.504×** p50 (17.04 → 6.81 ms) — re-measured 2026-10-02 with
-the P3 assets in place; the confidence is applied *after* the encode, so the graphed path sees
-the same answers and the same flips (0). The gate and the per-domain
-heads run *after* the encode, so the CUDA-graph path neither sees nor perturbs them — which is
-what ADR-0016 predicted when it kept the head as plain JSON computed post-encode.
+**The English artifact** (`benchmarks/results/fast_path_en.json`, ModernBERT + the fitted bank
+`checkpoints/en`): **2.533×** p50 (17.31 → 6.83 ms) — and, disclosed exactly as measured, **1
+top-label flip** among the 16 sampled questions, max answer-probability difference **0.024133**
+(the v0.8.0 run on the same states read 0 flips / 0.000784). Parity is a property of the
+*weights* as much as of the path: with the new arm, one question's fp32/bf16 answers diverged
+far enough to cross the argmax where the old arm's did not. The gate and the per-domain
+heads still run *after* the encode, so the CUDA-graph path neither sees nor perturbs them — which
+is what ADR-0016 predicted when it kept the head as plain JSON computed post-encode; NFR-P01 is
+met by both paths (17.31 → 6.83 ms).
 
-**The B-5b multilingual artifact** was measured on its own five-domain split
-(`benchmarks/results/fast_path_multi.json`, mmBERT + the fitted bank, `eval_multi_domains`,
-max_len 1024, n=284): **3.659×** p50 (13.97 → 3.82 ms), **0 top-label flips** (16 questions), max
-answer-probability difference **0.000173** — the gate and the keyed heads still execute *after*
-the encode, so the graphed path sees neither, exactly as ADR-0016 predicted for the keyed format.
-The earlier runs stay where they were: the support-split run in the table above (`fast_path.json`,
-the weights B-5b replaced) at **3.762× / 0 flips**, and the English run at **2.59× / 0 flips**
-(`fast_path_en_b5.json`, the B-5 weights the B-13 retrain replaced).
+**The multilingual five-domain run** (`benchmarks/results/fast_path_multi.json`, mmBERT + the
+fitted bank, `eval_multi_domains`, max_len 1024, n=284): **3.708×** p50 (14.23 → 3.84 ms),
+**0 top-label flips** (16 questions), max answer-probability difference **0.001120** — the gate
+and the keyed heads still execute *after* the encode, exactly as ADR-0016 predicted for the
+keyed format. The earlier runs stay archived: v0.8.0 support-split 3.762× / 0 flips, English
+2.504× / 0 flips, B-5b five-domain 3.659× / 0 flips (all `*_preb15.json`), plus the older
+B-5/B-13 English runs (`fast_path_en_b5.json`, `fast_path_en_prep3.json`).
 
-## Public probes (B-7) — measured on the v0.8.0 artifacts, re-measurement pending
+## Public probes (B-7) — v0.9.0 artifacts, re-measured 2026-10-08
 
 Three public datasets Tachyone did **not** train on, scored through the same metric code as
 everything else. (B-13's mixture trains on MultiNLI's **train** split; XNLI's test pairs are
@@ -275,9 +277,9 @@ citations and the exact reproduction commands live in
 
 | Probe | Licence | n | Accuracy | Chance | ECE raw |
 | --- | --- | ---: | ---: | ---: | ---: |
-| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.367** | 0.20–0.50 | 0.416 |
-| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.051** | 0.017 | 0.296 |
-| XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.566** | 0.333 | 0.264 |
+| typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.306** | 0.20–0.50 | 0.096 |
+| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.074** | 0.017 | 0.042 |
+| XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.333** | 0.333 | 0.068 |
 
 Evaluation only — no probe row has ever reached `training/`. Read each number against its
 **chance** level and against the in-sample 1.000 above, not against the other rows: these are the
@@ -329,6 +331,24 @@ with it (MASSIVE comes off the ceiling, T 11.6 → **7.55**; XNLI 20.0 → **3.1
 reads **0.029 / 0.050 / 0.121**. Read against the internal table, the honest summary is unchanged:
 the adapter is still *less* confident off-domain than on its own turf — that is what the evidence
 map is for — and it is no longer confident about being wrong.
+
+**Re-run on the v0.9.0 artifact (2026-10-08, right after the B-15 retrain).** The published pair
+was pinned locally through `TACHYONE_ADAPTERS`, byte-identical to Hub `tachyone-en` `e47d6393` /
+`tachyone-multi` `c5c05fd2`. The B-15 arm trains on the recomposed **synthetic-only** recipe,
+while the B-13 artifact it replaced carried the real-source layer (MultiNLI/BoolQ/Banking77,
+`training/configs/jev_mixture.json`) — the probes read that trade directly: **XNLI
+0.566 → 0.333**, exactly back to its chance level, the MultiNLI transfer went with the mixture
+layer the retrain did not carry (recorded as a follow-up in BACKLOG **B-15**; published here,
+never re-fixed); **typed-decisions 0.367 → 0.306**, the per-config mix moving rather than
+collapsing (0.274/0.450/0.290/0.456 → 0.256/0.260/0.446/0.262); **MASSIVE 0.051 → 0.074**
+against its 0.017 chance — the best reading on that probe so far, every language above chance
+(0.057–0.104, `de` 0.104 leading; the `en`-locale row alone moved down 0.117 → 0.080). What
+improved across all three is confidence: `ECE raw` **0.416 / 0.296 / 0.264 → 0.096 / 0.042 /
+0.068** with mean confidence pulled from **0.782 / 0.348 / 0.718 → 0.398 / 0.107 / 0.401**, so
+the shipped stack is no longer sharply wrong off-domain. The harness's per-probe fits now read
+T=20 (typed-decisions, ceiling), **T=1.75** (MASSIVE) and T=20 (XNLI, ceiling) — `ECE cal`
+above is what those fits buy, read it next to `Conf` and `Brier` exactly as the caveat at the
+top of this page says.
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 
@@ -440,8 +460,8 @@ public-probe deltas in the section above.
 - Calibrated ECE reflects the assets the runtime ships: the multilingual temperature is fitted
   on **pooled in-template + holdout** predictions (never in-sample), the English one on the
   never-trained P3 holdout. The public probes above are the opposite case — public
-  distributions, evaluation-only, no shared states with training (measured on the v0.8.0
-  artifacts; re-measurement pending).
+  distributions, evaluation-only, no shared states with training (re-measured on the v0.9.0
+  artifacts, 2026-10-08).
 - **Domain coverage is narrow.** Run against an external public probe (the peer scorer's own nine
   families — news, banking intents, emotions, MMLU, reviews, tickets), the released English
   adapter scores **0.288** while scoring **1.000** on its own support records. That is the

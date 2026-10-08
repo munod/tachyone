@@ -177,9 +177,9 @@ Measured on NVIDIA L4 23GB (v0.9.0, B-15; full tables and reproduction commands 
 **p50 latency — stock forward vs CUDA-graph fast path**
 
 <div class="tachyone-chart">
-<div class="tachyone-bar"><span>stock</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill tachyone-bar__fill--muted" style="width:74.8%"></span></span><span class="tachyone-bar__value">8.97 ms</span></div>
-<div class="tachyone-bar"><span>fast</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:28.2%"></span></span><span class="tachyone-bar__value">3.39 ms</span></div>
-<p class="tachyone-chart__caption">mmBERT + <code>checkpoints/multi</code>, batch=1, 189 states. 2.65× p50 speedup; p95 10.08 → 4.47 ms. Measured on the v0.8.0 artifact (RTX 3060); re-measurement on v0.9.0 pending — the fast path itself is unchanged.</p>
+<div class="tachyone-bar"><span>stock</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill tachyone-bar__fill--muted" style="width:74.8%"></span></span><span class="tachyone-bar__value">13.91 ms</span></div>
+<div class="tachyone-bar"><span>fast</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:20.6%"></span></span><span class="tachyone-bar__value">3.82 ms</span></div>
+<p class="tachyone-chart__caption">mmBERT + <code>checkpoints/multi</code>, batch=1, 189 states. 3.64× p50 speedup; p95 15.88 → 3.94 ms. Measured on the v0.9.0 artifact (NVIDIA L4, 2026-10-08) — the fast path itself is unchanged.</p>
 </div>
 
 ## How it compares
