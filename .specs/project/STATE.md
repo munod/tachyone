@@ -3,10 +3,14 @@
 **Last Updated:** 2026-10-07
 **Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
 leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
-`fix/sampler-stride`. Nothing leaves this machine:** the JevBench
-submission is evaluated from the remote (submission commit `164ed3b`, v0.8.0), so every
-correction in this cycle stays local — no `git push`, no Hub upload, no republication of
-`munod/tachyone-*`, gates measured but **not published** — until the benchmark has run.
+`fix/sampler-stride`.** ~~Nothing leaves this machine~~ **Deferral LIFTED 2026-10-08 by
+explicit decision:** the JevBench run had not finished, but its maintainer changed the
+submission methodology; the owner decided to set the benchmark aside and continue TachyOne
+development, so the "no `git push` / no Hub upload / no republication until JevBench runs"
+rule (which applied to every correction of this cycle) is **no longer in force** — the
+publication cycle proceeds as one set (promotion → `benchmarks/report.md` re-render →
+`chore(release): v0.9.0` + tag → push → Hub upload with per-file sha256 → GitHub release).
+The historical deferral text stays below as recorded.
 **Fase 0 (stride)** — option and hard-negative cycles decoupled from the language stride
 (`index // len(languages)`); goldens recaptured for `en_pt`/`noisy` only — `en` is
 byte-identical, so the English arm and its published numbers did not move. Regenerated
