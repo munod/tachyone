@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **B-14 case study (`docs/case-b14.md`, new "Case studies" section on the site).** The full
+  debugging trail of the `noul`/`support`/`it` cell inversion — six measured eliminations, the
+  epoch-snapshot localization, the driver test, the repair its own gates rejected, the
+  interleaved fix and the per-cell monitor — with the volatile run-log excerpts (epoch-loss
+  series, monitor lines, sha256 provenance) quoted into the page so the evidence outlives
+  `/tmp`. Linked from the roadmap and the training guide.
+
 ## [0.9.0] - 2026-10-08
 
 ### Added

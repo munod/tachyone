@@ -235,7 +235,8 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   run's `noul`/`support`/`it` inversion was root-caused to the trainer's **sequential
   primitive phases** and repaired by the interleaved continuation
   (`training/interleave_continue.py`), with a **per-cell validation monitor** added to the
-  trainer so one cell can never hide behind the aggregate again.
+  trainer so one cell can never hide behind the aggregate again — full evidence trail in the
+  [B-14 case study](case-b14.md).
 
 - **B-15: `template_split: "train"` retrain — the honest holdout number** ✅ (`v0.9.0`) —
   both checkpoints retrained excluding the holdout template pool, so the holdout evals (0%

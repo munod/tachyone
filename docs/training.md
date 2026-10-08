@@ -216,6 +216,23 @@ joint-training exposure is what made the bank look bad, and the fitted bank is w
 | Mixed precision (bf16/fp16) | Speed + memory |
 | Length-sorted batching | Fewer padding tokens |
 
+### Per-cell validation monitor and the interleaved continuation (B-14)
+
+Every epoch the trainer buckets the validation split by `(primitive, domain, language)`,
+appends one line per epoch to `cell_monitor.jsonl` in the output directory and prints the worst
+cell of each primitive beside the train loss — a single-cell collapse (B-14's
+`noul`/`support`/`it` inversion, worth ~0.010 of a 0.097 aggregate) can no longer hide behind
+an improving curve. The evaluation runs under `no_grad` with dropout off, so the trained
+artifact stays byte-identical to a run without it.
+
+The trainer's epoch runs sequential primitive phases (all `noul` → all `choice` → all `score`,
+`score` last); those long pure phases were the driver of the B-14 cell inversion through the
+shared trunk. `training/interleave_continue.py` resumes a trained adapter with **round-robin**
+batches (same loss math, split and per-epoch shuffle seeds) — the recipe of the published
+multilingual lineage (`multi_tt` → `multi_tt_il`) — with the `is_trainable=True` and
+sha256-before/after guards built in. Full narrative with the evidence trail:
+[the B-14 case study](case-b14.md).
+
 ### VRAM budget notes (RTX 3060 12GB)
 
 - Full fine-tuning of large encoders is **not** feasible; LoRA/QLoRA is required.
