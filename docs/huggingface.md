@@ -11,7 +11,27 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-02 (P3, English assets + both model cards)** — commits
+> **Latest revision: 2026-10-08 (`v0.9.0`, B-15 template-train retrain)** — commits
+> [`e47d6393`](https://huggingface.co/munod/tachyone-en/commit/e47d6393f281dbcc43526c8d36f8f22c7722ff3a)
+> (`tachyone-en`, **8 files**) and
+> [`c5c05fd2`](https://huggingface.co/munod/tachyone-multi/commit/c5c05fd2ac8c82dbff11d1f19d81653a229e543d)
+> (`tachyone-multi`, **6 files**). Both adapters are the B-15 lineages retrained on
+> `template_split: "train"` after the data-recipe corrections (stride decoupling,
+> leave-one-template-out evals, content ×3, volume 1.7×); the multilingual one carries the
+> two-epoch interleaved touch-up that fixed the B-14 `noul` inversion, and the English one
+> ships its **P3 stack rebuilt on the new trunk** (`state_prototypes.json` over 36,000 states,
+> `confidence_calibration.json` with sha256 provenance, `temperature_calibration.json` fitted
+> on the rebuilt never-trained holdout: `choice` **10.0** — the pooled fit pegged the top of
+> the grid, in-domain `choice` ECE recorded **NOT met** at 0.5243 with accuracy untouched —
+> `noul` 0.75, `score` pinned 0.1). The multilingual temperature is fitted on **15,000 pooled
+> in-template + holdout predictions** (`choice` 6.0, `noul` 0.25, `score` 0.25 — never
+> in-sample, L-015). Honest holdout (phrasing never in training): **multi 0.8355 / en 0.9825**,
+> **+0.127 / +0.131** over the previous revision; B-1's per-language holdout ECE is recorded
+> **NOT met** for multilingual (numbers in the card and `BACKLOG.md` **B-15**). The model card
+> was rewritten for this revision; every uploaded file was sha256-verified against the local
+> build (8/8 and 6/6) and the remote holds no stale file.
+>
+> **Previous revision: 2026-10-02 (P3, English assets + both model cards)** — commits
 > [`1c88ebef`](https://huggingface.co/munod/tachyone-en/commit/1c88ebef8f15f68e8a6583c564d636221f22c29f)
 > (`tachyone-en`, **8 files**) and
 > [`3693def1`](https://huggingface.co/munod/tachyone-multi/commit/3693def1bd04d8208216f05459c5b83388ff9fd6)

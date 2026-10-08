@@ -21,7 +21,12 @@ build --strict`, `uv sync --locked --group docs --extra serve --extra train`, e2
 0 skipped. **NOT met, recorded on the card**: P3 in-domain ≤ 0.05 for the rebuilt asset
 (`choice` 0.5243, pooled fit pegged the grid at T=10) and B-1 per-language ECE on holdout
 (both disclosed, never re-fixed). Numbers: multi routed 0.9156 / holdout 0.8355 (checkpoint
-alone 0.9885), en 0.9983 / 0.9825. Details in BACKLOG **B-15**.
+alone 0.9885), en 0.9983 / 0.9825. Details in BACKLOG **B-15**. **Shipped:** `main`
+`164ed3b → 10a42a5` pushed (36 files, +4,786), tag **v0.9.0** pushed, GitHub release
+<https://github.com/munod/tachyone/releases/tag/v0.9.0> created from the CHANGELOG section;
+Hub uploads committed — `tachyone-en` **`e47d6393`** (8 files) and `tachyone-multi`
+**`c5c05fd2`** (6 files) — every file sha256-verified against the local build (8/8, 6/6) with
+identical inventories (no stale remote file), revision recorded in `docs/huggingface.md`.
 **Fase 0 (stride)** — option and hard-negative cycles decoupled from the language stride
 (`index // len(languages)`); goldens recaptured for `en_pt`/`noisy` only — `en` is
 byte-identical, so the English arm and its published numbers did not move. Regenerated
