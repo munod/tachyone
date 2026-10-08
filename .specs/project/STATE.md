@@ -11,6 +11,17 @@ rule (which applied to every correction of this cycle) is **no longer in force**
 publication cycle proceeds as one set (promotion → `benchmarks/report.md` re-render →
 `chore(release): v0.9.0` + tag → push → Hub upload with per-file sha256 → GitHub release).
 The historical deferral text stays below as recorded.
+
+**Publication executed 2026-10-08 (the one-set cycle):** P3 stack rebuilt on `en_tt` → both
+promoted dirs carry B-15 (v0.8.0 dirs kept as `*_prev_pub_v080`) → multi served temperature =
+pooled fit (never in-sample, L-015) → report re-rendered with six entries pinning **both**
+local checkpoints (router L-013: empty/no-signal rows go to English, so the measured pair must
+be the published pair) → release gates green: ruff/pyright clean, **721 passed**, `mkdocs
+build --strict`, `uv sync --locked --group docs --extra serve --extra train`, e2e 2 passed /
+0 skipped. **NOT met, recorded on the card**: P3 in-domain ≤ 0.05 for the rebuilt asset
+(`choice` 0.5243, pooled fit pegged the grid at T=10) and B-1 per-language ECE on holdout
+(both disclosed, never re-fixed). Numbers: multi routed 0.9156 / holdout 0.8355 (checkpoint
+alone 0.9885), en 0.9983 / 0.9825. Details in BACKLOG **B-15**.
 **Fase 0 (stride)** — option and hard-negative cycles decoupled from the language stride
 (`index // len(languages)`); goldens recaptured for `en_pt`/`noisy` only — `en` is
 byte-identical, so the English arm and its published numbers did not move. Regenerated

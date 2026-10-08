@@ -1543,8 +1543,34 @@ so a preds→domain join by `id` silently collapses domains (it produced an all-
 axis and, during B-14, an "it is all `voice`" artifact). `support` × language comes from the
 report's `per_domain_language`; never join by id.
 
-**Deferred as always:** promotion, `benchmarks/report.md` re-render, Hub upload —
-post-JevBench, one set (B5B-8's rule).
+**Publication cycle (2026-10-08) — decisions, measured on the way to the push:**
+- **Promotion**: `checkpoints/{en,multi}` now carry the B-15 fitted banks (the v0.8.0 published
+  dirs are preserved as `checkpoints/{en,multi}_prev_pub_v080`). The P3 stack was **rebuilt on
+  `en_tt`**: holdout regenerated against the new training file (public-item assertion intact),
+  prototypes over 36,000 states, confidence with sha256 provenance, temperatures
+  `choice 10.0 / noul 0.75 / score pinned 0.1`.
+- **P3 in-domain acceptance (≤ 0.05) NOT met for the rebuilt asset.** The pooled fit pegged the
+  top of the pre-registered `DEFAULT_GRID` (**T = 10.0**): training is `split: train` while the
+  holdout keeps its hard rows, and the pooled objective accepts the trade — in-domain `choice`
+  ECE reads **0.5243**, accuracy untouched (0.9956). Recorded, never re-fixed; the follow-up
+  is a fit-basis redesign (slice-balanced pooling), not another fit.
+- **Multi's served temperature is the pooled fit** over 15,000 in-template + holdout
+  predictions (`choice 6.0 / noul 0.25 / score 0.25`) — deliberately *not* the in-sample
+  support-split fit (whose `ece_before ≈ 0` made the grid peg at `choice 0.05`, the L-015 trap).
+- **Report harness pins BOTH local checkpoints.** The router sends empty/no-signal states to
+  the English checkpoint by design (**L-013**, ~14% of five-domain multilingual rows); with the
+  Hub adapter as fallback the measurement mixes revisions, so the pair measured is the pair
+  published. Numbers (routed, as served): multi five-domain **0.9156 / ECE 0.0186** (the
+  multilingual checkpoint itself answers **0.9885** when it answers everything), holdout
+  **0.8355 / 0.1032**, support **0.9107 / 0.0506** (noisy 0.9087); en support **1.0000**,
+  five-domain **0.9983**, holdout **0.9825** (ECE ~0.19 — the T=10 disclosure above).
+- External probes (XNLI/typed-decisions/MASSIVE/JevBench) and the fast-path figures remain
+  **v0.8.0-artifact measurements** — pending re-measurement, recorded on the card.
+
+**Executed 2026-10-08 as one set (B5B-8; the JevBench deferral was lifted by decision — see
+STATE *Current Work*):** promotion → `benchmarks/report.md` re-render (six entries, holdout
+included) → `chore(release): v0.9.0` + tag → push → Hub upload with per-file sha256 → GitHub
+release.
 
 ---
 

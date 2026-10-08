@@ -299,113 +299,110 @@ def main(argv: Iterable[str] | None = None) -> int:
     report = render_report(
         _parse_entries(args.entry),
         commands=[
-            "uv run python -m training.generate_data --seed 1 --per-type 3000 --languages en "
-            "--out data/train_en.jsonl",
-            "uv run python -m training.generate_data --seed 1 --per-type 6000 "
-            "--languages pt,es,fr,de,it,nl --out data/train_multi.jsonl",
+            # Data: the committed configs record seed/counts; B-15 flipped the four training
+            # sets to template_split=train (training/holdout share 0% of templates).
+            "uv run python -m training.generate_data --seed 1 --per-type 4000 --languages en "
+            "--template-split train --out data/train_en.jsonl",
+            "uv run python -m training.generate_data --seed 1 --per-type 7800 "
+            "--languages pt,es,fr,de,it,nl --template-split train --out data/train_multi.jsonl",
+            "uv run python -m training.generate_data --seed 1 --per-type 2000 --languages en "
+            "--domains support,ecommerce,agent_tools,documents,voice --per-domain support=4000 "
+            "--template-split train --out data/train_en_domains.jsonl",
+            "uv run python -m training.generate_data --seed 1 --per-type 2400 "
+            "--languages pt,es,fr,de,it,nl "
+            "--domains support,ecommerce,agent_tools,documents,voice --per-domain support=7800 "
+            "--template-split train --out data/train_multi_domains.jsonl",
             "uv run python -m training.generate_data --seed 2 --per-type 500 --languages en "
             "--out data/eval_en.jsonl",
             "uv run python -m training.generate_data --seed 2 --per-type 500 "
             "--languages pt,es,fr,de,it,nl --out data/eval_multi.jsonl",
-            "uv run python -m training.finetune_rlcd --config training/configs/finetune_en.json",
-            "uv run python -m training.predict --data data/eval_en.jsonl --adapter checkpoints/en "
-            "--out-predictions data/preds_en.jsonl",
-            "uv run python -m training.fit_calibration --calibration data/preds_en.jsonl "
-            "--out checkpoints/en/temperature_calibration.json",
-            # B-11: both evaluates pin the local adapter (the Hub id would fetch a revision) and
-            # carry --noise-rate, without which the noisy view the report prints is not produced.
-            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en "
-            "uv run python -m training.evaluate --data data/eval_en.jsonl "
-            "--out benchmarks/results/en_split.json --backend encoder --noise-rate 0.15 "
-            '--models-dir "$HOME/.cache/tachyone/models"',
-            "TACHYONE_ADAPTERS=tachyone-multi=checkpoints/multi "
-            "uv run python -m training.evaluate --data data/eval_multi.jsonl "
-            "--out benchmarks/results/multi_split.json --backend encoder --noise-rate 0.15 "
-            '--models-dir "$HOME/.cache/tachyone/models"',
-            # B-5a: five domains, English, support keeping its published volume
-            "uv run python -m training.generate_data --seed 1 --per-type 1000 --languages en "
-            "--domains support,ecommerce,agent_tools,documents,voice --per-domain support=3000 "
-            "--out data/train_en_domains.jsonl",
             "uv run python -m training.generate_data --seed 2 --per-type 500 --languages en "
             "--domains support,ecommerce,agent_tools,documents,voice "
             "--out data/eval_en_domains.jsonl",
-            "uv run python -m training.finetune_rlcd "
-            "--config training/configs/finetune_en_domains.json",
-            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
-            "--adapter checkpoints/en_domains --out-predictions data/preds_en_domains.jsonl",
-            "uv run python -m training.fit_calibration --calibration data/preds_en_domains.jsonl "
-            "--out checkpoints/en_domains/temperature_calibration.json",
-            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en_domains "
-            "uv run python -m training.evaluate "
-            "--data data/eval_en_domains.jsonl --out benchmarks/results/en_domains.json "
-            "--backend encoder",
-            # B-5: five-domain bank, fitted on a frozen trunk and evaluated through the gate
-            "uv run python -m training.fit_choice_bank "
-            "--config training/configs/fit_bank_en_domains.json",
-            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
-            "--adapter checkpoints/en_domains_bank --train-data data/train_en_domains.jsonl "
-            "--out-predictions data/preds_en_domains_bank_gate.jsonl "
-            "--out-report benchmarks/results/en_domains_bank_gate.json",
-            # B-5b: five domains, multilingual (support keeps its 18k), joint run + frozen-trunk
-            # fit; the promoted checkpoints/multi is the fitted bank (fit_bank -> mv multi).
-            "uv run python -m training.generate_data --seed 1 --per-type 1000 "
-            "--languages pt,es,fr,de,it,nl "
-            "--domains support,ecommerce,agent_tools,documents,voice --per-domain support=6000 "
-            "--out data/train_multi_domains.jsonl",
             "uv run python -m training.generate_data --seed 2 --per-type 500 "
             "--languages pt,es,fr,de,it,nl "
             "--domains support,ecommerce,agent_tools,documents,voice "
             "--out data/eval_multi_domains.jsonl",
+            # holdout and in-template evals (B-15): 0% / ~100% template overlap with training
+            "uv run python -m training.generate_data --seed 2 --per-type 500 --languages en "
+            "--domains support,ecommerce,agent_tools,documents,voice --template-split holdout "
+            "--out data/eval_en_domains_holdout.jsonl",
+            "uv run python -m training.generate_data --seed 2 --per-type 500 "
+            "--languages pt,es,fr,de,it,nl "
+            "--domains support,ecommerce,agent_tools,documents,voice --template-split holdout "
+            "--out data/eval_multi_domains_holdout.jsonl",
+            "uv run python -m training.generate_data --seed 2 --per-type 500 --languages en "
+            "--domains support,ecommerce,agent_tools,documents,voice --template-split train "
+            "--out data/eval_en_domains_train.jsonl",
+            "uv run python -m training.generate_data --seed 2 --per-type 500 "
+            "--languages pt,es,fr,de,it,nl "
+            "--domains support,ecommerce,agent_tools,documents,voice --template-split train "
+            "--out data/eval_multi_domains_train.jsonl",
+            # arms: joint trunks with the per-cell monitor, then the interleaved touch-up on
+            # the multi lineage (training/interleave_continue.py), then the frozen-trunk fits
+            "uv run python -m training.finetune_rlcd "
+            "--config training/configs/finetune_en_domains.json",
             "uv run python -m training.finetune_rlcd "
             "--config training/configs/finetune_multi_domains.json",
+            "uv run python -m training.interleave_continue --adapter checkpoints/multi_tt "
+            "--out checkpoints/multi_tt_il --epochs 8,9 --data data/train_multi_domains.jsonl",
+            "uv run python -m training.fit_choice_bank "
+            "--config training/configs/fit_bank_en_domains.json",
             "uv run python -m training.fit_choice_bank "
             "--config training/configs/fit_bank_multi_domains.json",
-            "uv run python -m training.predict --data data/eval_multi_domains.jsonl "
-            "--adapter checkpoints/multi_b5b_fit_bank --train-data data/train_multi_domains.jsonl "
-            "--out-predictions data/preds_multi_domains_fit_bank.jsonl "
-            "--out-report benchmarks/results/multi_domains_fit_bank.json",
-            "uv run python -m training.fit_calibration "
-            "--calibration data/preds_multi_domains_fit_bank.jsonl "
-            "--out benchmarks/results/calibration_multi_domains_fit_bank.json",
-            # B-13: JevBench-family data (pinned sources + rule-tree families + mixture),
-            # two-arm training, frozen-trunk fit; the promoted checkpoints/en is the treatment
-            # bank (fit_bank -> mv checkpoints/en_jev_bank checkpoints/en).
-            "uv run python -m training.fetch_jev_sources",
-            "uv run python -m training.build_jev_sources "
+            # P3 stack rebuilt on the new English trunk (holdout regenerated against the new
+            # training file); promotion copies the fit outputs into checkpoints/{en,multi}
+            "uv run python -m training.build_calibration_holdout "
             "--public-dir <jevbench-clone>/datasets/public",
-            "uv run python -m training.build_jev_families "
-            "--public-dir <jevbench-clone>/datasets/public",
-            "uv run python -m training.build_jev_mixture",
-            "uv run python -m training.finetune_rlcd "
-            "--config training/configs/finetune_en_jev.json",
-            "uv run python -m training.fit_choice_bank "
-            "--config training/configs/fit_bank_en_jev.json",
-            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
-            "--adapter checkpoints/en_jev_bank --train-data data/train_en_domains.jsonl "
-            "--out-predictions data/preds_en_jev_treat.jsonl "
-            "--out-report benchmarks/results/en_jev_treat_raw.json",
-            "uv run python -m training.fit_calibration "
-            "--calibration data/preds_en_jev_treat.jsonl "
-            "--out benchmarks/results/calibration_en_jev_treat.json",
-            "uv run python -m training.predict --data data/eval_en_domains.jsonl "
-            "--adapter checkpoints/en_jev_bank "
-            "--temperature benchmarks/results/calibration_en_jev_treat.json "
-            "--train-data data/train_en_domains.jsonl "
-            "--out-predictions data/preds_en_jev_treat_cal.jsonl "
-            "--out-report benchmarks/results/en_jev_treat.json",
-            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en "
+            "uv run python -m training.build_prototypes --data data/train_en_domains.jsonl "
+            "--adapter checkpoints/en_tt --model-id answerdotai/ModernBERT-large "
+            "--out checkpoints/en_tt/state_prototypes.json",
+            "uv run python -m training.predict --data data/calibration_holdout.jsonl "
+            "--adapter checkpoints/en_tt --prototypes checkpoints/en_tt/state_prototypes.json "
+            "--out-predictions data/calibration_holdout_preds_entt.jsonl",
+            "uv run python -m training.fit_confidence "
+            "--predictions data/calibration_holdout_preds_entt.jsonl "
+            "--prototypes checkpoints/en_tt/state_prototypes.json --out-dir checkpoints/en_tt",
+            # Both evaluates pin BOTH local checkpoints: the router sends empty/no-signal
+            # states to the English one (by design), so the measured pair must be the
+            # published pair (B-15). --noise-rate only on the support splits (B-11 view).
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en,tachyone-multi=checkpoints/multi "
             "uv run python -m training.evaluate --data data/eval_en.jsonl "
-            "--out benchmarks/results/en_split_jev.json --backend encoder --noise-rate 0.15 "
+            "--out benchmarks/results/en_split.json --backend encoder --noise-rate 0.15 "
+            '--models-dir "$HOME/.cache/tachyone/models"',
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en,tachyone-multi=checkpoints/multi "
+            "uv run python -m training.evaluate --data data/eval_multi.jsonl "
+            "--out benchmarks/results/multi_split.json --backend encoder --noise-rate 0.15 "
+            '--models-dir "$HOME/.cache/tachyone/models"',
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en,tachyone-multi=checkpoints/multi "
+            "uv run python -m training.evaluate --data data/eval_en_domains.jsonl "
+            "--out benchmarks/results/en_domains.json --backend encoder "
+            '--models-dir "$HOME/.cache/tachyone/models"',
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en,tachyone-multi=checkpoints/multi "
+            "uv run python -m training.evaluate --data data/eval_multi_domains.jsonl "
+            "--out benchmarks/results/multi_domains.json --backend encoder "
+            '--models-dir "$HOME/.cache/tachyone/models"',
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en,tachyone-multi=checkpoints/multi "
+            "uv run python -m training.evaluate --data data/eval_en_domains_holdout.jsonl "
+            "--out benchmarks/results/en_domains_holdout.json --backend encoder "
+            '--models-dir "$HOME/.cache/tachyone/models"',
+            "TACHYONE_ADAPTERS=tachyone-en=checkpoints/en,tachyone-multi=checkpoints/multi "
+            "uv run python -m training.evaluate --data data/eval_multi_domains_holdout.jsonl "
+            "--out benchmarks/results/multi_domains_holdout.json --backend encoder "
             '--models-dir "$HOME/.cache/tachyone/models"',
             "uv run python -m benchmarks.report "
             '--entry "english (ModernBERT-large + LoRA r=16 + choice head)'
-            '=benchmarks/results/en_split_jev.json" '
-            '--entry "english five-domain (B-13 JevBench-family fitted bank, frozen trunk)'
-            '=benchmarks/results/en_jev_treat.json" '
+            '=benchmarks/results/en_split.json" '
+            '--entry "english five-domain (B-15 template-train fitted bank + P3 confidence, '
+            'frozen trunk)=benchmarks/results/en_domains.json" '
+            '--entry "english five-domain, holdout phrasing (never in training)'
+            '=benchmarks/results/en_domains_holdout.json" '
             '--entry "multilingual (mmBERT-base + LoRA r=64 + choice head)'
             '=benchmarks/results/multi_split.json" '
-            '--entry "multilingual five-domain (B-5b fitted choice-head bank, frozen trunk)'
-            '=benchmarks/results/multi_domains_fit_bank.json" '
+            '--entry "multilingual five-domain (B-15 template-train fitted bank, frozen trunk)'
+            '=benchmarks/results/multi_domains.json" '
+            '--entry "multilingual five-domain, holdout phrasing (never in training)'
+            '=benchmarks/results/multi_domains_holdout.json" '
             "--out benchmarks/report.md",
         ],
         title=args.title,
