@@ -33,17 +33,24 @@ reseeded separately in B-9 (overall 0.859). Spec/tasks: `.specs/features/multili
    calibration mapping; the scalar per-language temperature already exists.
 2. [x] Republished the r=64 multilingual adapter to the Hub (`munod/tachyone-multi`, commit `599df58`).
 3. Keep per-language accuracy/ECE reporting and gate on the worst language, not the average.
-4. **Open defect (2026-10-07): per-language `noul` inverted.** The B-14 multi arm scores
-   `noul`/`support`/`it` at **0.0723** on `eval_multi` (other languages 1.000) and anti-fits its
-   own training rows (10%) — full evidence trail, what was ruled out and the epoch snapshots in
-   flight are in **B-14** (*Open defect*). Per-language `noul` was never gated here (the
-   acceptance below covers `choice`/`score`); it is explicitly on the list now, and the
-   multi arm does not publish until it closes.
+4. **Per-language `noul` inverted — CLOSED 2026-10-07** (interleaved continuation from the
+   inverted trunk; all five pre-registered gates green — full trail in **B-14**). The
+   per-language `noul` gate this bullet demanded now exists in practice: B-15's holdout
+   tripwire (`noul` ≥ 0.60 in every language) passed everywhere (worst `it` 0.7807). Original
+   report: the B-14 multi arm scored `noul`/`support`/`it` at **0.0723** on `eval_multi`
+   (other languages 1.000) and anti-fit its own training rows (10%). Per-language `noul` was
+   never gated in the acceptance below (it covers `choice`/`score`); it is gated now.
 
 **Acceptance.**
 - Multilingual `choice` accuracy ≥ 0.60 on the held-out synthetic set.
 - Per-language ECE ≤ 0.05 for `choice`/`score` (NFR-C06), with per-language numbers published.
 - No regression in English (overall ≥ 0.72).
+
+**Evaluated 2026-10-08 against the B-15 holdout — the yardstick this was written for** (full
+tables in B-15): `choice` **0.9248** ≥ 0.60 ✓ · English overall **0.9821** ≥ 0.72 ✓ ·
+per-language ECE **NOT met** on multi — choice `es` 0.0753 / `it` 0.0968 / `pt` 0.1014, score
+`de` 0.0540 / `es` 0.0951 / `it` 0.1495 / `nl` 0.0577 (en passes: choice 0.0155, score
+0.0067). Recorded with the numbers, never re-fixed → **B-1 stays open on criterion 3.**
 
 **Risks / notes.** Small per-language calibration sets are noisy (warn below `min_samples`); more
 data volume does not fix an architectural gap, but here the head already exists. Effort ~1 day +
@@ -1421,7 +1428,7 @@ of the sort happens while the submission is being evaluated from the remote.
 
 ---
 
-## B-15 · Estágio 2 — template-holdout retrain (the honest generalization number) · **Gates fixed 2026-10-07, before training**
+## B-15 · Estágio 2 — template-holdout retrain (the honest generalization number) · **Executed 2026-10-08 — every gate PASS except B-1's per-language ECE, recorded NOT met**
 
 **Why.** B-14's arms trained on `template_split: "all"`, so their holdout scores (multi
 **0.9876**, en **0.9995**, `benchmarks/results/multi_holdout_b14.json`) are **in-sample** —
@@ -1477,6 +1484,64 @@ would re-fix a gate.
 with the numbers — never re-fixed (B-1's own rule). Deliverable: the per-axis table
 `current vs in-template vs holdout` (overall, `choice`/`score`/`noul` per language,
 `support` per language — accuracy + ECE), Δ = the generalization gap, per arm.
+
+**Results (2026-10-08).** Full cycle `exit=0`: flip → both retrains (monitor green every
+epoch — **the B-14 cell defect did not recur**; final `noul:*:it` cells 0.047–0.067) →
+unconditional touch-up (sha `19681298…` → `f7969603…`) → fits → both harness chains
+(18 artifacts). Arms: `checkpoints/{en_tt, multi_tt, multi_tt_il}` + fitted banks.
+
+*Gate verdict:*
+- **Current, multi — all five PASS**: `support` **0.9760** ≥ 0.7887 · worst domain `voice`
+  **0.9747** ≥ 0.70 · per-domain ECE **0.0019–0.0202** ≤ 0.05 (**zero exceptions**) · strict
+  **1.0000** (0 shared, 0 wrong) · every language ≥ baseline — `fr` 0.9960 · `es` 0.9841 ·
+  `de` 0.9904 · `it` 0.9799 · `pt` 0.9865 · `nl` 0.9944. overall **0.9885 / ECE 0.0069**
+  (B-14: 0.9863 / 0.0080 — the B-15 trunk is *better* raw: choice 0.9936 vs 0.9800).
+- **Current, en — all four PASS** (`85a2f05`): `support` **1.0000** ≥ 0.9733 · `voice` 0.9900
+  ≥ 0.70 · per-domain ECE ≤ **0.0082** · strict **1.0000**. overall **0.9980 / 0.0009**.
+- **Holdout**: B-1 `choice` ≥ 0.60 → multi **0.9248** PASS; en overall ≥ 0.72 → **0.9821**
+  PASS; tripwire `noul` ≥ 0.60/idioma → PASS everywhere (worst `it` 0.7807, `es` 0.7810, en
+  0.9944); `wrong_domain` = 0 both arms with **`fell_to_shared` = 0** and strict 1.0000 —
+  the signature gate survives unseen phrasing untouched.
+- **Holdout, B-1 per-language ECE ≤ 0.05 for `choice`/`score`: multi NOT met** — choice `es`
+  0.0753 · `it` 0.0968 · `pt` 0.1014; score `de` 0.0540 · `es` 0.0951 · `it` 0.1495 · `nl`
+  0.0577 (the report's all-primitives-per-language reading agrees: `es` 0.0717 · `it` 0.1261
+  · `pt` 0.0507). en PASS (choice 0.0155, score 0.0067). Recorded as NOT met per the rule —
+  **B-1 stays open with honest numbers.** Metric defs mirror `training/evaluate.py` exactly
+  and were validated against the report's `per_language`/`noul_per_language` to 4 decimals.
+
+*Generalization tables (accuracy; calibrated reports):*
+
+overall acc/ECE — multi **0.9885/0.0069 → 0.9997/0.0002 → 0.8892/0.0426**;
+en **0.9980/0.0009 → 1.0000/0.0002 → 0.9821/0.0089** (current → in-template → holdout).
+**Pure phrasing gap (in-template → holdout): multi −0.1105, en −0.0179.**
+
+| eixo | idioma | multi atual | train | holdout | Δ | | en atual | train | holdout | Δ |
+|---|---|---:|---:|---:|---:|---|---:|---:|---:|---:|
+| choice | de/es/fr/it/nl/pt | .9928/.9929/1.0/.9928/.9976/.9857 | .9976/1.0/1.0/1.0/1.0/1.0 | **.9735/.8619/.9928/.8795/.9807/.8619** | −.019/−.131/−.007/−.113/−.017/−.124 | choice | en .9956 | 1.0 | **.9600** | −.036 |
+| score | de/es/fr/it/nl/pt | .9928/.9905/.9952/.9880/.9928/.9929 | 1.0/1.0/1.0/1.0/1.0/1.0 | **.9157/.8619/.9325/.8699/.9205/.9357** | −.077/−.129/−.063/−.118/−.072/−.057 | score | en .9996 | 1.0 | **.9920** | −.008 |
+| noul | de/es/fr/it/nl/pt | .9855/.9690/.9928/.9590/.9928/.9810 | 1.0/1.0/1.0/1.0/.9976/1.0 | **.8867/.7810/.9060/.7807/.8434/.8238** | −.099/−.188/−.087/−.178/−.149/−.157 | noul | en .9988 | 1.0 | **.9944** | −.004 |
+| support | de/es/fr/it/nl/pt | .9759/.9643/.9880/.9438/.9839/1.0 | 1.0/1.0/1.0/1.0/1.0/1.0 | **.7952/.7738/.7831/.7068/.7671/1.0** | −.181/−.191/−.205/−.237/−.217/+0.0 | support | en 1.0 | 1.0 | **1.0000** | ±0 |
+
+*Findings.* (1) **Language asymmetry**: `fr`/`nl`/`de` `choice` lose ≤0.02 on unseen phrasing
+while `es`/`it`/`pt` lose ~0.11–0.13 — the phrasing-generalization gap is not uniform across
+languages (B-1's worst-language rule keeps catching what averages hide). (2) **`support` is
+the weakest domain holdout-side** (`support/it` 0.7068, −0.237) while `support/pt` is
+unchanged at 1.0000. (3) `noul` drops most per language (`es`/`it` −0.19/−0.18) yet clears the
+tripwire everywhere. (4) The multi trunk's aggregate val_loss rose vs B-14 (0.532 vs 0.097)
+while its raw eval *improved* (choice 0.9936 vs 0.9800): the val `choice` cells were noisy,
+the benchmark is the arbiter — the monitor's cost is real too (~+14 min/epoch on 90 multi
+cells; en's 15 cells ≈ free). (5) Reference: B-14 arms on holdout are in-sample (0.9876 /
+0.9995); released adapters 0.7623 / 0.8508 → **B-15 honest = +0.127 (multi) / +0.131 (en)
+over released, −0.098 / −0.017 under the in-sample ceiling.**
+
+**Publish-candidate decision (deferred to the publication cycle):** B-15 arms supersede B-14
+as the promotable lineage — current-benchmark numbers hold (multi better, en −0.0013) *and*
+their holdout number is claimable, which B-14's in-sample 0.9876 never was.
+
+**L-019 (analysis trap):** eval ids are **not** unique — 1,500 ids × 5 rows, one per domain —
+so a preds→domain join by `id` silently collapses domains (it produced an all-zero `support`
+axis and, during B-14, an "it is all `voice`" artifact). `support` × language comes from the
+report's `per_domain_language`; never join by id.
 
 **Deferred as always:** promotion, `benchmarks/report.md` re-render, Hub upload —
 post-JevBench, one set (B5B-8's rule).

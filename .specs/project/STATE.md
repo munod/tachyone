@@ -95,6 +95,29 @@ every language ≥ baseline; overall 0.9995 / ECE 0.0004** — all five PASS. **
 day: the trainer's per-cell val monitor (`cell_monitor.jsonl` + worst-cell line per epoch,
 commit `f57343f`) and the recipe script `training/interleave_continue.py` (commit `e9d49e4`);
 GPU parity lesson **L-018**. Full trail: BACKLOG **B-14**. Everything still local.
+
+**B-15 (Estágio 2 — template-holdout retrain) — executed 2026-10-08; the honest
+generalization number exists.** Order and evidence: provenance guard first (all six B-14 pins
+verified on disk *and* by regeneration; holdout evals pinned for the first time
+`3119e73c6d851e31` / `982236ca2728705f`) → gates pre-registered (`32b8d71`) → flip
+(`3472dc9`: the four training configs to `template_split: "train"`, volumes unchanged
+12k/36k/23.4k/52.2k, new pins `991dd971`/`2fc2486a`/`f1c7d2cf`/`97d6e9ea`, two in-template
+evals added with a mirror gate test, 721 passed) → retrain both arms with the per-cell
+monitor (**no defect recurrence** — final `noul:*:it` cells 0.047–0.067) + the unconditional
+interleaved touch-up (multi; sha `19681298…`→`f7969603…`) → fits retargeted (`092bfb3`) →
+harness (raw → fit_calibration → cal) on **three evals × two arms** — every stage `exit=0`,
+18 artifacts. **Verdict: current benchmark — all gates PASS** (multi **0.9885 / ECE 0.0069**,
+support 0.9760, worst domain 0.9747, **zero ECE exceptions**, strict 1.000, 6/6 languages ≥
+baseline; en **0.9980**, all four `85a2f05` gates PASS). **Holdout — B-1 `choice` 0.9248 ✓,
+en overall 0.9821 ✓, `noul` tripwire ≥0.60 ✓ everywhere (worst `it` 0.7807), `wrong_domain`=0
+with `fell_to_shared`=0; B-1 per-language ECE NOT met on multi** (choice `es`/`it`/`pt`, score
+`de`/`es`/`it`/`nl`; worst `score/it` 0.1495; en passes) → recorded, **B-1 stays open on
+criterion 3**. **Generalization gap (in-template → holdout): multi −0.1105, en −0.0179**;
+honest holdout = **+0.127 / +0.131 over released**, −0.098 / −0.017 under the B-14 in-sample
+ceiling. Publish-candidate call recorded for the publication cycle: **the B-15 arms supersede
+B-14** (current holds, holdout claimable). Analysis `/tmp/opencode/b15_tables.py` (metric
+defs validated against the report to 4 decimals; **L-019** for the id trap). Full tables:
+BACKLOG **B-15**. Still local — no push, no upload until JevBench finishes.
 **Previous:** **B-13 P3 — calibration — executed, adopted and closed 2026-10-02, its
 acceptance criterion recorded as NOT met.** The design was pre-registered from measurement
 (spec *P3 design*), executed as JB-9…JB-13, and the assets are now in `checkpoints/en`:
@@ -967,6 +990,27 @@ hashes plus the gates, never the run log.
 **Prevents:** burning hours chasing a "logic bug" that is GPU noise; claiming bitwise
 reproducibility of a training run; comparing two training runs by loss deltas smaller than
 the measured nondeterminism floor (≈Δ0.03 in adapter weights after one epoch here).
+
+---
+
+### L-019: An eval id is not a row key — domain cells come from the report, never an id join
+
+**Context:** B-15 analysis (2026-10-08); the same trap had already produced a wrong answer
+during B-14's defect trail.
+**Problem:** `eval_*_domains.jsonl` carries **1,500 unique ids × 5 rows, one per domain** —
+the id names the draw, not the row. Joining predictions back to `domain` by `id` keeps
+whichever domain came last and silently fabricates data: the B-15 `support × language` axis
+came out all zeros, and during B-14 the same collision produced "the `it` `noul` eval rows
+are all `voice`" (false — `it` has 83 `noul` rows in *every* domain). Neither output crashed;
+both looked plausible, and only a cross-check against report cells exposed them.
+**Solution:** the calibrated report already ships `per_domain_language` (domain × language
+accuracy + ECE) — that is the source for domain cells. Primitive × language cells need only
+the `type` and `lang` fields the predictions do carry, and every derived metric was validated
+by mirroring `training/evaluate.py`'s definitions and reproducing the report's `per_language`
+and `noul_per_language` to four decimals *before* any new cell was trusted.
+**Prevents:** plausible-looking zeroed or collapsed aggregates from key collisions — check a
+key's cardinality (`rows per id`) before joining anything to it, and cross-check every
+derived cell against an existing report cell before publishing it.
 
 ---
 
