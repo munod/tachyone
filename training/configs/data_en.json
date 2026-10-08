@@ -4,5 +4,6 @@
   ],
   "per_type": 4000,
   "seed": 1,
-  "source": "synthetic"
+  "source": "synthetic",
+  "template_split": "train"
 }

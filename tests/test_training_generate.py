@@ -323,6 +323,12 @@ _SPLIT_PAIRS = [
     ("data_eval_multi_domains_holdout.json", "data_multi_domains.json"),
 ]
 
+#: B-15: the in-template evals are the *seen* side of the same split pair.
+_SPLIT_TRAIN_PAIRS = [
+    ("data_eval_en_domains_train.json", "data_en_domains.json"),
+    ("data_eval_multi_domains_train.json", "data_multi_domains.json"),
+]
+
 #: (domain, lang) → entities + option terms, longest first, for template masking.
 _TERM_CACHE: dict[tuple[str, str], tuple[str, ...]] = {}
 
@@ -432,6 +438,51 @@ def test_holdout_eval_shares_almost_no_template_with_training() -> None:
         total = sum(count for _, count in per_lang.values())
         assert hit / total <= 0.05, f"{eval_name}: {100 * hit / total:.2f}% template overlap"
         assert exact == 0, f"{eval_name}: {exact} non-empty rows are byte-identical to training"
+
+
+def test_in_template_eval_is_drawn_from_the_training_templates() -> None:
+    """B-15 mirror of the holdout gate: the in-template column must be the *seen* side.
+
+    At least 95% of each language's non-empty rows carry a ``(kind, template)`` the ``train``
+    split emits. The column exists to separate "unseen template" from "unseen phrasing of a
+    seen template", so its own membership is pinned by a test, not assumed — the holdout test
+    above pins the other half of the pair.
+    """
+    from training.config import load_data_config
+
+    for eval_name, train_name in _SPLIT_TRAIN_PAIRS:
+        templates_by_lang: dict[str, set[tuple[str, str]]] = {}
+        for record in iter_records(
+            replace(
+                load_data_config(_ROOT / "training" / "configs" / train_name),
+                template_split="train",
+            )
+        ):
+            if not record["state"]:
+                continue
+            domain = record.get("domain", DEFAULT_DOMAIN)
+            templates_by_lang.setdefault(record["lang"], set()).add(
+                (record["type"], _template(record["state"], domain, record["lang"]))
+            )
+        per_lang: dict[str, list[int]] = {}
+        eval_records = list(
+            iter_records(load_data_config(_ROOT / "training" / "configs" / eval_name))
+        )
+        nonempty = [record for record in eval_records if record["state"]]
+        assert nonempty, eval_name
+        for record in nonempty:
+            domain = record.get("domain", DEFAULT_DOMAIN)
+            bucket = per_lang.setdefault(record["lang"], [0, 0])
+            bucket[1] += 1
+            if (
+                record["type"],
+                _template(record["state"], domain, record["lang"]),
+            ) in templates_by_lang[record["lang"]]:
+                bucket[0] += 1
+        for lang, (hit, total) in sorted(per_lang.items()):
+            assert hit / total >= 0.95, (
+                f"{eval_name}: {lang} is only {100 * hit / total:.1f}% in-template"
+            )
 
 
 def test_boundary_cases_present() -> None:
@@ -567,6 +618,9 @@ _SHIPPED = [
     ("data_eval_multi_domains.json", "data/eval_multi_domains.jsonl"),
     ("data_eval_en_domains_holdout.json", "data/eval_en_domains_holdout.jsonl"),
     ("data_eval_multi_domains_holdout.json", "data/eval_multi_domains_holdout.jsonl"),
+    # B-15 (Estágio 2): the in-template column — training flipped to `template_split: train`
+    ("data_eval_en_domains_train.json", "data/eval_en_domains_train.jsonl"),
+    ("data_eval_multi_domains_train.json", "data/eval_multi_domains_train.jsonl"),
 ]
 
 _FIVE = ("support", "ecommerce", "agent_tools", "documents", "voice")

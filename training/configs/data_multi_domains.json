@@ -19,5 +19,6 @@
   },
   "per_type": 2400,
   "seed": 1,
-  "source": "synthetic"
+  "source": "synthetic",
+  "template_split": "train"
 }

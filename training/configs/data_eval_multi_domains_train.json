@@ -7,13 +7,15 @@
     "voice"
   ],
   "languages": [
-    "en"
+    "pt",
+    "es",
+    "fr",
+    "de",
+    "it",
+    "nl"
   ],
-  "per_domain": {
-    "support": 4000
-  },
-  "per_type": 2000,
-  "seed": 1,
+  "per_type": 500,
+  "seed": 2,
   "source": "synthetic",
   "template_split": "train"
 }
