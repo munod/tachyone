@@ -1421,6 +1421,68 @@ of the sort happens while the submission is being evaluated from the remote.
 
 ---
 
+## B-15 · Estágio 2 — template-holdout retrain (the honest generalization number) · **Gates fixed 2026-10-07, before training**
+
+**Why.** B-14's arms trained on `template_split: "all"`, so their holdout scores (multi
+**0.9876**, en **0.9995**, `benchmarks/results/multi_holdout_b14.json`) are **in-sample** —
+those rows' templates were in their training. The only honest unseen-phrasing numbers today
+are the released adapters (multi 0.7623 / `choice` 0.5604, en 0.8508), which predate the
+recompose recipe. B-1's acceptance was written for exactly this yardstick and has stayed
+blocked on it ("the holdout eval … needs a `train`-split retrain to be actionable").
+
+**What runs.** Flip the four training configs to `template_split: "train"`, regenerate, and
+retrain both arms with the B-14 recipe — en 36,000 × 6 ep; multi 52,200 × 8 ep **with the
+per-cell monitor** plus the **unconditional** 2-epoch interleaved touch-up (the
+`tmp_il_orig` lineage), so the only variable against B-14 is the data. Fit the banks, then
+score **three evals per arm**: current (`all`, unchanged rows), in-template (`train`, new),
+holdout (`holdout`). Decisions recorded before the run: touch-up unconditional; the
+`noul`-per-language tripwire below; the in-template column is measurement-only.
+
+**Provenance guard (executed 2026-10-07 before any regeneration — all OK).** B-14's bytes
+re-verified from the day's configs, disk **and** regeneration agreeing: `train_en`
+`c4101fc8037bef85`, `train_en_domains` `9212e46d6a7994dc`, `train_multi` `de1bcca1e81190a6`,
+`train_multi_domains` `97a3ca3d5e56644f`, `eval_en_domains` `934145c047375133`,
+`eval_multi_domains` `92b526f99fe60187`. Holdout evals pinned for the first time:
+`eval_en_domains_holdout` **`3119e73c6d851e31`**, `eval_multi_domains_holdout`
+**`982236ca2728705f`**. After the flip, B-14's datasets remain reproducible from the
+pre-flip configs in git history.
+
+**Fixed gates (recorded before the launch):**
+
+*Current benchmark* — `eval_{en,multi}_domains.jsonl`, rows unchanged, so B-14's gates
+transfer verbatim:
+1. multi `support` ≥ **0.7887** · worst new domain ≥ **0.70** · per-domain ECE ≤ **0.05**
+   (exceptions declared) · gate strict = **1.000** · every language ≥ baseline (`fr` 0.8546 ·
+   `es` 0.8516 · `de` 0.8402 · `it` 0.8337 · `pt` 0.8310 · `nl` 0.8297).
+2. en `support` ≥ **0.9733**.
+
+*Holdout benchmark* — `eval_*_domains_holdout.jsonl`, rows never in any training:
+3. **B-1 acceptance, verbatim**: multilingual `choice` ≥ **0.60** · per-language ECE ≤
+   **0.05** for `choice`/`score` with numbers published · English overall ≥ **0.72**.
+4. **Anti-inversion tripwire (the B-14 lesson)**: `noul` ≥ **0.60** in *every* language
+   (en included) — an inversion lands near 0.07, baseline is ~0.5, so the floor fails loudly
+   on a defect and never on sampling noise.
+5. `wrong_domain` = **0** on every holdout report (misrouting is structural); `fell_to_shared`
+   is published as a measurement — signature matching may miss unseen phrasing, and if it
+   moves that is a finding, not a gate.
+
+*In-template eval* — `eval_*_domains_train.jsonl`, new rows: **measurement only**. No anchor
+exists on rows that were never benchmarked; publishing a floor invented after seeing the data
+would re-fix a gate.
+
+**Reference columns (already measured, labeled in the report):** B-14 arms on holdout
+0.9876 / 0.9995 = **in-sample**; released adapters 0.7623 / 0.8508 = pre-recompose.
+
+**Honest-failure rule.** If B-1's criteria or the tripwire fail, they are recorded as NOT met
+with the numbers — never re-fixed (B-1's own rule). Deliverable: the per-axis table
+`current vs in-template vs holdout` (overall, `choice`/`score`/`noul` per language,
+`support` per language — accuracy + ECE), Δ = the generalization gap, per arm.
+
+**Deferred as always:** promotion, `benchmarks/report.md` re-render, Hub upload —
+post-JevBench, one set (B5B-8's rule).
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
