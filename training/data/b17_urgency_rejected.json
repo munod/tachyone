@@ -1,0 +1,61 @@
+{
+  "rule": "affirmative urgency phrases belong to the urgent bank (level 3) only",
+  "removed": [
+    {
+      "domain": "support",
+      "lang": "nl",
+      "bank": "neutral",
+      "phrase": "Snelle vraag over de {entity}.",
+      "reason": "affirmative urgency outside the urgent bank"
+    },
+    {
+      "domain": "support",
+      "lang": "pt",
+      "bank": "request",
+      "phrase": "O {entity} precisa de atenção urgente da equipe.",
+      "reason": "affirmative urgency outside the urgent bank"
+    },
+    {
+      "domain": "ecommerce",
+      "lang": "de",
+      "bank": "request",
+      "phrase": "Ich benötige {entity} dringend bearbeitet.",
+      "reason": "affirmative urgency outside the urgent bank"
+    },
+    {
+      "domain": "ecommerce",
+      "lang": "es",
+      "bank": "request",
+      "phrase": "Solicito ayuda urgente por tu {entity}.",
+      "reason": "affirmative urgency outside the urgent bank"
+    },
+    {
+      "domain": "ecommerce",
+      "lang": "pt",
+      "bank": "request",
+      "phrase": "Preciso que analisem {entity} urgentemente.",
+      "reason": "affirmative urgency outside the urgent bank"
+    },
+    {
+      "domain": "documents",
+      "lang": "de",
+      "bank": "request",
+      "phrase": "Die Bearbeitung von {entity} ist dringend erforderlich.",
+      "reason": "affirmative urgency outside the urgent bank"
+    },
+    {
+      "domain": "documents",
+      "lang": "nl",
+      "bank": "request",
+      "phrase": "Verwerk de {entity} zo snel mogelijk.",
+      "reason": "affirmative urgency outside the urgent bank"
+    },
+    {
+      "domain": "voice",
+      "lang": "fr",
+      "bank": "request",
+      "phrase": "Il est urgent de réparer {entity}.",
+      "reason": "affirmative urgency outside the urgent bank"
+    }
+  ]
+}

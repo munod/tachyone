@@ -165,6 +165,12 @@
           "Wegen dem {entity} noch einmal nachgefragt.",
           "Status von dem {entity}?",
           "Eine Frage zu dem {entity}.",
+          "Ich beobachte nur die Entwicklung von {entity}.",
+          "Bitte aktualisiert den Status von {entity}.",
+          "Ich überprüfe gerade die Daten zu {entity}.",
+          "Danke für die Info zu {entity}.",
+          "Ich kontrolliere lediglich den aktuellen Stand von {entity}.",
+          "Lediglich eine kurze Rückfrage bezüglich {entity}.",
           "Ich prüfe, ob sich beim {entity} etwas geändert hat."
         ],
         "request": [
@@ -178,6 +184,12 @@
           "Kann sich jemand für mich um das {entity} kümmern?",
           "Ich warte auf das {entity}, kannst du nachsehen?",
           "Bitte sieh dir das {entity} an.",
+          "Ich habe eine Frage zu der {entity}.",
+          "Bitte senden Sie mir Updates zur {entity}.",
+          "Ich benötige Unterstützung für die {entity}.",
+          "Lassen Sie mich bitte über die {entity} wissen.",
+          "Ich benötige eine Überprüfung des {entity}.",
+          "Ich brauche eine {entity}.",
           "Ich brauche Hilfe bei dem {entity}."
         ],
         "urgent": [
@@ -547,6 +559,12 @@
           "Dando seguimiento al {entity}.",
           "¿Estado del {entity}?",
           "Una duda sobre el {entity}.",
+          "Solo quiero confirmar el estado actual de {entity}.",
+          "Necesito verificar si hay novedades respecto a {entity}.",
+          "Estoy revisando los detalles asociados con {entity}.",
+          "Busco información preliminar sobre el proceso de {entity}.",
+          "Quisiera saber si se ha actualizado {entity}.",
+          "Solo observo el progreso del elemento {entity}.",
           "Comprobando si cambió algo con el {entity}."
         ],
         "request": [
@@ -560,6 +578,12 @@
           "¿Alguien puede encargarse del {entity} por mí?",
           "Estoy esperando el {entity}, ¿puedes revisar?",
           "Por favor, revisa el {entity}.",
+          "Quiero solicitar soporte para el {entity}.",
+          "Necesito que revises el estado del {entity}.",
+          "Por favor, gestiona la incidencia del {entity}.",
+          "¿Podéis verificar el funcionamiento del {entity}?.",
+          "Requiero asistencia técnica para el {entity}.",
+          "Ayudadme con la configuración del {entity}.",
           "Necesito ayuda con el {entity}."
         ],
         "urgent": [
@@ -738,6 +762,12 @@
           "Suite sur le {entity}.",
           "État du {entity} ?",
           "Une question sur le {entity}.",
+          "Je note l'état actuel du {entity}.",
+          "Je surveille simplement le statut du {entity}.",
+          "Je note la situation actuelle du {entity}.",
+          "Je signale simplement l'état du {entity}.",
+          "Je relève les informations concernant le {entity}.",
+          "Je consigne les détails sur le {entity}.",
           "Je vérifie si quelque chose a changé avec le {entity}."
         ],
         "request": [
@@ -751,6 +781,12 @@
           "Quelqu'un peut s'occuper du {entity} pour moi ?",
           "J'attends le {entity}, tu peux vérifier ?",
           "Merci de regarder le {entity}.",
+          "Je souhaite signaler un problème avec le {entity}.",
+          "Pourriez-vous vérifier l'état du {entity} s'il vous plaît.",
+          "Il faudrait mettre à jour les informations du {entity}.",
+          "Est-ce que quelqu'un peut examiner le {entity}.",
+          "Merci de traiter cette demande concernant le {entity}.",
+          "Je dois obtenir plus d'informations sur le {entity}.",
           "J'ai besoin d'aide avec le {entity}."
         ],
         "urgent": [
@@ -929,6 +965,12 @@
           "Riprendo il discorso del {entity}.",
           "Stato del {entity}?",
           "Una domanda sul {entity}.",
+          "Ho bisogno di sapere lo stato attuale del {entity}.",
+          "Sto verificando la situazione relativa al {entity}.",
+          "Vorrei aggiornarmi sulle condizioni del {entity}.",
+          "Controllo se il {entity} è operativo.",
+          "Segnalo che sto monitorando il {entity}.",
+          "Desidero confermare lo stato del {entity}.",
           "Controllo se qualcosa è cambiato con il {entity}."
         ],
         "request": [
@@ -942,6 +984,12 @@
           "Qualcuno può occuparsi del {entity} per me?",
           "Sto aspettando il {entity}, puoi controllare?",
           "Per favore controlla il {entity}.",
+          "Avrei bisogno di assistenza per il {entity}.",
+          "Mi serve supporto tecnico per il {entity}.",
+          "Vorrei aggiornare le informazioni relative al {entity}.",
+          "Gentilmente, occupati della configurazione del {entity}.",
+          "Per favore, inviami le istruzioni per il {entity}.",
+          "Devo accedere al {entity} ma non riesco.",
           "Ho bisogno di aiuto con il {entity}."
         ],
         "urgent": [
@@ -1115,11 +1163,16 @@
           "Ik check alleen de {entity}.",
           "Nog nieuws over de {entity}?",
           "Ik wilde even naar de {entity} vragen.",
-          "Snelle vraag over de {entity}.",
           "Nieuws over het {entity}?",
           "Even navragen over het {entity}.",
           "Status van het {entity}?",
           "Een vraag over het {entity}.",
+          "Ik monitor de status van {entity}.",
+          "Geen actie nodig voor {entity} op dit moment.",
+          "Ik heb enkel gekeken naar {entity}.",
+          "Een neutrale observatie betreffende {entity}.",
+          "Ik volg de ontwikkeling van {entity} op.",
+          "Alleen een check van het {entity} gedaan.",
           "Ik controleer of er iets veranderd is met het {entity}."
         ],
         "request": [
@@ -1133,6 +1186,12 @@
           "Kan iemand het {entity} voor mij regelen?",
           "Ik wacht op het {entity}, kun je kijken?",
           "Bekijk het {entity} alsjeblieft.",
+          "Ik heb ondersteuning nodig voor de {entity}.",
+          "Ik wil graag meer informatie over de {entity}.",
+          "Ik moet de {entity} opnieuw instellen.",
+          "De {entity} werkt niet meer correct.",
+          "Ik heb een vraag over de {entity}.",
+          "Ik zou graag willen weten hoe ik het {entity} kan herstellen.",
           "Ik heb hulp nodig met het {entity}."
         ],
         "urgent": [
@@ -1311,6 +1370,12 @@
           "Retomando o assunto do {entity}.",
           "Status do {entity}?",
           "Dúvida sobre o {entity}.",
+          "Apenas acompanhando o status atual do {entity}.",
+          "Verificando se há alguma atualização sobre o {entity}.",
+          "Só passando para informar que estou atento ao {entity}.",
+          "Sem pressa, apenas querendo saber como está o {entity}.",
+          "Observando a evolução do processo relativo ao {entity}.",
+          "Fazendo uma consulta simples referente ao {entity}.",
           "Verificando se algo mudou no {entity}."
         ],
         "request": [
@@ -1324,6 +1389,11 @@
           "Alguém pode cuidar do {entity} para mim?",
           "Estou aguardando o {entity}, pode verificar?",
           "Por favor, verifique o {entity}.",
+          "Por favor, analise o {entity} com urgência.",
+          "Solicito revisão imediata do {entity}.",
+          "Verifique se há problemas no {entity} agora.",
+          "Trate o {entity} como prioridade máxima.",
+          "A equipe técnica deve corrigir o {entity} hoje.",
           "Preciso de ajuda com o {entity}."
         ],
         "urgent": [

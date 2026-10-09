@@ -166,6 +166,12 @@
           "Im Thread gibt es einen Kommentar zu {entity}.",
           "Die Dokumentation behandelt {entity} im Abschnitt zur Einrichtung.",
           "Jemand hat {entity} im Team-Review erwähnt.",
+          "Der Status von {entity} wurde aktualisiert.",
+          "Ich prüfe gerade die Details zu {entity}.",
+          "{entity} ist in der Warteliste notiert.",
+          "Wir haben {entity} im Protokoll gelistet.",
+          "Die Daten für {entity} sind aktuell.",
+          "{entity} wird im nächsten Schritt geprüft.",
           "Der Tracker markiert {entity} als offen."
         ],
         "request": [
@@ -179,6 +185,12 @@
           "Wir möchten, dass {entity} in dieser Aufgabe erledigt wird.",
           "Bitte stellen Sie {entity} in die aktuelle Warteschlange.",
           "Übernehmen Sie {entity} als Teil dieses Laufs.",
+          "Führen Sie {entity} bitte als Nächstes aus.",
+          "Wir benötigen {entity} für den nächsten Schritt.",
+          "Bitte bearbeiten Sie {entity} in dieser Sitzung.",
+          "Der Agent sollte {entity} als Erstes erledigen.",
+          "Erledigen Sie {entity} vor dem Start des Prozesses.",
+          "Wir warten auf die Fertigstellung von {entity}.",
           "Wir brauchen, dass Sie {entity} für das Review abschließen."
         ],
         "urgent": [
@@ -536,6 +548,12 @@
           "Hay un comentario sobre tu {entity} en el hilo.",
           "La documentación cubre tu {entity} en la sección de configuración.",
           "Alguien señaló tu {entity} en la revisión del equipo.",
+          "El registro indica que tu {entity} está activo.",
+          "Revisando tu {entity}, todo parece correcto.",
+          "Tu {entity} fue incluido en la lista.",
+          "La última actualización afecta a tu {entity}.",
+          "Se verificó el estado de tu {entity}.",
+          "El sistema confirma tu {entity} como válido.",
           "El rastreador marca tu {entity} como pendiente."
         ],
         "request": [
@@ -549,6 +567,12 @@
           "Queremos resolver tu {entity} en esta tarea.",
           "Por favor, pon tu {entity} en la cola de trabajo actual.",
           "Hazte cargo de tu {entity} en esta ejecución.",
+          "Procede con tu {entity} de inmediato.",
+          "Registra tu {entity} en el sistema.",
+          "Confirma tu {entity} antes de continuar.",
+          "Actualiza tu {entity} para la revisión.",
+          "Envía tu {entity} al servidor principal.",
+          "Valida tu {entity} con el supervisor.",
           "Necesitamos que completes tu {entity} para la revisión."
         ],
         "urgent": [
@@ -721,6 +745,12 @@
           "Il y a un commentaire sur votre {entity} dans le fil.",
           "La documentation couvre votre {entity} dans la section de configuration.",
           "Quelqu'un a signalé votre {entity} lors de la revue d'équipe.",
+          "Le statut de votre {entity} est actuellement visible.",
+          "Un rappel concerne spécifiquement votre {entity}.",
+          "Votre {entity} apparaît dans les logs récents.",
+          "La base de données contient vos infos sur {entity}.",
+          "Une mention officielle cite votre {entity}.",
+          "Le résumé du projet inclut votre {entity}.",
           "Le suivi indique votre {entity} comme en attente."
         ],
         "request": [
@@ -734,6 +764,12 @@
           "Nous souhaitons intégrer votre {entity} dans cette tâche.",
           "Veuillez ajouter votre {entity} à la file de travail actuelle.",
           "Traitez votre {entity} dans le cadre de cette exécution.",
+          "Merci de valider votre {entity} rapidement.",
+          "Veuillez initier le traitement de votre {entity}.",
+          "Nous attendons la mise à jour de votre {entity}.",
+          "Il convient de vérifier l'état de votre {entity}.",
+          "La tâche requiert la soumission de votre {entity}.",
+          "Pour conclure cette étape, veuillez appliquer votre {entity}.",
           "Il faut finaliser votre {entity} pour la revue."
         ],
         "urgent": [
@@ -906,6 +942,12 @@
           "C'è un commento su {entity} nella discussione.",
           "La documentazione copre {entity} nella sezione di configurazione.",
           "Qualcuno ha segnalato {entity} durante la revisione del team.",
+          "Il file contiene i dati relativi a {entity}.",
+          "La cronologia mostra un aggiornamento per {entity}.",
+          "Abbiamo archiviato le informazioni su {entity} nel server.",
+          "Il sistema ha registrato la presenza di {entity}.",
+          "Ho consultato il manuale per verificare {entity}.",
+          "I log indicano uno stato inattivo per {entity}.",
           "Il tracker marca {entity} come in attesa."
         ],
         "request": [
@@ -919,6 +961,12 @@
           "Vorremmo completare {entity} in questo compito.",
           "Per favore, metti {entity} nella coda di lavoro attuale.",
           "Inclui {entity} in questa esecuzione.",
+          "Si prega di avviare {entity} subito.",
+          "Dobbiamo elaborare {entity} per il cliente.",
+          "Lancia {entity} come priorità alta.",
+          "Esegui {entity} prima della chiusura.",
+          "Aggiungi {entity} alla lista delle attività.",
+          "Completa {entity} nel prossimo ciclo.",
           "Ci serve che tu completi {entity} per la revisione."
         ],
         "urgent": [
@@ -1091,6 +1139,12 @@
           "Er is een opmerking over {entity} in de thread.",
           "De documentatie behandelt {entity} in de setup-sectie.",
           "Iemand heeft {entity} tijdens de teamreview gemeld.",
+          "De status van je {entity} is momenteel actief.",
+          "Er is geen extra actie vereist voor {entity}.",
+          "Je {entity} verschijnt op het overzichtsscherm.",
+          "De data over {entity} is geverifieerd door het systeem.",
+          "Een update rondom {entity} wordt momenteel verwerkt.",
+          "De configuratie van {entity} staat vast in het log.",
           "De tracker markeert {entity} als openstaand."
         ],
         "request": [
@@ -1104,6 +1158,12 @@
           "We willen dat {entity} in deze taak wordt afgerond.",
           "Zet {entity} alsjeblieft in de huidige wachtrij.",
           "Doe {entity} alsjeblieft als onderdeel van deze run.",
+          "Verwerk {entity} in het volgende rapport.",
+          "Check de status van {entity} nu.",
+          "Gebruik {entity} voor de verificatie.",
+          "Log {entity} als afgerond in het systeem.",
+          "Start met {entity} voor de audit.",
+          "Verbind {entity} met de huidige sessie.",
           "We willen graag dat je {entity} voor de review afmaakt."
         ],
         "urgent": [
@@ -1276,6 +1336,12 @@
           "Há um comentário sobre {entity} na thread.",
           "A documentação cobre {entity} na seção de configuração.",
           "Alguém sinalizou {entity} na revisão da equipe.",
+          "O log registra {entity} como uma entrada recente.",
+          "Verifiquei o status de {entity} no sistema.",
+          "{entity} foi incluído na lista de verificação.",
+          "A base de dados referencia {entity} externamente.",
+          "Atualizei o campo de descrição para {entity}.",
+          "{entity} está marcado como resolvido no painel.",
           "O rastreador marca {entity} como pendente."
         ],
         "request": [
@@ -1289,6 +1355,12 @@
           "Gostaríamos de concluir {entity} nesta tarefa.",
           "Por favor, coloque {entity} na fila de trabalho atual.",
           "Inclua {entity} como parte desta execução.",
+          "Por gentileza, execute {entity} como prioridade.",
+          "O sistema precisa que você finalize {entity}.",
+          "Realize {entity} para avançar no workflow.",
+          "Solicita-se a execução de {entity} agora.",
+          "Faça {entity} conforme indicado no plano.",
+          "Conclua {entity} antes de encerrar o turno.",
           "Precisamos que você finalize {entity} para a revisão."
         ],
         "urgent": [

@@ -595,11 +595,14 @@ def test_noise_cli_runs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
 #: sibling — ``en`` was byte-identical there, one language so ``block == index``), and once more
 #: **after the content expansion** (Fase 2a: entities 20 → 60 and phrase banks → 11/9/9/9/8 per
 #: language in all five domains — domain content feeds every record, so all three move).
+#: Single-domain goldens: the config → bytes mapping, pinned. Recaptured for B-17
+#: (`en_pt`, `noisy` — both include languages whose `neutral`/`request` banks the teacher
+#: expanded; `en` alone is byte-identical, English was not touched).
 _GOLDEN_SINGLE_DOMAIN = {
     "en": ("43dc51504a396239", DataConfig(seed=42, per_type=50, languages=("en",))),
-    "en_pt": ("7bc8e173f745b2f4", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
+    "en_pt": ("f3eeb13cdacaf459", DataConfig(seed=42, per_type=50, languages=("en", "pt"))),
     "noisy": (
-        "4a8d0795dcfbd26f",
+        "451e09888704d154",
         DataConfig(seed=7, per_type=30, languages=("en", "pt", "de"), noise_rate=0.15),
     ),
 }

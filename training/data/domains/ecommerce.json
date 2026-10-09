@@ -178,6 +178,12 @@
           "Diese Nachricht betrifft ausschließlich {entity}.",
           "Bei {entity} ist mir etwas aufgefallen.",
           "Für {entity} haben wir schon einen Eintrag.",
+          "Ich protokolliere {entity} lediglich zur Dokumentation.",
+          "Bei {entity} liegt kein dringender Fall vor.",
+          "Es handelt sich nur um eine Info zu {entity}.",
+          "Ich prüfe gerade den Status von {entity}.",
+          "Zu {entity} gibt es aktuell keine Rückmeldung.",
+          "Die Beobachtung bezieht sich ausschließlich auf {entity}.",
           "Ich teile nur eine Kleinigkeit zu {entity}."
         ],
         "request": [
@@ -191,6 +197,11 @@
           "Ich wäre Ihnen dankbar für Ihre Hilfe mit {entity}.",
           "Ich möchte, dass sich jemand um {entity} kümmert.",
           "Bitte bearbeiten Sie {entity}.",
+          "Bitte leiten Sie {entity} an die zuständige Stelle weiter.",
+          "Es ist wichtig, dass {entity} schnell gelöst wird.",
+          "Ich warte noch auf eine Rückmeldung zu {entity}.",
+          "Ich bitte um die Bearbeitung von {entity}.",
+          "Bitte leiten Sie {entity} an den zuständigen Mitarbeiter weiter.",
           "Bitte geben Sie {entity} zur Prüfung frei."
         ],
         "urgent": [
@@ -570,6 +581,12 @@
           "Este mensaje es solo sobre tu {entity}.",
           "Noté algo sobre tu {entity}.",
           "Tu {entity} aparece en mi historial.",
+          "Tu {entity} está en proceso de revisión.",
+          "No se requiere intervención sobre tu {entity}.",
+          "Confirmando el estado actual de tu {entity}.",
+          "Solo informo sobre la situación de tu {entity}.",
+          "El sistema muestra detalles recientes de tu {entity}.",
+          "Sin acción pendiente para tu {entity} en este momento.",
           "Solo comparto un detalle sobre tu {entity}."
         ],
         "request": [
@@ -583,6 +600,11 @@
           "Te agradecería que gestionaras tu {entity}.",
           "Quiero que alguien atienda tu {entity}.",
           "Por favor, procesa tu {entity}.",
+          "Por favor, gestiona mi {entity} con prontitud.",
+          "Necesito asistencia para resolver tu {entity}.",
+          "Agradezco que atiendas mi {entity} hoy.",
+          "Quedo a la espera de tu {entity}.",
+          "Te pido revisar mi {entity} sin demora.",
           "Solicito que se ocupe de tu {entity}."
         ],
         "urgent": [
@@ -766,6 +788,12 @@
           "Ce message concerne uniquement votre {entity}.",
           "J'ai remarqué un détail concernant votre {entity}.",
           "Votre {entity} figure déjà dans mon historique.",
+          "Je confirme la réception de votre {entity}.",
+          "Votre {entity} est en cours de traitement.",
+          "Aucun nouveau message concernant votre {entity}.",
+          "Je consulte simplement l'état de votre {entity}.",
+          "Le statut actuel de votre {entity} n'a pas changé.",
+          "Cette observation porte uniquement sur votre {entity}.",
           "Je partage juste un détail sur votre {entity}."
         ],
         "request": [
@@ -779,6 +807,12 @@
           "Je vous serais reconnaissant de m'aider avec votre {entity}.",
           "Je souhaite que l'on s'occupe de votre {entity}.",
           "Veuillez faire le nécessaire avec votre {entity}.",
+          "Je souhaite que vous traitiez mon {entity} rapidement.",
+          "Je vous prie de prendre en charge ce {entity}.",
+          "Afin de résoudre ce problème, merci d'agir sur {entity}.",
+          "J'ai besoin que quelqu'un examine mon {entity} dès que possible.",
+          "Veuillez notifier l'équipe concernée au sujet de {entity}.",
+          "Merci d'orienter ma demande concernant {entity} vers la bonne file d'attente.",
           "Un coup de main serait bienvenu sur votre {entity}."
         ],
         "urgent": [
@@ -962,6 +996,12 @@
           "Questo messaggio riguarda solo {entity}.",
           "Ho notato una cosa su {entity}.",
           "{entity} compare già nel mio storico.",
+          "Verifico solo lo stato di {entity} per il report.",
+          "Questo è un semplice aggiornamento su {entity}.",
+          "Nessuna richiesta urgente riguarda {entity} in questo momento.",
+          "Sto archiviando i dati relativi a {entity}.",
+          "{entity} è stato registrato senza azioni successive.",
+          "Confermo la ricezione di informazioni su {entity}.",
           "Condivido solo un dettaglio su {entity}."
         ],
         "request": [
@@ -975,6 +1015,12 @@
           "Ti sarei grato se mi aiuti con {entity}.",
           "Vorrei che qualcuno si occupasse di {entity}.",
           "Porta a termine {entity}, per favore.",
+          "Ho un problema con {entity} da risolvere.",
+          "Mi occupo di {entity} per te.",
+          "Ti scrivo riguardo a {entity}.",
+          "C'è una richiesta su {entity} aperta.",
+          "Gestisci l'ordine relativo a {entity}.",
+          "Aggiorna lo stato di {entity}.",
           "Ti prego di fare avanzare {entity}."
         ],
         "urgent": [
@@ -1158,6 +1204,12 @@
           "Dit bericht gaat alleen over je {entity}.",
           "Ik merkte iets op bij je {entity}.",
           "Je {entity} staat al in mijn administratie.",
+          "Ik heb alleen een statusupdate over je {entity}.",
+          "Dit bericht bevat geen verzoek voor je {entity}.",
+          "We zijn je {entity} aan het monitoren.",
+          "Geen actie vereist voor uw huidige {entity}.",
+          "Ik informeer u enkel over de stand van zaken met {entity}.",
+          "Er is geen spoed rondom dit specifieke {entity}.",
           "Ik deel alleen een detail over je {entity}."
         ],
         "request": [
@@ -1171,6 +1223,12 @@
           "Ik zou je dankbaar zijn voor hulp met je {entity}.",
           "Ik wil dat iemand je {entity} aanpakt.",
           "Verwerk alsjeblieft je {entity}.",
+          "Ik verzoek je om hulp bij mijn {entity}.",
+          "Zorg voor de afhandeling van mijn {entity}.",
+          "Ik heb assistentie nodig voor mijn {entity}.",
+          "Verwerk mijn verzoek betreffende mijn {entity}.",
+          "Mijn {entity} vereist uw aandacht en hulp.",
+          "Ik wil graag dat je {entity} oplost.",
           "Stuur je {entity} door ter controle."
         ],
         "urgent": [
@@ -1354,6 +1412,12 @@
           "Esta mensagem é apenas sobre {entity}.",
           "Notei uma coisa sobre {entity}.",
           "Já temos {entity} no sistema desde antes.",
+          "Acompanho apenas o status de {entity}.",
+          "Informação básica sobre {entity} para registro.",
+          "Sem solicitação, apenas relato sobre {entity}.",
+          "Observo que {entity} está em processo.",
+          "Nota interna referente ao item {entity}.",
+          "Sem urgência, aviso sobre {entity}.",
           "Só compartilhando um detalhe sobre {entity}."
         ],
         "request": [
@@ -1367,6 +1431,11 @@
           "Agradeço a ajuda com {entity}.",
           "Acompanhe {entity} para mim, por favor.",
           "Por favor, processe {entity}.",
+          "Preciso de suporte com {entity} agora.",
+          "Por favor, verifique o status de {entity}.",
+          "Gostaria que verificassem {entity} para mim.",
+          "Ajude-me a resolver {entity}, por favor.",
+          "Procurei ajuda com {entity} sem sucesso.",
           "Manda {entity} para revisão."
         ],
         "urgent": [

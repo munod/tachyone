@@ -166,6 +166,12 @@
           "So steht es um die {entity}.",
           "Keine Anfrage, ich erwähne nur die {entity}.",
           "Das ist nur ein Statuscheck der {entity}.",
+          "Ich aktualisiere den Stand der {entity}.",
+          "Die {entity} ist gerade nicht erreichbar.",
+          "Keine Eile bei der {entity}, nur Info.",
+          "Statusbericht zur aktuellen Situation der {entity}.",
+          "Die {entity} meldet sich später selbst.",
+          "Ich sehe nur den Status der {entity}.",
           "Nur zum Kontext, das betrifft die {entity}."
         ],
         "request": [
@@ -179,6 +185,12 @@
           "Stellen Sie die {entity} ein, wenn es Ihnen recht ist.",
           "Fahren Sie mit den Änderungen an der {entity} fort.",
           "Ich brauche Hilfe bei der {entity}.",
+          "Ich möchte {entity} bitte anpassen.",
+          "Bitte überprüfen Sie die {entity}.",
+          "Die {entity} muss noch geändert werden.",
+          "Helfen Sie mir bei der {entity}.",
+          "Passen Sie die {entity} einfach an.",
+          "Bitte legen Sie {entity} zur Kenntnis.",
           "Ich bitte um ein Update zur {entity}."
         ],
         "urgent": [
@@ -536,6 +548,12 @@
           "Así está la situación de tu {entity}.",
           "No es una petición, solo menciono tu {entity}.",
           "Solo es una comprobación del estado de tu {entity}.",
+          "Solo informo sobre el estado actual de tu {entity}.",
+          "Menciono tu {entity} sin solicitar ninguna acción.",
+          "Esto es un comentario pasivo sobre tu {entity}.",
+          "Solo verifico la información relacionada con tu {entity}.",
+          "Sin intención de control, solo hablo de tu {entity}.",
+          "Es una observación neutral referente a tu {entity}.",
           "A modo de contexto, esto se refiere a tu {entity}."
         ],
         "request": [
@@ -549,6 +567,12 @@
           "Ajusta tu {entity} cuando te venga bien.",
           "Sigue adelante con los cambios de tu {entity}.",
           "Necesito ayuda con tu {entity}.",
+          "Por favor, configura tu {entity} correctamente.",
+          "Necesito que actualices tu {entity} pronto.",
+          "Ajusta los parámetros de tu {entity} ahora.",
+          "Requiero asistencia con la configuración de tu {entity}.",
+          "Es importante que verifiques tu {entity} hoy.",
+          "Te solicito que verifiques tu {entity} en cuanto puedas.",
           "Estoy solicitando una actualización sobre tu {entity}."
         ],
         "urgent": [
@@ -721,6 +745,12 @@
           "Voilà où en est votre {entity}.",
           "Ce n'est pas une demande, je mentionne juste votre {entity}.",
           "C'est seulement un contrôle d'état de votre {entity}.",
+          "Je signale simplement l'état actuel de votre {entity}.",
+          "Aucune action n'est requise pour votre {entity}.",
+          "Il s'agit d'une mise à jour sur votre {entity}.",
+          "Je vérifie juste le statut de votre {entity}.",
+          "Ceci concerne uniquement les informations sur votre {entity}.",
+          "Pas de commande, seulement un point sur votre {entity}.",
           "Pour le contexte, cela concerne votre {entity}."
         ],
         "request": [
@@ -734,6 +764,11 @@
           "Réglez votre {entity} quand cela vous arrangera.",
           "Poursuivez avec les modifications de votre {entity}.",
           "J'ai besoin d'aide pour votre {entity}.",
+          "Veuillez mettre à jour votre {entity}.",
+          "Je dois signaler un problème avec {entity}.",
+          "Merci de configurer {entity} pour moi.",
+          "Je souhaite accéder à {entity} maintenant.",
+          "Il serait utile de synchroniser votre {entity}.",
           "Je demande une mise à jour concernant votre {entity}."
         ],
         "urgent": [
@@ -906,6 +941,12 @@
           "Ecco a che punto siamo con la {entity}.",
           "Non è una richiesta, menziono solo la {entity}.",
           "È solo un controllo dello stato della {entity}.",
+          "Osserviamo lo stato attuale della {entity}.",
+          "La situazione della {entity} rimane invariata.",
+          "Nessun intervento richiesto per la {entity}.",
+          "Contesto generale sulla gestione della {entity}.",
+          "Solo informazione, nessun comando per la {entity}.",
+          "Aggiornamento neutro riguardante la {entity}.",
           "Per contesto, questo riguarda la {entity}."
         ],
         "request": [
@@ -919,6 +960,12 @@
           "Regola la {entity} quando ti è comodo.",
           "Prosegui con le modifiche alla {entity}.",
           "Ho bisogno di aiuto con la {entity}.",
+          "Sistemiamo la {entity} quando hai tempo.",
+          "Controlla lo stato della {entity} per favore.",
+          "Aggiorna i parametri della {entity} oggi.",
+          "Verifica il funzionamento della {entity}.",
+          "Gestisci le impostazioni della {entity} ora.",
+          "Rendi operativo il servizio {entity}.",
           "Sto chiedendo un aggiornamento sulla {entity}."
         ],
         "urgent": [
@@ -1091,6 +1138,12 @@
           "Zo staat het met je {entity}.",
           "Geen verzoek, ik noem alleen je {entity}.",
           "Dit is alleen een statuscontrole van je {entity}.",
+          "Er is geen actie vereist voor je {entity}.",
+          "Alleen een update over de status van je {entity}.",
+          "Ik controleer alleen de huidige toestand van je {entity}.",
+          "Geen spoed, dit betreft enkel je {entity}.",
+          "Dit bericht gaat uitsluitend over je {entity}.",
+          "Geen opdracht, slechts een observatie van je {entity}.",
           "Alleen voor de context, dit gaat over je {entity}."
         ],
         "request": [
@@ -1104,6 +1157,12 @@
           "Wijzig je {entity} op een moment dat jou schikt.",
           "Ga door met de wijzigingen aan je {entity}.",
           "Ik heb hulp nodig met je {entity}.",
+          "Zorg ervoor dat je {entity} correct is ingesteld.",
+          "Ik wil graag dat je {entity} wordt gecontroleerd.",
+          "Gelieve je {entity} te bekijken en aan te passen.",
+          "Het is belangrijk dat je {entity} werkt zoals verwacht.",
+          "Laat me weten als je {entity} hebt geregeld.",
+          "Ik wens dat je {entity} wordt geconfigureerd.",
           "Ik vraag om een update over je {entity}."
         ],
         "urgent": [
@@ -1276,6 +1335,12 @@
           "É assim que está a situação da {entity}.",
           "Não é um pedido, só mencionando a {entity}.",
           "É só um acompanhamento do status da {entity}.",
+          "Estou apenas verificando o status atual da {entity}.",
+          "Sem necessidade de ação na {entity} neste momento.",
+          "Isso é só um comentário sobre a {entity}.",
+          "A situação da {entity} está sendo monitorada agora.",
+          "Não há urgência relacionada à {entity} hoje.",
+          "Apenas registrando uma observação sobre a {entity}.",
           "Apenas para contexto, isso trata da {entity}."
         ],
         "request": [
@@ -1289,6 +1354,12 @@
           "Ajuste a {entity} quando for conveniente.",
           "Siga em frente com as alterações na {entity}.",
           "Preciso de ajuda com a {entity}.",
+          "Por favor, altere o {entity} para mim.",
+          "Ajuste o {entity} conforme solicitado.",
+          "Preciso da sua ajuda com o {entity}.",
+          "Verifique se o {entity} está funcionando.",
+          "Atualize o {entity} quando possível.",
+          "Resolva o problema do {entity}, por favor.",
           "Estou solicitando uma atualização sobre a {entity}."
         ],
         "urgent": [

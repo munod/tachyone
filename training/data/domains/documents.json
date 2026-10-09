@@ -147,6 +147,11 @@
           "Wir würden uns über Ihre Hilfe bei der {entity} freuen.",
           "Bitte bestätigen Sie, wenn die {entity} erledigt ist.",
           "Bitte übernehmen Sie die {entity} für uns.",
+          "Bitte prüfen Sie {entity} umgehend auf Vollständigkeit.",
+          "Wir benötigen {entity} bis morgen früh.",
+          "Wir erwarten eine Rückmeldung zu {entity}.",
+          "Bitte leiten Sie {entity} sofort weiter.",
+          "Bitte bearbeiten Sie {entity} in Ruhe und ohne Eile.",
           "Wir brauchen jemanden aus Ihrem Team für die {entity}."
         ],
         "neutral": [
@@ -158,6 +163,12 @@
           "Der aktuelle Statusbericht enthält die {entity}.",
           "Für die {entity} ist nichts weiter erforderlich.",
           "Die {entity} steht im gemeinsamen Protokoll.",
+          "Ich dokumentiere den aktuellen Stand der {entity}.",
+          "Die {entity} erfordert keine weitere Aufmerksamkeit.",
+          "Dies ist ein reiner Statuscheck zur {entity}.",
+          "Ich sehe bei der {entity} keinen Handlungsbedarf.",
+          "Die {entity} wurde erfolgreich archiviert.",
+          "Keine Aktion nötig für die aktuelle {entity}.",
           "Wir haben die {entity} bei der wöchentlichen Prüfung festgehalten."
         ],
         "urgent": [
@@ -517,6 +528,12 @@
           "Tu ayuda con tu {entity} sería fundamental.",
           "Confírmanos cuando hayamos terminado con tu {entity}.",
           "Por favor, hazte cargo de tu {entity} para nosotros.",
+          "Por favor, revisa tu {entity} cuando tengas un momento libre.",
+          "Necesitamos que actualices el estado de tu {entity} pronto.",
+          "Te rogamos gestionar tu {entity} con calma y atención.",
+          "Sería ideal si completaras tu {entity} esta tarde.",
+          "Por favor, asegúrate de que tu {entity} esté ordenado.",
+          "Por favor, encárgate de tu {entity} hoy para evitar retrasos.",
           "Necesitamos que alguien de tu equipo se ocupe de tu {entity}."
         ],
         "neutral": [
@@ -528,6 +545,12 @@
           "El informe de estado más reciente incluye tu {entity}.",
           "No hace falta nada más con tu {entity}.",
           "Tu {entity} aparece en el registro compartido.",
+          "El sistema actualiza automáticamente el estado de tu {entity}.",
+          "Tu {entity} está en proceso normal sin incidentes.",
+          "Confirmamos la recepción estándar de tu {entity}.",
+          "Solo se archiva temporalmente tu {entity} por ahora.",
+          "El dashboard refleja el estado inalterado de tu {entity}.",
+          "Tu {entity} sigue vigente sin cambios pendientes.",
           "Registramos tu {entity} en la revisión semanal."
         ],
         "urgent": [
@@ -702,6 +725,12 @@
           "Votre aide sur cette {entity} nous serait précieuse.",
           "Merci de nous confirmer lorsque votre {entity} sera terminée.",
           "Nous vous prions de gérer votre {entity} pour nous.",
+          "Le traitement de votre {entity} est requis aujourd'hui.",
+          "Veuillez vérifier l'état actuel de votre {entity}.",
+          "La mise à jour de {entity} est attendue rapidement.",
+          "Nous signalons un problème concernant votre {entity}.",
+          "Il convient de finaliser la gestion de {entity}.",
+          "Votre {entity} nécessite une validation immédiate.",
           "Il faudrait que quelqu'un de votre équipe s'occupe de votre {entity}."
         ],
         "neutral": [
@@ -713,6 +742,12 @@
           "Le rapport d'état récent inclut votre {entity}.",
           "Rien d'autre à faire pour votre {entity}.",
           "Votre {entity} figure dans le registre partagé.",
+          "Je relève l'état actuel de cette {entity}.",
+          "La situation de votre {entity} reste stable.",
+          "Aucune action immédiate n'est requise pour {entity}.",
+          "Je note que {entity} est sans objet.",
+          "Votre {entity} ne nécessite pas de suivi.",
+          "Le dossier de {entity} est clos.",
           "Nous avons consigné votre {entity} lors de la revue hebdomadaire."
         ],
         "urgent": [
@@ -887,6 +922,12 @@
           "Ci farebbe piacere il tuo aiuto con {entity}.",
           "Confermaci quando avremo finito con {entity}.",
           "Vorremmo che tu assumessi {entity} per noi.",
+          "Ti preghiamo di prendere in carico {entity} con cura.",
+          "Abbiamo bisogno del tuo supporto per {entity}.",
+          "Gestisci {entity} quando hai un momento libero.",
+          "Per favore, assegna {entity} al team appropriato.",
+          "Ci serve che tu gestisca {entity} stamattina.",
+          "Saremmo grati se potessi occuparti di {entity}.",
           "Ci serve qualcuno del tuo team per {entity}."
         ],
         "neutral": [
@@ -898,6 +939,12 @@
           "Il rapporto di stato recente include {entity}.",
           "Non serve altro per {entity}.",
           "Nel registro condiviso trovi {entity}.",
+          "Ho verificato lo stato corrente di {entity}.",
+          "L'output mostra che {entity} è attivo.",
+          "Nessuna modifica richiesta per {entity} al momento.",
+          "La checklist include solo {entity} per ora.",
+          "Ho aggiunto {entity} ai log del sistema.",
+          "Controlla il file per vedere {entity}.",
           "Abbiamo registrato {entity} durante la revisione settimanale."
         ],
         "urgent": [
@@ -1072,6 +1119,11 @@
           "We zouden je hulp bij de {entity} erg waarderen.",
           "Laat het weten wanneer de {entity} klaar is.",
           "We willen graag dat jij de {entity} op je neemt.",
+          "Je mag de {entity} niet vergeten.",
+          "Controleer de status van de {entity}.",
+          "Update de gegevens voor de {entity}.",
+          "De {entity} vereist directe actie.",
+          "Bevestig ontvangst van de {entity}.",
           "We hebben iemand uit je team nodig voor de {entity}."
         ],
         "neutral": [
@@ -1083,6 +1135,12 @@
           "Het recente statusrapport bevat de {entity}.",
           "Er hoeft verder niets te gebeuren met de {entity}.",
           "De {entity} staat in het gedeelde logboek.",
+          "De {entity} is momenteel in behandeling.",
+          "Ik controleer de status van de {entity}.",
+          "Geen actie vereist voor de {entity}.",
+          "De {entity} voldoet aan alle eisen.",
+          "De gegevens over de {entity} zijn bijgewerkt.",
+          "We hebben de {entity} geverifieerd.",
           "We hebben de {entity} tijdens de wekelijkse beoordeling genoteerd."
         ],
         "urgent": [
@@ -1257,6 +1315,12 @@
           "Sua ajuda com {entity} faria toda a diferença.",
           "Avise quando a gente concluir {entity}.",
           "Por favor, assuma {entity} pra gente.",
+          "Precisamos que alguém verifique {entity} hoje.",
+          "Por favor, atualize o status de {entity}.",
+          "Gostaria de saber quando {entity} será resolvido.",
+          "Aguarde a confirmação sobre {entity}, por favor.",
+          "Solicito atenção imediata para {entity}, por gentileza.",
+          "Precisamos que alguém resolva {entity} hoje.",
           "Pedimos que alguém da sua equipe resolva {entity}."
         ],
         "neutral": [
@@ -1268,6 +1332,12 @@
           "O relatório de status recente inclui {entity}.",
           "Não é preciso mais nada com {entity}.",
           "O registro compartilhado guarda {entity}.",
+          "Aguardei a confirmação sobre o status de {entity}.",
+          "Verifiquei se {entity} está atualizado no sistema.",
+          "Sem ações pendentes referentes a {entity} no momento.",
+          "Atualizei apenas os dados básicos de {entity}.",
+          "Consultei o histórico disponível para {entity}.",
+          "Mantenho {entity} em observação sem alterações.",
           "Registramos {entity} na revisão semanal."
         ],
         "urgent": [
