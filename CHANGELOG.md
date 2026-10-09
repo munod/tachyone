@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-09
+
 ### Added
 
 - **B-14 case study (`docs/case-b14.md`, new "Case studies" section on the site).** The full
