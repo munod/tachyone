@@ -535,6 +535,189 @@ def detect_language(text: str, script: str) -> str | None:
     return "und" if any(0x00C0 <= ord(char) <= 0x024F for char in text) else None
 
 
+#: Distinctive in-domain vocabulary per language, learned from
+#: ``data/train_multi_domains.jsonl`` (the multilingual trainer's own rows, ground-truth
+#: language): the top-14 terms by log-odds against the other five languages (minimum
+#: in-language count 8). The base ``_LANGUAGE_STOPWORDS`` are generic function words; these
+#: are the terms that separate languages the base sets cannot — ``it`` loses to ``es`` on
+#: the shared romance words (``de``/``la``/``el``) and ``nl`` loses to ``en``. Learned on
+#: **training rows only, never eval rows** (recipe and numbers: BACKLOG B-16).
+_CALIBRATION_EXTRA_STOPWORDS: dict[str, frozenset[str]] = {
+    "de": frozenset(
+        {
+            "an",
+            "anfrage",
+            "bitte",
+            "das",
+            "dem",
+            "der",
+            "diese",
+            "eine",
+            "fordert",
+            "ich",
+            "ist",
+            "keine",
+            "sie",
+            "und",
+        }
+    ),
+    "es": frozenset(
+        {
+            "debería",
+            "el",
+            "equipo",
+            "facturas",
+            "gestionar",
+            "hoy",
+            "mensaje",
+            "prensa",
+            "solicitud",
+            "tiene",
+            "urgencia",
+            "¿este",
+            "¿puedes",
+            "¿qué",
+        }
+    ),
+    "fr": frozenset(
+        {
+            "avec",
+            "besoin",
+            "ce",
+            "cette",
+            "commande",
+            "demande",
+            "est",
+            "et",
+            "l'urgence",
+            "pour",
+            "quelle",
+            "tout",
+            "une",
+            "votre",
+        }
+    ),
+    "it": frozenset(
+        {
+            "della",
+            "di",
+            "dovrebbe",
+            "favore",
+            "gestire",
+            "non",
+            "oggi",
+            "puoi",
+            "quanto",
+            "questa",
+            "questo",
+            "richiede",
+            "richiesta",
+            "è",
+        }
+    ),
+    "nl": frozenset(
+        {
+            "deze",
+            "dit",
+            "een",
+            "het",
+            "hoe",
+            "ik",
+            "is",
+            "kun",
+            "met",
+            "om",
+            "over",
+            "van",
+            "voor",
+            "vraagt",
+        }
+    ),
+    "pt": frozenset(
+        {
+            "cobrança",
+            "com",
+            "deste",
+            "deve",
+            "do",
+            "em",
+            "hoje",
+            "mensagem",
+            "na",
+            "não",
+            "pode",
+            "urgência",
+            "você",
+            "é",
+        }
+    ),
+}
+
+#: Accent fingerprints: accented characters whose presence votes for a language when the
+#: shared romance stopwords tie. Empty for ``nl`` (no distinctive diacritics).
+_CALIBRATION_ACCENTS: dict[str, str] = {
+    "de": "äöüß",
+    "es": "áíóúñü",
+    "fr": "éèêàçîôûïë",
+    "it": "àèéìòù",
+    "nl": "",
+    "pt": "ãõçáéíóúâêô",
+}
+
+_CALIBRATION_LANGUAGES: tuple[str, ...] = ("de", "es", "fr", "it", "nl", "pt")
+
+
+def detect_calibration_language(*texts: str) -> str | None:
+    """Serve key for per-language calibration (temperature and confidence maps, B-16).
+
+    Three differences from :func:`detect_language`, each measured before adoption
+    (BACKLOG B-16): the caller passes the **state and the localized question together**
+    (the question text alone carries the language and today never enters the detector);
+    each language's score is **penalized by the words it shares with the other five**
+    (so ``it`` stops winning on ``es``'s shared romance words); and accented characters
+    give a small per-language **accent vote**. The vocabulary is the base function words
+    plus :data:`_CALIBRATION_EXTRA_STOPWORDS` learned from training rows only.
+
+    Diagonal on the B-15 eval slices: 99.80% (train) / 99.95% (holdout); the routed
+    checkpoint selection keeps using :func:`detect_language` — this key is calibration-only
+    (B-16 gate G2: ≥ 0.99 per language on both slices).
+
+    Returns the language code, ``"en"``/``"und"`` with the same fallbacks as
+    :func:`detect_language`, or ``None`` for non-Latin or unidentifiable text.
+    """
+    text = " ".join(part for part in texts if part)
+    if not text or detect_script(text) != "latin":
+        return None
+    words = {word.strip(".,!?;:\"'()[]").lower() for word in text.split()}
+    english_hits = len(words & _ENGLISH_STOPWORDS)
+    stops = {
+        code: _LANGUAGE_STOPWORDS[code] | _CALIBRATION_EXTRA_STOPWORDS[code]
+        for code in _CALIBRATION_LANGUAGES
+    }
+    best_code: str | None = None
+    best_score = 0.0
+    for code in _CALIBRATION_LANGUAGES:
+        hits = len(words & stops[code])
+        overlap = sum(
+            len(words & (stops[code] & stops[other]))
+            for other in _CALIBRATION_LANGUAGES
+            if other != code
+        )
+        accents = sum(text.count(char) for char in _CALIBRATION_ACCENTS[code])
+        score = (
+            hits
+            - overlap / (len(_CALIBRATION_LANGUAGES) - 1)
+            + (min(accents, 3) * 0.6 if accents else 0.0)
+        )
+        if score > best_score:
+            best_code, best_score = code, score
+    if best_code is not None and best_score > 0 and best_score >= english_hits:
+        return best_code
+    if english_hits > 0:
+        return "en"
+    return "und" if any(0x00C0 <= ord(char) <= 0x024F for char in text) else None
+
+
 @dataclass
 class Router:
     """Chooses a checkpoint id for a state and manages checkpoint lifecycle.

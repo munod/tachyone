@@ -32,6 +32,7 @@ from tachyone.primitives import (
     ChoiceQuestion,
     JsonValue,
     NoulAnswer,
+    NoulCriteria,
     NoulQuestion,
     Question,
     ScoreAnswer,
@@ -797,8 +798,8 @@ def test_confidence_from_dict_happy_path() -> None:
         (lambda p: p["prototypes"]["centroids"][0].append(0.0), "not a 8-vector"),
         (lambda p: p["prototypes"]["centroids"][0].__setitem__(0, "x"), "non-numeric"),
         (lambda p: p["prototypes"]["centroids"][0].__setitem__(0, float("nan")), "non-finite"),
-        (lambda p: p.pop("noul"), "missing 'noul' knots"),
-        (lambda p: p["noul"].update(knots=[]), "missing 'noul' knots"),
+        (lambda p: p.pop("noul"), "asset ships neither 'noul' knots nor 'cells'"),
+        (lambda p: p["noul"].update(knots=[]), "'noul' knots must be a non-empty list"),
         (lambda p: p["noul"].update(knots=[[0.5]]), "pairs"),
         (lambda p: p["noul"].update(knots=[[0.5, 1.5]]), "out of range"),
         (lambda p: p["noul"].update(knots=[[0.9, 1.0], [0.5, 0.6]]), "increasing"),
@@ -818,6 +819,145 @@ def test_confidence_from_dict_rejects_non_objects(caplog: pytest.LogCaptureFixtu
     assert _load_confidence([1, 2], caplog) is None
     assert _load_confidence("nope", caplog) is None
     assert any("not a JSON object" in message for message in _warnings(caplog))
+
+
+def _cells_payload() -> dict:
+    """A cells-only asset (the multi shape, B-16): no ``noul`` knots, two ``choice`` cells."""
+    payload = _confidence_payload()
+    payload.pop("noul")
+    payload["cells"] = {
+        "choice:pt": {
+            "peaked_edges": [0.5],
+            "strength_edges": [0.5],
+            "table": [[0.1, 0.2], [0.3, None]],
+            "mean": 0.42,
+            "n": 100,
+        },
+        "choice": {
+            "peaked_edges": [0.5],
+            "strength_edges": [0.5],
+            "table": [[0.4, 0.5], [0.6, 0.7]],
+            "mean": 0.55,
+            "n": 200,
+        },
+    }
+    return payload
+
+
+def test_cells_only_asset_loads_without_noul_knots(caplog: pytest.LogCaptureFixture) -> None:
+    asset = _load_confidence(_cells_payload(), caplog)
+    assert asset is not None
+    assert asset.noul_knots == []  # multi ships cells, not the P3 noul map
+    assert set(asset.cells) == {"choice:pt", "choice"}
+    assert not _warnings(caplog)
+
+
+def test_cell_confidence_buckets_and_fallbacks(caplog: pytest.LogCaptureFixture) -> None:
+    asset = _load_confidence(_cells_payload(), caplog)
+    assert asset is not None
+    cell = asset.cells["choice:pt"]
+    # bucket = bisect_left(edges, value): (peaked, strength) quadrants of the 2x2 table
+    assert cell.confidence(0.4, 0.4) == pytest.approx(0.1)
+    assert cell.confidence(0.4, 0.6) == pytest.approx(0.2)
+    assert cell.confidence(0.6, 0.4) == pytest.approx(0.3)
+    assert cell.confidence(0.6, 0.6) == pytest.approx(0.42)  # unfitted bucket -> mean
+    # key order mirrors the temperature: kind:lang first, per-primitive global as fallback
+    one_hot = {"a": 1.0}  # peakedness 1.0 -> second row
+    assert asset.cell_confidence("choice", "pt", one_hot, 0.6) == pytest.approx(0.42)
+    assert asset.cell_confidence("choice", "de", one_hot, 0.6) == pytest.approx(0.7)
+    assert asset.cell_confidence("score", "pt", one_hot, 0.6) is None  # no score cell ships
+
+
+@pytest.mark.parametrize(
+    ("mutate", "match"),
+    [
+        (
+            lambda cell: cell.update(table=[[0.1, 0.2]]),
+            "rows",
+        ),
+        (
+            lambda cell: cell.update(peaked_edges=[0.5, 0.4]),
+            "increasing",
+        ),
+        (
+            lambda cell: cell.update(table=[[0.1, 1.5], [0.3, 0.4]]),
+            "out of [0, 1]",
+        ),
+        (
+            lambda cell: cell.update(mean=1.2),
+            "mean must be in [0, 1]",
+        ),
+        (
+            lambda cell: cell.update(strength_edges=[]),
+            "finite",
+        ),
+    ],
+)
+def test_confidence_cells_reject_malformed(
+    mutate, match: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    payload = _cells_payload()
+    mutate(payload["cells"]["choice:pt"])
+    assert _load_confidence(payload, caplog) is None
+    messages = _warnings(caplog)
+    assert messages and match in messages[-1], messages
+
+
+def test_confidence_cells_reject_bad_keys(caplog: pytest.LogCaptureFixture) -> None:
+    payload = _cells_payload()
+    payload["cells"]["chinese"] = payload["cells"].pop("choice")
+    assert _load_confidence(payload, caplog) is None
+    assert any("cell key" in message for message in _warnings(caplog))
+
+
+def test_answer_state_reports_the_fitted_cell_not_the_mass() -> None:
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(_cells_payload(), warn=lambda _message: None)
+    assert asset is not None
+    model = EncoderModel(_encode, confidence=asset)
+    answer = model.answer_state("please refund", {"q": _QUESTIONS["department"]}, lang="pt")["q"]
+    assert isinstance(answer, ChoiceAnswer)
+    strength = asset.strength(model.state_embedding("please refund"))
+    assert strength is not None
+    expected = asset.cell_confidence("choice", "pt", answer.probabilities, strength)
+    assert expected is not None
+    assert answer.confidence == pytest.approx(expected)
+    assert answer.confidence in {0.1, 0.2, 0.3, 0.42}, "the cell table, not the mass"
+
+
+def test_cells_only_asset_keeps_noul_on_the_temperature_path() -> None:
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    asset = ConfidenceCalibration.from_dict(_cells_payload(), warn=lambda _message: None)
+    assert asset is not None and asset.noul_knots == []
+    model = EncoderModel(_encode, confidence=asset)
+    answer = model.answer_state("please refund", {"q": _QUESTIONS["is_urgent"]})["q"]
+    assert isinstance(answer, NoulAnswer)
+    # no P3 level (that path needs noul knots): the cosine/temp path answers instead
+    assert 0.0 <= answer.noul <= 1.0
+
+
+def test_calibration_language_reads_the_noul_criteria_texts() -> None:
+    """B-16: the noul criteria are localized like everything else — the key reads them.
+
+    ``_criterion_texts`` deliberately returns nothing for noul (the scorer never embeds
+    those labels); the *detection* composition is separate and includes them — this is
+    what puts both eval slices over the 0.99 G2 gate.
+    """
+    from tachyone.backends.encoder import calibration_language
+
+    question = NoulQuestion(
+        instructions="Is this a request?",
+        criteria=NoulCriteria(
+            true="É uma solicitação urgente",
+            false="Não é uma solicitação",
+        ),
+    )
+    # English instructions, Portuguese criteria and a neutral state: criteria carry it
+    assert calibration_language("algo novo aqui", question) == "pt"
+    assert NoulQuestion(instructions="Is this a request?").criteria is None
+    assert calibration_language("please refund", _QUESTIONS["is_urgent"]) == "en"
 
 
 def test_strength_is_the_best_prototype_match_and_refuses_foreign_spaces() -> None:

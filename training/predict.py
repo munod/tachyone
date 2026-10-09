@@ -23,7 +23,7 @@ from tachyone.backends.encoder import (
     load_encoder,
     prototype_strength,
 )
-from tachyone.calibration import apply_temperature, confidence, parse_temperature_report
+from tachyone.calibration import parse_temperature_report
 from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
@@ -33,7 +33,7 @@ from tachyone.primitives import (
     ScoreAnswer,
     State,
 )
-from tachyone.router import CheckpointInfo, detect_language, detect_script, state_text
+from tachyone.router import CheckpointInfo
 from training.evaluate import (
     EvalExample,
     GateFn,
@@ -54,12 +54,16 @@ def _build_model(
     device: str,
     max_len: int,
     confidence: bool = True,
+    temperatures: dict[str, float] | None = None,
 ) -> EncoderModel:
     """Reuse the runtime loader so training and inference share one encode implementation.
 
     ``confidence=False`` skips the adapter's evidence-confidence asset so the emitted
     probabilities are the *natural* ones — that is what the fitter reads, because fitting a
     temperature on top of an already-mapped confidence would be fitting the wrong signal.
+    Temperatures live **inside** the model (same as the serve path since B-16), so the
+    confidence an answer carries is computed over the scaled distribution — the offline
+    pipeline and the backend report the same numbers by construction.
     """
     info = CheckpointInfo(
         id="adhoc",
@@ -72,7 +76,12 @@ def _build_model(
     encode = load_encoder(info, models_dir=_DEFAULT_MODELS_DIR, device=device)
     choice_bank = load_choice_head(info, models_dir=_DEFAULT_MODELS_DIR)
     calibration = load_confidence(info, models_dir=_DEFAULT_MODELS_DIR) if confidence else None
-    return EncoderModel(encode, choice_bank=choice_bank, confidence=calibration)
+    return EncoderModel(
+        encode,
+        temperatures=temperatures,
+        choice_bank=choice_bank,
+        confidence=calibration,
+    )
 
 
 def _load_temperatures(path: str | None) -> dict[str, float]:
@@ -80,29 +89,6 @@ def _load_temperatures(path: str | None) -> dict[str, float]:
         return {}
     report = json.loads(Path(path).read_text(encoding="utf-8"))
     return parse_temperature_report(report)
-
-
-def _apply_temperature(kind: str, answer: Answer, temperature: float) -> Answer:
-    if temperature == 1.0:
-        return answer
-    if kind == "noul":
-        assert isinstance(answer, NoulAnswer)
-        p = apply_temperature({"true": answer.noul, "false": 1.0 - answer.noul}, temperature)
-        return NoulAnswer(noul=p["true"])
-    if kind == "choice":
-        assert isinstance(answer, ChoiceAnswer)
-        scaled = apply_temperature(dict(answer.probabilities), temperature)
-        best = max(scaled, key=scaled.__getitem__)
-        return ChoiceAnswer(choice=best, probabilities=scaled, confidence=confidence(scaled))
-    assert isinstance(answer, ScoreAnswer)
-    scaled_levels = apply_temperature(dict(answer.probabilities), temperature)
-    expected = sum(index * probability for index, probability in scaled_levels.items())
-    return ScoreAnswer(
-        score=expected,
-        legend=answer.legend,
-        probabilities=scaled_levels,
-        confidence=confidence(scaled_levels),
-    )
 
 
 def _prediction_row(example: EvalExample, answer: Answer) -> dict[str, Any]:
@@ -148,15 +134,16 @@ def _load_prototypes(path: str | Path) -> list[list[float]]:
     return [[float(value) for value in row] for row in payload["centroids"]]
 
 
-def build_predictor(model: EncoderModel, temperatures: dict[str, float]):
+def build_predictor(model: EncoderModel):
+    """A ``(state, question)`` predictor that answers exactly as the serve path does.
+
+    The language key, the temperature and the confidence map all live inside the model
+    (B-16): no explicit ``lang`` is passed, so ``answer_state`` derives the serve key
+    itself and the offline pipeline cannot drift from the backend.
+    """
+
     def predict(state: State, question: Question, *, head_hint: str | None = None) -> Answer:
-        text = state_text(state)
-        lang = detect_language(text, detect_script(text))
-        answer = model.answer_state(state, {"q": question}, lang=lang, choice_head=head_hint)["q"]
-        temperature = temperatures.get(
-            f"{question.type}:{lang}", temperatures.get(question.type, 1.0)
-        )
-        return _apply_temperature(question.type, answer, temperature)
+        return model.answer_state(state, {"q": question}, choice_head=head_hint)["q"]
 
     return predict
 
@@ -220,6 +207,7 @@ def run(
         device=device,
         max_len=max_len,
         confidence=apply_confidence,
+        temperatures=_load_temperatures(temperature_path),
     )
     bank_keys = model.choice_bank.domains if model.choice_bank is not None else ()
     hint = resolve_head_hint(head_hint, bank_keys)
@@ -227,7 +215,7 @@ def run(
         raise SystemExit(
             f"--head-hint {hint!r} needs an adapter that ships a choice-head bank: {adapter_dir}"
         )
-    predictor = build_predictor(model, _load_temperatures(temperature_path))
+    predictor = build_predictor(model)
 
     bank = _load_prototypes(prototypes_path) if prototypes_path else None
     if out_predictions:

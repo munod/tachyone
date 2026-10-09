@@ -10,6 +10,7 @@ similarity baseline with trained task heads and calibrated temperatures.
 from __future__ import annotations
 
 import asyncio
+import bisect
 import hashlib
 import json
 import logging
@@ -19,12 +20,18 @@ import re
 import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from tachyone.agent import Agent
 from tachyone.backends.base import PredictionResult
-from tachyone.calibration import confidence, interpolate_confidence, parse_temperature_report
+from tachyone.calibration import (
+    confidence,
+    interpolate_confidence,
+    normalized_entropy,
+    parse_temperature_report,
+)
 from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
@@ -41,8 +48,7 @@ from tachyone.router import (
     MULTILINGUAL,
     CheckpointInfo,
     Router,
-    detect_language,
-    detect_script,
+    detect_calibration_language,
     state_text,
 )
 from tachyone.wire import Usage
@@ -138,6 +144,32 @@ def _criterion_texts(question: Question) -> list[str]:
     if isinstance(question, ScoreQuestion):
         return list(question.criteria)
     return []
+
+
+def calibration_language(state: State, question: Question) -> str | None:
+    """Serve-key language for one state/question pair (B-16).
+
+    ``detect_calibration_language`` scored over the state **and all the localized question
+    text** — instructions plus criteria, for every primitive (the noul criteria are label
+    texts but they are localized like everything else; this is the composition the recipe
+    was validated on, where both eval slices clear the 0.99 gate). This is the single
+    source of truth shared by ``answer_state``, the offline ``training/predict`` path and
+    the fit scripts, so the key the asset was fitted under is the key the runtime applies.
+
+    Note this differs from ``_criterion_texts`` on purpose: that one feeds *embeddings*
+    (the noul scorer never embeds its criteria); this one only reads text for detection.
+    """
+    texts = [state_text(state), _question_text(question)]
+    if isinstance(question, NoulQuestion):
+        if question.criteria is not None:
+            texts.extend(
+                str(value)
+                for value in (question.criteria.true, question.criteria.false)
+                if value is not None
+            )
+    else:
+        texts.extend(_criterion_texts(question))
+    return detect_calibration_language(*texts)
 
 
 class ChoiceScorer:
@@ -341,6 +373,121 @@ class ChoiceHeadBank:
         return self.domains[key].head
 
 
+@dataclass(frozen=True, slots=True)
+class CellConfidence:
+    """One fitted 2D confidence cell: ``accuracy = f(peakedness, strength)`` (B-16).
+
+    ``peaked_edges``/``strength_edges`` are the per-bucket maxima of the pooled fit basis
+    (``bins - 1`` strictly increasing values each); ``table`` is ``bins x bins`` of the
+    shrunk empirical accuracy, ``None`` where the basis held no row. ``mean`` is the
+    cell-wide shrunk fallback for an unseen bucket. A monotone map of the evidence
+    signals — the answer's argmax never moves, only how loudly it is reported.
+    """
+
+    peaked_edges: tuple[float, ...]
+    strength_edges: tuple[float, ...]
+    table: tuple[tuple[float | None, ...], ...]
+    mean: float
+    n: int
+
+    def confidence(self, peaked: float, strength: float) -> float:
+        """Map one answer's signals to its calibrated confidence."""
+        row = min(bisect.bisect_left(self.peaked_edges, peaked), len(self.table) - 1)
+        column = min(bisect.bisect_left(self.strength_edges, strength), len(self.table[row]) - 1)
+        value = self.table[row][column]
+        return self.mean if value is None else value
+
+
+def _served_confidence(
+    calibration: ConfidenceCalibration | None,
+    kind: str,
+    lang: str | None,
+    distribution: Mapping[Any, float],
+    strength: float | None,
+) -> float:
+    """The confidence an answer reports (B-16): fitted cell when the asset ships one,
+    the selected mass otherwise — identical to the historical behavior for every adapter
+    that ships no ``cells`` (en) and for every question type outside the map."""
+    if calibration is not None and strength is not None:
+        mapped = calibration.cell_confidence(kind, lang, distribution, strength)
+        if mapped is not None:
+            return mapped
+    return confidence(distribution)
+
+
+def _parse_cells(payload: Any, warn: Callable[[str], None]) -> dict[str, CellConfidence] | None:
+    """Validate the ``cells`` map (B-16); ``None`` (after ``warn``) when unusable.
+
+    Keys are ``kind`` or ``kind:lang``; each cell carries quantile edges for both signals,
+    the fitted ``bins x bins`` table (``null`` = unfitted bucket), the shrunk fallback
+    ``mean`` and the fit-basis row count ``n``.
+    """
+    if payload is None:
+        return {}
+    if not isinstance(payload, Mapping):
+        warn("'cells' must be an object")
+        return None
+    cells: dict[str, CellConfidence] = {}
+    for key, raw in payload.items():
+        name = str(key)
+        kind, separator, lang = name.partition(":")
+        if kind not in ("choice", "score", "noul") or (separator and (not lang or ":" in lang)):
+            warn(f"cell key must be 'kind' or 'kind:lang', got {name!r}")
+            return None
+        if not isinstance(raw, Mapping):
+            warn(f"cell {name!r} is not an object")
+            return None
+        try:
+            peaked_edges = tuple(float(value) for value in raw["peaked_edges"])
+            strength_edges = tuple(float(value) for value in raw["strength_edges"])
+            raw_table = raw["table"]
+            mean = float(raw["mean"])
+            n = int(raw["n"])
+        except (KeyError, TypeError, ValueError) as error:
+            warn(f"cell {name!r} is malformed: {error}")
+            return None
+        for label, edges in (("peaked", peaked_edges), ("strength", strength_edges)):
+            if len(edges) < 1 or not all(math.isfinite(value) for value in edges):
+                warn(f"cell {name!r}: {label}_edges must be finite")
+                return None
+            if any(right <= left for left, right in pairwise(edges)):
+                warn(f"cell {name!r}: {label}_edges must be strictly increasing")
+                return None
+        rows = len(peaked_edges) + 1
+        columns = len(strength_edges) + 1
+        if not isinstance(raw_table, list) or len(raw_table) != rows:
+            warn(f"cell {name!r}: table must have {rows} rows")
+            return None
+        table: list[tuple[float | None, ...]] = []
+        for raw_row in raw_table:
+            if not isinstance(raw_row, list) or len(raw_row) != columns:
+                warn(f"cell {name!r}: table rows must have {columns} columns")
+                return None
+            parsed: list[float | None] = []
+            for value in raw_row:
+                if value is None:
+                    parsed.append(None)
+                    continue
+                try:
+                    level = float(value)
+                except (TypeError, ValueError):
+                    warn(f"cell {name!r}: table values must be numbers or null")
+                    return None
+                if not math.isfinite(level) or not 0.0 <= level <= 1.0:
+                    warn(f"cell {name!r}: table value out of [0, 1]")
+                    return None
+                parsed.append(level)
+            table.append(tuple(parsed))
+        if not math.isfinite(mean) or not 0.0 <= mean <= 1.0:
+            warn(f"cell {name!r}: mean must be in [0, 1]")
+            return None
+        if n < 0:
+            warn(f"cell {name!r}: n must be >= 0")
+            return None
+        cells[name] = CellConfidence(peaked_edges, strength_edges, tuple(table), mean, n)
+    return cells
+
+
 class ConfidenceCalibration:
     """Evidence-conditioned confidence: a prototype bank plus the fitted ``noul`` map (P3).
 
@@ -356,7 +503,7 @@ class ConfidenceCalibration:
     exactly as an adapter that ships no asset would.
     """
 
-    __slots__ = ("_dim", "centroids", "noul_knots", "prototypes")
+    __slots__ = ("_dim", "cells", "centroids", "noul_knots", "prototypes")
 
     def __init__(
         self,
@@ -364,10 +511,12 @@ class ConfidenceCalibration:
         noul_knots: list[tuple[float, float]],
         *,
         prototypes: Mapping[str, Any] | None = None,
+        cells: Mapping[str, CellConfidence] | None = None,
     ) -> None:
         self.centroids = centroids
         self.noul_knots = noul_knots
         self.prototypes = dict(prototypes or {})
+        self.cells = dict(cells or {})
         self._dim = len(centroids[0]) if centroids else 0
 
     @property
@@ -378,6 +527,24 @@ class ConfidenceCalibration:
     def strength(self, embedding: Sequence[float]) -> float | None:
         """Max cosine to the bank, or ``None`` when the bank is for a different space."""
         return prototype_strength(embedding, self.centroids)
+
+    def cell_confidence(
+        self, kind: str, lang: str | None, distribution: Mapping[Any, float], strength: float
+    ) -> float | None:
+        """The fitted 2D confidence for this answer (``None`` when no cell ships).
+
+        Key order mirrors the temperature (B-1): ``kind:lang`` first, then the per-primitive
+        global cell. The signals are the served distribution's own peakedness and the
+        evidence strength — both monotone, so the answer never changes, only its reported
+        volume.
+        """
+        cell = self.cells.get(f"{kind}:{lang}") if lang else None
+        if cell is None:
+            cell = self.cells.get(kind)
+        if cell is None:
+            return None
+        peaked = 1.0 - normalized_entropy(distribution)
+        return cell.confidence(peaked, strength)
 
     def noul_confidence(self, strength: float) -> float:
         """Confidence for this evidence, clamped to ``[0.5, 1]`` (a binary floor)."""
@@ -428,28 +595,35 @@ class ConfidenceCalibration:
         noul = data.get("noul")
         raw_knots = noul.get("knots") if isinstance(noul, Mapping) else None
         knots: list[tuple[float, float]] = []
-        if not isinstance(raw_knots, list) or not raw_knots:
-            warn("missing 'noul' knots")
+        if raw_knots is not None:
+            if not isinstance(raw_knots, list) or not raw_knots:
+                warn("'noul' knots must be a non-empty list when 'noul' ships")
+                return None
+            previous = -math.inf
+            for entry in raw_knots:
+                if not isinstance(entry, (list, tuple)) or len(entry) != 2:
+                    warn("knots must be [strength, confidence] pairs")
+                    return None
+                try:
+                    strength, level = float(entry[0]), float(entry[1])
+                except (TypeError, ValueError):
+                    warn("knots must be numeric")
+                    return None
+                if not (math.isfinite(strength) and 0.0 <= level <= 1.0):
+                    warn(f"knot out of range: {entry!r}")
+                    return None
+                if strength <= previous:
+                    warn("knots must be strictly increasing in strength")
+                    return None
+                previous = strength
+                knots.append((strength, level))
+        cells = _parse_cells(data.get("cells"), warn)
+        if cells is None:
             return None
-        previous = -math.inf
-        for entry in raw_knots:
-            if not isinstance(entry, (list, tuple)) or len(entry) != 2:
-                warn("knots must be [strength, confidence] pairs")
-                return None
-            try:
-                strength, level = float(entry[0]), float(entry[1])
-            except (TypeError, ValueError):
-                warn("knots must be numeric")
-                return None
-            if not (math.isfinite(strength) and 0.0 <= level <= 1.0):
-                warn(f"knot out of range: {entry!r}")
-                return None
-            if strength <= previous:
-                warn("knots must be strictly increasing in strength")
-                return None
-            previous = strength
-            knots.append((strength, level))
-        return cls(centroids, knots, prototypes=prototypes)
+        if not knots and not cells:
+            warn("asset ships neither 'noul' knots nor 'cells'")
+            return None
+        return cls(centroids, knots, prototypes=prototypes, cells=cells)
 
 
 class EncoderModel:
@@ -506,8 +680,6 @@ class EncoderModel:
         choice_head: str | None = None,
     ) -> dict[str, Answer]:
         state_embedding_text = state_text(state)
-        if lang is None:
-            lang = detect_language(state_embedding_text, detect_script(state_embedding_text))
         texts = [state_embedding_text]
         plan: list[tuple[str, Question, int, list[int]]] = []
         for question_id, question in questions.items():
@@ -526,14 +698,17 @@ class EncoderModel:
         answers: dict[str, Answer] = {}
         for question_id, question, question_index, criterion_indices in plan:
             question_embedding = embeddings[question_index]
+            # Calibration key (B-16): state + localized question, detection-penalized.
+            # An explicit ``lang`` (offline tools) wins; the serve path passes ``None``.
+            q_lang = lang if lang is not None else calibration_language(state, question)
             if isinstance(question, NoulQuestion):
                 raw = _cosine(question_embedding, state_embedding)
-                if strength is not None and calibration is not None:
+                if strength is not None and calibration is not None and calibration.noul_knots:
                     # P3: the answer keeps its own direction, the evidence sets the volume.
                     level = calibration.noul_confidence(strength)
                     answers[question_id] = NoulAnswer(noul=level if raw >= 0.0 else 1.0 - level)
                     continue
-                score = raw / self._temp("noul", lang)
+                score = raw / self._temp("noul", q_lang)
                 answers[question_id] = NoulAnswer(noul=min(1.0, max(0.0, _sigmoid(score))))
                 continue
             scores = [
@@ -555,17 +730,21 @@ class EncoderModel:
                         [embeddings[index] for index in criterion_indices],
                     )
                     scores = [base + extra for base, extra in zip(scores, residual, strict=True)]
-                probabilities = _softmax(scores, self._temp("choice", lang))
+                probabilities = _softmax(scores, self._temp("choice", q_lang))
                 options = list(question.criteria)
                 distribution = {
                     option: probabilities[position] for position, option in enumerate(options)
                 }
                 best = max(distribution, key=lambda option: distribution[option])
                 answers[question_id] = ChoiceAnswer(
-                    choice=best, probabilities=distribution, confidence=confidence(distribution)
+                    choice=best,
+                    probabilities=distribution,
+                    confidence=_served_confidence(
+                        calibration, "choice", q_lang, distribution, strength
+                    ),
                 )
             else:
-                probabilities = _softmax(scores, self._temp("score", lang))
+                probabilities = _softmax(scores, self._temp("score", q_lang))
                 level_distribution = {
                     position: probabilities[position] for position in range(len(question.criteria))
                 }
@@ -576,7 +755,9 @@ class EncoderModel:
                     score=expected,
                     legend=dict(enumerate(question.criteria)),
                     probabilities=level_distribution,
-                    confidence=confidence(level_distribution),
+                    confidence=_served_confidence(
+                        calibration, "score", q_lang, level_distribution, strength
+                    ),
                 )
         return answers
 

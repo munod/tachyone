@@ -17,7 +17,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from tachyone.calibration import confidence, expected_calibration_error
+from tachyone.calibration import expected_calibration_error
 from tachyone.primitives import (
     Answer,
     ChoiceAnswer,
@@ -110,12 +110,14 @@ def _predicted_and_confidence(example: EvalExample, answer: Answer) -> tuple[Any
         assert isinstance(answer, ChoiceAnswer)
         distribution: dict[str, float] = dict(answer.probabilities)
         predicted = max(distribution, key=distribution.__getitem__)
-        conf = confidence(distribution)
+        # What the answer reports (B-16): the fitted cell when the asset ships one, the
+        # selected mass otherwise — the harness must measure what is served.
+        conf = answer.confidence
         return predicted, conf, predicted == example.target
     assert isinstance(answer, ScoreAnswer)
     level_distribution: dict[int, float] = dict(answer.probabilities)
     predicted = max(level_distribution, key=level_distribution.__getitem__)
-    conf = confidence(level_distribution)
+    conf = answer.confidence
     return predicted, conf, predicted == int(example.target)
 
 
@@ -193,6 +195,10 @@ def _run(
     #: ``noul`` alone per language: the primitive whose labels B-11 had to fix, published next
     #: to the contradictory-label rate so label noise and model error stay separable (L-008).
     noul_per_language: dict[str, list[tuple[bool, float, float]]] = {}
+    #: ``primitive/lang`` cells: B-1's acceptance is per-language ECE for ``choice``/``score``
+    #: (NFR-C06) and neither axis alone reads it — the gate table the B-16 cycle measures
+    #: (previously reconstructed by a throwaway script; now emitted by the harness itself).
+    per_primitive_language: dict[str, list[tuple[bool, float, float]]] = {}
     overall: list[tuple[bool, float, float]] = []
     #: Accuracy split by whether the row's input text also occurs in training (B7).
     text_seen: dict[str, list[tuple[bool, float, float]]] = {"seen": [], "unseen": []}
@@ -213,6 +219,7 @@ def _run(
         per_language.setdefault(example.lang, []).append(row)
         per_domain.setdefault(example.domain, []).append(row)
         per_domain_language.setdefault(f"{example.domain}/{example.lang}", []).append(row)
+        per_primitive_language.setdefault(f"{example.type}/{example.lang}", []).append(row)
         if example.type == "noul":
             noul_per_language.setdefault(example.lang, []).append(row)
         if seen_inputs is not None:
@@ -229,6 +236,10 @@ def _run(
         "per_domain": {domain: _metrics(rows, bins) for domain, rows in per_domain.items()},
         "noul_per_language": {
             lang: _metrics(rows, bins) for lang, rows in noul_per_language.items()
+        },
+        # Flat ``kind/lang`` keys, the notation BACKLOG B-1/B-16 gate on (NFR-C06).
+        "per_primitive_language": {
+            cell: _metrics(rows, bins) for cell, rows in sorted(per_primitive_language.items())
         },
     }
     if len(per_domain) > 1:

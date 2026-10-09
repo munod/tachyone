@@ -11,6 +11,7 @@ from tachyone.router import (
     MULTILINGUAL,
     SUPPORTED_LANGUAGES,
     Router,
+    detect_calibration_language,
     detect_language,
     detect_script,
     state_text,
@@ -81,6 +82,39 @@ def test_portuguese_without_accents_routes_to_multilingual(text: str) -> None:
 def test_detect_language_identifies_portuguese() -> None:
     assert detect_language("quero cancelar agora", "latin") == "pt"
     assert detect_language("please refund the charge", "latin") == "en"
+
+
+def test_calibration_language_uses_state_and_question_together() -> None:
+    # B-16: the localized question joins the state — Italian survives the shared romance
+    # words that made state-only detection return Spanish.
+    assert (
+        detect_calibration_language("Di chi è questa fattura?", "Dovrei gestire questa richiesta?")
+        == "it"
+    )
+    assert (
+        detect_calibration_language("Ho una richiesta urgente", "Gestire la fattura di favore?")
+        == "it"
+    )
+    assert detect_calibration_language("Cancel my order", "Which team handles this?") == "en"
+    # the overlap penalty keeps a Portuguese state from being claimed by Spanish
+    assert (
+        detect_calibration_language("Preciso de ajuda com o pagamento", "Você pode ajudar?") == "pt"
+    )
+    # accent fingerprints break a tie toward French
+    assert detect_calibration_language("déjà vu", "Voilà votre commande") == "fr"
+
+
+def test_calibration_language_fallbacks() -> None:
+    assert detect_calibration_language("Пожалуйста, верните деньги") is None
+    assert detect_calibration_language() is None
+    assert detect_calibration_language("12345 !!!") is None
+
+
+def test_calibration_language_keeps_the_base_detector_contract() -> None:
+    # routing still uses detect_language — the new key must not change checkpoint choice
+    text = "quero cancelar agora"
+    assert detect_language(text, detect_script(text)) == "pt"
+    assert detect_calibration_language(text) == "pt"
 
 
 def test_unknown_script_uses_default() -> None:

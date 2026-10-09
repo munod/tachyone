@@ -168,6 +168,7 @@ def test_evaluate_noise_rate_adds_noisy_view(tmp_path: Path) -> None:
         "per_language",
         "per_domain",
         "noul_per_language",
+        "per_primitive_language",
     }
     assert report["noisy"]["overall"]["n"] == report["overall"]["n"]
 
@@ -261,6 +262,23 @@ def test_single_domain_reports_carry_no_domain_language_cells(tmp_path: Path) ->
     report = evaluate(examples, _perfect(examples))
     assert "per_domain_language" not in report
     assert set(report["per_domain"]) == {"support"}
+
+
+def test_evaluate_reports_primitive_language_cells(tmp_path: Path) -> None:
+    """B-1's acceptance is per-language ECE for choice/score (NFR-C06): the harness must
+    emit primitive x language cells itself — B-16 measured them through a throwaway script
+    before this existed."""
+    path = tmp_path / "eval.jsonl"
+    generate(DataConfig(seed=13, per_type=4, languages=("en", "pt")), path)
+    examples = load_examples(path)
+    report = evaluate(examples, _perfect(examples))
+    cells = report["per_primitive_language"]
+    assert set(cells) == {
+        f"{kind}/{lang}" for kind in ("noul", "choice", "score") for lang in ("en", "pt")
+    }
+    assert all(cell["n"] == 2 for cell in cells.values())  # per_type=4 spread over 2 languages
+    assert all(cell["accuracy"] == 1.0 for cell in cells.values())
+    assert list(cells) == sorted(cells)  # deterministic order for clean re-renders
 
 
 # ------------------------------------------------------------------ B-11: the `noul` label audit
