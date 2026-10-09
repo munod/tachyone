@@ -11,7 +11,24 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-08 (`v0.9.0`, B-15 template-train retrain)** — commits
+> **Latest revision: 2026-10-09 (`v0.10.0`, B-16 confidence map)** — commits
+> [`8abf70fc`](https://huggingface.co/munod/tachyone-en/commit/8abf70fc6121cdc222f48a7b6dbe5e8cd0d18267)
+> (`tachyone-en`, **8 files**, README-only: the model card now carries the B-14 case study,
+> the probe re-measurement and the B-16 disclosures) and
+> [`86804a7a`](https://huggingface.co/munod/tachyone-multi/commit/86804a7a0d3b548ccad29bd156fd685539b3a3fa)
+> (`tachyone-multi`, **8 files**: + `confidence_calibration.json`, the 2D
+> `peakedness × strength` cells with the prototype bank embedded, and +
+> `state_prototypes.json`, the fit input kept auditable). Adapter weights and temperatures
+> are **byte-identical to the previous revision** — what changed is the calibration **key**
+> (detector v3 reads state + localized question: diagonal 99.80% / 99.95% vs the old 65.8%;
+> checkpoint routing untouched) and the multilingual `choice`/`score` **confidence
+> derivation** (the fitted cell where the asset ships one — probabilities, argmax and gates
+> untouched, accuracy byte-identical everywhere). B-1's per-language holdout ECE reads
+> **11 of 12 cells ≤ 0.05**, `score/it` **0.0521 recorded NOT met** (from 7 cells / 0.1495;
+> `BACKLOG.md` **B-16**, gates pre-registered `0f1593d`). Every uploaded file sha256-verified
+> against the local build (**8/8 and 8/8**) and the remote holds no stale file.
+>
+> **Previous revision: 2026-10-08 (`v0.9.0`, B-15 template-train retrain)** — commits
 > [`e47d6393`](https://huggingface.co/munod/tachyone-en/commit/e47d6393f281dbcc43526c8d36f8f22c7722ff3a)
 > (`tachyone-en`, **8 files**) and
 > [`c5c05fd2`](https://huggingface.co/munod/tachyone-multi/commit/c5c05fd2ac8c82dbff11d1f19d81653a229e543d)
