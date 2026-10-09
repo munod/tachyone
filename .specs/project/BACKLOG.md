@@ -1736,6 +1736,75 @@ B-1 reading.
 
 ---
 
+## B-17 · Part 2 — close `score/it`: teacher bank expansion + multi retrain · **Gates pre-registered 2026-10-09, before any data edit**
+
+**Why.** B-16 left exactly one failing cell: `score/it` holdout ECE **0.0521** (from 0.1495).
+The measured root cause is pure phrasing generalization in the two middle tone banks:
+`score`'s errors on unseen phrasing are **100% the neutral(1) ↔ request(2) confusion**
+(target 1→2: 31 rows, target 2→1: 23; levels 0 and 3 perfect —
+`_LEVEL_BY_TONE = {calm: 0, neutral: 1, request: 2, urgent: 3}`), and every holdout row draws
+the bank's **held-out last phrase**: `it`/`support` neutral
+`'Controllo se qualcosa è cambiato con il {entity}.'` and request
+`'Ho bisogno di aiuto con il {entity}.'`. By domain, holdout `score` accuracy:
+
+| lang | support | voice | agent_tools | documents | ecommerce |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| de | 0.867 | 0.711 | 1.000 | 1.000 | 1.000 |
+| es | 0.726 | 0.726 | 0.857 | 1.000 | 1.000 |
+| fr | 0.819 | 0.843 | 1.000 | 1.000 | 1.000 |
+| it | **0.627** | 0.723 | 1.000 | 1.000 | 1.000 |
+| nl | 0.735 | 0.867 | 1.000 | 1.000 | 1.000 |
+| pt | 1.000 | 0.798 | 0.881 | 1.000 | 1.000 |
+
+In-template every cell is 1.000 — nothing but the phrasing gap; `choice/es` (0.0467) and
+`score/es` (0.0369) sit near the gate line by the same mechanism.
+
+**What runs (owner decisions 2026-10-09).**
+1. **Teacher: `qwen3.6:35b`** through the local Ollama — deviation from the recorded
+   "Qwen3.5:35b" (the 3.5 tag is not on the box; same 35B class, chosen by the owner).
+   Scope: **all five domains × {neutral, request} × the six non-English languages, +6
+   phrases per bank**, few-shot from that bank's own phrases, inserted **before** the
+   held-out last phrase (~360 phrases). Every candidate passes the cycle validator — no
+   placeholder tokens, no phrase in two banks of one language, no sentence in two tones,
+   per-language conventions (the Fase-2a rules) — with re-prompting on rejection; model tag,
+   prompts, raw outputs and the accepted list are logged and disclosed on the card.
+2. **Frozen yardstick:** the last phrase of every bank never moves → the holdout evals must
+   regenerate **byte-identical** (sha pins, T2); the `en` sections of the domain files are
+   untouched → English data and artifacts byte-identical (T3).
+3. Regenerate the multi `train`-split datasets, then retrain **multi only** with the
+   published recipe (8 epochs + the 2-epoch interleaved touch-up → new lineage),
+   `fit_choice_bank`, pooled temperature fit, prototypes, `fit_cell_confidence`. English
+   runs no training.
+
+**Gates (fixed now, before step 1):**
+- **T1 · the target**: `score/it` holdout ECE ≤ **0.05** — **all 12/12**
+  `(primitive, language)` cells pass and B-1 criterion 3 closes (harness =
+  `training.predict` checkpoint-alone, L-020's protocol).
+- **T2 · frozen yardstick**: `data/eval_multi_domains_holdout.jsonl` stays sha256
+  `982236ca2728705f…`, `data/eval_en_domains_holdout.jsonl` `3119e73c6d851e31…`, and every
+  `data/eval_en*.jsonl` is byte-identical after regeneration.
+- **T3 · no regression (B-16 gates re-verified, checkpoint-alone)**: multilingual `choice`
+  ≥ 0.60 · English **byte-identical to B-16** (overall 0.9825 / 0.9983 / 1.0000, ECE
+  0.1884 / 0.1906 / 0.1884) · `noul` tripwire ≥ 0.60 every language (worst `it` 0.7807) ·
+  current multi: `support` ≥ 0.7887 · worst domain ≥ 0.70 · per-domain ECE ≤ 0.05 **zero
+  exceptions** · strict 1.0000 · every language ≥ its released baseline · holdout overall
+  ≥ **0.8892** and in-template overall ≥ **0.9760** (the B-16 readings).
+- **T4 · mechanism, reported whatever the number**: `score/it` holdout accuracy from
+  0.8699 (support 0.627 / voice 0.723) — target ≥ **0.93**.
+- **T5 · data gates (Fase 0 discipline)**: zero incomplete `(domain, language)` cells in
+  the regenerated recipes · distractor ≈ 1/6 in every language · zero `noul`
+  contradictory rows · volume per language unchanged · every teacher rejection logged.
+- **T6 · detection key**: diagonal ≥ **0.99** on both regenerated eval slices.
+- **T7 · contract**: full suite green, wire unchanged.
+- **Honesty rules**: the expansion targets a diagnosed mechanism — disclosed with the table
+  above; the holdout rows stay inside the pooled calibration basis (B-15 precedent,
+  disclosed); teacher provenance on the model card; if T1 misses, the number is published,
+  never re-fixed.
+
+**Record:** execution appended below when the cycle runs.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
