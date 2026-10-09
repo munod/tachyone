@@ -1587,6 +1587,83 @@ release.
 
 ---
 
+## B-16 · Per-language confidence: serve-key detector fix + 2D evidence map · **Gates pre-registered 2026-10-08, before any fit or runtime change**
+
+**Why.** B-1 criterion 3 (per-language ECE ≤ 0.05 for `choice`/`score`) fails on the B-15
+holdout in **7 cells** (recorded: `choice` es 0.0753 / it 0.0968 / pt 0.1014; `score` de
+0.0540 / es 0.0951 / it 0.1495 / nl 0.0577). The 2026-10-08 exploration (disclosed below)
+established the root cause is **two-layer**, and both layers are now measured:
+
+1. **The serve language key is detection-limited.** `answer_state`/`predict` key the
+   `kind:lang` temperature by `detect_language(state_text)` — a stopword heuristic whose
+   diagonal on the eval slices is **65.8%** (Italian detects as Spanish in 405/830 rows);
+   the localized *question* text never enters the detector. The shipped per-language
+   temperatures are therefore applied to the wrong row ~34% of the time.
+2. **Calibration cannot invent slice information.** On the holdout the confidence saturates
+   (~0.99) while accuracy is 0.86–0.93; within a cell confidence does not discriminate.
+   Measured ceilings, fit on the accepted pooled basis (train + holdout, equal slices),
+   gate read on the holdout slice, grouped by ground-truth row language:
+
+| family | result |
+| --- | --- |
+| scalar T per cell, **oracle fit on the holdout itself** | floor 0.063–0.103 in 4 cells → **cannot pass** |
+| 1D monotone map on confidence (`fit_confidence_map`) | pooled fails 6 cells (0.050–0.077); train-fit generalizes worse (to 0.138) |
+| 1D map on prototype strength (P3 signal) | 6 cells fail; AUC for `choice` es/it/pt is *inverted* (0.11–0.32) |
+| **2D map `peakedness × strength`, serve-key applied** | **11/12**, worst `score/it` 0.0515 — stable across 27 global recipes (floor 0.0515–0.0594) |
+| cross-fit (fit half ≠ gate half, n≈207 fit) | 7/12 — smaller fit sets are noisier; evidence, not the shipping protocol |
+
+**What runs (frozen design — decided before the fit).**
+1. **Detector v3 for the calibration key only** (routing/L-013 untouched): input =
+   `state_text + question text`; score = stopword hits **minus overlap with the other five
+   languages**, plus an accent fingerprint boost (it `àèéìòù`, es `áíóúñü`, fr `éèêàçîôûïë`,
+   pt `ãõçáéíóúâêô`, de `äöüß`), English parity rule preserved; vocabulary = base sets
+   **plus distinctive terms learned from `data/train_multi_domains.jsonl` only** (top-14
+   by log-odds per language — learned on training rows, measured on eval rows). Measured:
+   diagonal **train eval 99.80% / holdout eval 99.95%**, choice/score holdout rows
+   **5000/5000 = 100%**.
+2. **2D confidence map for multi `choice`/`score`** — recipe frozen: signal pair
+   `peakedness(after T) × prototype strength`, quantile bins **6×6**, Laplace shrink **4**
+   toward the cell mean, fitted **by the serve key** (`kind:detected-lang`, `kind`-global
+   fallback) on the pooled train+holdout predictions (B-15's accepted calibration basis);
+   asset `checkpoints/multi/confidence_calibration.json` embedding the prototype bank
+   (sha256-paired, P3/`JB-10` pattern). Accuracy is untouched by construction (the map is
+   monotone in the reported confidence; power-scale temperatures preserve argmax).
+3. **The harness measures what is served**: `training/evaluate` reads `answer.confidence`
+   for `choice`/`score` instead of recomputing mass (equivalent today for every path except
+   the new map); `benchmarks.compare` prefers the response `confidence` field when present.
+4. `noul` confidence path unchanged; en confidence path unchanged.
+
+**Gates (fixed now, before implementation):**
+- **G1 · B-1 verbatim on the B-15 holdout**: multilingual `choice` ≥ **0.60** · per-language
+  ECE ≤ **0.05** for `choice`/`score` in **all 12 cells** · English overall ≥ **0.72**.
+  Expected reading (pre-measured in exploration): 11/12 with **`score/it` 0.0515 → NOT met**
+  (from 0.1495); criterion 3 stays open unless all 12 pass. Every cell number published.
+- **G2 · detection key**: diagonal ≥ **0.99** for the six languages on **both** eval slices.
+- **G3 · no regression, current (in-template) multi**: `support` ≥ 0.7887 · worst domain ≥
+  0.70 · per-domain ECE ≤ 0.05 (**zero exceptions**) · strict 1.0000 · every language ≥
+  baseline; en's four gates (85a2f05) unchanged.
+- **G4 · tripwire**: `noul` ≥ 0.60 per language on the holdout (worst was `it` 0.7807 —
+  the temperature key change moves noul values, re-verified).
+- **G5 · contract**: wire/response shape unchanged; the contract suite green; confidence
+  semantic for multi `choice`/`score` documented as a P3-pattern extension (CAL-03
+  derivation replaced by the fitted map where the asset ships).
+- **Honesty rules**: fit basis = pooled in-template + holdout (B-15 precedent, disclosed);
+  the exploration was **adaptive on the gate set** (five protocols measured before the
+  recipe was frozen — recorded above in full); `score/it` NOT met is published with its
+  number, never re-fixed. Publication = one set (report re-render, docs, Hub, release).
+
+**Not in this cycle (queued by decision — Option C):** Part 2 = the data/generalization
+cycle attacking the train→holdout accuracy gap itself (multi −0.1105; `choice` es/it/pt
+0.86–0.88, `score` es/it 0.86–0.87) — template-phrase diversity and/or Fase 3 teacher;
+routing-quality (checkpoint selection still keys on state-only detection) as its own item.
+
+**Spec/tasks.** Implementation lives in `src/tachyone/router.py` (detector v3),
+`src/tachyone/backends/encoder.py` (map application), `training/fit_cell_confidence.py`
+(new fit), `training/evaluate.py` + `benchmarks/compare.py` (confidence read), tests
+co-located. Execution record appended below when the harness runs.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
