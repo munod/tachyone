@@ -57,11 +57,14 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
 
     ---
 
-    Strictly proper scoring (RLCD) plus per-`(primitive, language)` temperature scaling, with
-    per-language ECE reported. The `ECE ≤ 0.05` target is met for **one** of the six multilingual
-    languages (`es` 0.045); `pt`/`fr`/`de`/`nl`/`it` remain above it (worst `it` 0.197). Every
-    label is derived from the text it accompanies (B-11 + B-12), and the label audit published
-    with the accuracy reports **0 contradictory rows**.
+    Strictly proper scoring (RLCD) plus per-`(primitive, language)` calibration: temperatures
+    keyed by a detector that reads the state **and** the localized question, and — since
+    B-16 — a fitted `peakedness × strength` confidence for multilingual `choice`/`score`.
+    On phrasing never seen in training, **11 of the 12 `(primitive, language)` cells sit at
+    ECE ≤ 0.05** (was 5 of 12); the remaining miss, `score/it` **0.0521**, is published
+    **NOT met**, never smoothed. Every label is derived from the text it accompanies
+    (B-11 + B-12), and the label audit published with the accuracy reports **0
+    contradictory rows**.
 
 - :material-compare:{ .lg .middle } **Decisions, not text**
 
@@ -171,7 +174,7 @@ Measured on NVIDIA L4 23GB (v0.9.0, B-15; full tables and reproduction commands 
 <div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:80.1%"></span></span><span class="tachyone-bar__value">80.1%</span></div>
 <div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:79.8%"></span></span><span class="tachyone-bar__value">79.8%</span></div>
 <div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:75.8%"></span></span><span class="tachyone-bar__value">75.8%</span></div>
-<p class="tachyone-chart__caption">B-15's holdout evals: training excluded the holdout template pool, so this measures phrasing generalization instead of recognition (overall 83.6% multilingual / 98.3% English). The distance between the two charts is the generalization gap — and B-1's per-language ECE ≤ 0.05 target is recorded <strong>NOT met</strong> on this set (numbers in BACKLOG B-15; disclosed, never re-fixed).</p>
+<p class="tachyone-chart__caption">B-15's holdout evals: training excluded the holdout template pool, so this measures phrasing generalization instead of recognition (overall 83.6% multilingual / 98.3% English). The distance between the two charts is the generalization gap — and B-1's per-language ECE ≤ 0.05 target, after B-16's confidence map (2026-10-09), now passes <strong>11 of 12 cells</strong> on this set with <strong>score/it 0.0521 recorded NOT met</strong> (numbers in BACKLOG B-16; disclosed, never re-fixed).</p>
 </div>
 
 **p50 latency — stock forward vs CUDA-graph fast path**

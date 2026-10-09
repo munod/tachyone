@@ -40,8 +40,14 @@ pipeline_tag: text-classification
 > never-trained holdout and its pooled fit pegged the grid at **T = 10.0**, so in-domain
 > `choice` ECE reads **0.5243** honestly instead of in-sample (P3's in-domain ≤ 0.05
 > acceptance recorded **NOT met** for the rebuilt asset; accuracy is untouched); and **B-1's
-> per-language ECE ≤ 0.05 on holdout is NOT met** for the multilingual arm (`choice` es/it/pt,
-> `score` de/es/it/nl — full numbers in `.specs/project/BACKLOG.md` **B-15**).
+> per-language ECE ≤ 0.05 on holdout**, which after the **B-16** confidence map
+> (2026-10-09) reads **11 of 12 cells ≤ 0.05** with **`score/it` 0.0521 recorded NOT met**
+> (B-15 measured 7 failing cells, worst 0.1495; full numbers in `.specs/project/BACKLOG.md`
+> **B-1** and **B-16**). The multilingual `choice`/`score` answers now report a **fitted
+> confidence** — a 2D peakedness × strength table per `(primitive, language)` keyed by a
+> detector that reads the state **and** the localized question (B-16); probabilities and
+> decisions are untouched, and the in-template multilingual ECE trade (0.0069 → 0.0228,
+> still zero gate exceptions) is disclosed with it.
 >
 > **The v0.8.0 English artifact was B-13: the mixture retrain (history).** Same recipe and
 > seed as the B-5 run, one factor changed — the training data: 35,540 records (the 21,000
@@ -205,8 +211,11 @@ the multilingual checkpoint answers everything** — the routed rows above show 
 served. On the support-only *routed* split (13–15% of
 rows fall through to the English checkpoint by language routing, `.specs/project/BACKLOG.md`
 **L-013**) the per-language story is unchanged in kind: three of six languages sit above the
-0.05 ECE target on that split, and on the **holdout** the B-1 per-language ECE criterion is
-**NOT met** (recorded with numbers in BACKLOG **B-1**) — open under NFR-C06 / BACKLOG B-1.
+0.05 ECE target on that split, and on the **holdout** the B-1 per-language ECE criterion was
+**NOT met** at B-15 (7 cells, worst `score/it` 0.1495) — the **B-16** cycle (serve-key
+detector + fitted confidence, 2026-10-09) moved it to **11/12 with `score/it` 0.0521
+recorded NOT met**, `choice` 0.9248 and every other axis byte-identical (recorded with
+numbers in BACKLOG **B-1**/**B-16**) — open under NFR-C06 / BACKLOG B-1.
 The CUDA-graph fast path
 (`TACHYONE_FAST=1`) gives **2.53×** p50 on English (17.31 → 6.83 ms) and **3.71×** on the
 multilingual five-domain path (14.23 → 3.84 ms) — re-measured on the v0.9.0 artifacts

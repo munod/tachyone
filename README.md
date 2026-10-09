@@ -144,8 +144,10 @@ graceful fallback.
   in-template → holdout gap at −0.1105 / −0.0179. Two results are published **NOT met** rather
   than smoothed: the English confidence fit's in-domain acceptance (`choice` T pegged at 10.0,
   in-domain `choice` ECE 0.5243, accuracy untouched) and B-1's per-language ECE ≤ 0.05 on
-  holdout for the multilingual arm — numbers in the [model card](docs/model-card.md) and
-  `BACKLOG.md` **B-15**. The English ECE column is that pooled never-trained fit; the
+  holdout for the multilingual arm — improved by the **B-16** confidence map (2026-10-09)
+  from 7 failing cells to **1 (`score/it` 0.0521), recorded NOT met**; numbers in the
+  [model card](docs/model-card.md) and `BACKLOG.md` **B-1** / **B-16**. The English ECE column
+  is that pooled never-trained fit; the
   multilingual rows are the routed product (~13–15% of rows fall through to the English
   checkpoint by design — L-013 — and the multilingual checkpoint itself answers **0.9885** when
   it answers everything).
@@ -156,7 +158,8 @@ graceful fallback.
   contradictory rows** (the pre-B-11 labels contradicted 121 of 241 request-toned English rows, and
   7.8% of `score` rows carried a "near-tie" the text never showed). The dedicated `choice` head
   (L-002) and localized per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance);
-  on the current five-domain split every language sits at ECE ≤ 0.053, and on the support-only
+  after B-16's fitted confidence, **11 of the 12 `(primitive, language)` cells sit at ECE ≤ 0.05
+  on unseen phrasing** (`score/it` 0.0521 remains, recorded), and on the support-only
   routed split the per-language ECE target (NFR-C06 / BACKLOG B-1) remains open. The CUDA-graph
   fast path (`TACHYONE_FAST=1`) improves p50 by **2.5×** on English (17.31 → 6.83 ms) and
   **3.7×** on the multilingual five-domain path (14.23 → 3.84 ms) — re-measured on the v0.9.0

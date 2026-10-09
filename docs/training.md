@@ -300,6 +300,39 @@ the answer) and `confidence_calibration.json` (the bank embedded with the monoto
 knots). Rebuilding after a retrain means rerunning all three: the bank describes the states
 the checkpoint was trained on, and the map describes that bank.
 
+### Per-cell confidence for `choice`/`score` (B-16)
+
+Where P3 gives `noul` one map over the evidence, **B-16** gives the multilingual
+`choice`/`score` answers a fitted confidence per `(primitive, language)` — a 2D
+`peakedness × strength` table (quantile buckets 6×6, Laplace shrink 4) fitted on the **pooled
+in-template + holdout** predictions (B-15's accepted calibration basis), shipped inside
+`confidence_calibration.json` with the bank embedded (the pair is atomic, exactly like P3).
+The serve key is `calibration_language(state, question)` — the state **and** the localized
+question scored by an overlap-penalized detector with train-learned vocabulary; `predict`,
+`answer_state` and the fit all share that one function, so the key the asset was fitted under
+is the key the runtime applies (routing keeps the old state-only detector — see **L-020**
+for why the protocol matters).
+
+```bash
+# strength per row on both slices (natural probabilities; no map yet)
+uv run python -m training.predict --data data/eval_multi_domains_{train,holdout}.jsonl \
+  --adapter checkpoints/multi --prototypes checkpoints/multi/state_prototypes.json \
+  --no-confidence --out-predictions data/b1_multi_<slice>_strength.jsonl
+
+# fit the cells (recipe pre-registered in BACKLOG B-16; provenance sha256 per input)
+uv run python -m training.fit_cell_confidence \
+  --predictions data/b1_multi_train_strength.jsonl data/b1_multi_holdout_strength.jsonl \
+  --records data/eval_multi_domains_train.jsonl data/eval_multi_domains_holdout.jsonl \
+  --temperature checkpoints/multi/temperature_calibration.json \
+  --prototypes checkpoints/multi/state_prototypes.json \
+  --out checkpoints/multi/confidence_calibration.json --bins 6 --shrink 4
+```
+
+The map reports a confidence; it never touches probabilities, argmax or the gate — accuracy
+is untouched by construction, and `training/evaluate` reads `answer.confidence` so the harness
+measures what is served (the `per_primitive_language` cells the B-1 gate reads are emitted by
+the harness itself).
+
 ---
 
 ## 5. Evaluation (`benchmarks/` + `training/evaluate.py`)

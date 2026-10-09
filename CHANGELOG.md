@@ -14,6 +14,12 @@ All notable changes to this project are documented here. The format is based on
   interleaved fix and the per-cell monitor — with the volatile run-log excerpts (epoch-loss
   series, monitor lines, sha256 provenance) quoted into the page so the evidence outlives
   `/tmp`. Linked from the roadmap and the training guide.
+- **Per-cell confidence fit for the multilingual arm (`training/fit_cell_confidence.py`,
+  B-16).** Fits a 2D `peakedness × strength` table per `(primitive, language)` on the pooled
+  in-template + holdout predictions (sha256-provenance of every input), ships it as
+  `confidence_calibration.json` with the prototype bank embedded (P3/JB-10 atomicity), and the
+  runtime reports the fitted value wherever the asset carries a cell. `training/evaluate`
+  now also emits `per_primitive_language` — the B-1 gate table is harness-native from now on.
 
 ### Changed
 
@@ -26,6 +32,16 @@ All notable changes to this project are documented here. The format is based on
   **2.53×** English / **3.71×** five-domain, **0 flips** on multilingual and **1 of 16
   sampled** on English (disclosed as measured). JevBench remains a v0.8.0 measurement (set
   aside by decision). v0.8.0 artifacts archived as `*_preb15.json`.
+- **B-16: serve-key detector v3 + the 2D confidence map (2026-10-09).** The calibration
+  language key now reads the state **and** the localized question with overlap-penalized
+  stopwords and train-learned vocabulary (diagonal 0.9980/0.9995 vs the old 65.8%; routing
+  untouched), and multilingual `choice`/`score` answers report a fitted confidence where the
+  asset ships a cell. **B-1 criterion 3: 7 failing cells → 1** — `score/it` **0.0521**
+  (from 0.1495), recorded NOT met, everything else ≤ 0.05; accuracy byte-identical to v0.9.0
+  everywhere (`choice` 0.9248, every language, `noul` tripwire, strict 1.0000). Disclosures:
+  in-template multi ECE 0.0069 → 0.0228 (pooled-basis trade, zero gate exceptions); the
+  routed-pair report's holdout `choice` ECE **0.087 → 0.044**; probes re-run with unchanged
+  accuracy (MASSIVE T 1.75 → 1.85). Gates: BACKLOG B-16 (pre-registered `0f1593d`).
 
 ## [0.9.0] - 2026-10-08
 

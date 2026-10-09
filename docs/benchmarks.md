@@ -98,6 +98,44 @@ and never was a generalization number. The in-template → holdout gap for B-15 
 **−0.1105** (multilingual) / **−0.0179** (English). Full report with reproduction commands:
 [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
+## v0.9.0 — B-16: serve-key detector + the 2D confidence map (2026-10-09)
+
+No retrain — the calibration **key** and the confidence **derivation** changed for the
+multilingual `choice`/`score` answers. Gates pre-registered in `0f1593d`; full record in
+BACKLOG **B-16**; the gate harness is `training.predict` (checkpoint-alone — the protocol
+B-15's gates were read under, **L-020**), the ECE rows below are the routed pair.
+
+| Axis | B-15 (2026-10-08) | B-16 (2026-10-09) | Note |
+| --- | --- | --- | --- |
+| Holdout per-language ECE cells, `choice`/`score` × 6 | **7 failing**, worst `score/it` 0.1495 | **1 failing**, `score/it` **0.0521** | B-1 criterion 3: 11/12 ≤ 0.05 |
+| Routed holdout `choice` ECE | 0.087 | **0.044** | pair-as-served, `report.md` |
+| Routed holdout overall ECE | 0.103 | **0.075** | accuracies byte-identical |
+| Calibration-key detection diagonal | 65.8% (state-only) | **99.80% / 99.95%** | state + localized question (G2 ≥ 0.99) |
+| multi in-template overall ECE (gate harness) | 0.0069 | **0.0228** | disclosed trade of the pooled-basis map; per-domain ECE still zero exceptions ≤ 0.05 |
+| accuracy — every axis | — | **byte-identical** | `choice` 0.9248 · all six languages · `noul` tripwire (`it` 0.7807) · strict 1.0000 |
+
+The holdout cell table (checkpoint-alone, n = 415–420 per cell):
+
+| Cell | ECE | | Cell | ECE |
+| --- | ---: | --- | --- | ---: |
+| `choice/de` | 0.0118 | | `score/de` | 0.0211 |
+| `choice/es` | 0.0467 | | `score/es` | 0.0369 |
+| `choice/fr` | 0.0024 | | `score/fr` | 0.0095 |
+| `choice/it` | 0.0320 | | **`score/it`** | **0.0521** |
+| `choice/nl` | 0.0079 | | `score/nl` | 0.0296 |
+| `choice/pt` | 0.0475 | | `score/pt` | 0.0141 |
+
+**Disclosures (recorded, never re-fixed).** `score/it` **0.0521 > 0.05** stays NOT met —
+tied to the holdout accuracy gap (0.8699) that Part 2 of the data cycle attacks; English is
+untouched (its per-domain ECE values are byte-identical to the v0.9.0 disclosed P3 state,
+`choice` 0.5243 — the fit-basis redesign remains queued); in-template multi ECE moved
+0.0069 → 0.0228 under the pooled-basis map (every gate line still passes); probes re-ran the
+same day with **unchanged accuracy** (MASSIVE T 1.75 → 1.85 under the new key). On the
+routed pair the same cells read 9/12 — the gap scales monotonically with each cell's
+state-only-undetected share (the English fallback carries the disclosed P3 confidence onto
+foreign rows), which quantifies the queued **routing-quality** follow-up: 13% of
+choice/score holdout rows.
+
 ## English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) — B-13 artifact (v0.8.0, history)
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
@@ -278,7 +316,7 @@ citations and the exact reproduction commands live in
 | Probe | Licence | n | Accuracy | Chance | ECE raw |
 | --- | --- | ---: | ---: | ---: | ---: |
 | typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.306** | 0.20–0.50 | 0.096 |
-| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.074** | 0.017 | 0.042 |
+| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.074** | 0.017 | 0.046 |
 | XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.333** | 0.333 | 0.068 |
 
 Evaluation only — no probe row has ever reached `training/`. Read each number against its
@@ -349,6 +387,13 @@ the shipped stack is no longer sharply wrong off-domain. The harness's per-probe
 T=20 (typed-decisions, ceiling), **T=1.75** (MASSIVE) and T=20 (XNLI, ceiling) — `ECE cal`
 above is what those fits buy, read it next to `Conf` and `Brier` exactly as the caveat at the
 top of this page says.
+
+**Re-run under B-16 (2026-10-09, the v3 calibration key).** Accuracy is unchanged on all
+three (**0.306 / 0.074 / 0.333**). Only MASSIVE's multilingual rows moved with their
+temperature key: T **1.75 → 1.85**, `ECE raw` **0.042 → 0.046**, `Conf` 0.107 → 0.110 —
+noise-level, in the same direction the B-16 key corrected (the probes read the selected mass
+after the shipped temperature; the fitted confidence multilingual `choice`/`score` answers
+now report is measured in [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md)).
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 

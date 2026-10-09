@@ -51,6 +51,13 @@ tables in B-15): `choice` **0.9248** ≥ 0.60 ✓ · English overall **0.9821** 
 per-language ECE **NOT met** on multi — choice `es` 0.0753 / `it` 0.0968 / `pt` 0.1014, score
 `de` 0.0540 / `es` 0.0951 / `it` 0.1495 / `nl` 0.0577 (en passes: choice 0.0155, score
 0.0067). Recorded with the numbers, never re-fixed → **B-1 stays open on criterion 3.**
+**Re-evaluated 2026-10-09 under B-16** (serve-key detector v3 + the 2D evidence map, same
+holdout, checkpoint-alone protocol): **11 of 12 cells now pass** — `choice` de 0.0118 /
+es 0.0467 / fr 0.0024 / it 0.0320 / nl 0.0079 / pt 0.0475, `score` de 0.0211 / es 0.0369 /
+fr 0.0095 / **it 0.0521** / nl 0.0296 / pt 0.0141 — with `choice` 0.9248 and en 0.9825
+unchanged. **Still NOT met: `score/it` 0.0521 > 0.05** (from 0.1495), tied to the accuracy
+generalization gap Part 2 of Option C attacks. Recorded with the numbers, never re-fixed →
+**B-1 stays open on criterion 3, now one cell wide.**
 
 **Risks / notes.** Small per-language calibration sets are noisy (warn below `min_samples`); more
 data volume does not fix an architectural gap, but here the head already exists. Effort ~1 day +
@@ -1661,6 +1668,71 @@ routing-quality (checkpoint selection still keys on state-only detection) as its
 `src/tachyone/backends/encoder.py` (map application), `training/fit_cell_confidence.py`
 (new fit), `training/evaluate.py` + `benchmarks/compare.py` (confidence read), tests
 co-located. Execution record appended below when the harness runs.
+
+**Execution (2026-10-09) — all six runs `exit=0` twice (report harness + gate harness).**
+
+*Protocol discovery (recorded as a correction, not re-fixed):* B-15's gate numbers were
+**checkpoint-alone** (`training.predict --out-report`, no router); the committed
+`benchmarks/report.md` is the **routed pair**. The first B-16 gate read used the routed
+`evaluate` output and conflated the two — it showed 9/12 cells failing where the
+pre-registered expectation (11/12) was computed checkpoint-alone. Both readings now stand
+side by side: the routed per-primitive cells fail in **monotone proportion to each cell's
+state-only-undetected share** (`score/nl` 34.5% of rows routing to `en` → 0.1082,
+`choice/nl` 21.7% → 0.0593, `choice/de` 4.8% → passes) — the en fallback carries the
+disclosed P3 `T=10` confidence onto foreign rows. The **routing-quality** item (state-only
+detection at checkpoint selection) is thereby quantified: 13% of choice/score holdout
+rows.
+
+*Gate harness = `training.predict` (checkpoint-alone), six reports in
+`benchmarks/results/gates_b16/`:*
+
+- **G1 · B-1 verbatim, holdout**: multilingual `choice` **0.9248** ≥ 0.60 ✓ · English
+  overall **0.9825** ≥ 0.72 ✓ · per-language ECE ≤ 0.05: **11/12 PASS**, failing
+  **`score/it` 0.0521** (from B-15's **0.1495**; exploration expected 0.0515 — measured
+  0.0521 through the predict path). Full table: `choice` de 0.0118 / es 0.0467 / fr 0.0024 /
+  it 0.0320 / nl 0.0079 / pt 0.0475; `score` de 0.0211 / es 0.0369 / fr 0.0095 /
+  **it 0.0521** / nl 0.0296 / pt 0.0141 (n = 415–420 each). **Criterion 3 stays open on
+  `score/it`; B-1 improves from 7 failing cells to 1.**
+- **G2 · detection key**: 0.9980 (train slice) / 0.9995 (holdout slice) ≥ 0.99 ✓ — the
+  recipe's validated numbers exactly; the noul-criteria composition fix moved holdout from
+  0.9899 to 0.9995 (one row short of the line under the wrong composition, corrected to the
+  validated recipe rather than tuned to the gate).
+- **G3 · multi current**: `support` **0.9760** ≥ 0.7887 ✓ · worst domain `voice` **0.9747**
+  ≥ 0.70 ✓ · per-domain ECE **zero exceptions** ≤ 0.05 ✓ · strict **1.0000** (0 shared,
+  0 wrong) ✓ · every language **byte-identical to B-15** (`de` 0.9904 · `es` 0.9841 · `fr`
+  0.9960 · `it` 0.9799 · `pt` 0.9865 · `nl` 0.9944 — *nothing moved*) ✓ · overall accuracy
+  **0.9885 = B-15 exactly** ✓. **Disclosure:** overall in-template ECE **0.0069 → 0.0228**
+  (per-primitive choice 0.0192 / noul 0.0283 / score 0.0244) — the pooled-basis map trades
+  saturated in-template calibration for the holdout slice; every gate line still passes.
+- **G3 · en**: `support` **1.0000** ✓ · worst domain `voice` **0.9913** ✓ · strict
+  **1.0000** ✓ · holdout overall **0.9825** ✓. **Correction:** the pre-registration's
+  "per-domain ECE ≤ 0.0082 (85a2f05)" was the **pre-P3-rebuild** gate state; on the
+  published asset the values (per-domain 0.18–0.21, `choice` **0.5243**) are
+  **byte-identical to the committed v0.9.0 report** — the disclosed P3 in-domain NOT met,
+  unchanged by B-16 (its follow-up, the fit-basis redesign, remains queued).
+- **G4 · tripwire**: `noul` ≥ 0.60 per language, worst `it` **0.7807 = B-15 exactly** ✓.
+- **G5 · contract**: full suite **739 passed** (the GPU test included), ruff/format clean,
+  pyright 0, `mkdocs build --strict` ✓.
+
+*Report harness (routed pair, `benchmarks/report.md` re-rendered):* holdout overall ECE
+**0.103 → 0.075**, `choice` **0.087 → 0.044**, `score` **0.110 → 0.082**, every
+per-language ECE down (`es` 0.146 → 0.088, `it` 0.162 → 0.083); **all accuracies
+byte-identical to the committed report** (routed current 0.9156/0.0182, holdout
+0.8355/0.0747) — calibration moved, decisions did not.
+
+*Probes re-run the same day (the v3 temperature key moves multi rows):* accuracy unchanged
+(typed-decisions 0.306 · MASSIVE 0.074 · XNLI 0.333); MASSIVE's fit shifted T 1.75 → 1.85
+(`ECE raw` 0.042 → 0.046, `Conf` 0.107 → 0.110); the probes-page caveat now states that
+`ECE raw` reads the selected mass after the shipped temperature and that the fitted value
+for multilingual `choice`/`score` is what `benchmarks/report.md` measures (the planned
+`benchmarks/compare.py` re-wiring was **not** done — the caveat carries the distinction
+instead; deviation from the pre-registration's item 3, recorded here).
+
+*Artifacts:* `checkpoints/multi/confidence_calibration.json` — 14 cells (6 langs ×
+choice/score + 2 globals), 10,000 fit-basis rows, sha256 of all six inputs (holdout pin
+`982236ca…` = the B-15 pin); detector v3 vocabulary as literals in `router.py` with the
+learning recipe recorded; `evaluate` now emits `per_primitive_language` for every future
+B-1 reading.
 
 ---
 

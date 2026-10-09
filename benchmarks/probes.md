@@ -15,10 +15,12 @@ reached `training/`, which is exactly what makes the numbers mean something.
 - **Judge each number against that probe's chance level**, stated in its section — not
   against the synthetic 1.000. Different tasks, different option counts,
   no shared distribution with the training data.
-- **Temperature fits (`typed-decisions` T=20, `massive` T=1.75, `xnli` T=20).** A fit pinned at the grid ceiling (T=20.0)
+- **Temperature fits (`typed-decisions` T=20, `massive` T=1.85, `xnli` T=20).** A fit pinned at the grid ceiling (T=20.0)
   flattens the distribution, so a low `ECE cal` is *bought* with confidence: read it next
-  to `Conf` and `Brier`, and treat `ECE raw` as what the adapter actually ships (same
-  caveat as [`docs/compare.md` §3](../docs/compare.md#3-why-not-another-open-system-one-scorer)).
+  to `Conf` and `Brier`, and treat `ECE raw` as the **selected mass after the shipped
+  temperature**: since B-16 the multilingual `choice`/`score` answers report a fitted
+  confidence instead, and the fitted value is what `benchmarks/report.md` measures
+  (same caveat as [`docs/compare.md` §3](../docs/compare.md#3-why-not-another-open-system-one-scorer)).
 - **These are the released adapters, zero-shot.** Both now cover five domains — the English one since B-5 (2026-10-01) and the multilingual one since B-5b (2026-10-02, support plus four new domains across six languages). None of these rows was ever in `training/`.
 
 ## Method
@@ -52,7 +54,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 121.43 | 290.80 | 6.7 | 1.000 | 2483 | 1831 |
+| tachyone (encoder) | 121.68 | 291.64 | 6.7 | 1.000 | 2501 | 1832 |
 
 #### Per task: accuracy and calibration
 
@@ -72,31 +74,31 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 ### tachyone (encoder)
 
-3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=1.75) · NVIDIA L4 · Python 3.12.3
+3584 rows · `test` split · 512 per language · temperature fitted on dev (capped) (T=1.85) · NVIDIA L4 · Python 3.12.3
 
 #### Quality
 
 | Engine | n | answered | Accuracy | ECE raw | ECE cal | Brier | Conf |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 3584 | 3584 | 0.074 | 0.042 | 0.036 | 0.967 | 0.067 |
+| tachyone (encoder) | 3584 | 3584 | 0.074 | 0.046 | 0.035 | 0.966 | 0.066 |
 
 #### Performance
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 319.98 | 452.68 | 2.8 | 1.000 | 3119 | 2960 |
+| tachyone (encoder) | 325.80 | 455.08 | 2.8 | 1.000 | 3126 | 2960 |
 
 #### Per task: accuracy and calibration
 
 | Task | Engine | n | Accuracy | ECE raw | ECE cal | Conf |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| de | tachyone (encoder) | 512 | 0.104 | 0.041 | 0.039 | 0.075 |
-| en | tachyone (encoder) | 512 | 0.080 | 0.049 | 0.056 | 0.024 |
-| es | tachyone (encoder) | 512 | 0.074 | 0.026 | 0.043 | 0.059 |
-| fr | tachyone (encoder) | 512 | 0.076 | 0.115 | 0.077 | 0.120 |
-| it | tachyone (encoder) | 512 | 0.057 | 0.060 | 0.054 | 0.075 |
-| nl | tachyone (encoder) | 512 | 0.064 | 0.054 | 0.014 | 0.062 |
-| pt | tachyone (encoder) | 512 | 0.061 | 0.037 | 0.032 | 0.051 |
+| de | tachyone (encoder) | 512 | 0.104 | 0.035 | 0.047 | 0.072 |
+| en | tachyone (encoder) | 512 | 0.080 | 0.049 | 0.057 | 0.023 |
+| es | tachyone (encoder) | 512 | 0.074 | 0.027 | 0.045 | 0.056 |
+| fr | tachyone (encoder) | 512 | 0.076 | 0.148 | 0.067 | 0.134 |
+| it | tachyone (encoder) | 512 | 0.057 | 0.054 | 0.044 | 0.067 |
+| nl | tachyone (encoder) | 512 | 0.064 | 0.055 | 0.017 | 0.058 |
+| pt | tachyone (encoder) | 512 | 0.061 | 0.037 | 0.031 | 0.049 |
 
 ## `xnli` — facebook/xnli (CC BY-NC 4.0)
 
@@ -119,7 +121,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 63.04 | 80.91 | 15.1 | 1.000 | 2965 | 2829 |
+| tachyone (encoder) | 62.78 | 72.59 | 15.6 | 1.000 | 2977 | 2830 |
 
 #### Per task: accuracy and calibration
 
@@ -133,7 +135,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 | --- | --- | ---: | ---: | ---: |
 | in-sample synthetic eval (`benchmarks/report.md`) | synthetic, shares states with training data | 1500 | 1.000 | 0.188 |
 | typed-decisions `test` | public, Apache-2.0 | 2000 | 0.306 | 0.096 |
-| massive `test` | public, CC-BY-4.0 | 3584 | 0.074 | 0.042 |
+| massive `test` | public, CC-BY-4.0 | 3584 | 0.074 | 0.046 |
 | xnli `test` | public, CC BY-NC 4.0 | 5010 | 0.333 | 0.068 |
 
 Raw (uncalibrated) ECE is what the engine shipped with; see

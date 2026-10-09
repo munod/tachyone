@@ -572,8 +572,10 @@ def render(paths: list[Path], out: Path, synthetic: Path | None) -> None:
         "  no shared distribution with the training data.",
         f"- **Temperature fits ({temperature_line}).** A fit pinned at the grid ceiling (T=20.0)",
         "  flattens the distribution, so a low `ECE cal` is *bought* with confidence: read it next",
-        "  to `Conf` and `Brier`, and treat `ECE raw` as what the adapter actually ships (same",
-        "  caveat as [`docs/compare.md` §3]"
+        "  to `Conf` and `Brier`, and treat `ECE raw` as the **selected mass after the shipped",
+        "  temperature**: since B-16 the multilingual `choice`/`score` answers report a fitted",
+        "  confidence instead, and the fitted value is what `benchmarks/report.md` measures",
+        "  (same caveat as [`docs/compare.md` §3]"
         "(../docs/compare.md#3-why-not-another-open-system-one-scorer)).",
         "- **These are the released adapters, zero-shot.** Both now cover five domains — the"
         " English one since B-5 (2026-10-01) and the multilingual one since B-5b (2026-10-02,"

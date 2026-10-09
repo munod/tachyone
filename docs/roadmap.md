@@ -249,6 +249,19 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   multilingual (worst `score/it` 0.1495). Both disclosed on the model card; follow-ups in
   `BACKLOG.md` **B-15**.
 
+- **B-16: serve-key detector + 2D confidence map — B-1's calibration axis** ✅ (2026-10-09,
+  no retrain). The calibration key now reads the state **and** the localized question with
+  overlap-penalized stopwords and train-learned vocabulary (diagonal 65.8% → **99.80/99.95%**;
+  checkpoint routing untouched), and multilingual `choice`/`score` answers report a fitted
+  `peakedness × strength` confidence per `(primitive, language)` (14-cell asset with the
+  prototype bank embedded). Holdout per-language ECE cells: **7 failing → 1** — `score/it`
+  **0.0521** recorded NOT met (from 0.1495), everything else ≤ 0.05, and accuracy
+  byte-identical everywhere. Disclosed: in-template ECE 0.0069 → 0.0228 (pooled-basis trade,
+  zero gate exceptions) and the routed-pair reading (9/12 — quantifies the queued
+  routing-quality item, 13% of choice/score rows). Part 2 — the data/generalization cycle for
+  `score/it` and the −0.1105 holdout gap — queued by decision. Record in `BACKLOG.md`
+  **B-16** (gates pre-registered `0f1593d`; lesson **L-020** on gate protocols).
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

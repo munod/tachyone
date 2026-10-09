@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-10-08
+**Last Updated:** 2026-10-09
 **Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
 leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
 `fix/sampler-stride`.** ~~Nothing leaves this machine~~ **Deferral LIFTED 2026-10-08 by
@@ -45,6 +45,25 @@ languages above), off-domain `ECE raw` **0.096 / 0.042 / 0.068** with mean confi
 measurement (set aside by decision). Docs updated as one set (`benchmarks.md`, `model-card.md`,
 `index.md`, `README.md`, `probes.md` re-render) — all four "re-measurement pending"
 disclosures closed. Record: BACKLOG **B-15**.
+
+**B-16 executed 2026-10-09 (the B-1 criterion-3 cycle, gates pre-registered in `0f1593d`).**
+Serve-key **detector v3** (state + localized question, overlap-penalized stopwords, accent
+fingerprints, train-learned distinctive vocabulary — diagonal 0.9980/0.9995, gate G2 PASS)
+plus the **2D `peakedness × strength` confidence map** for multilingual `choice`/`score`
+(14 cells, pooled fit basis, sha256-provenanced asset, recipe frozen before the fit). Gate
+harness = `training.predict` checkpoint-alone (the protocol B-15's numbers were read under —
+see **L-020** for the routed-vs-alone confusion that nearly inverted the verdict): **G1
+11/12 cells pass** — B-1 goes from **7 failing cells (worst 0.1495) to 1 (`score/it` 0.0521)**,
+NOT met and recorded, with `choice` 0.9248 / en 0.9825 / every multi language / the `noul`
+tripwire (`it` 0.7807) / strict 1.0000 all **byte-identical to B-15** — accuracy never moved.
+Disclosures: in-template multi ECE 0.0069 → 0.0228 (pooled-basis trade, zero gate
+exceptions); en's per-domain ECE line in the pre-registration referenced the pre-P3-rebuild
+state — the published values are identical to the committed report (correction recorded);
+the routed-pair report improved across the board (holdout `choice` ECE 0.087 → 0.044,
+per-language all down); probes re-run with unchanged accuracy (MASSIVE T 1.75 → 1.85 under
+the v3 key); `benchmarks/compare.py` was **not** re-wired (the probes caveat carries the
+mass-vs-fitted distinction — deviation recorded). Full record: BACKLOG **B-16**.
+**Part 2 (queued):** the data/generalization cycle for `score/it` and the −0.1105 holdout gap.
 
 **Fase 0 (stride)** — option and hard-negative cycles decoupled from the language stride
 (`index // len(languages)`); goldens recaptured for `en_pt`/`noisy` only — `en` is
@@ -1050,6 +1069,29 @@ and `noul_per_language` to four decimals *before* any new cell was trusted.
 **Prevents:** plausible-looking zeroed or collapsed aggregates from key collisions — check a
 key's cardinality (`rows per id`) before joining anything to it, and cross-check every
 derived cell against an existing report cell before publishing it.
+
+---
+
+### L-020: A gate is (protocol, table, date) — the same cells read routed fail where checkpoint-alone passes
+
+**Context:** B-16, the first official gate read of the per-language ECE cells.
+**Problem:** B-15's recorded gate numbers were **checkpoint-alone** (`training.predict
+--out-report`, no router) while the committed `benchmarks/report.md` is the **routed pair** —
+two protocols over identical rows that agree on accuracy and disagree on ECE exactly where
+the router sends a row to the other checkpoint. The pre-registered expectation (11/12 cells,
+computed checkpoint-alone) was read through the routed harness and showed **9/12**, nearly
+costing a real 7→1 improvement the verdict "worse than B-15"; the en-ECE line of the same
+pre-registration referenced a pre-P3-rebuild gate state the published asset no longer carries.
+**Solution:** record the protocol next to every gate number (B-16's block names both harness
+outputs explicitly), read the gate through the protocol the pre-registration's numbers were
+computed under, and cross-check the second protocol instead of discarding it: the routed-vs-
+checkpoint-alone ECE gap scaled **monotonically** with each cell's state-only-undetected
+share (`score/nl` 34.5% of rows routing to `en` → worst cell 0.1082; `choice/de` 4.8% →
+passes), turning the confusion into a measured routing-quality follow-up. The harness now
+emits `per_primitive_language` itself, so the cell table no longer needs a reconstruction
+outside it (L-019).
+**Prevents:** rejecting a true improvement because the yardstick moved; gate tables derived
+by scripts nobody can rerun; silent protocol drift between cycles.
 
 ---
 
