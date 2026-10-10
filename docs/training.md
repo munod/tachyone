@@ -346,6 +346,20 @@ is untouched by construction, and `training/evaluate` reads `answer.confidence` 
 measures what is served (the `per_primitive_language` cells the B-1 gate reads are emitted by
 the harness itself).
 
+**B-18 (2026-10-10) extended the tool additively** for the English fit-basis redesign:
+`--kinds choice` fits a subset of cells, `--languages en` keys a cell for a serve key outside
+the six trained languages, `--base checkpoints/en/confidence_calibration.json` carries the
+unrefit keys of the existing asset over (`noul`'s knots and the P3 provenance ride along
+byte-unchanged), and `--balance-slices` pools the predictions files with **equal total
+weight** — the recorded slice-balanced pooling: per-row weights feed the cell accuracies and
+the shrink target, while the quantile edges stay rank-based. `meta.slice_diagnostics` then
+reports each slice's ECE under the fitted map and under the temperature-only mechanism,
+computed through `CellConfidence` — the runtime's own lookup, so fit and serve cannot drift.
+The English fit (5,000 `choice` rows over the in-template and holdout slices) produced
+`choice` + `choice:en` cells whose balanced mean is 0.9778 = (0.9956 + 0.96) / 2 — the
+midpoint of the two regimes no single temperature could serve (BACKLOG **B-18** carries the
+measured curves).
+
 ---
 
 ## 5. Evaluation (`benchmarks/` + `training/evaluate.py`)

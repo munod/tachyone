@@ -4,12 +4,12 @@
 
 ```json
 {
-  "git_commit": "9353a6aa5363fbf2dc9717f92d0d6417ba3de352",
+  "git_commit": "725c57c87b18e20401f68c3756c42b0763350c12",
   "peft": "0.21.0",
   "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
   "pydantic": "2.13.5",
   "python": "3.12.3",
-  "tachyone": "0.10.0",
+  "tachyone": "0.11.0",
   "torch": "2.14.0+cu130",
   "transformers": "5.17.0"
 }
@@ -54,15 +54,15 @@ uv run python -m benchmarks.report --entry "english (ModernBERT-large + LoRA r=1
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 1.000 | 0.188 | 58.312 | 92.150 |
-| choice | 500 | 1.000 | 0.517 | 77.735 | 93.462 |
-| noul | 500 | 1.000 | 0.048 | 54.701 | 61.168 |
-| score | 500 | 1.000 | 0.000 | 57.767 | 61.952 |
-| lang:en | 1500 | 1.000 | 0.188 | 58.312 | 92.150 |
+| overall | 1500 | 1.000 | 0.017 | 58.464 | 92.843 |
+| choice | 500 | 1.000 | 0.004 | 88.646 | 95.737 |
+| noul | 500 | 1.000 | 0.048 | 54.422 | 60.986 |
+| score | 500 | 1.000 | 0.000 | 57.790 | 63.146 |
+| lang:en | 1500 | 1.000 | 0.017 | 58.464 | 92.843 |
 
-Worst language (accuracy): `en` — accuracy 1.000, ECE 0.188.
+Worst language (accuracy): `en` — accuracy 1.000, ECE 0.017.
 
-Noisy view (noise_rate 0.15) — overall: accuracy 0.995, ECE 0.185, p50 57.853 ms.
+Noisy view (noise_rate 0.15) — overall: accuracy 0.995, ECE 0.013, p50 58.604 ms.
 #### `noul` per language — accuracy beside the label audit
 
 | Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |
@@ -74,31 +74,31 @@ Noisy view (noise_rate 0.15) — overall: accuracy 0.995, ECE 0.185, p50 57.853 
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 7500 | 0.998 | 0.191 | 58.206 | 98.054 |
-| choice | 2500 | 0.996 | 0.524 | 88.602 | 99.560 |
-| noul | 2500 | 1.000 | 0.048 | 55.119 | 61.089 |
-| score | 2500 | 1.000 | 0.000 | 57.312 | 62.456 |
-| lang:en | 7500 | 0.998 | 0.191 | 58.206 | 98.054 |
-| domain:agent_tools | 1500 | 1.000 | 0.184 | 58.368 | 95.796 |
-| domain:documents | 1500 | 1.000 | 0.182 | 57.727 | 93.338 |
-| domain:ecommerce | 1500 | 1.000 | 0.210 | 58.310 | 99.787 |
-| domain:support | 1500 | 1.000 | 0.188 | 58.206 | 92.507 |
-| domain:voice | 1500 | 0.991 | 0.190 | 58.236 | 93.633 |
+| overall | 7500 | 0.998 | 0.016 | 58.004 | 97.937 |
+| choice | 2500 | 0.996 | 0.001 | 89.980 | 99.926 |
+| noul | 2500 | 1.000 | 0.048 | 54.877 | 60.680 |
+| score | 2500 | 1.000 | 0.000 | 57.348 | 62.896 |
+| lang:en | 7500 | 0.998 | 0.016 | 58.004 | 97.937 |
+| domain:agent_tools | 1500 | 1.000 | 0.015 | 58.000 | 93.229 |
+| domain:documents | 1500 | 1.000 | 0.013 | 57.834 | 94.203 |
+| domain:ecommerce | 1500 | 1.000 | 0.016 | 58.354 | 100.111 |
+| domain:support | 1500 | 1.000 | 0.017 | 57.544 | 92.283 |
+| domain:voice | 1500 | 0.991 | 0.030 | 58.105 | 93.379 |
 
-Worst language (accuracy): `en` — accuracy 0.998, ECE 0.191.
+Worst language (accuracy): `en` — accuracy 0.998, ECE 0.016.
 
-Worst domain (accuracy): `voice` — accuracy 0.991, ECE 0.190.
+Worst domain (accuracy): `voice` — accuracy 0.991, ECE 0.030.
 #### domain x language
 
 | Cell | n | Accuracy | ECE |
 | --- | --- | --- | --- |
-| voice/en | 1500 | 0.991 | 0.190 |
-| agent_tools/en | 1500 | 1.000 | 0.184 |
-| documents/en | 1500 | 1.000 | 0.182 |
-| ecommerce/en | 1500 | 1.000 | 0.210 |
-| support/en | 1500 | 1.000 | 0.188 |
+| voice/en | 1500 | 0.991 | 0.030 |
+| agent_tools/en | 1500 | 1.000 | 0.015 |
+| documents/en | 1500 | 1.000 | 0.013 |
+| ecommerce/en | 1500 | 1.000 | 0.016 |
+| support/en | 1500 | 1.000 | 0.017 |
 
-Worst cell (accuracy): `voice/en` — accuracy 0.991, ECE 0.190.
+Worst cell (accuracy): `voice/en` — accuracy 0.991, ECE 0.030.
 
 #### `noul` per language — accuracy beside the label audit
 
@@ -111,31 +111,31 @@ Worst cell (accuracy): `voice/en` — accuracy 0.991, ECE 0.190.
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 7500 | 0.983 | 0.188 | 58.161 | 97.978 |
-| choice | 2500 | 0.960 | 0.506 | 88.053 | 98.768 |
-| noul | 2500 | 0.996 | 0.066 | 54.927 | 60.864 |
-| score | 2500 | 0.992 | 0.008 | 57.373 | 63.038 |
-| lang:en | 7500 | 0.983 | 0.188 | 58.161 | 97.978 |
-| domain:agent_tools | 1500 | 0.999 | 0.188 | 58.385 | 94.344 |
-| domain:documents | 1500 | 0.999 | 0.189 | 58.066 | 93.551 |
-| domain:ecommerce | 1500 | 0.999 | 0.214 | 58.157 | 98.980 |
-| domain:support | 1500 | 1.000 | 0.193 | 58.248 | 92.900 |
-| domain:voice | 1500 | 0.915 | 0.178 | 58.111 | 93.714 |
+| overall | 7500 | 0.983 | 0.032 | 58.274 | 98.200 |
+| choice | 2500 | 0.960 | 0.037 | 82.856 | 99.364 |
+| noul | 2500 | 0.996 | 0.066 | 55.264 | 61.465 |
+| score | 2500 | 0.992 | 0.008 | 57.429 | 62.797 |
+| lang:en | 7500 | 0.983 | 0.032 | 58.274 | 98.200 |
+| domain:agent_tools | 1500 | 0.999 | 0.017 | 58.475 | 93.494 |
+| domain:documents | 1500 | 0.999 | 0.015 | 58.391 | 94.392 |
+| domain:ecommerce | 1500 | 0.999 | 0.016 | 58.009 | 99.691 |
+| domain:support | 1500 | 1.000 | 0.019 | 57.815 | 92.270 |
+| domain:voice | 1500 | 0.915 | 0.120 | 58.456 | 94.002 |
 
-Worst language (accuracy): `en` — accuracy 0.983, ECE 0.188.
+Worst language (accuracy): `en` — accuracy 0.983, ECE 0.032.
 
-Worst domain (accuracy): `voice` — accuracy 0.915, ECE 0.178.
+Worst domain (accuracy): `voice` — accuracy 0.915, ECE 0.120.
 #### domain x language
 
 | Cell | n | Accuracy | ECE |
 | --- | --- | --- | --- |
-| voice/en | 1500 | 0.915 | 0.178 |
-| documents/en | 1500 | 0.999 | 0.189 |
-| agent_tools/en | 1500 | 0.999 | 0.188 |
-| ecommerce/en | 1500 | 0.999 | 0.214 |
-| support/en | 1500 | 1.000 | 0.193 |
+| voice/en | 1500 | 0.915 | 0.120 |
+| documents/en | 1500 | 0.999 | 0.015 |
+| agent_tools/en | 1500 | 0.999 | 0.017 |
+| ecommerce/en | 1500 | 0.999 | 0.016 |
+| support/en | 1500 | 1.000 | 0.019 |
 
-Worst cell (accuracy): `voice/en` — accuracy 0.915, ECE 0.178.
+Worst cell (accuracy): `voice/en` — accuracy 0.915, ECE 0.120.
 
 #### `noul` per language — accuracy beside the label audit
 
@@ -148,20 +148,20 @@ Worst cell (accuracy): `voice/en` — accuracy 0.915, ECE 0.178.
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 1500 | 0.930 | 0.038 | 52.782 | 83.679 |
-| choice | 500 | 0.982 | 0.030 | 75.471 | 92.004 |
-| noul | 500 | 0.928 | 0.016 | 48.888 | 57.674 |
-| score | 500 | 0.880 | 0.094 | 52.525 | 60.025 |
-| lang:de | 249 | 0.908 | 0.065 | 53.320 | 82.369 |
-| lang:es | 252 | 0.948 | 0.042 | 52.681 | 83.320 |
-| lang:fr | 249 | 0.980 | 0.048 | 52.207 | 80.901 |
-| lang:it | 249 | 0.932 | 0.051 | 52.842 | 91.481 |
-| lang:nl | 249 | 0.855 | 0.091 | 53.335 | 88.821 |
-| lang:pt | 252 | 0.956 | 0.043 | 52.476 | 81.390 |
+| overall | 1500 | 0.930 | 0.039 | 53.120 | 84.152 |
+| choice | 500 | 0.982 | 0.014 | 76.529 | 92.117 |
+| noul | 500 | 0.928 | 0.016 | 50.052 | 60.106 |
+| score | 500 | 0.880 | 0.094 | 51.909 | 61.521 |
+| lang:de | 249 | 0.908 | 0.056 | 53.208 | 90.938 |
+| lang:es | 252 | 0.948 | 0.032 | 52.946 | 81.073 |
+| lang:fr | 249 | 0.980 | 0.038 | 53.144 | 80.608 |
+| lang:it | 249 | 0.932 | 0.061 | 52.914 | 90.742 |
+| lang:nl | 249 | 0.855 | 0.097 | 53.744 | 91.148 |
+| lang:pt | 252 | 0.956 | 0.031 | 52.125 | 80.703 |
 
-Worst language (accuracy): `nl` — accuracy 0.855, ECE 0.091.
+Worst language (accuracy): `nl` — accuracy 0.855, ECE 0.097.
 
-Noisy view (noise_rate 0.15) — overall: accuracy 0.925, ECE 0.043, p50 53.324 ms.
+Noisy view (noise_rate 0.15) — overall: accuracy 0.925, ECE 0.043, p50 53.203 ms.
 #### `noul` per language — accuracy beside the label audit
 
 | Lang | n | Accuracy | ECE | request | neutral | empty | unknown | Contradictory |
@@ -178,61 +178,61 @@ Noisy view (noise_rate 0.15) — overall: accuracy 0.925, ECE 0.043, p50 53.324 
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 7500 | 0.922 | 0.026 | 53.501 | 87.689 |
-| choice | 2500 | 0.957 | 0.030 | 78.209 | 95.899 |
-| noul | 2500 | 0.933 | 0.010 | 50.170 | 59.718 |
-| score | 2500 | 0.876 | 0.072 | 52.666 | 60.470 |
-| lang:de | 1245 | 0.918 | 0.036 | 53.527 | 87.145 |
-| lang:es | 1260 | 0.958 | 0.029 | 53.318 | 84.360 |
-| lang:fr | 1245 | 0.950 | 0.018 | 53.246 | 85.149 |
-| lang:it | 1245 | 0.933 | 0.031 | 53.463 | 87.964 |
-| lang:nl | 1245 | 0.807 | 0.049 | 55.057 | 92.333 |
-| lang:pt | 1260 | 0.965 | 0.026 | 52.853 | 84.726 |
-| domain:agent_tools | 1500 | 0.907 | 0.020 | 54.026 | 90.699 |
-| domain:documents | 1500 | 0.936 | 0.021 | 52.604 | 86.588 |
-| domain:ecommerce | 1500 | 0.921 | 0.027 | 53.730 | 89.486 |
-| domain:support | 1500 | 0.930 | 0.038 | 53.033 | 86.167 |
-| domain:voice | 1500 | 0.916 | 0.041 | 53.821 | 84.781 |
+| overall | 7500 | 0.922 | 0.034 | 53.497 | 88.180 |
+| choice | 2500 | 0.957 | 0.039 | 78.028 | 96.744 |
+| noul | 2500 | 0.933 | 0.010 | 50.538 | 59.734 |
+| score | 2500 | 0.876 | 0.072 | 52.523 | 61.246 |
+| lang:de | 1245 | 0.918 | 0.039 | 53.357 | 85.642 |
+| lang:es | 1260 | 0.958 | 0.020 | 53.176 | 84.654 |
+| lang:fr | 1245 | 0.950 | 0.013 | 53.339 | 85.123 |
+| lang:it | 1245 | 0.933 | 0.031 | 53.533 | 87.539 |
+| lang:nl | 1245 | 0.807 | 0.101 | 54.783 | 93.437 |
+| lang:pt | 1260 | 0.965 | 0.015 | 53.168 | 84.303 |
+| domain:agent_tools | 1500 | 0.907 | 0.039 | 53.337 | 83.609 |
+| domain:documents | 1500 | 0.936 | 0.028 | 53.428 | 87.898 |
+| domain:ecommerce | 1500 | 0.921 | 0.035 | 53.733 | 90.782 |
+| domain:support | 1500 | 0.930 | 0.039 | 53.492 | 89.043 |
+| domain:voice | 1500 | 0.916 | 0.053 | 53.513 | 89.277 |
 
-Worst language (accuracy): `nl` — accuracy 0.807, ECE 0.049.
+Worst language (accuracy): `nl` — accuracy 0.807, ECE 0.101.
 
-Worst domain (accuracy): `agent_tools` — accuracy 0.907, ECE 0.020.
+Worst domain (accuracy): `agent_tools` — accuracy 0.907, ECE 0.039.
 #### domain x language
 
 | Cell | n | Accuracy | ECE |
 | --- | --- | --- | --- |
-| agent_tools/nl | 249 | 0.779 | 0.074 |
-| voice/nl | 249 | 0.779 | 0.096 |
-| documents/nl | 249 | 0.811 | 0.041 |
-| ecommerce/nl | 249 | 0.811 | 0.041 |
-| support/nl | 249 | 0.855 | 0.091 |
-| agent_tools/de | 249 | 0.871 | 0.056 |
-| ecommerce/de | 249 | 0.908 | 0.060 |
-| support/de | 249 | 0.908 | 0.065 |
-| documents/it | 249 | 0.916 | 0.036 |
+| agent_tools/nl | 249 | 0.779 | 0.132 |
+| voice/nl | 249 | 0.779 | 0.157 |
+| documents/nl | 249 | 0.811 | 0.091 |
+| ecommerce/nl | 249 | 0.811 | 0.104 |
+| support/nl | 249 | 0.855 | 0.097 |
+| agent_tools/de | 249 | 0.871 | 0.071 |
+| ecommerce/de | 249 | 0.908 | 0.049 |
+| support/de | 249 | 0.908 | 0.056 |
+| documents/it | 249 | 0.916 | 0.054 |
 | agent_tools/fr | 249 | 0.920 | 0.028 |
-| voice/fr | 249 | 0.924 | 0.040 |
-| voice/es | 252 | 0.925 | 0.051 |
-| voice/it | 249 | 0.928 | 0.035 |
-| support/it | 249 | 0.932 | 0.051 |
+| voice/fr | 249 | 0.924 | 0.035 |
+| voice/es | 252 | 0.925 | 0.061 |
+| voice/it | 249 | 0.928 | 0.030 |
+| support/it | 249 | 0.932 | 0.061 |
 | documents/de | 249 | 0.936 | 0.042 |
-| ecommerce/it | 249 | 0.936 | 0.035 |
-| ecommerce/pt | 252 | 0.948 | 0.042 |
-| support/es | 252 | 0.948 | 0.042 |
-| agent_tools/pt | 252 | 0.952 | 0.022 |
-| agent_tools/it | 249 | 0.956 | 0.028 |
-| ecommerce/es | 252 | 0.956 | 0.046 |
-| support/pt | 252 | 0.956 | 0.043 |
-| documents/fr | 249 | 0.960 | 0.030 |
-| agent_tools/es | 252 | 0.964 | 0.044 |
-| ecommerce/fr | 249 | 0.968 | 0.024 |
-| voice/de | 249 | 0.968 | 0.020 |
-| voice/pt | 252 | 0.972 | 0.054 |
-| support/fr | 249 | 0.980 | 0.048 |
-| documents/es | 252 | 0.996 | 0.030 |
-| documents/pt | 252 | 0.996 | 0.025 |
+| ecommerce/it | 249 | 0.936 | 0.026 |
+| ecommerce/pt | 252 | 0.948 | 0.029 |
+| support/es | 252 | 0.948 | 0.032 |
+| agent_tools/pt | 252 | 0.952 | 0.012 |
+| agent_tools/it | 249 | 0.956 | 0.020 |
+| ecommerce/es | 252 | 0.956 | 0.034 |
+| support/pt | 252 | 0.956 | 0.031 |
+| documents/fr | 249 | 0.960 | 0.018 |
+| agent_tools/es | 252 | 0.964 | 0.033 |
+| ecommerce/fr | 249 | 0.968 | 0.013 |
+| voice/de | 249 | 0.968 | 0.026 |
+| voice/pt | 252 | 0.972 | 0.044 |
+| support/fr | 249 | 0.980 | 0.038 |
+| documents/es | 252 | 0.996 | 0.019 |
+| documents/pt | 252 | 0.996 | 0.014 |
 
-Worst cell (accuracy): `voice/nl` — accuracy 0.779, ECE 0.096.
+Worst cell (accuracy): `voice/nl` — accuracy 0.779, ECE 0.157.
 
 #### `noul` per language — accuracy beside the label audit
 
@@ -250,61 +250,61 @@ Worst cell (accuracy): `voice/nl` — accuracy 0.779, ECE 0.096.
 
 | Scope | n | Accuracy | ECE | p50 (ms) | p95 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| overall | 7500 | 0.926 | 0.032 | 53.273 | 87.861 |
-| choice | 2500 | 0.953 | 0.036 | 78.272 | 98.947 |
-| noul | 2500 | 0.939 | 0.007 | 50.558 | 58.305 |
-| score | 2500 | 0.887 | 0.063 | 52.553 | 60.445 |
-| lang:de | 1245 | 0.928 | 0.031 | 53.111 | 86.664 |
-| lang:es | 1260 | 0.950 | 0.031 | 53.138 | 86.449 |
-| lang:fr | 1245 | 0.949 | 0.036 | 52.987 | 84.765 |
-| lang:it | 1245 | 0.947 | 0.026 | 53.058 | 91.821 |
-| lang:nl | 1245 | 0.831 | 0.055 | 54.183 | 98.055 |
-| lang:pt | 1260 | 0.954 | 0.032 | 52.950 | 84.886 |
-| domain:agent_tools | 1500 | 0.931 | 0.043 | 53.058 | 82.918 |
-| domain:documents | 1500 | 0.935 | 0.044 | 51.994 | 84.508 |
-| domain:ecommerce | 1500 | 0.873 | 0.046 | 54.086 | 98.239 |
-| domain:support | 1500 | 0.961 | 0.031 | 53.454 | 82.634 |
-| domain:voice | 1500 | 0.932 | 0.030 | 53.516 | 81.976 |
+| overall | 7500 | 0.926 | 0.033 | 53.174 | 86.106 |
+| choice | 2500 | 0.953 | 0.032 | 77.680 | 97.631 |
+| noul | 2500 | 0.939 | 0.007 | 49.941 | 57.988 |
+| score | 2500 | 0.887 | 0.063 | 52.571 | 59.990 |
+| lang:de | 1245 | 0.928 | 0.030 | 53.164 | 84.618 |
+| lang:es | 1260 | 0.950 | 0.020 | 52.980 | 84.410 |
+| lang:fr | 1245 | 0.949 | 0.025 | 53.104 | 84.754 |
+| lang:it | 1245 | 0.947 | 0.030 | 53.073 | 86.606 |
+| lang:nl | 1245 | 0.831 | 0.086 | 54.134 | 95.222 |
+| lang:pt | 1260 | 0.954 | 0.021 | 52.924 | 83.984 |
+| domain:agent_tools | 1500 | 0.931 | 0.036 | 53.053 | 81.988 |
+| domain:documents | 1500 | 0.935 | 0.038 | 52.907 | 82.965 |
+| domain:ecommerce | 1500 | 0.873 | 0.084 | 53.481 | 96.456 |
+| domain:support | 1500 | 0.961 | 0.023 | 53.344 | 82.772 |
+| domain:voice | 1500 | 0.932 | 0.023 | 52.880 | 82.065 |
 
-Worst language (accuracy): `nl` — accuracy 0.831, ECE 0.055.
+Worst language (accuracy): `nl` — accuracy 0.831, ECE 0.086.
 
-Worst domain (accuracy): `ecommerce` — accuracy 0.873, ECE 0.046.
+Worst domain (accuracy): `ecommerce` — accuracy 0.873, ECE 0.084.
 #### domain x language
 
 | Cell | n | Accuracy | ECE |
 | --- | --- | --- | --- |
-| ecommerce/nl | 249 | 0.627 | 0.120 |
-| agent_tools/nl | 249 | 0.819 | 0.100 |
-| ecommerce/de | 249 | 0.855 | 0.086 |
-| documents/nl | 249 | 0.863 | 0.081 |
-| voice/nl | 249 | 0.871 | 0.072 |
-| support/pt | 252 | 0.885 | 0.085 |
-| agent_tools/fr | 249 | 0.888 | 0.081 |
-| ecommerce/it | 249 | 0.896 | 0.044 |
-| documents/es | 252 | 0.909 | 0.095 |
-| voice/de | 249 | 0.916 | 0.042 |
-| documents/de | 249 | 0.924 | 0.091 |
-| voice/fr | 249 | 0.928 | 0.072 |
-| ecommerce/pt | 252 | 0.933 | 0.058 |
-| documents/it | 249 | 0.940 | 0.033 |
-| voice/es | 252 | 0.940 | 0.040 |
-| ecommerce/es | 252 | 0.952 | 0.045 |
-| voice/it | 249 | 0.956 | 0.031 |
-| agent_tools/it | 249 | 0.960 | 0.033 |
-| agent_tools/de | 249 | 0.964 | 0.032 |
-| support/es | 252 | 0.968 | 0.042 |
-| ecommerce/fr | 249 | 0.972 | 0.018 |
-| support/nl | 249 | 0.972 | 0.026 |
-| agent_tools/pt | 252 | 0.972 | 0.019 |
-| documents/fr | 249 | 0.976 | 0.026 |
-| support/de | 249 | 0.980 | 0.031 |
-| support/fr | 249 | 0.980 | 0.047 |
-| agent_tools/es | 252 | 0.980 | 0.038 |
-| voice/pt | 252 | 0.980 | 0.042 |
-| support/it | 249 | 0.984 | 0.031 |
-| documents/pt | 252 | 1.000 | 0.027 |
+| ecommerce/nl | 249 | 0.627 | 0.317 |
+| agent_tools/nl | 249 | 0.819 | 0.101 |
+| ecommerce/de | 249 | 0.855 | 0.076 |
+| documents/nl | 249 | 0.863 | 0.072 |
+| voice/nl | 249 | 0.871 | 0.064 |
+| support/pt | 252 | 0.885 | 0.072 |
+| agent_tools/fr | 249 | 0.888 | 0.070 |
+| ecommerce/it | 249 | 0.896 | 0.081 |
+| documents/es | 252 | 0.909 | 0.084 |
+| voice/de | 249 | 0.916 | 0.049 |
+| documents/de | 249 | 0.924 | 0.082 |
+| voice/fr | 249 | 0.928 | 0.062 |
+| ecommerce/pt | 252 | 0.933 | 0.046 |
+| documents/it | 249 | 0.940 | 0.052 |
+| voice/es | 252 | 0.940 | 0.029 |
+| ecommerce/es | 252 | 0.952 | 0.033 |
+| voice/it | 249 | 0.956 | 0.022 |
+| agent_tools/it | 249 | 0.960 | 0.024 |
+| agent_tools/de | 249 | 0.964 | 0.023 |
+| support/es | 252 | 0.968 | 0.031 |
+| ecommerce/fr | 249 | 0.972 | 0.008 |
+| support/nl | 249 | 0.972 | 0.018 |
+| agent_tools/pt | 252 | 0.972 | 0.009 |
+| documents/fr | 249 | 0.976 | 0.015 |
+| support/de | 249 | 0.980 | 0.022 |
+| support/fr | 249 | 0.980 | 0.036 |
+| agent_tools/es | 252 | 0.980 | 0.028 |
+| voice/pt | 252 | 0.980 | 0.032 |
+| support/it | 249 | 0.984 | 0.022 |
+| documents/pt | 252 | 1.000 | 0.015 |
 
-Worst cell (accuracy): `ecommerce/nl` — accuracy 0.627, ECE 0.120.
+Worst cell (accuracy): `ecommerce/nl` — accuracy 0.627, ECE 0.317.
 
 #### `noul` per language — accuracy beside the label audit
 

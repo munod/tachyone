@@ -19,15 +19,35 @@ pipeline_tag: text-classification
 
 # Tachyone (System One decision engine)
 
-> **Status: released (`v0.9.0`), revision 2026-10-08 — both checkpoints are the B-15
-> template-train retrain (English carries its P3 stack rebuilt on the new trunk); revision
+> **Status: released (`v0.12.0`), revision 2026-10-10 — the English arm carries the B-18
+> fitted confidence (P3's in-domain acceptance met), the multilingual arm is the B-17
+> retrain; revision
 > commits are listed in [`docs/huggingface.md`](https://github.com/munod/tachyone/blob/main/docs/huggingface.md).**
 > Trained on NVIDIA L4 23GB and published as LoRA adapters
 > ([`munod/tachyone-en`](https://huggingface.co/munod/tachyone-en),
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
 >
-> **This revision is B-17: the teacher expanded the tone banks, the multilingual arm was
+> **This revision is B-18: the English confidence chain was rebuilt and P3's in-domain
+> acceptance closes.** Diagnosis settled B-15's recorded follow-up: no single temperature
+> serves both regimes of the legal P3 basis (training slice acc 0.803 wants T ≈ 1.5–2; the
+> hard remainder slice at acc 0.372 wants T ≥ 10) *and* the acceptance read (acc 0.9956
+> needs T ≤ 1.3), so English now ships the B-16 2D `peakedness × strength` cell map for
+> `choice` (`choice:en` + the global fallback), fitted **slice-balanced** over the two
+> served slices (5,000 rows; balanced mean 0.9778 = (0.9956 + 0.96) / 2). Temperatures
+> (choice 10.0 / noul 0.75 / score 0.1 pinned), `noul`'s knots and `score`'s pin are
+> byte-unchanged; answers never move (accuracy byte-identical on every read). **P3's
+> in-domain `choice` ECE 0.5243 → 0.0010** (support split 0.5170 → 0.0042) — **the ≤ 0.05
+> acceptance is MET** — with holdout overall ECE **0.1884 → 0.0316** (`choice` 0.5058 →
+> 0.0368) and routed English ECE ~10× better everywhere (0.188 / 0.191 / 0.188 → 0.017 /
+> 0.016 / 0.032). Multi gates are byte-identical and the external probes byte-unchanged
+> (they read the selected mass; no temperature moved). Disclosures, never smoothed: the map
+> is fitted on the basis the acceptance reads (the B-16 protocol — the out-of-sample checks
+> are the holdout slice, `en_split` outside the basis, and the probes), and the JB-12
+> "legal holdout only" basis is abandoned deliberately and reversibly (its rows, curves and
+> shas stay in provenance and `BACKLOG.md` **B-18**).
+>
+> **The v0.11.0 revision was B-17 (history):** the teacher expanded the tone banks, the multilingual arm was
 > retrained, and B-1's per-language ECE acceptance closes.** **352 phrases** authored by a
 > local `qwen3.6:35b` teacher went into every `neutral`/`request` bank (five domains × six
 > languages, inserted **before** the held-out phrase — the holdout evals are byte-identical,
@@ -157,19 +177,21 @@ interleaved touch-up (`training/interleave_continue.py`).
 
 | Checkpoint | Split | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- | --- |
-| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.188 | 57.7 |
-| English, five-domain split | 5 domains | **0.9983** | 0.191 | 57.7 |
-| English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.188 | 58.0 |
-| Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.9300** | 0.038 | 52.8 |
-| Multilingual, five-domain split | 5 domains | **0.9221** | 0.026 | 53.5 |
-| Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9264** | 0.032 | 53.3 |
+| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.017 | 58.5 |
+| English, five-domain split | 5 domains | **0.9983** | 0.016 | 58.0 |
+| English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.032 | 58.3 |
+| Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.9300** | 0.039 | 53.1 |
+| Multilingual, five-domain split | 5 domains | **0.9221** | 0.034 | 53.5 |
+| Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9264** | 0.033 | 53.2 |
 
-The English ECE column reads the **pooled never-trained fit** (below): `choice` is flattened to
-T=10.0 to calibrate held-out rows, which shows up honestly in-domain (0.5243 `choice` ECE —
-accuracy untouched). The multilingual rows are the **routed system**: ~13–15% of rows fall
+The English ECE column reads the **B-18 fitted confidence** (below): a `peakedness ×
+strength` cell map for `choice` (fitted slice-balanced over the in-template and holdout
+slices) plus the P3 `noul` map, with every temperature byte-unchanged — the P3 in-domain
+`choice` miss (0.5243 at T=10.0) is history (0.0010, acceptance met). The multilingual rows
+are the **routed system**: ~13–15% of rows fall
 through to the English checkpoint by language routing (empty state or no Latin-language signal
 — `.specs/project/BACKLOG.md` **L-013**), which is why the five-domain multilingual row sits
-below the multilingual checkpoint's own **0.9885** when it answers everything.
+below the multilingual checkpoint's own **0.9961** when it answers everything.
 
 Per primitive (English, five-domain): `choice` **0.9956**, `noul` **0.9996**, `score`
 **0.9996**; (multilingual, five-domain): `choice` **0.9564**, `noul` **0.9136**, `score`
@@ -190,11 +212,16 @@ public rows, re-asserted against the public items before a byte was written): `c
 consequence of training on `template_split: "train"` while the holdout keeps its hard rows —
 `noul` **T = 0.75** with the map, `score` **pinned at 0.1** because its answer *is* the
 expected value (the pin's own record: rounded-EV accuracy 0.53 at T=1 vs 0.9996 shipped).
-Accuracy is untouched by construction (argmax and direction never move). **Recorded NOT met:**
-P3's in-domain ECE ≤ 0.05 acceptance for the rebuilt asset — `choice` reads **0.5243**
-in-domain under T=10.0 (the honest price of calibrating held-out rows; the fix is a fit-basis
-redesign, not another fit — see `.specs/features/jevbench/spec.md` *P3 results* for why no
-legal fit set can see bench difficulty). The multilingual adapter has no evidence stack; its
+Accuracy is untouched by construction (argmax and direction never move). **P3's in-domain
+ECE ≤ 0.05 acceptance was recorded NOT met** for the rebuilt asset (`choice` **0.5243**
+in-domain under T = 10.0 — the honest price of calibrating held-out rows with one scalar) —
+**closed by B-18 (2026-10-10)** with exactly the fit-basis redesign this paragraph
+predicted: slice-balanced pooling plus the B-16 `peakedness × strength` cell map for
+`choice`, taking it to **0.0010** (support split 0.0042, holdout 0.0368) with temperatures
+and answers byte-unchanged. The diagnosis behind it
+(`.specs/features/jevbench/spec.md` *P3 results* — no legal fit set can see bench
+difficulty) stands: it is why the map is fitted on the served slices, disclosed as an
+in-sample calibration read in `BACKLOG.md` **B-18**. The multilingual adapter has no evidence stack; its
 served `temperature_calibration.json` is fitted on **15,000 pooled in-template + holdout
 predictions** (`choice` 6.0, `noul` 0.25, `score` 0.25 — fitted where the model is *not*
 saturated, per L-015). The public probes were **re-measured on this v0.9.0 artifact

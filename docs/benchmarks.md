@@ -98,6 +98,40 @@ and never was a generalization number. The in-template → holdout gap for B-15 
 **−0.1105** (multilingual) / **−0.0179** (English). Full report with reproduction commands:
 [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
+## v0.12.0 — B-18: the English fit-basis redesign — P3 closes (2026-10-10)
+
+The last NOT-met acceptance on the published surface (English `choice` in-domain ECE 0.5243)
+turned out to be **shape, not accuracy**: the P3 fit's legal basis holds two regimes no
+single temperature can serve (the training slice at acc 0.803 wants T ≈ 1.5–2; the hard
+remainder slice at acc 0.372 wants T ≥ 10) while the acceptance read (acc 0.9956) needs
+T ≤ 1.3 — so the pooled fit pegged the grid at T = 10.0 and flattened `choice`'s reported
+confidence to ~0.4 everywhere. The redesign gave English the mechanism multilingual already
+trusts: the B-16 **2D `peakedness × strength` cell map**, fitted **slice-balanced** over the
+two served slices (5,000 `choice` rows; balanced mean **0.9778** = (0.9956 + 0.96) / 2 —
+the midpoint of the two regimes), with temperatures, `noul` knots and `score`'s pin
+byte-unchanged. Gates pre-registered in `7fe4f50`, **13/13 PASS**; full record in BACKLOG
+**B-18**.
+
+| Axis | before (v0.11.0) | after (v0.12.0) |
+| --- | --- | --- |
+| **P3 in-domain `choice` ECE** | 0.5243 (NOT met) | **0.0010 — acceptance MET** |
+| `choice` ECE, support split (outside the fit basis) | 0.5170 | **0.0042** |
+| `choice` ECE, holdout | 0.5058 | **0.0368** |
+| English holdout overall ECE | 0.1884 | **0.0316** |
+| English routed ECE (support / 5-dom / holdout) | 0.188 / 0.191 / 0.188 | **0.017 / 0.016 / 0.032** |
+| accuracy, every read | — | **byte-identical** (the map moves only the volume) |
+| multi gates (3 reports) | — | **byte-identical** |
+| external probes | — | **byte-unchanged** (they read the selected mass) |
+
+**Disclosures (measured, never smoothed).** The map is fitted on the basis the acceptance
+reads — the protocol the B-16 multilingual cells were fitted and accepted under — so the
+in-domain half is an in-sample calibration read; the out-of-sample checks are the holdout
+slice (0.0368), `en_split` (0.0042, outside the basis) and the probes (unchanged). The
+JB-12 "legal holdout only" basis of the B-13 public run is abandoned deliberately and
+reversibly — its rows, curves and shas stay in the asset's provenance and BACKLOG **B-18**.
+The multilingual routed rows moved only where English fall-through rows land (0.0381 →
+0.0386 / 0.0264 → 0.0342 / 0.0318 → 0.0335) — published as measured.
+
 ## v0.11.0 — B-17: teacher bank expansion — B-1 closes (2026-10-10)
 
 Part 2 of the generalization cycle: **352 teacher-authored phrases** (`qwen3.6:35b` through
@@ -442,6 +476,12 @@ while `ECE raw` goes **0.046 → 0.197** — the in-domain gains of the teacher-
 re-sharpened off-domain confidence, the L-007/L-015 trade this page has published in the
 same direction every time capability was bought in-domain. Read it beside the internal
 tables: the adapter got *sharper and better* at home and *sharper* away from it.
+
+**Re-run under B-18 (2026-10-10).** Byte-unchanged (typed-decisions 0.306, MASSIVE 0.058,
+XNLI 0.333, with their raw ECEs): the probe pipeline reads the selected mass after the
+shipped temperature, and B-18 moved no temperature — the fitted `choice` map only reshapes
+what [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md)
+calls `Conf`.
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 

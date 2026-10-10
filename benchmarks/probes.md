@@ -54,7 +54,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 121.78 | 292.68 | 6.7 | 1.000 | 2496 | 1831 |
+| tachyone (encoder) | 122.26 | 294.10 | 6.7 | 1.000 | 2495 | 1831 |
 
 #### Per task: accuracy and calibration
 
@@ -86,7 +86,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 332.58 | 467.52 | 2.7 | 1.000 | 3126 | 2960 |
+| tachyone (encoder) | 327.30 | 456.25 | 2.7 | 1.000 | 3126 | 2960 |
 
 #### Per task: accuracy and calibration
 
@@ -121,7 +121,7 @@ reached `training/`, which is exactly what makes the numbers mean something.
 
 | Engine | p50 (ms) | p95 (ms) | items/s | JSON ok | RSS (MiB) | VRAM (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| tachyone (encoder) | 62.76 | 72.44 | 15.6 | 1.000 | 2966 | 2830 |
+| tachyone (encoder) | 62.05 | 71.64 | 15.9 | 1.000 | 2971 | 2830 |
 
 #### Per task: accuracy and calibration
 

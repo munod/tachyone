@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-10-10
+**Last Updated:** 2026-10-10 (B-18)
 **Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
 leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
 `fix/sampler-stride`.** ~~Nothing leaves this machine~~ **Deferral LIFTED 2026-10-08 by
@@ -64,6 +64,23 @@ per-language all down); probes re-run with unchanged accuracy (MASSIVE T 1.75 �
 the v3 key); `benchmarks/compare.py` was **not** re-wired (the probes caveat carries the
 mass-vs-fitted distinction — deviation recorded). Full record: BACKLOG **B-16**.
 **Part 2 (queued):** the data/generalization cycle for `score/it` and the −0.1105 holdout gap.
+
+**B-18 executed 2026-10-10 (the English P3 fit-basis redesign; gates pre-registered
+`7fe4f50`, 13/13 PASS).** Diagnosis settled the recorded follow-up of B-15: no scalar
+temperature can serve both regimes of the legal P3 basis (training slice acc 0.803 wants
+T ≈ 1.5–2; the hard remainder slice acc 0.372 wants T ≥ 10) nor the acceptance read
+(needs T ≤ 1.3) — so English received the B-16 mechanism: a fitted `peakedness × strength`
+cell map for `choice` (`choice:en` + global), **slice-balanced** over the two served slices
+(5,000 rows; balanced mean 0.9778 = the midpoint of the two regimes), with temperatures,
+`noul` knots and `score`'s pin byte-unchanged and the P3 keys carried over intact.
+**P3's in-domain acceptance (≤ 0.05) is MET: `choice` 0.5243 → 0.0010 in-template and
+0.5170 → 0.0042 on split** — accuracy byte-identical on every read, holdout overall ECE
+0.1884 → 0.0316, multi gates byte-identical, probes byte-unchanged. Routed English ECE is
+~10× better everywhere (0.188/0.191/0.188 → 0.017/0.016/0.032); routed multi moved only on
+its fall-through rows (published as measured). Disclosed as pre-committed: the in-domain
+half is an in-sample calibration read (the B-16 protocol; out-of-sample = holdout slice,
+`en_split`, probes) and the JB-12 legal basis is abandoned deliberately and reversibly.
+Record: BACKLOG **B-18**; publication = `v0.12.0`.
 
 **B-17 executed 2026-10-09/10 (Part 2 — the data cycle; gates pre-registered `cd69459`,
 15/15 PASS).** Teacher **`qwen3.6:35b`** (local Ollama; owner deviation from the recorded

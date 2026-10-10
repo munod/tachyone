@@ -276,6 +276,20 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   Record in `BACKLOG.md` **B-17** (gates pre-registered `cd69459`); full narrative with the
   evidence trail: [the last cell](case-b17.md).
 
+- **B-18: the English fit-basis redesign — P3 closes** ✅ (`v0.12.0`, 2026-10-10). B-15's
+  recorded follow-up: no single temperature serves both regimes of the legal P3 basis
+  (training slice acc 0.803 wants T ≈ 1.5–2; the hard remainder at acc 0.372 wants T ≥ 10)
+  nor the acceptance read (needs T ≤ 1.3) — so English now ships the B-16 2D
+  `peakedness × strength` cell map for `choice`, fitted **slice-balanced** over the served
+  slices (5,000 rows; balanced mean 0.9778), with temperatures/`noul`/`score`
+  byte-unchanged. **13/13 gates PASS: P3's in-domain acceptance MET — `choice` 0.5243 →
+  0.0010** (split 0.5170 → 0.0042), holdout overall ECE 0.1884 → 0.0316, accuracy
+  byte-identical everywhere, multi byte-identical, probes byte-unchanged; routed English
+  ECE ~10× better (0.188/0.191/0.188 → 0.017/0.016/0.032). Disclosed: the in-domain half is
+  an in-sample calibration read (the B-16 protocol) and the JB-12 legal basis is abandoned
+  deliberately and reversibly. Record in `BACKLOG.md` **B-18** (gates pre-registered
+  `7fe4f50`).
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

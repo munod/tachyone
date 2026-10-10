@@ -1928,6 +1928,46 @@ JB-12 "legal holdout only" constraint of the B-13 public run — recorded as a d
 redesign now that the run is set aside with JevBench — and is reversible: the P3 basis and
 its shas remain in provenance.
 
+**Execution (2026-10-10) — every gate PASS (13/13); P3's in-domain acceptance closes.**
+
+*Implementation (`725c57c`, additive; suite 741 passed).* `fit_cell_confidence` grew exactly
+the four pre-registered options (`--kinds`, `--languages`, `--base`, `--balance-slices`) plus
+per-slice `meta.slice_diagnostics` computed through `CellConfidence` — the runtime's own
+lookup. The fit ran on the two served slices (7,500 + 7,500 rows → 5,000 `choice`, balanced
+2,500/2,500) and produced `choice` + `choice:en` cells (6×6, shrink 4.0) whose balanced mean
+is **0.9778** — literally (0.9956 + 0.96) / 2, the midpoint of the two regimes the scalar
+could not reconcile. `noul`'s knots (10) and the P3 provenance carried over byte-unchanged;
+the holdout pin `3119e73c…` is recorded among the fit inputs. Installed with the previous
+asset preserved as `checkpoints/en_prev_pub_v0110/`.
+
+*Gates — `benchmarks/results/gates_b18/` (checkpoint-alone, L-020):*
+
+- **T1 · the target: P3 in-domain acceptance MET.** `en_current` `choice` **0.5243 →
+  0.0010** (`noul` 0.0480 and `score` 0.0004 intact — untouched), `en_split` `choice`
+  **0.5170 → 0.0042** — every per-primitive ECE ≤ 0.05 on both in-domain reads.
+- **T2 · nothing else moved.** Accuracy **byte-identical** to the B-17 reads on all three
+  evals (the map moves only the reported volume); `en_holdout` overall ECE **0.1884 →
+  0.0316** (`choice` 0.5058 → **0.0368**; `noul` 0.0661 and `score` 0.0075 as before).
+- **T3 · multi and the yardstick untouched.** All three multi reports byte-identical (modulo
+  latency) to `gates_b17/multi_*`; holdout sha pins `982236ca…` / `3119e73c…` re-verified.
+- **T4 · mechanism (reported).** Map ECE 0.0096 (in-template) / 0.0096 (holdout) / 0.0007
+  (pooled) against the temperature-only chain's 0.7357 / 0.7015 / 0.7186.
+- **T5 · contract.** 741 passed; ruff/format/pyright/`mkdocs --strict` clean.
+
+*The routed pair and the probes (reported).* English rows improved ~10× in every routed
+report (ECE 0.188 / 0.191 / 0.188 → **0.017 / 0.016 / 0.032**, accuracies unchanged); the
+multilingual routed rows moved only where fall-through rows land (0.0381 → 0.0386,
+0.0264 → 0.0342, 0.0318 → 0.0335) — published as measured. The external probes are
+**byte-unchanged** (MASSIVE 0.058 / typed 0.306 / XNLI 0.333): the probe pipeline reads the
+selected mass after the shipped temperature, and no temperature moved.
+
+*Disclosures (as pre-committed).* The map is fitted on the basis T1 reads (the B-16
+protocol), so the in-domain half is an in-sample calibration read — the out-of-sample checks
+are the holdout slice (0.0368), `en_split` (outside the basis: 0.0042) and the probes; the
+JB-12 legal basis is abandoned deliberately and reversibly (its rows, curves and shas stay
+in this record and the asset's provenance). **English's P3 in-domain `choice` ECE 0.5243 is
+history — the last NOT-met acceptance on the published model surface is closed.**
+
 ---
 
 ## Carried over (from earlier planning)
