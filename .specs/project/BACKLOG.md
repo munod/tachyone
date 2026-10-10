@@ -1185,7 +1185,7 @@ evidence.
 
 ---
 
-## B-14 · Recompose retrain (Fases 0–2b of the data-recipe plan) · **In progress — gates fixed 2026-10-06, before training**
+## B-14 · Recompose retrain (Fases 0–2b of the data-recipe plan) · **Done — executed 2026-10-06/07 (gates fixed 2026-10-06, before training); arms superseded by B-15's at publication (v0.9.0); case study published**
 
 **Why.** The 2026-10-05 data audit confirmed the structural defects the plan was written for:
 Fase 0 (option and hard-negative strides aliased with the language stride — 24/30 incomplete
@@ -1438,7 +1438,7 @@ of the sort happens while the submission is being evaluated from the remote.
 
 ---
 
-## B-15 · Estágio 2 — template-holdout retrain (the honest generalization number) · **Executed 2026-10-08 — every gate PASS except B-1's per-language ECE, recorded NOT met**
+## B-15 · Estágio 2 — template-holdout retrain (the honest generalization number) · **Done — executed 2026-10-08, published v0.9.0; every gate PASS except B-1's per-language ECE, recorded NOT met there and closed by B-17**
 
 **Why.** B-14's arms trained on `template_split: "all"`, so their holdout scores (multi
 **0.9876**, en **0.9995**, `benchmarks/results/multi_holdout_b14.json`) are **in-sample** —
@@ -1597,7 +1597,7 @@ release.
 
 ---
 
-## B-16 · Per-language confidence: serve-key detector fix + 2D evidence map · **Gates pre-registered 2026-10-08, before any fit or runtime change**
+## B-16 · Per-language confidence: serve-key detector fix + 2D evidence map · **Done — executed 2026-10-09 (gates pre-registered 2026-10-08), published v0.10.0; 11/12 cells ≤ 0.05 with `score/it` 0.0521 recorded NOT met (closed by B-17)**
 
 **Why.** B-1 criterion 3 (per-language ECE ≤ 0.05 for `choice`/`score`) fails on the B-15
 holdout in **7 cells** (recorded: `choice` es 0.0753 / it 0.0968 / pt 0.1014; `score` de
@@ -1739,7 +1739,7 @@ B-1 reading.
 
 ---
 
-## B-17 · Part 2 — close `score/it`: teacher bank expansion + multi retrain · **Gates pre-registered 2026-10-09, before any data edit**
+## B-17 · Part 2 — close `score/it`: teacher bank expansion + multi retrain · **Done — executed 2026-10-09/10 (gates pre-registered 2026-10-09, before any data edit); 15/15 gates PASS, B-1 criterion 3 CLOSED, published v0.11.0**
 
 **Why.** B-16 left exactly one failing cell: `score/it` holdout ECE **0.0521** (from 0.1495).
 The measured root cause is pure phrasing generalization in the two middle tone banks:
