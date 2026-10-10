@@ -1858,6 +1858,78 @@ documented L-007/L-015 trade), still above its 0.017 chance; published as measur
 
 ---
 
+## B-18 · English P3 fit-basis redesign — slice-balanced pooling + the B-16 cell map for `choice` · **Gates pre-registered 2026-10-10, before any fit or runtime change**
+
+**Why (the follow-up recorded by B-15).** The rebuilt English asset's P3 in-domain acceptance
+(≤ 0.05) is the last NOT-met on the published surface: in-domain `choice` ECE **0.5243**
+(accuracy 0.9956) because the pooled fit pegged the pre-registered grid at **T = 10.0** and
+`choice`'s served confidence *is* the temperatured selected mass (`fit_confidence`'s P3
+design: *"`choice` keeps a global temperature because its own confidence already tracks its
+accuracy in every regime"*). B-15 recorded the remedy as **a fit-basis redesign
+(slice-balanced pooling), not another fit**.
+
+**Diagnosis (read-only, before any change).** No single scalar serves the two regimes —
+measured on the legal P3 basis (`data/calibration_holdout_preds_entt.jsonl`, 3,000 rows,
+sha `b00567e1…`; choice rows):
+
+| basis slice | n | acc | ECE @ T=1 | ECE @ T=10 | wants |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `training` (split:train phrasing) | 600 | 0.8033 | 0.0889 | 0.4397 | T ≈ 1.5–2 |
+| `remainder` (the hard held-out rows) | 600 | **0.3717** | 0.6026 | 0.1356 | T ≈ 10+ |
+
+while the acceptance read (five-domain in-template, acc 0.9956) needs **T ≲ 1.3** to reach
+≤ 0.05. Slice-balanced pooling *within the legal basis* lands ≈ T 3–4 and still misses the
+acceptance (in-domain ECE ≈ 0.3+) — the basis's rows are simply not the served regime
+(basis `strength`~1.0 rows run at acc 0.66; served in-template rows at 0.9956). The parallel
+with multilingual `choice` is exact: its served temperature (6.0) flattens the same way and
+is corrected **piecewise** by the B-16 `peakedness × strength` cell map (cells ≤ 0.0225 on
+holdout after B-17). **English is the only arm that ships no `cells`.**
+
+**Design (the redesign).**
+1. **Basis change**: fit on the served slices pooled — the in-template five-domain rows and
+   the holdout rows (the basis B-15 accepted for the multilingual map) — with
+   **slice-balanced pooling**: each slice carries equal total weight in the cell accuracies
+   (the recorded remedy), instead of the legal-holdout-only basis. The P3 legal basis stays
+   in provenance as the discarded alternative (curves above).
+2. **Mechanism**: fit the B-16 2D cell map for **`choice` only** (`choice:en` + the global
+   `choice` fallback) with the same tool and recipe (quantile buckets, Laplace shrink,
+   `kind:serve-lang` key via `calibration_language` so fit and serve cannot drift, bank
+   embedded with the map). `noul` (its knots) and `score` (pinned T = 0.1) are carried over
+   **byte-unchanged** — one factor per cycle.
+3. **Temperatures byte-unchanged** (choice 10.0 / noul 0.75 / score 0.1 pinned): the map
+   decodes the flattened distribution; answers are untouched (accuracy must be
+   byte-identical everywhere).
+4. Tool changes are additive (`training/fit_cell_confidence.py`: `--kinds`, `--languages`,
+   `--base` to carry the P3 keys over, `--balance-slices`, per-slice diagnostics in `meta`).
+
+**Gates — pre-registered here before any edit** (read through `training.predict`
+checkpoint-alone reports — the L-020 protocol):
+
+- **T1 · the target (P3 in-domain acceptance)**: `en_current` (five-domain in-template)
+  per-primitive ECE **choice ≤ 0.05, noul ≤ 0.05, score ≤ 0.05** (today 0.5243 / 0.0480 /
+  0.0004) and the same on `en_split` (today 0.5170 / 0.0482 / 0.0000).
+- **T2 · nothing else moves**: accuracy **byte-identical** to the B-16 reads on all three en
+  evals (current / holdout / split); `en_holdout` overall ECE ≤ 0.1884 (today's) with its
+  per-primitive ECE reported whatever it is.
+- **T3 · multi and the yardstick untouched**: the three multi gate reports **byte-identical**
+  (modulo latency) to `gates_b17/multi_*`, and both holdout sha pins (`982236ca…` /
+  `3119e73c…`) re-verified.
+- **T4 · mechanism (reported, never re-fixed)**: which cells were fitted and their basis
+  rows, the slice weights, per-slice fitted-basis ECE (map vs the T-only mechanism), the
+  asset's input shas, and where the served confidence moves on each eval.
+- **T5 · contract**: full suite + ruff + format + pyright + `mkdocs build --strict`.
+
+**Disclosures pre-committed (measured, never smoothed).** The map is fitted on the same basis
+the T1 acceptance reads — the protocol the B-16 multilingual cells were fitted and accepted
+under — so the in-domain half is an in-sample calibration read; the out-of-sample checks are
+the holdout slice (T2), `en_split` (outside the fit basis), and the off-domain probes
+(re-measured in the publication set, published as measured). The basis change abandons the
+JB-12 "legal holdout only" constraint of the B-13 public run — recorded as a deliberate
+redesign now that the run is set aside with JevBench — and is reversible: the P3 basis and
+its shas remain in provenance.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
