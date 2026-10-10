@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **B-17 case study (`docs/case-b17.md`, "Case studies" section).** The trail of the closing
+  cycle: the error matrix that reduced a failing gate cell to two held-out sentences per
+  domain, the teacher-driven expansion that inserted new phrases *around* the frozen
+  yardstick (sha pins proved it never moved), 15/15 gates with the full 12-cell table, the
+  beyond-target generalization collapse (gap −0.1105 → −0.0165), and the disclosures
+  (MASSIVE's off-domain trade, the targeting). Linked from the roadmap.
+
 ## [0.11.0] - 2026-10-10
 
 ### Added

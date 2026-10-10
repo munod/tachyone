@@ -273,7 +273,8 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   0.9828** (gap −0.1105 → **−0.0165**), `choice` 0.9248 → 0.9808, tripwire 0.7807 → 0.9735,
   every language ≥ 0.9928, in-template ECE 0.0036, English byte-identical. Disclosed as
   measured: off-domain MASSIVE **0.074 → 0.058, `ECE raw` 0.197** (the L-007/L-015 trade).
-  Record in `BACKLOG.md` **B-17** (gates pre-registered `cd69459`).
+  Record in `BACKLOG.md` **B-17** (gates pre-registered `cd69459`); full narrative with the
+  evidence trail: [the last cell](case-b17.md).
 
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 

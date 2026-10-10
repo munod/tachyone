@@ -106,6 +106,7 @@ nav:
   - Benchmarks: benchmarks.md
   - Case studies:
       - 'B-14: the cell that inverted': case-b14.md
+      - 'B-17: the last cell': case-b17.md
   - JevBench: jevbench.md
   - Roadmap: roadmap.md
   - Tasks: tasks.md
