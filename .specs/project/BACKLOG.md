@@ -1970,6 +1970,65 @@ history — the last NOT-met acceptance on the published model surface is closed
 
 ---
 
+## B-19 · Routing quality (the L-013 follow-up) — one detector, one language truth · **Gates pre-registered 2026-10-10, before any runtime change**
+
+**Why.** The routed pair has answered 13–15% of multilingual rows with the *English*
+checkpoint since L-013 ("empty state or no Latin-language signal") and the figure sits all
+over the docs. Measured precisely on the current stack (2026-10-10): **1,082/7,500 (14.4%)**
+of `eval_multi_domains` and **181/1,500 (12.1%)** of `eval_multi` reach the English arm —
+noise changes little (14.8%). Two causes, both in the *router's* detector
+(`detect_language`, which reads the **state text only**):
+
+1. **empty state** — 405 rows (5.4%): the language lives only in the localized question,
+   which routing never reads;
+2. **Latin state without signal or misdetected `en`** — 677 rows (9.0%): 528 unidentifiable
+   + 149 wrong `en`; `nl` loses **35%** of its rows (434/1,250).
+
+The B-16 cycle already built the better detector — `detect_calibration_language` (state
+**and** the localized question, shared-stopword penalties, accent votes; diagonal
+99.80/99.95%) — but scoped it to calibration only (*"the routed checkpoint selection keeps
+using `detect_language`"*). **B-19 promotes it to routing.**
+
+**Design.**
+1. **One detector, one truth**: the checkpoint choice comes from
+   `detect_calibration_language(state_text, *question_texts)` — the same function that keys
+   temperatures and cells (fit and serve cannot drift). Measured on the current evals:
+   misroutes **4/7,500 (0.05%)** five-domain (4 `nl` rows), **0/1,500** support,
+   **0/7,500** English — clean and noisy alike.
+2. **Additive API**: `Router.route(state, *, question_texts=None)`; without the keyword the
+   old state-only `detect_language` path runs **byte-identically** (back-compat).
+   `EncoderBackend.predict` passes the request's question texts.
+3. **Fallback policy (recorded design decision)**: `en`/no signal on both texts →
+   **ENGLISH** (the L-013 default, unchanged); `und` (accented Latin, unidentifiable) →
+   **MULTILINGUAL** — accents are a non-English signal, so the old "und falls to English"
+   half of the coin was the wrong one.
+4. Wire untouched (routing is internal); the `on_route` event shape is unchanged.
+
+**Gates — pre-registered here before any edit** (L-020: quality is gated checkpoint-alone;
+routing is measured on its own axis):
+
+- **T1 · the target**: non-English rows reaching the English arm **≤ 1.0%** on
+  `eval_multi_domains` and `eval_multi` (clean *and* noisy view, `--noise-rate 0.15`);
+  English rows reaching the multilingual arm **= 0**.
+- **T2 · checkpoint-alone untouched**: the six gate reports (`gates_b19/*`) **byte-identical**
+  (modulo latency) to `gates_b18/*` — routing must not move what each arm answers.
+- **T3 · the routed pair improves or holds**: multilingual routed accuracy ≥ 0.9300 /
+  0.9221 / 0.9264 (split / five-domain / holdout); the three English reports **byte-identical**
+  in accuracy (its rows no longer receive fall-through); ECEs reported whatever they are.
+- **T4 · mechanism (reported)**: the before/after routing table per language and cause; the
+  A/B accuracy of the previously-misrouted subset (English arm vs multilingual arm); the 4
+  residual `nl` rows.
+- **T5 · contract**: full suite + ruff + format + pyright + `mkdocs --strict`; the wire
+  contract test green; router unit tests cover the new key, both fallbacks and the
+  no-question back-compat.
+
+**Disclosures pre-committed.** The docs' "~13–15%" becomes history (14.4% measured → 0.05%);
+the routed numbers move because more rows are answered by the arm that owns them — published
+as measured — while the checkpoint-alone gates (the only quality gates, L-013) are
+byte-identical by construction.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
