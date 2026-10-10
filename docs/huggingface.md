@@ -11,7 +11,23 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-09 (`v0.10.0`, B-16 confidence map)** — commits
+> **Latest revision: 2026-10-10 (`v0.11.0`, B-17 — B-1 closes)** — commits
+> [`7785db14`](https://huggingface.co/munod/tachyone-multi/commit/7785db143e495c6d3aa4fe051ed63889d1f0191b)
+> (`tachyone-multi`, **8 files, NEW WEIGHTS**: the B-17 arm — teacher-expanded tone banks,
+> retrained on the unchanged recipe; adapter sha `eb946aab…` replaces the B-15 lineage, plus
+> the refreshed `temperature_calibration.json`, `confidence_calibration.json` (14 cells) and
+> `state_prototypes.json`) and
+> [`dd492424`](https://huggingface.co/munod/tachyone-en/commit/dd49242478c08ec64e5d91b41b8fdae33249a51c)
+> (`tachyone-en`, **8 files**, README-only — English ran no training and its numbers are
+> **byte-identical**). On the frozen holdout (sha pins never moved) **all 12
+> `(primitive, language)` cells now read ECE ≤ 0.05 — B-1's NFR-C06 acceptance CLOSED**
+> (`score/it` 0.1495 → 0.0521 → **0.0014**); holdout overall **0.8355 → 0.9264** routed,
+> gap −0.1105 → **−0.0165**. Disclosed: off-domain MASSIVE **0.074 → 0.058, `ECE raw`
+> 0.197** (L-007/L-015 trade) and English's P3 in-domain `choice` ECE 0.5243 as before.
+> Every uploaded file sha256-verified against the local build (**8/8 and 8/8**) and the
+> remote holds no stale file.
+>
+> **Previous revision: 2026-10-09 (`v0.10.0`, B-16 confidence map)** — commits
 > [`8abf70fc`](https://huggingface.co/munod/tachyone-en/commit/8abf70fc6121cdc222f48a7b6dbe5e8cd0d18267)
 > (`tachyone-en`, **8 files**, README-only: the model card now carries the B-14 case study,
 > the probe re-measurement and the B-16 disclosures) and
