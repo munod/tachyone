@@ -29,12 +29,15 @@ import hashlib
 import json
 import math
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from tachyone.backends.encoder import CONFIDENCE_VERSION, calibration_language
+from tachyone.backends.encoder import CONFIDENCE_VERSION, CellConfidence, calibration_language
 from tachyone.calibration import (
     apply_temperature,
+    confidence,
+    expected_calibration_error,
     normalized_entropy,
     parse_temperature_report,
 )
@@ -95,13 +98,22 @@ def fit_cells(
     *,
     bins: int,
     shrink: float,
+    kinds: Sequence[str] = KINDS,
+    languages: Sequence[str] = LANGUAGES,
 ) -> dict[str, dict[str, Any]]:
-    """Build every ``cells`` entry from pooled rows carrying (kind, serve_lang, signals)."""
+    """Build every ``cells`` entry from pooled rows carrying (kind, serve_lang, signals).
+
+    Each row may carry a ``weight`` (default 1.0); the cell accuracies, the shrink target
+    and the per-bucket counts are weight-aware, so a caller can pool slices with balanced
+    mass (B-18's slice-balanced pooling) instead of by row count. The quantile buckets
+    stay rank-based over rows — the bucket *edges* describe where the evidence sits, not
+    how loudly each slice voted.
+    """
     cells: dict[str, dict[str, Any]] = {}
     keys: list[tuple[str, str | None]] = []
-    for kind in KINDS:
+    for kind in kinds:
         keys.append((kind, None))  # global fallback over every row of the primitive
-        keys.extend((kind, lang) for lang in LANGUAGES)
+        keys.extend((kind, lang) for lang in languages)
     for key in keys:
         kind, lang = key
         subset = [
@@ -113,15 +125,18 @@ def fit_cells(
             continue
         peaked = [row["peaked"] for row in subset]
         strength = [row["strength"] for row in subset]
-        correct = [row["correct"] for row in subset]
-        mean = sum(1.0 for ok in correct if ok) / len(correct)
+        weights = [float(row.get("weight", 1.0)) for row in subset]
+        total_weight = sum(weights)
+        mean = (
+            sum(w for row, w in zip(subset, weights, strict=True) if row["correct"]) / total_weight
+        )
         peaked_buckets, peaked_edges = _quantile_buckets(peaked, bins)
         strength_buckets, strength_edges = _quantile_buckets(strength, bins)
-        counts: dict[tuple[int, int], list[int]] = {}
+        counts: dict[tuple[int, int], list[float]] = {}
         for index, (pb, sb) in enumerate(zip(peaked_buckets, strength_buckets, strict=True)):
-            counts.setdefault((pb, sb), [0, 0])
-            counts[(pb, sb)][0] += int(correct[index])
-            counts[(pb, sb)][1] += 1
+            counts.setdefault((pb, sb), [0.0, 0.0])
+            counts[(pb, sb)][0] += weights[index] if subset[index]["correct"] else 0.0
+            counts[(pb, sb)][1] += weights[index]
         table: list[list[float | None]] = [
             [None] * (len(strength_edges) + 1) for _ in range(len(peaked_edges) + 1)
         ]
@@ -135,6 +150,56 @@ def fit_cells(
             "n": len(subset),
         }
     return cells
+
+
+def _slice_diagnostics(
+    pooled: list[dict[str, Any]], cells: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Per-slice ECE of the fitted map against the temperature-only mechanism (B-18, T4).
+
+    Evaluated through :class:`CellConfidence` itself — the same lookup the runtime
+    performs (``kind:serve-lang`` then the per-primitive global cell), so the reported
+    numbers are what the served path would print, not a re-implementation of it.
+    """
+    fitted = {
+        name: CellConfidence(
+            tuple(cell["peaked_edges"]),
+            tuple(cell["strength_edges"]),
+            tuple(tuple(row) for row in cell["table"]),
+            float(cell["mean"]),
+            int(cell["n"]),
+        )
+        for name, cell in cells.items()
+    }
+    out: dict[str, Any] = {}
+    for label in ["all", *sorted({row["slice"] for row in pooled})]:
+        subset = pooled if label == "all" else [row for row in pooled if row["slice"] == label]
+        if not subset:
+            continue
+        entry: dict[str, Any] = {"n": len(subset)}
+        for kind in sorted({row["kind"] for row in subset}):
+            rows = [row for row in subset if row["kind"] == kind]
+            correct = [bool(row["correct"]) for row in rows]
+            mapped: list[float] = []
+            for row in rows:
+                cell = fitted.get(f"{row['kind']}:{row['serve_lang']}")
+                if cell is None:
+                    cell = fitted.get(row["kind"])
+                if cell is None:
+                    mapped.append(float(row["t_confidence"]))
+                else:
+                    mapped.append(cell.confidence(float(row["peaked"]), float(row["strength"])))
+            entry[kind] = {
+                "map_ece": round(expected_calibration_error(mapped, correct, bins=10), 6),
+                "temperature_ece": round(
+                    expected_calibration_error(
+                        [float(row["t_confidence"]) for row in rows], correct, bins=10
+                    ),
+                    6,
+                ),
+            }
+        out[label] = entry
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -156,6 +221,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", required=True, help="confidence_calibration.json to write")
     parser.add_argument("--bins", type=int, default=6)
     parser.add_argument("--shrink", type=float, default=4.0)
+    parser.add_argument(
+        "--kinds",
+        default=",".join(KINDS),
+        help="question types to fit cells for (default: choice,score)",
+    )
+    parser.add_argument(
+        "--languages",
+        default=",".join(LANGUAGES),
+        help="serve keys that get their own cell; anything else feeds the global one",
+    )
+    parser.add_argument(
+        "--base",
+        default=None,
+        help="existing asset whose unrefit keys are carried over (B-18: noul/provenance)",
+    )
+    parser.add_argument(
+        "--balance-slices",
+        action="store_true",
+        help="pool the predictions files with equal total weight (B-18 slice-balanced pooling)",
+    )
     args = parser.parse_args(argv)
 
     if len(args.predictions) != len(args.records):
@@ -164,12 +249,16 @@ def main(argv: list[str] | None = None) -> int:
     from training.evaluate import record_to_example  # local import keeps module load light
 
     temperatures = parse_temperature_report(json.loads(Path(args.temperature).read_text()))
+    kinds = tuple(item.strip() for item in args.kinds.split(",") if item.strip())
+    languages = tuple(item.strip() for item in args.languages.split(",") if item.strip())
     pooled: list[dict[str, Any]] = []
     seen = 0
     matched = 0
     diagonal = 0
     detectable = 0
-    for predictions_path, records_path in zip(args.predictions, args.records, strict=True):
+    for file_index, (predictions_path, records_path) in enumerate(
+        zip(args.predictions, args.records, strict=True)
+    ):
         predictions = _load_jsonl(Path(predictions_path))
         records = _load_jsonl(Path(records_path))
         if len(predictions) != len(records):
@@ -178,6 +267,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"has {len(records)} — refusing to pair rows (L-019: an eval id is not "
                 f"a row key)"
             )
+        slices_seen = sorted({str(row["slice"]) for row in predictions if row.get("slice")})
+        slice_label = "+".join(slices_seen) if slices_seen else Path(predictions_path).name
         for record, row in zip(records, predictions, strict=True):
             if row.get("id") != record["id"] or row.get("type") != record["type"]:
                 raise SystemExit(
@@ -187,9 +278,9 @@ def main(argv: list[str] | None = None) -> int:
             seen += 1
             example = record_to_example(record)
             serve = calibration_language(example.state, example.question)
-            serve_lang = serve if serve in LANGUAGES else None
+            serve_lang = serve if serve in languages else None
             kind = record["type"]
-            if kind not in KINDS:
+            if kind not in kinds:
                 continue
             matched += 1
             if serve_lang is not None:
@@ -209,12 +300,22 @@ def main(argv: list[str] | None = None) -> int:
                     "peaked": 1.0 - normalized_entropy(scaled),
                     "strength": float(row["strength"]),
                     "correct": best == target,
+                    "t_confidence": confidence(scaled),
+                    "slice": slice_label,
+                    "file_index": file_index,
                 }
             )
 
     if not pooled:
-        raise SystemExit("no choice/score rows to fit")
-    cells = fit_cells(pooled, bins=args.bins, shrink=args.shrink)
+        raise SystemExit(f"no {'/'.join(kinds)} rows to fit")
+    if args.balance_slices:
+        file_counts: dict[int, int] = {}
+        for row in pooled:
+            file_counts[row["file_index"]] = file_counts.get(row["file_index"], 0) + 1
+        per_slice = len(pooled) / len(file_counts)
+        for row in pooled:
+            row["weight"] = per_slice / file_counts[row["file_index"]]
+    cells = fit_cells(pooled, bins=args.bins, shrink=args.shrink, kinds=kinds, languages=languages)
     if not cells:
         raise SystemExit("fit produced no cells")
 
@@ -228,11 +329,18 @@ def main(argv: list[str] | None = None) -> int:
                 "signals": "peakedness x strength",
                 "bins": args.bins,
                 "shrink": args.shrink,
-                "basis": "pooled in-template train + holdout (B-15 accepted)",
+                "basis": (
+                    "pooled in-template train + holdout, slice-balanced (B-18)"
+                    if args.balance_slices
+                    else "pooled in-template train + holdout (B-15 accepted)"
+                ),
                 "key": "kind:calibration_language (state + localized question, B-16)",
+                "kinds": list(kinds),
+                "languages": list(languages),
             },
             "fit_basis_rows": len(pooled),
             "serve_key_diagonal": round(diagonal / detectable, 4) if detectable else None,
+            "slice_diagnostics": _slice_diagnostics(pooled, cells),
             "inputs": {
                 path: _sha256(Path(path))
                 for path in [
@@ -244,6 +352,20 @@ def main(argv: list[str] | None = None) -> int:
             },
         },
     }
+    if args.base:
+        base_payload = json.loads(Path(args.base).read_text(encoding="utf-8"))
+        if not isinstance(base_payload, dict):
+            raise SystemExit(f"{args.base} is not a JSON object — refusing to carry it over")
+        carried: list[str] = []
+        for key in ("noul", "provenance"):
+            if key in base_payload:
+                asset[key] = base_payload[key]
+                carried.append(key)
+        asset["meta"]["base"] = {
+            "path": str(args.base),
+            "sha256": _sha256(Path(args.base)),
+            "carried": carried,
+        }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(asset, indent=2, sort_keys=True) + "\n", encoding="utf-8")

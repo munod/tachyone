@@ -220,3 +220,175 @@ def test_main_refuses_mismatched_pairing(tmp_path: Path) -> None:
                 str(tmp_path / "o.json"),
             ]
         )
+
+
+def test_fit_cells_weights_shift_the_table_and_options_shape_keys() -> None:
+    rows = [
+        {
+            "kind": "choice",
+            "serve_lang": "en",
+            "peaked": 0.9,
+            "strength": 0.9,
+            "correct": True,
+            "weight": 1.0,
+        },
+        {
+            "kind": "choice",
+            "serve_lang": "en",
+            "peaked": 0.9,
+            "strength": 0.9,
+            "correct": False,
+            "weight": 3.0,
+        },
+    ]
+    unweighted = fit_cells(rows, bins=2, shrink=0.0, kinds=("choice",), languages=("en",))
+    assert set(unweighted) == {"choice", "choice:en"}, "options shape the cell keys"
+    assert unweighted["choice"]["n"] == 2
+    # the weight is honored in the mean (1 hit of weight 1 against 1 miss of weight 3)
+    heavy = [
+        {**rows[0], "weight": 1.0},
+        {**rows[1], "weight": 3.0},
+    ]
+    assert fit_cells(heavy, bins=2, shrink=0.0, kinds=("choice",), languages=("en",))["choice"][
+        "mean"
+    ] == pytest.approx(0.25)
+    assert rows[0]["correct"] is True and rows[1]["correct"] is False
+
+
+def _record(identifier: str, state: str, target: str) -> dict:
+    return {
+        "id": identifier,
+        "type": "choice",
+        "lang": "en",
+        "state": state,
+        "instructions": "Please handle my request today",
+        "criteria": {"billing": "charges", "tech": "bugs"},
+        "target": target,
+    }
+
+
+def _prediction(identifier: str, probabilities: dict, strength: float, slice_: str) -> dict:
+    return {
+        "id": identifier,
+        "type": "choice",
+        "lang": "en",
+        "probabilities": probabilities,
+        "target": max(probabilities, key=lambda key: probabilities[key]),
+        "strength": strength,
+        "slice": slice_,
+    }
+
+
+def test_main_slice_balanced_pooling_and_base_carry_over(tmp_path: Path) -> None:
+    records = [
+        _record("choice-0", "I need to cancel today's order", "billing"),
+        _record("choice-1", "There is a duplicated charge on my invoice", "billing"),
+        _record("choice-2", "Please fix the bug in my account", "tech"),
+        _record("choice-3", "The app crashes when I open it", "tech"),
+    ]
+    predictions = [
+        _prediction("choice-0", {"billing": 0.9, "tech": 0.1}, 0.95, "training"),
+        _prediction("choice-1", {"billing": 0.8, "tech": 0.2}, 0.90, "training"),
+        _prediction("choice-2", {"tech": 0.7, "billing": 0.3}, 0.85, "training"),
+        _prediction("choice-3", {"tech": 0.6, "billing": 0.4}, 0.80, "training"),
+    ]
+    holdout_records = [
+        _record("choice-4", "Please cancel the order from today", "billing"),
+        _record("choice-5", "Help me with the charge on the account", "billing"),
+    ]
+    holdout_predictions = [
+        # deliberately wrong rows: the hard slice the balanced fit must not drown in
+        _prediction("choice-4", {"tech": 0.9, "billing": 0.1}, 0.60, "holdout"),
+        _prediction("choice-5", {"tech": 0.8, "billing": 0.2}, 0.55, "holdout"),
+    ]
+    records_path = _write_jsonl(tmp_path / "records.jsonl", records)
+    predictions_path = _write_jsonl(tmp_path / "predictions.jsonl", predictions)
+    holdout_records_path = _write_jsonl(tmp_path / "holdout_records.jsonl", holdout_records)
+    holdout_predictions_path = _write_jsonl(
+        tmp_path / "holdout_predictions.jsonl", holdout_predictions
+    )
+    temperature = tmp_path / "temperature_calibration.json"
+    temperature.write_text(
+        json.dumps({"per_primitive": {"choice": {"temperature": 1.0}}}), encoding="utf-8"
+    )
+    prototypes = tmp_path / "state_prototypes.json"
+    prototypes.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "metric": "cosine",
+                "k": 1,
+                "dim": 8,
+                "centroids": [[1.0] + [0.0] * 7],
+            }
+        ),
+        encoding="utf-8",
+    )
+    base = tmp_path / "confidence_calibration.json"
+    base.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "noul": {"knots": [[0.5, 0.5], [1.0, 1.0]]},
+                "provenance": {"rows": 1234, "predictions": "data/p3.jsonl"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "fitted.json"
+
+    exit_code = main(
+        [
+            "--predictions",
+            str(predictions_path),
+            str(holdout_predictions_path),
+            "--records",
+            str(records_path),
+            str(holdout_records_path),
+            "--temperature",
+            str(temperature),
+            "--prototypes",
+            str(prototypes),
+            "--out",
+            str(out),
+            "--bins",
+            "2",
+            "--kinds",
+            "choice",
+            "--languages",
+            "en",
+            "--base",
+            str(base),
+            "--balance-slices",
+        ]
+    )
+    assert exit_code == 0
+    asset = json.loads(out.read_text(encoding="utf-8"))
+
+    # one factor: only what was asked gets fitted; the base keys ride along untouched
+    assert set(asset["cells"]) == {"choice", "choice:en"}
+    assert asset["noul"] == {"knots": [[0.5, 0.5], [1.0, 1.0]]}
+    assert asset["provenance"] == {"rows": 1234, "predictions": "data/p3.jsonl"}
+    assert asset["meta"]["base"]["carried"] == ["noul", "provenance"]
+    assert len(asset["meta"]["base"]["sha256"]) == 64
+    assert "slice-balanced" in asset["meta"]["recipe"]["basis"]
+
+    # slice balance: pooled accuracy is 4/6, the balanced mean splits the difference (1.0, 0.0)
+    assert asset["cells"]["choice"]["mean"] == pytest.approx(0.5)
+
+    diagnostics = asset["meta"]["slice_diagnostics"]
+    assert set(diagnostics) == {"all", "training", "holdout"}
+    for entry in diagnostics.values():
+        assert "choice" in entry
+        assert entry["choice"]["map_ece"] >= 0.0
+        assert entry["choice"]["temperature_ece"] >= 0.0
+
+    from tachyone.backends.encoder import ConfidenceCalibration
+
+    def _no_warning(message: str) -> None:
+        pytest.fail(f"unexpected warning: {message}")
+
+    loaded = ConfidenceCalibration.from_dict(asset, warn=_no_warning)
+    assert loaded is not None
+    assert loaded.noul_confidence(1.0) == pytest.approx(1.0)
+    assert loaded.cell_confidence("choice", "en", {"billing": 1.0}, 0.9) is not None
