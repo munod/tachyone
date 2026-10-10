@@ -11,7 +11,24 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-10 (`v0.11.0`, B-17 — B-1 closes)** — commits
+> **Latest revision: 2026-10-10 (`v0.12.0`, B-18 — P3 closes)** — commits
+> [`4b7e9fa5`](https://huggingface.co/munod/tachyone-en/commit/4b7e9fa5b5139cb38030d2c9610762f2154270a9)
+> (`tachyone-en`, **8 files, NEW CONFIDENCE ASSET**: `confidence_calibration.json` now ships
+> the B-18 fitted `choice` cells (`choice:en` + global, `peakedness × strength`, slice-balanced
+> over the in-template and holdout slices) beside the untouched P3 `noul` knots and prototype
+> bank — weights and temperatures byte-unchanged) and
+> [`affad595`](https://huggingface.co/munod/tachyone-multi/commit/affad5951df49a561aa342079c24f94839c9014c)
+> (`tachyone-multi`, **8 files**, README-only). **P3's in-domain acceptance (≤ 0.05) is MET**:
+> English `choice` ECE **0.5243 → 0.0010** (split 0.0042), holdout overall ECE **0.1884 →
+> 0.0316**, accuracy byte-identical on every read (the map moves only the reported volume);
+> routed English ECE ~10× better everywhere (0.188/0.191/0.188 → 0.017/0.016/0.032).
+> Disclosed as measured: the in-domain half is an in-sample calibration read (the B-16
+> protocol; out-of-sample = the holdout slice, `en_split` outside the basis, and the
+> byte-unchanged probes), and the JB-12 legal basis is abandoned deliberately and reversibly
+> (`BACKLOG.md` **B-18**). Every uploaded file sha256-verified against the local build
+> (**8/8 and 8/8**) and the remote holds no stale file.
+>
+> **Previous revision: 2026-10-10 (`v0.11.0`, B-17 — B-1 closes)** — commits
 > [`7785db14`](https://huggingface.co/munod/tachyone-multi/commit/7785db143e495c6d3aa4fe051ed63889d1f0191b)
 > (`tachyone-multi`, **8 files, NEW WEIGHTS**: the B-17 arm — teacher-expanded tone banks,
 > retrained on the unchanged recipe; adapter sha `eb946aab…` replaces the B-15 lineage, plus
