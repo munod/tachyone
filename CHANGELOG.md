@@ -6,14 +6,42 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-10
+
 ### Added
 
+- **Slice-balanced cell fitting (`training/fit_cell_confidence.py`, B-18).** `--kinds` /
+  `--languages` fit a subset of cells, `--base` carries the unrefit keys of an existing asset
+  over (en's P3 `noul` knots and provenance ride along intact), `--balance-slices` pools the
+  predictions files with equal total weight (per-row weights honored in the cell accuracies
+  and the shrink target; quantile edges stay rank-based), and `meta.slice_diagnostics`
+  reports the fitted map against the temperature-only mechanism per slice — computed through
+  `CellConfidence`, the runtime's own lookup.
 - **B-17 case study (`docs/case-b17.md`, "Case studies" section).** The trail of the closing
   cycle: the error matrix that reduced a failing gate cell to two held-out sentences per
   domain, the teacher-driven expansion that inserted new phrases *around* the frozen
   yardstick (sha pins proved it never moved), 15/15 gates with the full 12-cell table, the
   beyond-target generalization collapse (gap −0.1105 → −0.0165), and the disclosures
   (MASSIVE's off-domain trade, the targeting). Linked from the roadmap.
+
+### Changed
+
+- **B-18: the English P3 fit-basis redesign — P3's in-domain acceptance (≤ 0.05) MET
+  (2026-10-10).** No single temperature could serve both regimes of the legal P3 basis
+  (measured: the training slice at acc 0.803 wants T ≈ 1.5–2, the hard remainder slice at
+  acc 0.372 wants T ≥ 10, and the acceptance read needs T ≤ 1.3), so English now ships the
+  B-16 2D `peakedness × strength` cell map for `choice` (`choice:en` + the global fallback),
+  fitted slice-balanced over the served slices; temperatures, `noul` knots and `score`'s pin
+  are byte-unchanged and answers never move (accuracy byte-identical on every read).
+  In-domain `choice` ECE **0.5243 → 0.0010** (split 0.5170 → 0.0042), holdout overall ECE
+  **0.1884 → 0.0316** (`choice` 0.5058 → 0.0368); routed English ECE is ~10× better in every
+  report (0.188 / 0.191 / 0.188 → 0.017 / 0.016 / 0.032). Multi gates byte-identical; probes
+  byte-unchanged (they read the selected mass and no temperature moved). Disclosed as
+  measured: the map is fitted on the basis the acceptance reads (the B-16 protocol — the
+  out-of-sample checks are the holdout slice, `en_split` and the probes), and the JB-12
+  "legal holdout only" basis is abandoned deliberately (reversible; its rows, curves and
+  shas stay in provenance). Gates pre-registered `7fe4f50`, 13/13 PASS. Full record:
+  `BACKLOG.md` **B-18**.
 
 ## [0.11.0] - 2026-10-10
 
