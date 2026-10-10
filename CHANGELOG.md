@@ -6,6 +6,35 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-10
+
+### Added
+
+- **Teacher bank expansion tool (`training/expand_banks.py`, B-17).** A local Ollama teacher
+  (`qwen3.6:35b`, `think: false` — thinking mode otherwise returns empty content) authors new
+  `neutral`/`request` phrases few-shot from each bank's own sentences; mechanical validation
+  (one `{entity}` placeholder, cross-bank duplicate-free per language, no affirmative urgency
+  outside the `urgent` bank) with full provenance in `training/data/b17_teacher_log.jsonl`.
+  Phrases are inserted **before** the held-out last phrase, so the holdout evals regenerate
+  byte-identical; all-or-nothing writes make re-runs safe.
+
+### Changed
+
+- **B-17: multilingual arm retrained on the teacher-expanded banks — B-1's per-language ECE
+  acceptance (NFR-C06) CLOSED (2026-10-10).** 352 net phrases across 60 banks (5 domains ×
+  6 languages), unchanged B-15 recipe (8 epochs + interleaved touch-up), English untouched
+  (byte-identical). Gates pre-registered `cd69459`, **15/15 PASS** on the frozen yardstick
+  (holdout sha pins intact): **all 12 `(primitive, language)` cells ≤ 0.05 on unseen
+  phrasing** — `score/it` 0.1495 → 0.0521 (B-16) → **0.0014** at accuracy 0.9928, worst cell
+  now `score/fr` 0.0257. Everything else improved or held: holdout overall **0.8892 →
+  0.9828** (generalization gap −0.1105 → **−0.0165**), routed pair **0.8355/0.0747 →
+  0.9264/0.0318**, `choice` 0.9248 → 0.9808, `noul` tripwire 0.7807 → 0.9735, every language
+  ≥ 0.9928 (`es` 1.0000), in-template multilingual ECE 0.0228 → 0.0036 (zero exceptions),
+  English byte-identical to v0.10.0, strict 1.0000. Disclosed as measured: off-domain
+  **MASSIVE 0.074 → 0.058, `ECE raw` 0.046 → 0.197** (the L-007/L-015 in-domain/off-domain
+  trade, still 3.4× its chance); English's P3 in-domain `choice` ECE 0.5243 stands as
+  previously disclosed. Full record: `BACKLOG.md` **B-17**.
+
 ## [0.10.0] - 2026-10-09
 
 ### Added
