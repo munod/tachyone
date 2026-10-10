@@ -8,7 +8,7 @@ checkpoint; Latin text goes to English unless a caller hint says otherwise. A ca
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 from pydantic import BaseModel, ConfigDict
@@ -799,16 +799,25 @@ class Router:
                     self.hooks.emit(ON_EVICT, checkpoint_id=candidate)
                 return
 
-    def route(self, state: State) -> RouteDecision:
-        """Decide which checkpoint should answer ``state`` and emit ``on_route``."""
-        decision = self._decide(state)
+    def route(self, state: State, *, question_texts: Sequence[str] | None = None) -> RouteDecision:
+        """Decide which checkpoint should answer ``state`` and emit ``on_route``.
+
+        ``question_texts`` (B-19) are the localized question texts of the request. When
+        given, the decision is keyed by :func:`detect_calibration_language` over the state
+        and those texts — the same detector that keys temperatures and confidence cells,
+        so fit and serve cannot drift about language. Without them the historical
+        state-only :func:`detect_language` path runs unchanged.
+        """
+        decision = self._decide(state, question_texts=question_texts)
         if self.hooks is not None:
             self.hooks.emit(
                 ON_ROUTE, state=state, route=decision, checkpoint_id=decision.checkpoint_id
             )
         return decision
 
-    def _decide(self, state: State) -> RouteDecision:
+    def _decide(
+        self, state: State, *, question_texts: Sequence[str] | None = None
+    ) -> RouteDecision:
         """Decide which checkpoint should answer ``state``."""
         if self.lang_guess is not None:
             guess = self.lang_guess(state)
@@ -816,6 +825,33 @@ class Router:
                 return self._from_language(guess, script="unknown", reason="lang_guess hint")
         text = state_text(state)
         script = detect_script(text)
+        if question_texts is not None:
+            key = detect_calibration_language(text, *question_texts)
+            if key in _CALIBRATION_LANGUAGES:
+                return RouteDecision(
+                    checkpoint_id=MULTILINGUAL,
+                    detected_script=script,
+                    detected_language=key,
+                    reason="calibration key over state + localized question (B-19)",
+                )
+            if key == "und":
+                # accented Latin with no stopword signal: accents are a non-English hint,
+                # so this half of the old coin-flip now lands multilingual (B-19)
+                return RouteDecision(
+                    checkpoint_id=MULTILINGUAL,
+                    detected_script=script,
+                    detected_language="und",
+                    reason="accented Latin with no stopword signal (B-19)",
+                )
+            if key == "en" and script in ("latin", "unknown"):
+                return RouteDecision(
+                    checkpoint_id=ENGLISH,
+                    detected_script=script,
+                    detected_language="en",
+                    reason="calibration key found English (B-19)",
+                )
+            # no Latin signal anywhere (or English on a non-Latin state): the historical
+            # script rule below decides — B-19 changes nothing outside the Latin fallthrough
         language = detect_language(text, script)
         if script == "latin":
             if language in (None, "en"):

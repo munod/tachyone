@@ -158,3 +158,51 @@ def test_routing_overhead_is_small() -> None:
         router.route(samples[index % len(samples)])
     mean_ms = (time.perf_counter() - start) / 500 * 1000
     assert mean_ms < 5.0  # target is <0.5 ms; loose bound to avoid CI flakiness
+
+
+# --- B-19: the calibration key routes too (one detector, one language truth) -----------
+
+
+def test_route_question_texts_rescue_an_empty_state() -> None:
+    decision = Router().route("", question_texts=["Kannst du mir mit der Bestellung helfen?"])
+    assert decision.checkpoint_id == MULTILINGUAL
+    assert decision.detected_language == "de"
+
+
+def test_route_question_texts_rescue_an_unsignaled_state() -> None:
+    # the state carries no stopword signal at all — today's router sends this to English
+    decision = Router().route(
+        "Bestellung 4711 — Konto 12.", question_texts=["Waarom is mijn factuur hoger?"]
+    )
+    assert decision.checkpoint_id == MULTILINGUAL
+    assert decision.detected_language == "nl"
+
+
+def test_route_question_texts_keep_english_english() -> None:
+    decision = Router().route("", question_texts=["Can you help me with the order?"])
+    assert decision.checkpoint_id == ENGLISH
+    assert decision.detected_language == "en"
+
+
+def test_route_without_question_texts_keeps_the_historical_path() -> None:
+    # back-compat: no keyword, no change — the state-only detector decides as before
+    decision = Router().route("")
+    assert decision.checkpoint_id == ENGLISH
+    assert decision.detected_language is None
+
+
+def test_route_accented_latin_without_signal_goes_multilingual() -> None:
+    # B-19 fallback policy: accents are a non-English signal ('und' is not English's half).
+    # Czech Latin-ext: accented, but outside every one of the six languages' accent votes
+    # (no á/é/í/ó/ú/ü/ñ/à/è/ì/ò/ù/ã/õ/ç/ä/ö/ß anywhere in the text).
+    decision = Router().route("Žluťoučký kůň pěl", question_texts=["!!! ???"])
+    assert decision.checkpoint_id == MULTILINGUAL
+    assert decision.detected_language == "und"
+
+
+def test_route_state_signal_still_wins_when_unambiguous() -> None:
+    decision = Router().route(
+        "Ich möchte meine Bestellung stornieren.", question_texts=["What does this do?"]
+    )
+    assert decision.checkpoint_id == MULTILINGUAL
+    assert decision.detected_language == "de"

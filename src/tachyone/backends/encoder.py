@@ -146,20 +146,16 @@ def _criterion_texts(question: Question) -> list[str]:
     return []
 
 
-def calibration_language(state: State, question: Question) -> str | None:
-    """Serve-key language for one state/question pair (B-16).
+def _detection_texts(question: Question) -> list[str]:
+    """The localized texts one question contributes to language detection (B-16/B-19).
 
-    ``detect_calibration_language`` scored over the state **and all the localized question
-    text** — instructions plus criteria, for every primitive (the noul criteria are label
-    texts but they are localized like everything else; this is the composition the recipe
-    was validated on, where both eval slices clear the 0.99 gate). This is the single
-    source of truth shared by ``answer_state``, the offline ``training/predict`` path and
-    the fit scripts, so the key the asset was fitted under is the key the runtime applies.
-
-    Note this differs from ``_criterion_texts`` on purpose: that one feeds *embeddings*
-    (the noul scorer never embeds its criteria); this one only reads text for detection.
+    Instructions plus criteria for every primitive (the noul criteria are label texts but
+    they are localized like everything else) — the composition the calibration recipe was
+    validated on, and now the same one routing reads. Note this differs from
+    ``_criterion_texts`` on purpose: that one feeds *embeddings* (the noul scorer never
+    embeds its criteria); this one only reads text for detection.
     """
-    texts = [state_text(state), _question_text(question)]
+    texts = [_question_text(question)]
     if isinstance(question, NoulQuestion):
         if question.criteria is not None:
             texts.extend(
@@ -169,7 +165,18 @@ def calibration_language(state: State, question: Question) -> str | None:
             )
     else:
         texts.extend(_criterion_texts(question))
-    return detect_calibration_language(*texts)
+    return texts
+
+
+def calibration_language(state: State, question: Question) -> str | None:
+    """Serve-key language for one state/question pair (B-16).
+
+    ``detect_calibration_language`` scored over the state **and all the localized question
+    text**. This is the single source of truth shared by ``answer_state``, the offline
+    ``training/predict`` path, the fit scripts and — since B-19 — the router's checkpoint
+    choice, so the key the asset was fitted under is the key the runtime applies.
+    """
+    return detect_calibration_language(state_text(state), *_detection_texts(question))
 
 
 class ChoiceScorer:
@@ -1193,8 +1200,13 @@ class EncoderBackend:
     ) -> PredictionResult:
         if not questions:
             return PredictionResult(answers={}, usage=Usage(input_tokens=0, output_tokens=0))
+        question_texts = [
+            text for question in questions.values() for text in _detection_texts(question)
+        ]
         checkpoint_id = (
-            model if model in self._router.checkpoints else self._router.route(state).checkpoint_id
+            model
+            if model in self._router.checkpoints
+            else self._router.route(state, question_texts=question_texts).checkpoint_id
         )
         checkpoint = cast(EncoderCheckpointLike, self._router.get(checkpoint_id))
 
