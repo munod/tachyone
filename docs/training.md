@@ -98,6 +98,19 @@ Every stage is a committed script with a committed config and a fixed seed.
   count divisible by `languages x options` (24 for four-option domains, 30 for `ecommerce`) so
   each `(domain, language)` cell balances exactly — landing at 13,334 (37.0%) and 33,551
   (64.3%) distinct states.)*
+- **Teacher bank expansion (B-17, 2026-10-10):** `training/expand_banks.py` authors new
+  phrases for chosen banks through a local teacher (Ollama; `qwen3.6:35b` with `think: false`
+  — a thinking model otherwise burns the whole token budget and returns nothing), few-shot
+  from each bank's own sentences. Candidates pass mechanical rules before they reach a file —
+  exactly one `{entity}` placeholder, length and final period, normalized-duplicate free
+  across **every bank of that language in every domain**, and no *affirmative* urgency
+  outside the `urgent` bank (negated urgency is a valid neutral signal) — with every prompt,
+  raw reply, acceptance and rejection appended to `training/data/b17_teacher_log.jsonl`.
+  Accepted phrases are inserted **before** the bank's held-out last phrase, so the holdout
+  evals regenerate byte-identical (the frozen yardstick's sha pins); the tool writes all or
+  nothing (a partial bank expansion would double up on a re-run), and each dataset is then
+  regenerated from its committed config — the golden hashes and the config-to-dataset tests
+  are recaptured in the same commit (L-011).
 - **Localization completeness (B-5b):** every committed domain ships a full table for each tag in
   `DEFAULT_LANGUAGES` (`en, pt, es, fr, de, it, nl`) — entities, instructions, levels, criteria,
   ≥ 4 option terms and ≥ 20-char descriptions per option, and all five phrase tones with their

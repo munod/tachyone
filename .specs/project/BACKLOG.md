@@ -8,7 +8,7 @@ Legend: **Ready** (can start now) · **Blocked** (needs a prerequisite) · **Ide
 
 ---
 
-## B-1 — Multilingual `choice`/`score` quality  · Done (published) / `de` `fr` `it` `nl` ECE open
+## B-1 — Multilingual `choice`/`score` quality  · **Done (published) — criterion 3 closed by B-17 (2026-10-10)**
 
 **Why.** After v3 (dedicated `choice` head, rich option descriptions), English `choice` reached
 0.78 but multilingual `choice` is 0.40 and multilingual `score` ECE is 0.18 (see
@@ -58,6 +58,9 @@ fr 0.0095 / **it 0.0521** / nl 0.0296 / pt 0.0141 — with `choice` 0.9248 and e
 unchanged. **Still NOT met: `score/it` 0.0521 > 0.05** (from 0.1495), tied to the accuracy
 generalization gap Part 2 of Option C attacks. Recorded with the numbers, never re-fixed →
 **B-1 stays open on criterion 3, now one cell wide.**
+**Closed 2026-10-10 under B-17** (teacher bank expansion + retrain): **all 12 cells ≤ 0.05**
+— worst cell `score/fr` 0.0257, `score/it` **0.0014** (acc 0.9928) — with every other
+acceptance line improved or untouched (see B-17). NFR-C06 met on the frozen yardstick.
 
 **Risks / notes.** Small per-language calibration sets are noisy (warn below `min_samples`); more
 data volume does not fix an architectural gap, but here the head already exists. Effort ~1 day +
@@ -1802,6 +1805,56 @@ In-template every cell is 1.000 — nothing but the phrasing gap; `choice/es` (0
   never re-fixed.
 
 **Record:** execution appended below when the cycle runs.
+
+---
+
+**Execution (2026-10-09/10) — every gate PASS, `score/it` closed, B-1 criterion 3 met.**
+
+*Data phase (`7ac4d91`, configs `9353a6a`):* teacher `qwen3.6:35b` through the local Ollama
+(owner decision; deviation from the recorded "Qwen3.5:35b" — the 3.5 tag is not on the box)
+produced **360 accepted phrases** across all 60 banks in 60–180 s per call with `think:false`
+(the default burned the token budget in `thinking` and returned empty content — smoke-tested
+before the run); the post-filter removed **8 affirmative-urgency phrases** (the urgent
+vocabulary belongs to level 3; zero affirmative hits remain, rule now enforced in
+`expand_banks.validate`), **352 net**; the held-out last phrase is intact in **all 60 banks**;
+`data/eval_multi_domains_holdout.jsonl` regenerated to sha **982236ca2728705f** (T2 pin), every
+`data/eval_en*.jsonl` byte-identical; volumes unchanged (8,700 rows per language); the
+`en_pt`/`noisy` goldens recaptured with the B-17 note (L-011). Provenance:
+`training/data/b17_teacher_log.jsonl` (prompts, raw replies, accept/reject per call) and
+`training/data/b17_urgency_rejected.json`.
+
+*Retrain phase (detached, L-009, 12:07→19:23, all ten steps `exit=0`):* 8 epochs
+(37 min/epoch — the B-15 cadence exactly), 2-epoch interleaved touch-up, fitted choice bank +
+control, prototype bank, strength predictions on both slices, pooled temperature fit, and the
+14-cell confidence fit (diagonal 0.9996). Lineage: `checkpoints/multi_b17{,_il,_il_fit_bank}`;
+English ran no training.
+
+*Gates — `benchmarks/results/gates_b17/` (checkpoint-alone), 15/15 PASS:*
+
+- **T1 · THE TARGET: 12/12 cells ≤ 0.05 — B-1 criterion 3 CLOSES.** Full table: `choice` de
+  0.0225 / es 0.0000 / fr 0.0055 / it 0.0007 / nl 0.0049 / pt 0.0035; `score` de 0.0007 /
+  es 0.0165 / fr **0.0257 (worst)** / **it 0.0014** / nl 0.0025 / pt 0.0056. `score/it`
+  accuracy **0.8699 → 0.9928** (support 0.627 and voice 0.723 became ~0.99).
+- **T2 · frozen yardstick**: multi holdout sha `982236ca…` ✓, en holdout `3119e73c…` ✓ —
+  the gate rows never moved.
+- **T3 · no regression — everything improved or held:** multilingual `choice` **0.9248 →
+  0.9808** · English **byte-identical to B-16 on all three reports** ✓ · tripwire worst
+  **0.7807 → 0.9735 (`nl`)** · `support` **0.9760 → 0.9993** · worst domain `voice 0.9747
+  → ecommerce 0.9933` · per-domain ECE **zero exceptions** · strict 1.0000 · every language
+  ≥ 0.9928 (`es` 1.0000) · holdout overall **0.8892 → 0.9828** · split overall **0.9760 →
+  0.9993**.
+- **T4 · mechanism (reported):** `score/it` holdout accuracy **0.9928** vs the ≥ 0.93 target.
+- **T6 · detection key**: 0.9988 (train) / 0.9995 (holdout) ≥ 0.99 ✓.
+- **T5 + T7 · data gates and contract**: full suite **739 passed**, ruff/format clean,
+  pyright 0, `mkdocs build --strict` ✓.
+
+*The honest extras (reported, never re-fixed):* the generalization gap collapsed **−0.1105 →
+−0.0165** (checkpoint-alone, in-template 0.9961 / holdout 0.9828) and the routed pair went
+**0.8355/0.0747 → 0.9264/0.0318** — the expansion generalized far beyond the target cell;
+in-template ECE also improved (B-16's disclosed 0.0228 → 0.0036). Off-domain probes: en-routed
+rows unchanged (typed-decisions 0.306, XNLI 0.333), **MASSIVE 0.074 → 0.058 with `ECE raw`
+0.046 → 0.197** — the in-domain gain bought back some off-domain confidence sharpness (the
+documented L-007/L-015 trade), still above its 0.017 chance; published as measured.
 
 ---
 

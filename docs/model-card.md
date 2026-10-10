@@ -27,8 +27,26 @@ pipeline_tag: text-classification
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
 >
-> **This revision is B-15: both checkpoints retrained on `template_split: "train"`, and the
-> holdout number is honest for the first time.** The data recipe was corrected end to end
+> **This revision is B-17: the teacher expanded the tone banks, the multilingual arm was
+> retrained, and B-1's per-language ECE acceptance closes.** **352 phrases** authored by a
+> local `qwen3.6:35b` teacher went into every `neutral`/`request` bank (five domains × six
+> languages, inserted **before** the held-out phrase — the holdout evals are byte-identical,
+> sha-pinned); the multilingual checkpoint retrained with the unchanged B-15 recipe and
+> **English was not touched** (byte-identical numbers). On phrasing never seen in any
+> training: **multilingual 0.9264 (routed), English 0.9825** — the in-template → holdout gap
+> collapsed **−0.1105 → −0.0165** — and **all 12 `(primitive, language)` cells now sit at
+> ECE ≤ 0.05** (worst `score/fr` 0.0257; `score/it` **0.0521 → 0.0014**, accuracy
+> 0.8699 → 0.9928) — **B-1 criterion 3 (NFR-C06) CLOSED** on the frozen yardstick. Also
+> improved: `choice` holdout 0.9248 → 0.9808, the `noul` tripwire 0.7807 → 0.9735, every
+> language ≥ 0.9928 (`es` 1.0000), in-template multilingual ECE 0.0228 → 0.0036 (zero gate
+> exceptions everywhere). Disclosures, never smoothed: the expansion targeted a diagnosed
+> mechanism (BACKLOG **B-17** carries the per-domain table); off-domain **MASSIVE
+> 0.074 → 0.058 with `ECE raw` 0.046 → 0.197** — in-domain gains re-sharpened off-domain
+> confidence (the L-007/L-015 trade), still 3.4× its chance; and the English P3 `choice`
+> ECE **0.5243** (pooled fit at T = 10.0) stands exactly as previously disclosed.
+>
+> **The v0.9.0/v0.10.0 revisions were B-15/B-16 (history).** B-15 retrained both checkpoints
+> on `template_split: "train"` after the data recipe was corrected end to end
 > (sampler strides decoupled so every language trains every label, evals made
 > leave-one-template-out, phrase content ×3, volume 1.7×) and every training set regenerated so
 > training and the holdout eval share **0%** of templates. The multilingual lineage carries the
@@ -142,9 +160,9 @@ interleaved touch-up (`training/interleave_continue.py`).
 | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.188 | 57.7 |
 | English, five-domain split | 5 domains | **0.9983** | 0.191 | 57.7 |
 | English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.188 | 58.0 |
-| Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.9107** | 0.051 | 47.4 |
-| Multilingual, five-domain split | 5 domains | **0.9156** | 0.019 | 48.0 |
-| Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.8355** | 0.103 | 47.8 |
+| Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.9300** | 0.038 | 52.8 |
+| Multilingual, five-domain split | 5 domains | **0.9221** | 0.026 | 53.5 |
+| Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9264** | 0.032 | 53.3 |
 
 The English ECE column reads the **pooled never-trained fit** (below): `choice` is flattened to
 T=10.0 to calibrate held-out rows, which shows up honestly in-domain (0.5243 `choice` ECE —
@@ -214,8 +232,11 @@ rows fall through to the English checkpoint by language routing, `.specs/project
 0.05 ECE target on that split, and on the **holdout** the B-1 per-language ECE criterion was
 **NOT met** at B-15 (7 cells, worst `score/it` 0.1495) — the **B-16** cycle (serve-key
 detector + fitted confidence, 2026-10-09) moved it to **11/12 with `score/it` 0.0521
-recorded NOT met**, `choice` 0.9248 and every other axis byte-identical (recorded with
-numbers in BACKLOG **B-1**/**B-16**) — open under NFR-C06 / BACKLOG B-1.
+recorded NOT met** — and the **B-17** cycle (teacher bank expansion + retrain, 2026-10-10)
+**closed it**: **all 12/12 cells ≤ 0.05 on the same frozen holdout** (worst `score/fr`
+0.0257, `score/it` **0.0014** at accuracy 0.9928), `choice` 0.9248 → 0.9808 and every other
+axis improved or byte-identical. **NFR-C06 met**; the trail is in BACKLOG
+**B-1**/**B-15**/**B-16**/**B-17**.
 The CUDA-graph fast path
 (`TACHYONE_FAST=1`) gives **2.53×** p50 on English (17.31 → 6.83 ms) and **3.71×** on the
 multilingual five-domain path (14.23 → 3.84 ms) — re-measured on the v0.9.0 artifacts

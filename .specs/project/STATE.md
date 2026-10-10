@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-10-09
+**Last Updated:** 2026-10-10
 **Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
 leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
 `fix/sampler-stride`.** ~~Nothing leaves this machine~~ **Deferral LIFTED 2026-10-08 by
@@ -64,6 +64,22 @@ per-language all down); probes re-run with unchanged accuracy (MASSIVE T 1.75 �
 the v3 key); `benchmarks/compare.py` was **not** re-wired (the probes caveat carries the
 mass-vs-fitted distinction — deviation recorded). Full record: BACKLOG **B-16**.
 **Part 2 (queued):** the data/generalization cycle for `score/it` and the −0.1105 holdout gap.
+
+**B-17 executed 2026-10-09/10 (Part 2 — the data cycle; gates pre-registered `cd69459`,
+15/15 PASS).** Teacher **`qwen3.6:35b`** (local Ollama; owner deviation from the recorded
+"Qwen3.5:35b") authored **352 net phrases** into all 60 `neutral`/`request` banks (8
+affirmative-urgency phrases filtered; held-out last phrase intact in every bank; provenance
+`training/data/b17_teacher_log.jsonl`). Multi retrained on the expanded data with the
+unchanged B-15 recipe (8ep + interleave, 37 min/epoch = the B-15 cadence; English ran no
+training). **The target closed and took the whole axis with it: `score/it` 0.0521 →
+0.0014 (acc 0.8699 → 0.9928), all 12/12 cells ≤ 0.05 (worst `score/fr` 0.0257) — B-1
+criterion 3 CLOSED (NFR-C06 met on the frozen yardstick, holdout sha pins intact).** Every
+other line improved: holdout overall **0.8892 → 0.9828** (gap −0.1105 → **−0.0165**),
+`choice` 0.9248 → 0.9808, tripwire 0.7807 → 0.9735, languages ≥ 0.9928, English
+byte-identical to B-16, in-template ECE 0.0228 → 0.0036; routed pair **0.8355/0.0747 →
+0.9264/0.0318**. Disclosed as measured: MASSIVE (off-domain) **0.074 → 0.058, `ECE raw`
+0.046 → 0.197** — the in-domain gain re-sharpened off-domain confidence (L-007/L-015
+trade), still 3.4× its chance. Record: BACKLOG **B-17**; publication = `v0.11.0`.
 
 **Fase 0 (stride)** — option and hard-negative cycles decoupled from the language stride
 (`index // len(languages)`); goldens recaptured for `en_pt`/`noisy` only — `en` is

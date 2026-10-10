@@ -98,6 +98,46 @@ and never was a generalization number. The in-template → holdout gap for B-15 
 **−0.1105** (multilingual) / **−0.0179** (English). Full report with reproduction commands:
 [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
+## v0.11.0 — B-17: teacher bank expansion — B-1 closes (2026-10-10)
+
+Part 2 of the generalization cycle: **352 teacher-authored phrases** (`qwen3.6:35b` through
+the local Ollama, 8 urgency-filtered) appended to every `neutral`/`request` bank — five
+domains × six non-English languages, inserted **before** the held-out last phrase, so the
+gate rows never moved (holdout sha pins intact). Multi retrained with the unchanged B-15
+recipe (8 epochs + interleaved touch-up); English ran no training. Gates pre-registered in
+`cd69459`, **15/15 PASS**; full record in BACKLOG **B-17**.
+
+| Axis | B-16 (2026-10-09) | B-17 (2026-10-10) |
+| --- | --- | --- |
+| **B-1 cells ≤ 0.05 (holdout)** | 11/12 — worst `score/it` 0.0521 | **12/12 — worst `score/fr` 0.0257 · criterion 3 CLOSED** |
+| `score/it` (ECE / accuracy) | 0.0521 / 0.8699 | **0.0014 / 0.9928** |
+| holdout overall, checkpoint-alone | 0.8892 | **0.9828** (generalization gap −0.1105 → **−0.0165**) |
+| holdout overall, routed pair | 0.8355 / 0.0747 | **0.9264 / 0.0318** |
+| `choice` holdout | 0.9248 | **0.9808** |
+| `noul` tripwire (worst) | 0.7807 | **0.9735** |
+| languages, current split | 0.9799–0.9960 | **0.9928–1.0000** (`es` 1.0000) |
+| in-template multi ECE | 0.0228 (disclosed trade) | **0.0036** — zero exceptions, both slices |
+| English | byte-identical to B-15 | **byte-identical to B-16** |
+
+The holdout cell table (checkpoint-alone, n = 415–420):
+
+| Cell | ECE | | Cell | ECE |
+| --- | ---: | --- | --- | ---: |
+| `choice/de` | 0.0225 | | `score/de` | 0.0007 |
+| `choice/es` | 0.0000 | | `score/es` | 0.0165 |
+| `choice/fr` | 0.0055 | | `score/fr` | **0.0257** (worst) |
+| `choice/it` | 0.0007 | | `score/it` | **0.0014** (was 0.1495 at B-15) |
+| `choice/nl` | 0.0049 | | `score/nl` | 0.0025 |
+| `choice/pt` | 0.0035 | | `score/pt` | 0.0056 |
+
+**Disclosures (measured, never re-fixed).** The frozen yardstick held — holdout sha pins
+`982236ca…` / `3119e73c…`, the gate rows never moved, and the expansion targeted a diagnosed
+mechanism (the per-domain error table is in BACKLOG **B-17**). Off-domain probes: en-routed
+rows unchanged (typed-decisions 0.306, XNLI 0.333); **MASSIVE 0.074 → 0.058 with `ECE raw`
+0.046 → 0.197** — the in-domain gain re-sharpened off-domain confidence (the L-007/L-015
+trade), still 3.4× its 0.017 chance. Accuracy improved everywhere the gates read; nothing was
+smoothed.
+
 ## v0.9.0 — B-16: serve-key detector + the 2D confidence map (2026-10-09)
 
 No retrain — the calibration **key** and the confidence **derivation** changed for the
@@ -316,7 +356,7 @@ citations and the exact reproduction commands live in
 | Probe | Licence | n | Accuracy | Chance | ECE raw |
 | --- | --- | ---: | ---: | ---: | ---: |
 | typed-decisions (`LocalLLaMA`, 4 configs) | Apache-2.0 | 2000 | **0.306** | 0.20–0.50 | 0.096 |
-| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.074** | 0.017 | 0.046 |
+| MASSIVE intents (7 languages) | CC-BY-4.0 | 3584 | **0.058** | 0.017 | 0.197 |
 | XNLI (`en`) | CC BY-NC 4.0 | 5010 | **0.333** | 0.333 | 0.068 |
 
 Evaluation only — no probe row has ever reached `training/`. Read each number against its
@@ -394,6 +434,14 @@ temperature key: T **1.75 → 1.85**, `ECE raw` **0.042 → 0.046**, `Conf` 0.10
 noise-level, in the same direction the B-16 key corrected (the probes read the selected mass
 after the shipped temperature; the fitted confidence multilingual `choice`/`score` answers
 now report is measured in [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md)).
+
+**Re-run under B-17 (2026-10-10, the retrained multilingual arm).** English-routed rows are
+byte-unchanged (**typed-decisions 0.306, XNLI 0.333** — en ran no training). The multilingual
+rows moved with the new weights: **MASSIVE 0.074 → 0.058** (still 3.4× its 0.017 chance)
+while `ECE raw` goes **0.046 → 0.197** — the in-domain gains of the teacher-expanded banks
+re-sharpened off-domain confidence, the L-007/L-015 trade this page has published in the
+same direction every time capability was bought in-domain. Read it beside the internal
+tables: the adapter got *sharper and better* at home and *sharper* away from it.
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 

@@ -33,10 +33,12 @@ confidence with its gate recorded NOT met), the **data-recipe corrections (Fases
 sampler strides decoupled, leave-one-template-out evals (0.00% template overlap), content ×3,
 volume 1.7× —, **B-14** (the recompose retrain, whose `noul`/`support`/`it` cell inversion was
 root-caused to the trainer's sequential primitive phases and fixed by the interleaved
-continuation, with a per-cell validation monitor added to the trainer), and **B-15** — both
+continuation, with a per-cell validation monitor added to the trainer), **B-15** — both
 checkpoints retrained on `template_split: "train"`, the first **honest holdout number**
-(multi **0.8355** / en **0.9825**; +0.127 / +0.131 over the previous release), with the two
-NOT-met results disclosed rather than smoothed (see the model card). The wire
+(multi **0.8355** / en **0.9825**), — and **B-17**: the teacher (`qwen3.6:35b`) expanded the
+tone banks, the multilingual arm retrained, and **B-1's per-language ECE acceptance closed**
+(holdout multi **0.9264**, **12/12 cells ≤ 0.05**, gap −11.1 → −1.7 points), with the
+remaining NOT-met results disclosed rather than smoothed (see the model card). The wire
 contract, an OpenAI-compatible LLM backend, a local encoder
 (ModernBERT/mmBERT + LoRA), an ONNX backend, FastAPI serving, an SDK/CLI, MCP + LangChain
 integrations, a training pipeline, and a docs site all ship. LoRA adapters are published on the
@@ -134,22 +136,25 @@ graceful fallback.
   | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.188 | 57.7 ms |
   | English, five-domain | 5 domains | **0.9983** | 0.191 | 57.7 ms |
   | English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.188 | 58.0 ms |
-  | Multilingual (mmBERT-base + LoRA r=64 + fitted bank), routed | support | **0.9107** | 0.051 | 47.4 ms |
-  | Multilingual, five-domain | 5 domains | **0.9156** | 0.019 | 48.0 ms |
-  | Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.8355** | 0.103 | 47.8 ms |
+  | Multilingual (mmBERT-base + LoRA r=64 + fitted bank), routed | support | **0.9300** | 0.038 | 52.8 ms |
+  | Multilingual, five-domain | 5 domains | **0.9221** | 0.026 | 53.5 ms |
+  | Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9264** | 0.032 | 53.3 ms |
 
-  The two **holdout** rows are the honest generalization number (v0.9.0, B-15): training and
-  those evals share **0%** of templates, so the score measures phrasing generalization instead
-  of recognition — **+0.127 / +0.131 over the previously released adapters**, with the
-  in-template → holdout gap at −0.1105 / −0.0179. Two results are published **NOT met** rather
-  than smoothed: the English confidence fit's in-domain acceptance (`choice` T pegged at 10.0,
-  in-domain `choice` ECE 0.5243, accuracy untouched) and B-1's per-language ECE ≤ 0.05 on
-  holdout for the multilingual arm — improved by the **B-16** confidence map (2026-10-09)
-  from 7 failing cells to **1 (`score/it` 0.0521), recorded NOT met**; numbers in the
-  [model card](docs/model-card.md) and `BACKLOG.md` **B-1** / **B-16**. The English ECE column
+  The two **holdout** rows are the honest generalization number (v0.11.0, **B-17**): training
+  and those evals share **0%** of templates — the gate rows are sha-pinned and never moved —
+  so the score measures phrasing generalization instead of recognition: multilingual
+  **0.8355 → 0.9264** (**+0.164 over the previously released adapters**), English 0.9825,
+  with the in-template → holdout gap collapsed from −0.1105 to **−0.0165**. **B-1's
+  per-language ECE acceptance (NFR-C06) is CLOSED**: all **12/12** `(primitive, language)`
+  cells ≤ 0.05 on the holdout (worst `score/fr` 0.0257; `score/it` 0.1495 → **0.0014**).
+  Still published **NOT met**, never smoothed: the English confidence fit's in-domain
+  acceptance (`choice` T pegged at 10.0, in-domain `choice` ECE 0.5243, accuracy untouched)
+  and, off-domain, **MASSIVE 0.074 → 0.058 with `ECE raw` 0.046 → 0.197** — in-domain gains
+  re-sharpened off-domain confidence (the L-007/L-015 trade, still 3.4× chance); numbers in
+  the [model card](docs/model-card.md) and `BACKLOG.md` **B-17**. The English ECE column
   is that pooled never-trained fit; the
   multilingual rows are the routed product (~13–15% of rows fall through to the English
-  checkpoint by design — L-013 — and the multilingual checkpoint itself answers **0.9885** when
+  checkpoint by design — L-013 — and the multilingual checkpoint itself answers **0.9961** when
   it answers everything).
 
   Every label comes from the text it accompanies (B-11 + B-12 / ADR-0014 + ADR-0015): `noul` from
@@ -158,16 +163,19 @@ graceful fallback.
   contradictory rows** (the pre-B-11 labels contradicted 121 of 241 request-toned English rows, and
   7.8% of `score` rows carried a "near-tie" the text never showed). The dedicated `choice` head
   (L-002) and localized per-record-RNG data (B-1) lifted multilingual `choice` from ~0.25 (chance);
-  after B-16's fitted confidence, **11 of the 12 `(primitive, language)` cells sit at ECE ≤ 0.05
-  on unseen phrasing** (`score/it` 0.0521 remains, recorded), and on the support-only
-  routed split the per-language ECE target (NFR-C06 / BACKLOG B-1) remains open. The CUDA-graph
+  after the B-16 confidence map and the B-17 teacher expansion, **all 12 `(primitive, language)`
+  cells sit at ECE ≤ 0.05 on unseen phrasing — B-1's NFR-C06 acceptance is CLOSED** (the
+  support-only routed split, a different view, still shows three languages above the line,
+  worst `nl` 0.091). The CUDA-graph
   fast path (`TACHYONE_FAST=1`) improves p50 by **2.5×** on English (17.31 → 6.83 ms) and
   **3.7×** on the multilingual five-domain path (14.23 → 3.84 ms) — re-measured on the v0.9.0
   artifacts (2026-10-08), with **0 top-label changes** on multilingual and **1 of 16 sampled**
   on English (disclosed as measured; NFR-P01 met by both paths). The external probes were
-  re-measured the same day: XNLI **0.333** (exactly chance — the B-13 mixture's MultiNLI layer
-  is not in the recomposed recipe), typed-decisions **0.306**, MASSIVE **0.074** against its
-  0.017 chance, with off-domain `ECE raw` down across the board (details in
+  re-measured after **B-17** (2026-10-10): XNLI **0.333** (exactly chance — the B-13
+  mixture's MultiNLI layer is not in the recomposed recipe) and typed-decisions **0.306**
+  are unchanged (English ran no training), MASSIVE reads **0.058** against its 0.017 chance
+  with `ECE raw` **0.197** — the in-domain gains re-sharpened off-domain confidence (the
+  L-007/L-015 trade; details in
   [`docs/benchmarks.md`](docs/benchmarks.md)). JevBench remains set aside by decision after
   its maintainer changed the submission methodology (Intelligence **8.4 → 15.0** belongs to
   the v0.8.0 artifact).

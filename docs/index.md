@@ -60,9 +60,10 @@ and returns probabilities plus calibrated `confidence`. It speaks the exact Type
     Strictly proper scoring (RLCD) plus per-`(primitive, language)` calibration: temperatures
     keyed by a detector that reads the state **and** the localized question, and — since
     B-16 — a fitted `peakedness × strength` confidence for multilingual `choice`/`score`.
-    On phrasing never seen in training, **11 of the 12 `(primitive, language)` cells sit at
-    ECE ≤ 0.05** (was 5 of 12); the remaining miss, `score/it` **0.0521**, is published
-    **NOT met**, never smoothed. Every label is derived from the text it accompanies
+    On phrasing never seen in training, **all 12 `(primitive, language)` cells now sit at
+    ECE ≤ 0.05** (B-17, 2026-10-10 — from 5 of 12 at B-15; worst cell `score/fr`
+    0.0257, `score/it` 0.1495 → **0.0014**): **B-1's NFR-C06 acceptance is CLOSED** on the
+    frozen yardstick. Every label is derived from the text it accompanies
     (B-11 + B-12), and the label audit published with the accuracy reports **0
     contradictory rows**.
 
@@ -156,25 +157,25 @@ Measured on NVIDIA L4 23GB (v0.9.0, B-15; full tables and reproduction commands 
 **Overall accuracy by language — multilingual, five-domain split (routed pair)**
 
 <div class="tachyone-chart">
-<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:96.1%"></span></span><span class="tachyone-bar__value">96.1%</span></div>
-<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:94.5%"></span></span><span class="tachyone-bar__value">94.5%</span></div>
-<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:94.4%"></span></span><span class="tachyone-bar__value">94.4%</span></div>
-<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:91.4%"></span></span><span class="tachyone-bar__value">91.4%</span></div>
-<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:91.2%"></span></span><span class="tachyone-bar__value">91.2%</span></div>
-<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:81.6%"></span></span><span class="tachyone-bar__value">81.6%</span></div>
-<p class="tachyone-chart__caption">Both published checkpoints pinned (the router sends empty or no-signal states to the English one by design — L-013 — ~13–15% of rows; the multilingual checkpoint alone answers 98.9% when it answers everything). Labels are derived from the text (B-11/B-12, 0 contradictory); temperature fitted per (primitive, language).</p>
+<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:96.5%"></span></span><span class="tachyone-bar__value">96.5%</span></div>
+<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:95.8%"></span></span><span class="tachyone-bar__value">95.8%</span></div>
+<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:95.0%"></span></span><span class="tachyone-bar__value">95.0%</span></div>
+<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:93.3%"></span></span><span class="tachyone-bar__value">93.3%</span></div>
+<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:91.8%"></span></span><span class="tachyone-bar__value">91.8%</span></div>
+<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:80.7%"></span></span><span class="tachyone-bar__value">80.7%</span></div>
+<p class="tachyone-chart__caption">Both published checkpoints pinned (the router sends empty or no-signal states to the English one by design — L-013 — ~13–15% of rows; the multilingual checkpoint alone answers 99.6% when it answers everything). Labels are derived from the text (B-11/B-12, 0 contradictory); temperature fitted per (primitive, language).</p>
 </div>
 
 **The honest generalization number — holdout phrasing, 0% of templates shared with training**
 
 <div class="tachyone-chart">
-<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:92.2%"></span></span><span class="tachyone-bar__value">92.2%</span></div>
-<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:89.4%"></span></span><span class="tachyone-bar__value">89.4%</span></div>
-<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:84.1%"></span></span><span class="tachyone-bar__value">84.1%</span></div>
-<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:80.1%"></span></span><span class="tachyone-bar__value">80.1%</span></div>
-<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:79.8%"></span></span><span class="tachyone-bar__value">79.8%</span></div>
-<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:75.8%"></span></span><span class="tachyone-bar__value">75.8%</span></div>
-<p class="tachyone-chart__caption">B-15's holdout evals: training excluded the holdout template pool, so this measures phrasing generalization instead of recognition (overall 83.6% multilingual / 98.3% English). The distance between the two charts is the generalization gap — and B-1's per-language ECE ≤ 0.05 target, after B-16's confidence map (2026-10-09), now passes <strong>11 of 12 cells</strong> on this set with <strong>score/it 0.0521 recorded NOT met</strong> (numbers in BACKLOG B-16; disclosed, never re-fixed).</p>
+<div class="tachyone-bar"><span>pt</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:95.4%"></span></span><span class="tachyone-bar__value">95.4%</span></div>
+<div class="tachyone-bar"><span>es</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:95.0%"></span></span><span class="tachyone-bar__value">95.0%</span></div>
+<div class="tachyone-bar"><span>fr</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:94.9%"></span></span><span class="tachyone-bar__value">94.9%</span></div>
+<div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:94.7%"></span></span><span class="tachyone-bar__value">94.7%</span></div>
+<div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:92.8%"></span></span><span class="tachyone-bar__value">92.8%</span></div>
+<div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:83.1%"></span></span><span class="tachyone-bar__value">83.1%</span></div>
+<p class="tachyone-chart__caption">B-17's holdout evals (2026-10-10): training excluded the holdout template pool, so this measures phrasing generalization instead of recognition (overall <strong>92.6%</strong> multilingual / 98.3% English — the generalization gap collapsed from −11.1 to −1.7 points after the teacher expanded the tone banks). The distance between the two charts is the generalization gap — and B-1's per-language ECE ≤ 0.05 target now passes <strong>all 12 cells</strong> on this set (worst `score/fr` 0.0257): <strong>B-1's NFR-C06 acceptance CLOSED</strong> (numbers in BACKLOG B-17; the frozen yardstick's sha pins never moved).</p>
 </div>
 
 **p50 latency — stock forward vs CUDA-graph fast path**

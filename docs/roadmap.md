@@ -262,6 +262,19 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   `score/it` and the −0.1105 holdout gap — queued by decision. Record in `BACKLOG.md`
   **B-16** (gates pre-registered `0f1593d`; lesson **L-020** on gate protocols).
 
+- **B-17: teacher bank expansion — B-1 closes** ✅ (`v0.11.0`, 2026-10-10). Part 2 of the
+  cycle: a local `qwen3.6:35b` teacher authored **352 net phrases** into every
+  `neutral`/`request` bank (5 domains × 6 languages, inserted before the held-out phrase —
+  the holdout evals stayed byte-identical, sha-pinned), the multilingual arm retrained with
+  the unchanged recipe, English untouched. **All 15 gates PASS (15/15): every one of the 12
+  `(primitive, language)` cells now reads ECE ≤ 0.05 on unseen phrasing — B-1's NFR-C06
+  acceptance is CLOSED** (`score/it` 0.1495 → 0.0521 → **0.0014**; worst cell now `score/fr`
+  0.0257). The expansion generalized far beyond the target: holdout overall **0.8892 →
+  0.9828** (gap −0.1105 → **−0.0165**), `choice` 0.9248 → 0.9808, tripwire 0.7807 → 0.9735,
+  every language ≥ 0.9928, in-template ECE 0.0036, English byte-identical. Disclosed as
+  measured: off-domain MASSIVE **0.074 → 0.058, `ECE raw` 0.197** (the L-007/L-015 trade).
+  Record in `BACKLOG.md` **B-17** (gates pre-registered `cd69459`).
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).
