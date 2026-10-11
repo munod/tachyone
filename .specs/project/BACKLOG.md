@@ -1157,6 +1157,33 @@ Never train or calibrate on public/sealed items (the >25 pp public-to-sealed gap
 penalised); never vendor the harness (AD-011). Submission queue is long (~30 open
 `[bench request]` issues) — file early.
 
+**Dry-run re-measurement (2026-10-10, `v0.13.0` artifact — measured only, no submission).**
+Owner decision: answer "would the board read better today?" without re-engaging the set-aside
+benchmark. Same protocol as the diagnostic above (231 public items at the pinned rev
+`bb05a335`, `typesafe` adapter against an explicit-adapter serve, 231/231 strict-valid,
+0 failed; results kept in `/tmp/opencode/jev_dryrun/`):
+
+| Axis | v0.8.0 (B-13, mixture artifact) | v0.13.0 (synthetic-only) | Δ |
+| --- | ---: | ---: | --- |
+| Intelligence | 15.0 | **10.5** | −4.5 |
+| Calibration | 52.6 | **85.9** | **+33.3** |
+| Speed | 84.9 | 85.0 | = |
+| Cost | 78.8 | 78.8 | = |
+| **Composite** | **4.28** | **2.17** | pulled by the `(I/50)²` multiplier |
+| public ECE | 0.2369 | **0.0704** | **3.4× better — P3's ≥ 60 / ECE ≤ 0.15 target MET now** |
+
+Both facts decompose cleanly. **Calibration is much better** because B-16/B-18 replaced the
+temperature-only chain with strength-keyed fitted maps — exactly the axis that failed in
+P3. **Intelligence is worse** because the B-13 artifact *was* the mixture retrain (MultiNLI
++ BoolQ + Banking77, the "+6.0 treatment") and the B-15 recompose is synthetic-only — the
+same loss the XNLI probe recorded (0.566 → 0.333). Per family: `easy/intent` 0.750 → 0.250
+and `hard/adversarial` 0.667 → 0.167 (natural text); `noul` 0.487 → **0.554** and
+**`hard/trap` 0.000 → 0.500** (the B-11/B-12 label fixes closed half the rubric-blindness);
+`hard/temporal_numeric` 0.133 → 0.267. Routed and explicit-en are identical (every bench
+item is English and routes to `tachyone-en`). Verdict recorded as measured: the axis the
+project fixed is fixed; the axis the data removed needs the data back — **B-20 opens that
+cycle** (mixture layer alongside synthetic, public items evaluation-only as ever).
+
 **Related.** `.specs/features/jevbench/spec.md`, `.specs/project/STATE.md` L-003/L-006/
 L-013, `docs/compare.md` §3 (the probes said this already: XNLI ≈ chance, ECE raw 0.35–0.65),
 `AGENTS.md` hard rules 1/5/6.

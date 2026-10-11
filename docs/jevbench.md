@@ -2,6 +2,9 @@
 
 > **Status (2026-10-08):** JevBench was **set aside by decision** — its maintainer
 > changed the submission methodology upstream and Tachyone development continued
+> (2026-10-10: a **measurement-only dry-run** re-read the public set on the `v0.13.0`
+> artifact — see *Dry-run re-measurement* below — and B-20 opened the data cycle its
+> verdict points at).
 > (`.specs/project/STATE.md`). Every JevBench number on this page belongs to the
 > **v0.8.0 artifact** and is kept as a measurement of that revision; it is **not**
 > re-measured for v0.9.0. The current release's numbers are in
@@ -55,6 +58,47 @@ Wire: **231/231 strict-valid, 0 renormalised, 0 failed.** ECE (top-label, 10 bin
 stays 0.000); the P3 calibration target was **≥ 60** and it landed at **52.6**. The full
 record — including why no legal fit set can see bench difficulty — is in
 `.specs/features/jevbench/spec.md`.
+
+## Dry-run re-measurement (2026-10-10, `v0.13.0` — measured only, no submission)
+
+Owner decision: answer "would the board read better today?" without re-engaging the
+set-aside benchmark. **Same protocol** (231 public items at the pinned rev `bb05a335`, the
+harness's own `typesafe` adapter against an explicit-adapter serve; 231/231 strict-valid,
+0 failed):
+
+| Axis (public-only) | 2026-10-02 (`v0.8.0`) | 2026-10-10 (`v0.13.0`) | Δ |
+| --- | ---: | ---: | --- |
+| Intelligence | 15.0 | **10.5** | −4.5 |
+| Calibration | 52.6 | **85.9** | **+33.3** |
+| Speed | 84.9 | 85.0 | = |
+| Cost | 78.8 | 78.8 | = |
+| **Composite** | **4.28** | **2.17** | pulled by the `(I/50)²` multiplier |
+| public ECE | 0.2369 | **0.0704** | **P3's ≥ 60 / ECE ≤ 0.15 target is MET now** |
+
+| Tier | acc then | acc now | chance-corr then → now |
+| --- | ---: | ---: | --- |
+| easy | 0.625 | 0.417 | 47.6 → 18.5 |
+| standard | 0.417 | 0.431 | 14.6 → 16.6 |
+| hard | 0.333 | 0.342 | 0.0 → 1.0 |
+
+| Primitive | then | now |
+| --- | ---: | ---: |
+| `noul` | 0.487 | **0.554** |
+| `choice` | 0.360 | 0.288 |
+| `score` | 0.611 | 0.444 |
+
+**Both directions decompose cleanly.** Calibration is much better because B-16/B-18
+replaced the temperature-only chain with strength-keyed fitted maps — exactly the axis P3
+failed. Intelligence is worse because the October artifact *was* the mixture retrain
+(MultiNLI + BoolQ + Banking77 — the "+6.0 treatment") and the B-15 recompose is
+**synthetic-only**: `easy/intent` 0.750 → 0.250 and `hard/adversarial` 0.667 → 0.167 (the
+natural-text families), the same loss the XNLI probe recorded (0.566 → 0.333). Against
+that, `noul` 0.487 → **0.554** and **`hard/trap` 0.000 → 0.500** — the B-11/B-12 label fixes
+closed half the rubric-blindness that capped Intelligence — and `hard/temporal_numeric`
+0.133 → 0.267. Routed and explicit-`en` are identical: every bench item is English and
+routes to `tachyone-en`. The verdict is recorded as measured — and **B-20** opens the data
+cycle to bring the natural-text layer back beside the synthetic recipe (public items stay
+evaluation-only for ever).
 
 ## What is pinned
 

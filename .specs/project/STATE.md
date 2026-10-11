@@ -65,6 +65,18 @@ the v3 key); `benchmarks/compare.py` was **not** re-wired (the probes caveat car
 mass-vs-fitted distinction — deviation recorded). Full record: BACKLOG **B-16**.
 **Part 2 (queued):** the data/generalization cycle for `score/it` and the −0.1105 holdout gap.
 
+**JevBench dry-run re-measured 2026-10-10 (measurement only, no submission — owner
+decision).** Same protocol as the 2026-10-02 diagnostic (231 public items at the pinned
+rev, 231/231 strict-valid): **Calibration 52.6 → 85.9** (public ECE 0.2369 → 0.0704 — P3's
+≥ 60 / ECE ≤ 0.15 target is met now; B-16/B-18's fitted maps fixed exactly the axis that
+failed) but **Intelligence 15.0 → 10.5** — the October artifact was the *mixture* retrain
+(MultiNLI + BoolQ + Banking77) and the B-15 recompose is synthetic-only (`easy/intent`
+0.750 → 0.250; the XNLI probe drop was the same loss). Bright side: `noul` 0.487 → 0.554
+and **`hard/trap` 0.000 → 0.500** (B-11/B-12 closed half the rubric-blindness). Composite
+4.28 → 2.17 (the `(I/50)²` multiplier). Verdict recorded in BACKLOG **B-13** +
+`docs/jevbench.md`; **B-20 opens the data cycle**: the natural-text layer back beside the
+synthetic recipe, public items evaluation-only for ever.
+
 **B-19 executed 2026-10-10 (routing quality, the L-013 follow-up; gates pre-registered
 `94df00c`, 20/20 PASS).** The docs' "~13–15% fall through to English" measured real:
 **14.4%** of five-domain rows / **12.1%** of support rows — 405 empty states (language lives
