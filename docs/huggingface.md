@@ -11,7 +11,19 @@ consumers load the base trunk plus the adapter. Weights are fetched/cached local
 >
 > Both load via `PeftModel.from_pretrained(base, "munod/tachyone-en")` and predict.
 >
-> **Latest revision: 2026-10-10 (`v0.12.0`, B-18 — P3 closes)** — commits
+> **Latest revision: 2026-10-10 (`v0.13.0`, B-19 — routing quality)** — commits
+> [`df897ca2`](https://huggingface.co/munod/tachyone-en/commit/df897ca218d7f09e1fd71d24e9a4fc4caeebd935)
+> (`tachyone-en`) and
+> [`ea9529ca`](https://huggingface.co/munod/tachyone-multi/commit/ea9529ca5ef4700ff9af79bb5b8a8745318c8107)
+> (`tachyone-multi`), **8 files each, README-only** — no weight or calibration asset changed
+> (B-19 ships in the code, not the adapters). The model card now records that routing keys on
+> the same detector as calibration (state + localized question): the L-013 fall-through
+> collapsed **14.4% → 0.05%**, and the routed pair matches the arms (multilingual routed
+> 0.9993 / 0.9957 / 0.9828, English accuracy-identical, checkpoint-alone reports
+> byte-identical). Every uploaded file sha256-verified against the local build (**8/8 and
+> 8/8**) and the remote holds no stale file.
+>
+> **Previous revision: 2026-10-10 (`v0.12.0`, B-18 — P3 closes)** — commits
 > [`4b7e9fa5`](https://huggingface.co/munod/tachyone-en/commit/4b7e9fa5b5139cb38030d2c9610762f2154270a9)
 > (`tachyone-en`, **8 files, NEW CONFIDENCE ASSET**: `confidence_calibration.json` now ships
 > the B-18 fitted `choice` cells (`choice:en` + global, `peakedness × strength`, slice-balanced
