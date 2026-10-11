@@ -236,3 +236,11 @@ def test_format_worst_cells_is_one_line_with_the_primitive_prefix_stripped() -> 
     }
     assert format_worst_cells(cells) == "noul=support/it@0.3612 choice=ecommerce/fr@0.0042"
     assert format_worst_cells({}) == ""  # no rows at all: empty line, never a crash
+
+
+def test_grad_clip_max_norm_is_a_positive_float() -> None:
+    # B-20: the collapse fix is a constant the trainer reads before every step
+    from training.finetune_rlcd import GRAD_CLIP_MAX_NORM
+
+    assert isinstance(GRAD_CLIP_MAX_NORM, float)
+    assert GRAD_CLIP_MAX_NORM > 0.0

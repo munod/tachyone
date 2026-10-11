@@ -23,6 +23,11 @@ from training.rlcd import categorical_loss
 
 _TRAIN_HINT = "the train extra is required for fine-tuning: uv sync --extra train"
 
+#: Gradient norm clipped before every optimizer step (B-20). The natural-text mixture puts
+#: long policy documents beside short intents; one unclipped update collapsed every head to
+#: uniform output for the rest of the run (loss flat at ln k for four epochs).
+GRAD_CLIP_MAX_NORM = 1.0
+
 
 def choice_head_modules(
     torch: Any, *, hidden_size: int, rank: int, init_std: float, domains: Sequence[str]
@@ -437,9 +442,20 @@ def _train(config: FinetuneConfig, report: dict[str, Any]) -> dict[str, Any]:
                 loss.backward()
                 accumulations += 1
                 if accumulations % config.grad_accum == 0:
+                    # B-20: clip before stepping. The teacher-free mixture (long policy
+                    # documents beside short intents) produced one unclipped update that
+                    # collapsed every head to uniform output for the rest of the run.
+                    torch.nn.utils.clip_grad_norm_(
+                        [p for group in optimizer.param_groups for p in group["params"]],
+                        GRAD_CLIP_MAX_NORM,
+                    )
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
         if accumulations % config.grad_accum != 0:
+            torch.nn.utils.clip_grad_norm_(
+                [p for group in optimizer.param_groups for p in group["params"]],
+                GRAD_CLIP_MAX_NORM,
+            )
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
         epochs_run += 1

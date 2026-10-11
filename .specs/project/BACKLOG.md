@@ -2164,6 +2164,23 @@ public items are evaluation-only **for ever** and the builders refuse collisions
 is English-only, so multilingual's numbers move only through shared nothing; the mixture
 licenses ride in the model card as before.
 
+**Attempt 1 (2026-10-10/11) — COLLAPSED, recorded not smoothed.** The chain trained 6 epochs
+(`exit=0`, 5h11m) but the run is a **loss**: `choice` train loss fell 1.0093 → 0.2168 by
+epoch 2 and then jumped to **1.1618 and froze** for four epochs (`noul` 0.13 → 0.30,
+`score` flat 0.75) — the classic L-011 signature. The arm reads **chance on every task**
+(choice 0.284 / noul 0.505 / score 0.239 on the in-template evals against the published
+arm's 0.996 / 0.995 / 1.000) and its predictions are **uniform** (mean conf 0.27 ≈ 1/4,
+entropy ≈ ln 4). Diagnosis: the mixture puts long policy documents beside short intents and
+the trainer had **no gradient clipping** — one unclipped update blew the weights into the
+uniform regime. Data audited and clean (schemas, criteria, targets; the 59 data tests held).
+*Fix (minimal, recorded):* `GRAD_CLIP_MAX_NORM = 1.0` — `clip_grad_norm_` before every
+optimizer step in `finetune_rlcd` (constant + test), **lr kept at the registered 1e-4**
+(a 5k-row smoke at 5e-5 trained without collapse but converges too slowly for the mixture —
+B-13's treatment reached `choice` 0.0695 at 1e-4). The `fit_bank` step of attempt 1 also hit
+an OOM by starting 8 seconds after the trainer exited (GPU still releasing) — the resumed
+chain adds a lead-in sleep. Gates T1–T5 stand unchanged; attempt 1's outputs stay in
+`checkpoints/en_b20` until the re-run replaces them.
+
 ---
 
 ## Carried over (from earlier planning)
