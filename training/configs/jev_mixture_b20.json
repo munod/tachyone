@@ -1,0 +1,9 @@
+{
+  "_comment": "The training mixture for the B-20 arm (BACKLOG B-20): the natural-text layer returns on top of the current synthetic recipe. The fine-tune takes ONE data_path, so the mixture is itself a recipe: ordered parts, concatenated by training/build_jev_mixture.py with id-uniqueness and shape checks. Part files are gitignored; this config plus the part recipes (jev_sources.json, jev_families.json, data_en_domains.json) and jev_sources.lock.json is what reproduces it (L-011).",
+  "parts": [
+    "data/train_en_domains.jsonl",
+    "data/train_jev_sources.jsonl",
+    "data/train_jev_families.jsonl"
+  ],
+  "out": "data/train_en_b20.jsonl"
+}
