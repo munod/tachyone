@@ -2093,6 +2093,69 @@ question, plus 677 Latin states without signal — `nl` losing 35% of its rows) 
 
 ---
 
+## B-20 · The mixture layer returns — natural text beside synthetic (the JevBench Intelligence follow-up) · **Gates pre-registered 2026-10-10, before any data edit or training**
+
+**Why.** The 2026-10-10 dry-run (BACKLOG **B-13** addendum) decomposed the board reading:
+**Calibration 52.6 → 85.9** (public ECE 0.0704 — P3's ≥ 60 target met) but **Intelligence
+15.0 → 10.5**, because the October artifact *was* the mixture retrain (MultiNLI + BoolQ +
+Banking77 — the "+6.0 treatment") and the B-15 recompose is synthetic-only. The families
+that hurt are the natural-text ones (`easy/intent` 0.750 → 0.250, `hard/adversarial`
+0.667 → 0.167; the XNLI probe 0.566 → 0.333 recorded the same loss). Meanwhile the
+label fixes (B-11/B-12) closed half the rubric-blindness (`hard/trap` 0.000 → 0.500) — the
+other half is data. **B-20 brings the mixture layer back on top of the current recipe.**
+
+**Design — one factor vs the published en trunk: the added data layer.**
+1. **Mixture** = the current recipe's base (`data/train_en_domains.jsonl`, 36,000) + the
+   pinned-source layer (`data/train_jev_sources.jsonl`, 11,000: MultiNLI → `choice` with
+   the XNLI probe's own instruction as the transfer target, BoolQ → `noul`, Banking77 →
+   `choice` 5-way) + the bench-shaped families (`data/train_jev_families.jsonl`, 3,540:
+   `long_policy`/`trap`/`multi_hop`/`temporal_numeric`/`adequacy`) → `data/train_en_b20.jsonl`
+   (**50,540 rows, 28.6% mixture**). Everything rebuilds from the committed recipes
+   (`jev_sources.json` / `jev_families.json` / the new `jev_mixture_b20.json`) plus
+   `jev_sources.lock.json` — deterministic seeds, L-011.
+2. **Trainer byte-unchanged** from the published recipe (`finetune_en_domains.json`:
+   ModernBERT-large, LoRA r=16/α32, 6 epochs, choice_rank 128, seed 2) — only
+   `data_path`/`out_dir` move (`checkpoints/en_b20`). English only; **multilingual
+   untouched** (the mixture is English text by construction).
+3. **The P3 stack is rebuilt on the new trunk** (choice bank fit, state prototypes,
+   temperatures, and the B-18 slice-balanced `choice` map) — same chain, same fit basis,
+   so the B-18 acceptance is re-earned, not assumed.
+4. Licenses unchanged and pinned (`jev_sources.lock.json`: MultiNLI mixed CC-BY-3.0/
+   CC-BY-SA-3.0/MIT/other, BoolQ CC-BY-SA-3.0, Banking77 CC-BY-4.0) — carried into the
+   model card.
+
+**Gates — pre-registered here before any edit** (quality is gated checkpoint-alone, L-013;
+the bench is diagnostic):
+
+- **T1 · internal quality non-regression (the rebuilt en stack, checkpoint-alone):** P3's
+  in-domain acceptance re-met (`en_current` + `en_split` per-primitive ECE ≤ 0.05);
+  five-domain in-template accuracy **≥ 0.9900** (today 0.9983) and holdout **≥ 0.9700**
+  (today 0.9825) — pre-set bands, because the layer is expected to trade a little synthetic
+  saturation for coverage; support ≥ 0.85 and worst domain ≥ 0.70 (the B-5 floors);
+  strict-valid 1.0000; label audit 0 contradictory.
+- **T2 · mixture integrity:** `fetch_jev_sources --check` green against the lock; sources
+  and families rebuilt deterministically; **zero normalized-text overlap with the 231
+  public items** (`--public-dir`, the build refuses otherwise) and zero overlap with the
+  internal evals; volumes 36,000 + 11,000 + 3,540; globally unique ids; the holdout
+  template-share gate still ≤ 5%.
+- **T3 · multilingual and the yardstick untouched:** multi gate reports byte-identical to
+  `gates_b19`/`gates_b18`; both holdout sha pins re-verified.
+- **T4 · the target (bench diagnostic, pre-set targets):** the JevBench dry-run under the
+  exact protocol of the 2026-10-10 re-measurement: **Intelligence ≥ 15.0** (the mixture
+  artifact's reading, from 10.5) and `hard/trap` ≥ 0.5 held; **Calibration ≥ 60 held**
+  (P3's board target; today 85.9). Probes (one set): **XNLI ≥ 0.45** (the MultiNLI
+  instruction is the probe's own question; from 0.333 — the B-13 artifact read 0.566);
+  typed-decisions and MASSIVE reported as measured. NOT met → published with the numbers.
+- **T5 · contract:** full suite + ruff + format + pyright + `mkdocs --strict`; goldens
+  recaptured in the same commit if any committed config↔dataset pair moves (L-011).
+
+**Disclosures pre-committed.** The bench target is a diagnostic on a set-aside benchmark —
+public items are evaluation-only **for ever** and the builders refuse collisions; the layer
+is English-only, so multilingual's numbers move only through shared nothing; the mixture
+licenses ride in the model card as before.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.
