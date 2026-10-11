@@ -6,6 +6,30 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-10
+
+### Changed
+
+- **B-19: routing quality (the L-013 follow-up) — one detector, one language truth
+  (2026-10-10).** The "~13–15% of multilingual rows fall through to the English checkpoint"
+  figure the docs carried was real (measured: **14.4%** five-domain / **12.1%** support —
+  405 empty states whose language lives only in the localized question, plus 677 Latin
+  states without signal; `nl` lost 35% of its rows). Routing now keys on
+  `detect_calibration_language` over the state **and** the request's question texts — the
+  same detector that keys temperatures and confidence cells (fit and serve cannot drift
+  about language) — through the additive `Router.route(state, question_texts=None)`; without
+  the keyword the historical state-only path runs byte-identically, non-Latin scripts fall
+  through to the historical rule untouched, and the recorded fallback sends `und`/accented
+  Latin to the multilingual arm. **Misroutes 14.4% → 0.05%** (4/7,500; support 0; English
+  0, clean and noisy alike). The routed pair finally matches the arms: multilingual routed
+  accuracy **0.9300 → 0.9993** (split), **0.9221 → 0.9957** (five-domain), **0.9264 →
+  0.9828** (holdout) with ECE 0.0386/0.0342/0.0335 → 0.0058/0.0032/0.0057; the six
+  checkpoint-alone gate reports are **byte-identical** and the three English reports
+  accuracy-identical. On the 1,082 rescued rows the English arm scored 0.4871 against the
+  multilingual arm's **1.0000**. Probes published as measured: typed-decisions 0.306 and
+  XNLI 0.333 byte-unchanged, MASSIVE 0.058 → 0.051. Gates pre-registered `94df00c`,
+  20/20 PASS. Full record: `BACKLOG.md` **B-19**.
+
 ## [0.12.0] - 2026-10-10
 
 ### Added
