@@ -100,6 +100,44 @@ routes to `tachyone-en`. The verdict is recorded as measured — and **B-20** op
 cycle to bring the natural-text layer back beside the synthetic recipe (public items stay
 evaluation-only for ever).
 
+### The LLM-backend reference row (same protocol, 2026-10-11)
+
+What a general LLM reads on the same 231 items — not a submission, a reference point for the
+two axes a decision engine trades away: `gemma4:26b` through the `llm` backend (local
+Ollama on a dedicated GPU; the B-20 training ran untouched on the other).
+
+| Axis (public-only) | `v0.8.0` encoder | `v0.13.0` encoder | **LLM · gemma4:26b** |
+| --- | ---: | ---: | ---: |
+| Intelligence | 15.0 | 10.5 | **97.7** |
+| Calibration | 52.6 | 85.9 | **94.6** |
+| Speed | 84.9 | 85.0 | **44.2** |
+| Cost | 78.8 | 78.8 | *unmetered (see note)* |
+| **Composite** | **4.28** | **2.17** | **75.3** (see notes) |
+
+Accuracy **227/231 (98.3%)** — easy 1.000, standard 1.000, hard 0.964 (`choice` 0.986,
+`noul` 0.986, `score` 0.944); ECE **0.0272**. The four misses are genuinely hard: a multi-hop
+credit calculation, a vulnerability-triage ladder, a trap item and a numeric `judge` item.
+
+**Notes (read before quoting the composite).**
+- **Speed is the trade**: raw p50 **11.0 s** / p95 84.7 s serial local inference (the board's
+  `×2 + 0.15 s` adjustment → 22.2 s / 169.6 s) against the encoder's ~70 ms. That gap *is*
+  the product thesis.
+- **Cost is unmetered**: the LLM ran locally with no metered price, and the October cost
+  basis ($0.00510 per 1,000 decisions) was priced for the encoder self-host — it is **not**
+  applied to a 26B row. At five times the per-token basis the composite would read ≈ 65
+  instead of 75.3; at ten times, ≈ 55.
+- The `(I/50)²` multiplier applies **below 50 only** (the board's formula) — above 50 the
+  composite is the geometric mean alone.
+- Protocol: `qwen3.6:35b` was unusable as-is (the B-17 thinking quirk — empty content while
+  reasoning burns the budget), so the row is `gemma4:26b`; the harness client timeout was
+  raised 120 → 600 s in the local clone for slow local inference (plumbing only — no scoring
+  logic touched); models and runs kept in `/tmp/opencode/jev_dryrun/`.
+
+The honest frame for the three rows: **the decision engine does not compete with an LLM
+judge on Intelligence — it competes on Speed, Cost and deployability**, and its calibration
+is now in the same class. What the encoder rows must keep fixing is the coverage the
+synthetic recipe never sees (that is B-20's job, running since 2026-10-10).
+
 ## What is pinned
 
 | | |

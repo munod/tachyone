@@ -1188,6 +1188,16 @@ cycle** (mixture layer alongside synthetic, public items evaluation-only as ever
 L-013, `docs/compare.md` §3 (the probes said this already: XNLI ≈ chance, ECE raw 0.35–0.65),
 `AGENTS.md` hard rules 1/5/6.
 
+*Addendum (2026-10-11):* an **LLM-backend reference row** joined the dry-run table (same
+protocol) — `gemma4:26b` through `TACHYONE_BACKEND=llm` reads **Intelligence 97.7 /
+Calibration 94.6 / Speed 44.2 / composite 75.3** (227/231 = 98.3% accuracy; ECE 0.0272; the
+four misses are the genuinely hard items). The framing it buys: the decision engine competes
+on Speed/Cost/deployability, not on judging — and the encoder's calibration is now in the
+LLM's class while its coverage is what B-20 must keep growing. Cost is unmetered (local
+run; the encoder cost basis is not applied to a 26B) and the `(I/50)²` multiplier applies
+below 50 only. `qwen3.6:35b` was unusable as-is (the B-17 thinking quirk). Full table and
+notes: `docs/jevbench.md` *Dry-run re-measurement*.
+
 ---
 
 ## Evaluated and not pursued (for now)
