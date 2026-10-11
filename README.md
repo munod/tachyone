@@ -37,10 +37,14 @@ continuation, with a per-cell validation monitor added to the trainer), **B-15**
 checkpoints retrained on `template_split: "train"`, the first **honest holdout number**
 (multi **0.8355** / en **0.9825**), **B-17**: the teacher (`qwen3.6:35b`) expanded the
 tone banks, the multilingual arm retrained, and **B-1's per-language ECE acceptance closed**
-(holdout multi **0.9264**, **12/12 cells ≤ 0.05**, gap −11.1 → −1.7 points) — and **B-18**:
-the English fit-basis redesign (slice-balanced fitted `choice` map) closed the last NOT-met
+(holdout multi **0.9264**, **12/12 cells ≤ 0.05**, gap −11.1 → −1.7 points) — **B-18**: the
+English fit-basis redesign (slice-balanced fitted `choice` map) closed the last NOT-met
 on the model surface (P3 in-domain `choice` ECE **0.5243 → 0.0010**, acceptance met; routed
-English ECE ~10× better everywhere). Nothing on the model surface is left NOT met; the
+English ECE ~10× better everywhere) — and **B-19**: routing reads the same detector as
+calibration (state + localized question), the L-013 fall-through collapsed **14.4% → 0.05%**,
+and the routed pair finally matches the arms (multilingual routed 0.9300 → **0.9993** split,
+0.9221 → **0.9957** five-domain, 0.9264 → **0.9828** holdout). Nothing on the model surface
+is left NOT met; the
 JevBench-run misses and every disclosure are in the model card. The wire
 contract, an OpenAI-compatible LLM backend, a local encoder
 (ModernBERT/mmBERT + LoRA), an ONNX backend, FastAPI serving, an SDK/CLI, MCP + LangChain
@@ -136,12 +140,12 @@ graceful fallback.
 
   | Checkpoint | Split | Overall | ECE | p50 |
   | --- | --- | --- | --- | --- |
-  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.017 | 58.5 ms |
-  | English, five-domain | 5 domains | **0.9983** | 0.016 | 58.0 ms |
-  | English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.032 | 58.3 ms |
-  | Multilingual (mmBERT-base + LoRA r=64 + fitted bank), routed | support | **0.9300** | 0.039 | 53.1 ms |
-  | Multilingual, five-domain | 5 domains | **0.9221** | 0.034 | 53.5 ms |
-  | Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9264** | 0.033 | 53.2 ms |
+  | English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.017 | 58.2 ms |
+  | English, five-domain | 5 domains | **0.9983** | 0.016 | 58.8 ms |
+  | English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.032 | 59.2 ms |
+  | Multilingual (mmBERT-base + LoRA r=64 + fitted bank), routed | support | **0.9993** | 0.006 | 54.5 ms |
+  | Multilingual, five-domain | 5 domains | **0.9957** | 0.003 | 53.2 ms |
+  | Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9828** | 0.006 | 53.8 ms |
 
   The two **holdout** rows are the honest generalization number (v0.11.0, **B-17**): training
   and those evals share **0%** of templates — the gate rows are sha-pinned and never moved —
@@ -161,9 +165,10 @@ graceful fallback.
   holdout slices, out-of-basis split, probes); numbers in
   the [model card](docs/model-card.md) and `BACKLOG.md` **B-17** / **B-18**. The English ECE
   column is the fitted B-18 confidence; the
-  multilingual rows are the routed product (~13–15% of rows fall through to the English
-  checkpoint by design — L-013 — and the multilingual checkpoint itself answers **0.9961** when
-  it answers everything).
+  multilingual rows are the routed product (before **B-19**, ~13–15% of rows fell through to
+  the English checkpoint by design — L-013; since B-19 the router keys on the same detector
+  as calibration and that is **0.05%** — and the multilingual checkpoint itself answers
+  **0.9961** when it answers everything).
 
   Every label comes from the text it accompanies (B-11 + B-12 / ADR-0014 + ADR-0015): `noul` from
   its phrase bank, `score` from the tone's level, `choice` from the option the state names, with
@@ -184,8 +189,10 @@ graceful fallback.
   are unchanged (English ran no training), MASSIVE reads **0.058** against its 0.017 chance
   with `ECE raw` **0.197** — the in-domain gains re-sharpened off-domain confidence (the
   L-007/L-015 trade; details in
-  [`docs/benchmarks.md`](docs/benchmarks.md)) — and stayed **byte-unchanged under B-18**
-  (the probe pipeline reads the selected mass, and no temperature moved). JevBench remains
+  [`docs/benchmarks.md`](docs/benchmarks.md)) — stayed byte-unchanged under B-18 (the probe
+  pipeline reads the selected mass, and no temperature moved) and moved to **0.051** under
+  **B-19** (rows re-routed between arms; typed-decisions **0.306** and XNLI **0.333**
+  byte-unchanged). JevBench remains
   set aside by decision after
   its maintainer changed the submission methodology (Intelligence **8.4 → 15.0** belongs to
   the v0.8.0 artifact).

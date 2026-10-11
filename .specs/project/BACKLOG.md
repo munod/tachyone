@@ -2027,6 +2027,43 @@ the routed numbers move because more rows are answered by the arm that owns them
 as measured — while the checkpoint-alone gates (the only quality gates, L-013) are
 byte-identical by construction.
 
+**Execution (2026-10-10) — every gate PASS (20/20); the routed pair finally matches the arms.**
+
+*Implementation (`5eb26d7`, additive; suite 747 passed with 6 new routing tests).* The
+checkpoint choice comes from `detect_calibration_language` over the state **and** the
+request's localized question texts (`Router.route(state, question_texts=None)` — the
+no-keyword path is byte-identical to history); `EncoderBackend.predict` passes them through
+a shared `_detection_texts` helper refactored out of `calibration_language`, so the key the
+assets were fitted under is the key routing applies. The non-Latin script rule falls through
+untouched (the suite's Greek/Cyrillic cases pin it). Fallback policy as pre-registered:
+`und` → multilingual.
+
+*Gates — `benchmarks/results/gates_b19/` + the router API over both eval views:*
+
+- **T1 · the target: misroutes 4/7,500 (0.05%) five-domain, 0/1,500 support, 0/7,500
+  English** — clean and noisy alike (≤ 1.0% / = 0), from 14.4% / 12.1% before. The four
+  residual rows are Dutch states with no signal anywhere (reported below).
+- **T2 · checkpoint-alone untouched:** all six gate reports **byte-identical** to
+  `gates_b18/*` — routing moved no answer of any arm.
+- **T3 · the routed pair:** multilingual routed accuracy **0.9300 → 0.9993** (split),
+  **0.9221 → 0.9957** (five-domain), **0.9264 → 0.9828** (holdout) with ECE 0.0386/0.0342/
+  0.0335 → **0.0058/0.0032/0.0057** — the routed numbers now sit where the arms sit
+  (checkpoint-alone 0.9961/0.9828). The three English reports are accuracy-identical
+  (**7,487/7,500 · 7,369/7,500 · 1,500/1,500** — verified by exact row counts, since the
+  gate reader's first pass compared rounded constants and misread its own tolerance).
+- **T4 · mechanism (reported):** on the **1,082 previously-misrouted rows** the English arm
+  scores **0.4871** and the multilingual arm **1.0000** — the fall-through was dragging the
+  routed pair down by ~0.5 accuracy on exactly those rows. Probes: typed-decisions 0.306 and
+  XNLI 0.333 byte-unchanged (English rows), **MASSIVE 0.058 → 0.051** with `ECE raw` 0.197 →
+  0.200 — rows re-routed between arms, published as measured.
+- **T5 · contract:** 747 passed; ruff/format/pyright/`mkdocs --strict` clean; the wire
+  contract test green (routing is internal).
+
+*The docs number is history.* "~13–15% fall through to the English checkpoint (L-013)" was
+real (14.4% measured on five-domain rows: 405 empty states whose language lives only in the
+question, plus 677 Latin states without signal — `nl` losing 35% of its rows) and is now
+**0.05%** with one detector deciding language everywhere.
+
 ---
 
 ## Carried over (from earlier planning)

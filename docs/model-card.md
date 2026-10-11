@@ -28,7 +28,26 @@ pipeline_tag: text-classification
 > [`munod/tachyone-multi`](https://huggingface.co/munod/tachyone-multi)); measured numbers below come
 > from `benchmarks/report.md`.
 >
-> **This revision is B-18: the English confidence chain was rebuilt and P3's in-domain
+> **This revision is B-19: routing reads the same detector as calibration, and the routed
+> pair finally matches the arms.** The docs' *"~13–15% of multilingual rows fall through to
+> the English checkpoint"* was real — measured **14.4%** (five-domain) / **12.1%** (support):
+> 405 empty states whose language lives only in the localized question plus 677 Latin states
+> without signal (`nl` losing 35% of its rows). Routing now keys on
+> `detect_calibration_language` over the state **and** the request's question texts (the B-16
+> detector, diagonal 99.80/99.95% — the same function that keys temperatures and cells, so
+> fit and serve cannot drift), through the additive `Router.route(state, question_texts=…)`;
+> non-Latin scripts and the no-keyword path are byte-identical to history, and `und`/accented
+> Latin now routes multilingual (accents are a non-English signal). **Misroutes 14.4% →
+> 0.05%** (4/7,500; support 0; English 0, clean and noisy alike). Routed multilingual
+> accuracy **0.9300 → 0.9993 / 0.9221 → 0.9957 / 0.9264 → 0.9828** (ECE → 0.006/0.003/
+> 0.006); the six checkpoint-alone reports are byte-identical and English accuracy-identical
+> (quality is gated checkpoint-alone per **L-013**). On the 1,082 rescued rows the English
+> arm scored 0.4871 against the multilingual arm's **1.0000**. Disclosed as measured:
+> MASSIVE 0.058 → **0.051** (rows re-routed between arms), typed-decisions 0.306 and XNLI
+> 0.333 byte-unchanged; four Dutch states with no signal anywhere still reach English (the
+> recorded L-013 default). Record: `BACKLOG.md` **B-19**.
+>
+> **The v0.12.0 revision was B-18 (history):** the English confidence chain was rebuilt and P3's in-domain
 > acceptance closes.** Diagnosis settled B-15's recorded follow-up: no single temperature
 > serves both regimes of the legal P3 basis (training slice acc 0.803 wants T ≈ 1.5–2; the
 > hard remainder slice at acc 0.372 wants T ≥ 10) *and* the acceptance read (acc 0.9956
@@ -177,21 +196,21 @@ interleaved touch-up (`training/interleave_continue.py`).
 
 | Checkpoint | Split | Accuracy | ECE (calibrated) | p50 (ms) |
 | --- | --- | --- | --- | --- |
-| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.017 | 58.5 |
-| English, five-domain split | 5 domains | **0.9983** | 0.016 | 58.0 |
-| English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.032 | 58.3 |
-| Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.9300** | 0.039 | 53.1 |
-| Multilingual, five-domain split | 5 domains | **0.9221** | 0.034 | 53.5 |
-| Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9264** | 0.033 | 53.2 |
+| English (ModernBERT-large + five-domain LoRA r=16 + choice-head bank) | support | **1.0000** | 0.017 | 58.2 |
+| English, five-domain split | 5 domains | **0.9983** | 0.016 | 58.8 |
+| English, **holdout phrasing** (never in training) | 5 domains | **0.9825** | 0.032 | 59.2 |
+| Multilingual (mmBERT-base + LoRA r=64 + fitted bank) — routed runtime | support | **0.9993** | 0.006 | 54.5 |
+| Multilingual, five-domain split | 5 domains | **0.9957** | 0.003 | 53.2 |
+| Multilingual, **holdout phrasing** (never in training) | 5 domains | **0.9828** | 0.006 | 53.8 |
 
 The English ECE column reads the **B-18 fitted confidence** (below): a `peakedness ×
 strength` cell map for `choice` (fitted slice-balanced over the in-template and holdout
 slices) plus the P3 `noul` map, with every temperature byte-unchanged — the P3 in-domain
 `choice` miss (0.5243 at T=10.0) is history (0.0010, acceptance met). The multilingual rows
-are the **routed system**: ~13–15% of rows fall
-through to the English checkpoint by language routing (empty state or no Latin-language signal
-— `.specs/project/BACKLOG.md` **L-013**), which is why the five-domain multilingual row sits
-below the multilingual checkpoint's own **0.9961** when it answers everything.
+are the **routed system**: since **B-19** the router keys on the calibration detector (state
++ localized question), so only **0.05%** of rows still reach the English checkpoint by
+design (**L-013** — empty *and* unsignaled), and the routed rows sit where the arms sit
+(five-domain routed **0.9957** against the multilingual checkpoint's own **0.9961**).
 
 Per primitive (English, five-domain): `choice` **0.9956**, `noul` **0.9996**, `score`
 **0.9996**; (multilingual, five-domain): `choice` **0.9564**, `noul` **0.9136**, `score`
@@ -253,9 +272,10 @@ worst new domain **0.993**, per-domain ECE **0.0005–0.0038** (zero exceptions)
 benchmark: multilingual support 0.9760, worst new domain 0.9747, per-domain ECE 0.0019–0.0202
 (zero exceptions), strict 1.000, every language ≥ baseline; overall 0.9885 / ECE 0.0069 when
 the multilingual checkpoint answers everything** — the routed rows above show the pair as
-served. On the support-only *routed* split (13–15% of
-rows fall through to the English checkpoint by language routing, `.specs/project/BACKLOG.md`
-**L-013**) the per-language story is unchanged in kind: three of six languages sit above the
+served. On the support-only *routed* split (before B-19, 13–15% of
+rows fell through to the English checkpoint by language routing — `.specs/project/BACKLOG.md`
+**L-013**; since B-19 that is 0.05%, one detector deciding language everywhere) the
+per-language story is unchanged in kind: three of six languages sit above the
 0.05 ECE target on that split, and on the **holdout** the B-1 per-language ECE criterion was
 **NOT met** at B-15 (7 cells, worst `score/it` 0.1495) — the **B-16** cycle (serve-key
 detector + fitted confidence, 2026-10-09) moved it to **11/12 with `score/it` 0.0521

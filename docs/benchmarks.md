@@ -98,6 +98,37 @@ and never was a generalization number. The in-template → holdout gap for B-15 
 **−0.1105** (multilingual) / **−0.0179** (English). Full report with reproduction commands:
 [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md).
 
+## v0.13.0 — B-19: routing quality — one detector, one language truth (2026-10-10)
+
+The docs had carried *"~13–15% of multilingual rows fall through to the English checkpoint"*
+since L-013. Measured precisely, it was **14.4%** (five-domain) / **12.1%** (support) — two
+causes in a router that read the **state text only**: 405 empty states whose language lives
+in the localized question (5.4%) and 677 Latin states without signal (9.0%, `nl` losing
+**35%** of its rows). The B-16 cycle had already built the better detector —
+`detect_calibration_language` (state + question, shared-stopword penalties, accent votes;
+diagonal 99.80/99.95%) — but scoped it to calibration. B-19 **promotes it to routing**:
+one detector, one language truth, through the additive `Router.route(state,
+question_texts=None)` (no keyword → historical path byte-identical; non-Latin scripts fall
+through untouched). Gates pre-registered `94df00c`, **20/20 PASS**; record in BACKLOG
+**B-19**.
+
+| Axis | before (v0.12.0) | after (v0.13.0) |
+| --- | --- | --- |
+| non-English rows reaching the English arm | 14.4% / 12.1% | **0.05% / 0.00%** (clean and noisy alike) |
+| English rows reaching the multilingual arm | 6 rows | **0** |
+| routed multilingual (split / five-domain / holdout) | 0.9300 / 0.9221 / 0.9264 | **0.9993 / 0.9957 / 0.9828** |
+| routed multilingual ECE | 0.0386 / 0.0342 / 0.0335 | **0.0058 / 0.0032 / 0.0057** |
+| routed English (all three) | — | **accuracy-identical** (7,487/7,500 · 7,369/7,500 · 1,500/1,500) |
+| checkpoint-alone gates (the only quality gates, L-013) | — | **byte-identical** |
+| the 1,082 rescued rows | en arm 0.4871 | **multi arm 1.0000** |
+
+**Disclosures (reported as measured).** The routed numbers move because more rows are
+answered by the arm that owns them — the checkpoint-alone reports, which are the only place
+quality is gated (L-013), are byte-identical by construction. Probes: typed-decisions 0.306
+and XNLI 0.333 byte-unchanged (English rows), **MASSIVE 0.058 → 0.051** (`ECE raw` 0.197 →
+0.200) — rows re-routed between arms under the same weights. Four Dutch states with no
+signal anywhere still reach English (0.05%): the fallback is the recorded L-013 default.
+
 ## v0.12.0 — B-18: the English fit-basis redesign — P3 closes (2026-10-10)
 
 The last NOT-met acceptance on the published surface (English `choice` in-domain ECE 0.5243)
@@ -482,6 +513,11 @@ XNLI 0.333, with their raw ECEs): the probe pipeline reads the selected mass aft
 shipped temperature, and B-18 moved no temperature — the fitted `choice` map only reshapes
 what [`benchmarks/report.md`](https://github.com/munod/tachyone/blob/main/benchmarks/report.md)
 calls `Conf`.
+
+**Re-run under B-19 (2026-10-10).** Routing moved rows between arms, so the multilingual
+rows of the probes moved with it: **MASSIVE 0.058 → 0.051** (`ECE raw` 0.197 → 0.200) —
+published as measured — while typed-decisions **0.306** and XNLI **0.333** are byte-unchanged
+(English rows; English routing is accuracy-identical under B-19).
 
 ## Multi-domain experiment (B-5a / ADR-0016) — **released 2026-10-01**
 

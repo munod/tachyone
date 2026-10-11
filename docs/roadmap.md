@@ -290,6 +290,19 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   deliberately and reversibly. Record in `BACKLOG.md` **B-18** (gates pre-registered
   `7fe4f50`).
 
+- **B-19: routing quality — one detector, one language truth** ✅ (`v0.13.0`, 2026-10-10).
+  The docs' *"~13–15% fall through to English"* measured real (**14.4%** five-domain /
+  **12.1%** support — 405 empty states whose language lives only in the question, plus 677
+  Latin states without signal; `nl` losing 35% of its rows). The B-16 calibration detector
+  (state + localized question) is promoted to routing via the additive
+  `route(state, question_texts=…)`; `und`/accented Latin now routes multilingual and
+  non-Latin scripts fall through untouched. **20/20 gates PASS: misroutes 14.4% → 0.05%**
+  (4/7,500; support 0; English 0, clean and noisy alike), checkpoint-alone reports
+  byte-identical, routed multilingual **0.9993 / 0.9957 / 0.9828** (was 0.9300 / 0.9221 /
+  0.9264). On the 1,082 rescued rows the English arm scored 0.4871 vs the multilingual
+  arm's **1.0000**. Disclosed as measured: MASSIVE 0.058 → 0.051 (rows re-routed). Record
+  in `BACKLOG.md` **B-19** (gates pre-registered `94df00c`).
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

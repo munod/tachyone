@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-10-10 (B-18)
+**Last Updated:** 2026-10-10 (B-19)
 **Current Work:** **Fases 0–2a da correção das receitas de dados — stride do sampler, eval
 leave-one-template-out e expansão de conteúdo — executadas localmente 2026-10-06 na branch
 `fix/sampler-stride`.** ~~Nothing leaves this machine~~ **Deferral LIFTED 2026-10-08 by
@@ -64,6 +64,22 @@ per-language all down); probes re-run with unchanged accuracy (MASSIVE T 1.75 �
 the v3 key); `benchmarks/compare.py` was **not** re-wired (the probes caveat carries the
 mass-vs-fitted distinction — deviation recorded). Full record: BACKLOG **B-16**.
 **Part 2 (queued):** the data/generalization cycle for `score/it` and the −0.1105 holdout gap.
+
+**B-19 executed 2026-10-10 (routing quality, the L-013 follow-up; gates pre-registered
+`94df00c`, 20/20 PASS).** The docs' "~13–15% fall through to English" measured real:
+**14.4%** of five-domain rows / **12.1%** of support rows — 405 empty states (language lives
+only in the question, which routing never read) plus 677 Latin states without signal (`nl`
+losing 35% of its rows). Fix: **one detector, one language truth** — the B-16
+`detect_calibration_language` (state + localized question) promoted to routing via the
+additive `route(state, question_texts=None)` (no keyword → historical path byte-identical;
+non-Latin script rule falls through untouched), with the recorded fallback `und`/accented
+Latin → multilingual. **Misroutes 14.4% → 0.05%** (4/7,500; support 0; English 0), clean and
+noisy alike. The routed pair finally matches the arms: multilingual routed **0.9300 →
+0.9993 / 0.9221 → 0.9957 / 0.9264 → 0.9828** (ECE → 0.006/0.003/0.006), English
+accuracy-identical, checkpoint-alone reports byte-identical. On the 1,082 rescued rows the
+English arm scored 0.4871 vs the multilingual arm's **1.0000**. Probes: typed/XNLI
+unchanged, MASSIVE 0.058 → 0.051 reported as measured. Record: BACKLOG **B-19**;
+publication = `v0.13.0`.
 
 **B-18 executed 2026-10-10 (the English P3 fit-basis redesign; gates pre-registered
 `7fe4f50`, 13/13 PASS).** Diagnosis settled the recorded follow-up of B-15: no scalar

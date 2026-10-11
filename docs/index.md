@@ -163,7 +163,7 @@ Measured on NVIDIA L4 23GB (v0.9.0, B-15; full tables and reproduction commands 
 <div class="tachyone-bar"><span>it</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:93.3%"></span></span><span class="tachyone-bar__value">93.3%</span></div>
 <div class="tachyone-bar"><span>de</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:91.8%"></span></span><span class="tachyone-bar__value">91.8%</span></div>
 <div class="tachyone-bar"><span>nl</span><span class="tachyone-bar__track"><span class="tachyone-bar__fill" style="width:80.7%"></span></span><span class="tachyone-bar__value">80.7%</span></div>
-<p class="tachyone-chart__caption">Both published checkpoints pinned (the router sends empty or no-signal states to the English one by design — L-013 — ~13–15% of rows; the multilingual checkpoint alone answers 99.6% when it answers everything). Labels are derived from the text (B-11/B-12, 0 contradictory); temperature fitted per (primitive, language).</p>
+<p class="tachyone-chart__caption">Both published checkpoints pinned (since B-19 the router keys on the same detector as calibration — state + localized question — and only 0.05% of rows reach the English one by design, L-013; the multilingual checkpoint alone answers 99.6% when it answers everything). Labels are derived from the text (B-11/B-12, 0 contradictory); temperature fitted per (primitive, language).</p>
 </div>
 
 **The honest generalization number — holdout phrasing, 0% of templates shared with training**

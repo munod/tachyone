@@ -386,11 +386,14 @@ keeps its ADR-0016 fall-through).
 
 **Which harness measures what (lesson L-013).** `training.predict --adapter <dir>` measures
 *that checkpoint* explicitly; `training.evaluate --backend encoder` goes through the wire and
-the language router, where on multilingual rows 13–15% fall through to `tachyone-en` (empty or
-short states) — so the routed number depends on whatever the *English* adapter happens to be
-today (the published multilingual 0.743 stopped reproducing the day the English adapter was
-republished). Gate one checkpoint's quality only on the explicit harness; read routed numbers
-as product-level measurements that mix checkpoints by design.
+the language router — where, before B-19, 13–15% of multilingual rows fell through to
+`tachyone-en` (empty or short states), so the routed number depended on whatever the
+*English* adapter happened to be today (the published multilingual 0.743 stopped reproducing
+the day the English adapter was republished). **B-19 (2026-10-10)** closed the fall-through
+itself — routing now keys on `detect_calibration_language` over the state and the localized
+question (0.05% residual) — but the lesson stands: gate one checkpoint's quality only on the
+explicit harness; read routed numbers as product-level measurements that mix checkpoints by
+design.
 
 `benchmarks/report.py` renders the last two **in one table**, because the pre-B-11 generator made
 `de`/`es`/`nl` look weak when the labels, not the model, were the problem (L-008).
