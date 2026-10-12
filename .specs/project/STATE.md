@@ -65,6 +65,16 @@ the v3 key); `benchmarks/compare.py` was **not** re-wired (the probes caveat car
 mass-vs-fitted distinction — deviation recorded). Full record: BACKLOG **B-16**.
 **Part 2 (queued):** the data/generalization cycle for `score/it` and the −0.1105 holdout gap.
 
+**B-21 opened 2026-10-12 (JevBench Intelligence ≥ 50, encoder-alone; gates pre-registered
+before any GPU).** Spec adopted with three review corrections: decision gates carry the
+non-regression set (B-20's price — holdout/Calibration/XNLI/`standard`), S1 factored
+one-per-arm (L-012), and W2's cross-encoder **distilled into the single-pass scorer** (a
+teacher is training-time only, LLM or encoder). Target row `easy 0.857 / std 0.761 /
+hard 0.535` → I ≈ 53; the binding hypothesis is that counterfactuals + curriculum + arity
+flip the `standard` sign B-20 got wrong. First step **S0** (~10 min GPU, kill switch): soft
+vs hard labels on the frozen trunk, hard-slice acc + ECE, `score` excluded. Spec:
+`.specs/features/jevbench-intel/spec.md`; contract: BACKLOG **B-21**.
+
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three
 recorded attempts, NOT adopted.** Attempt 1 **collapsed** (uniform output; no gradient
 clipping in the trainer + long-document batches — `GRAD_CLIP_MAX_NORM = 1.0` added and

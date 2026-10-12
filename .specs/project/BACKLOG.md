@@ -2232,6 +2232,58 @@ runs — reported wherever quoted).
 
 ---
 
+## B-21 · JevBench Intelligence ≥ 50 without a System-2 handoff · **Spec adopted 2026-10-12 (owner); gates pre-registered 2026-10-12, before any data edit or training**
+
+The corrected plan lives in `.specs/features/jevbench-intel/spec.md` (it supersedes the
+uncommitted working note and folds in the 2026-10-12 code/evidence review). Hard constraint
+unchanged: **the encoder alone answers** — single forward pass, offline, ~70 ms p50;
+`handoff.py`/cascade/abstention out of scope; every teacher (LLM or cross-encoder) is a
+**training-time instrument only**. Three review corrections are part of the spec: the
+decision gates carry the **non-regression set** (B-20's exact price: holdout/Calibration/
+XNLI/`standard`), **S1 is factored one-per-arm** (L-012), and **W2's cross-encoder distils
+into the single-pass scorer** (the serving variant only behind a numeric latency gate).
+
+**Target (public yardstick, verified arithmetic):** `I ≥ 50` ⇔ `0.14·cc_easy + 0.28·cc_std +
+0.30·cc_hard ≥ 36`; recommended row `easy 0.857 / std 0.761 / hard 0.535` → I ≈ 53.3. `judge`
+has no public items — a public I is a diagnostic, not the official score.
+
+**Pre-registered gates — the contract (read before any mover number is quoted):**
+
+*Non-regression set (every stage, S1a–S5; failing any one blocks the stage):*
+- **N1** holdout accuracy (`eval_en_domains_holdout`, sha `3119e73c…`) ≥ **0.9700**
+  (B-20's loss: 0.9825 → 0.9419)
+- **N2** P3 in-domain per-primitive ECE ≤ **0.05** on `en_current` and `en_split`
+- **N3** five-domain in-template accuracy ≥ **0.9900**
+- **N4** probes reported as measured with floors at the published row: XNLI ≥ **0.333**,
+  MASSIVE and typed-decisions reported (typed is expected to move up); never gate on the
+  bench alone (R7: taxonomy-shaped families)
+- **N5** multi checkpoint-alone reports **byte-identical** (T3 protocol) + holdout shas pinned
+- **N6** Speed: encoder serve p50 ≤ **150 ms**; JevBench Speed axis ≥ **70**
+- **N7** JevBench Calibration ≥ **60** (B-20's loss: 85.9 → 49.0)
+
+*Mover gates (per stage):*
+- **S0** soft vs hard labels on the frozen trunk, one factor apart (L-012): treatment ≥
+  control on the **hard/natural slice accuracy and ECE** (`score` excluded). If **no** → drop
+  soft-label trunk work (a no does not disprove W2's cross-encoder distillation).
+- **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
+- **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
+  (up vs S1a — the sign B-20 got wrong)
+- **S1c** + reasoning families + arity: named families (`temporal_numeric`/`multi_hop`/
+  `policy_trap`/`tradeoff`) move up; full suite I ≥ **22**
+- **S2** cross-encoder distillation: `hard` cc ≥ **20** (acc ≥ 0.469) and I ≥ **30**; serving
+  variant only if p50 ≤ 150 ms at the measured arities
+- **S3** long-context training: long-policy/multi-hop accuracy up at the Speed gate
+- **S4** teacher + soft labels on the trunk: hard-tier ECE down **and** I up vs S3 (paired);
+  teacher extraction **with thinking** (paired measurement 2026-10-12: +15 accuracy points),
+  model and pool size named in the stage record
+- **S5** calibration refit + one-set publication: **all** gates green on one set; report,
+  model card, README, probes and Hub re-rendered together (release discipline, T5-style)
+
+Discipline restated: every stage is a one-set change; gates are never re-fixed after a NOT
+met (publish the number); no JevBench item — public or sealed — ever enters training.
+
+---
+
 ## Carried over (from earlier planning)
 
 - **Provider registry** for LLM backends (OpenAI-compatible, Anthropic, local llama.cpp) — `Idea`.

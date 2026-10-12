@@ -316,6 +316,17 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   published**; queued follow-up: a touch-up from the published trunk at a lower ratio.
   Record: `BACKLOG.md` **B-20**.
 
+- **B-21: JevBench Intelligence ≥ 50 without a System-2 handoff** (spec adopted
+  `2026-10-12`, gates pre-registered — **not yet executed**). The in-encoder path: data
+  coverage + counterfactual rubrics (W1), cross-encoder **distilled into the single-pass
+  scorer** (W2), teacher soft labels with thinking on (W3), long-context training (W4), and
+  the B-16/B-18 fit refit (W5). Hard constraint: the encoder alone answers (~70 ms single
+  pass); every teacher is training-time only. Decision gates carry the **non-regression set**
+  (holdout ≥ 0.97, P3 ECE ≤ 0.05, five-domain ≥ 0.99, probes with XNLI ≥ 0.333, multi
+  byte-identical, Speed ≥ 70, Calibration ≥ 60) — B-20's exact price is what they prevent.
+  First step: **S0**, the frozen-trunk soft-vs-hard head fit (~10 min GPU, its own kill
+  switch). Spec: `.specs/features/jevbench-intel/spec.md`; gates: `BACKLOG.md` **B-21**.
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).
