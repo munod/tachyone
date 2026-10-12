@@ -71,9 +71,13 @@ non-regression set (B-20's price — holdout/Calibration/XNLI/`standard`), S1 fa
 one-per-arm (L-012), and W2's cross-encoder **distilled into the single-pass scorer** (a
 teacher is training-time only, LLM or encoder). Target row `easy 0.857 / std 0.761 /
 hard 0.535` → I ≈ 53; the binding hypothesis is that counterfactuals + curriculum + arity
-flip the `standard` sign B-20 got wrong. First step **S0** (~10 min GPU, kill switch): soft
-vs hard labels on the frozen trunk, hard-slice acc + ECE, `score` excluded. Spec:
-`.specs/features/jevbench-intel/spec.md`; contract: BACKLOG **B-21**.
+flip the `standard` sign B-20 got wrong. **S0 executed 2026-10-12 — gate NOT met (recorded):
+soft-label trunk work dropped by the kill-switch** (control 0.3257/0.0435 vs treatment
+0.3330/0.0438 on the 958-row slice — accuracy noise-level, ECE unchanged). Diagnosis: the
+hard/natural slice is capability-limited (chance-level) and well calibrated — the hedging
+failure mode lives on the bench's `hard` tier, not here; the gap is capability, so the
+Intelligence work is W1 (data) + W2 (cross-encoder distillation), both still open. Spec:
+`.specs/features/jevbench-intel/spec.md`; contract + S0 record: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three
 recorded attempts, NOT adopted.** Attempt 1 **collapsed** (uniform output; no gradient

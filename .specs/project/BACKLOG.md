@@ -2265,6 +2265,31 @@ has no public items — a public I is a diagnostic, not the official score.
 - **S0** soft vs hard labels on the frozen trunk, one factor apart (L-012): treatment ≥
   control on the **hard/natural slice accuracy and ECE** (`score` excluded). If **no** → drop
   soft-label trunk work (a no does not disprove W2's cross-encoder distillation).
+  *Run parameters pinned 2026-10-12 before extraction:* subset = `choice` rows from
+  `multi_nli`/`banking77`/`synthetic:jev:{long_policy,multi_hop,temporal_numeric}` sampled
+  3,000 (seed 20261012) → 2,000 fit / 1,000 eval, states disjoint; teacher `gemma4:26b`
+  through the `llm` backend prompt (thinking on), teacher distribution flattened at T=2 and
+  blended `0.5·one_hot + 0.5·p_teacher`; control = one-hot (same rows/trunk/seed/budget,
+  shared head both arms); metric = eval-slice accuracy (argmax) and top-label ECE (10 bins)
+  over the head's own softmax probabilities vs true labels. A dropped teacher row is removed
+  from both arms (never only one).
+
+  *Outcome (2026-10-12) — **gate NOT met, recorded and never re-fixed**:* teacher extraction
+  completed 2,000/2,000 (gemma4:26b, thinking on, T=2 flattening, 0.5 blend; zero drops; the
+  2-GPU CUDA pass after switching Ollama off its Vulkan default). On the held-out 958-row
+  slice the shared head reads **control 0.3257 acc / 0.0435 ECE vs treatment 0.3330 / 0.0438**
+  — accuracy +7 net rows (noise-level) and ECE unchanged to 3e-4. **Per the kill-switch:
+  soft-label trunk work is dropped** (S4's soft-label retrain is out of the sequence); W2's
+  cross-encoder distillation stays alive, as the gate states. Diagnosis recorded: on this
+  slice the frozen-trunk head is at **chance** (`multi_nli` 0.315/0.330 vs 0.333 chance) and
+  **well calibrated** (ECE 0.04) — the failure mode the gate targeted (confident hedging;
+  bench `hard`-tier ECE 0.21) does not live in the training slice. The gap is capability,
+  not calibration, which redirects the Intelligence work to W1 (data) and W2 (architecture),
+  the levers the plan ranked highest. Test limitations as pinned: α=0.5 fixed, linear head,
+  capability-limited slice. Artifacts: `checkpoints/s0_ctrl`/`s0_soft`,
+  `training/configs/s0_control.json`/`s0_soft.json`, `data/s0_*.jsonl`;
+  `training/fit_choice_bank.py` gained additive soft-target support (+tests,
+  `target_mode` in the arm recipe, L-011).
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

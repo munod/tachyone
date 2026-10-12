@@ -185,6 +185,7 @@ def fit_recipe(
     domains: Sequence[str],
     languages: Sequence[str],
     metrics: Mapping[str, Any],
+    target_mode: str = "one_hot",
 ) -> dict[str, Any]:
     """The ``choice_bank_fit.json`` an arm ships: what produced *this* artifact, in full (L-011)."""
     return {
@@ -193,6 +194,7 @@ def fit_recipe(
         "trunk_adapter": config.trunk_adapter,
         "domains": list(domains),
         "languages": list(languages),
+        "target_mode": target_mode,
         "fit": dict(metrics),
     }
 
@@ -208,7 +210,8 @@ class ChoiceCache:
     criteria: Any
     offsets: list[int]
     sizes: list[int]
-    targets: list[int]
+    #: One-hot index per record, or a soft distribution over its options (B-21 W3).
+    targets: list[Any]
     domains: list[str]
 
     def __len__(self) -> int:
@@ -234,6 +237,28 @@ def _encode_matrix(
     return torch.cat(chunks)
 
 
+def _target_vector(record: dict[str, Any]) -> Any:
+    """A one-hot index, or a soft distribution over the record's options (B-21 W3).
+
+    Soft targets arrive from the teacher extraction as a non-negative vector aligned with
+    ``criterion_texts`` order; it is validated and normalised here so the loss always sees a
+    proper distribution.
+    """
+    target = record["target"]
+    if isinstance(target, list):
+        count = len(criterion_texts(record))
+        if len(target) != count:
+            raise ValueError(
+                f"soft target for {record.get('id')} has {len(target)} entries, expected {count}"
+            )
+        weights = [max(0.0, float(value)) for value in target]
+        total = sum(weights)
+        if total <= 0:
+            raise ValueError(f"soft target for {record.get('id')} sums to zero")
+        return [weight / total for weight in weights]
+    return int(target) if isinstance(target, int) else choice_target_index(record)
+
+
 def encode_choice(
     records: Sequence[dict[str, Any]],
     encode: Callable[[list[str]], list[list[float]]],
@@ -249,10 +274,7 @@ def encode_choice(
     criteria = _encode_matrix(
         [text for record in records for text in criterion_texts(record)], encode, torch
     )
-    targets = [
-        int(record["target"]) if isinstance(record["target"], int) else choice_target_index(record)
-        for record in records
-    ]
+    targets = [_target_vector(record) for record in records]
     return ChoiceCache(
         states=states,
         questions=questions,
@@ -320,17 +342,21 @@ def arm_loss(
         base = (
             F.cosine_similarity(block, state, dim=-1) + F.cosine_similarity(block, question, dim=-1)
         ) / temperature
-        one_hot = torch.zeros(count, device=device)
-        one_hot[cache.targets[index]] = 1.0
+        target = cache.targets[index]
+        if isinstance(target, list):
+            target_dist = torch.tensor(target, dtype=torch.float32, device=device)
+        else:
+            target_dist = torch.zeros(count, device=device)
+            target_dist[target] = 1.0
         residual = (shared_context[position] * shared.project(block)).sum(dim=-1)
         probabilities = torch.softmax(base + residual / math.sqrt(rank), dim=0)
-        total = total + ((probabilities - one_hot) ** 2).sum()
+        total = total + ((probabilities - target_dist) ** 2).sum()
         name = cache.domains[index]
         if name in contexts:
             context_row = contexts[name][position]
             domain_residual = (context_row * heads[name].project(block)).sum(dim=-1)
             domain_probabilities = torch.softmax(base + domain_residual / math.sqrt(rank), dim=0)
-            total = total + ((domain_probabilities - one_hot) ** 2).sum()
+            total = total + ((domain_probabilities - target_dist) ** 2).sum()
     return total / max(1, len(indices))
 
 
@@ -484,6 +510,9 @@ def _fit(
 
     arms: dict[str, Any] = {}
     payloads: dict[str, dict[str, Any]] = {}
+    target_mode = (
+        "soft" if any(isinstance(record["target"], list) for record in records) else "one_hot"
+    )
     for arm, bank in (("control", False), ("bank", True)):
         metrics, payload = fit_arm(
             torch,
@@ -507,7 +536,12 @@ def _fit(
         domains={},
         languages=languages,
         recipe=fit_recipe(
-            config, arm="control", domains=(), languages=languages, metrics=arms["control"]
+            config,
+            arm="control",
+            domains=(),
+            languages=languages,
+            metrics=arms["control"],
+            target_mode=target_mode,
         ),
     )
     write_arm(
@@ -517,7 +551,12 @@ def _fit(
         domains=payloads["bank"]["domains"],
         languages=languages,
         recipe=fit_recipe(
-            config, arm="bank", domains=domains, languages=languages, metrics=arms["bank"]
+            config,
+            arm="bank",
+            domains=domains,
+            languages=languages,
+            metrics=arms["bank"],
+            target_mode=target_mode,
         ),
     )
     for arm, directory in (("control", config.control_dir), ("bank", config.bank_dir)):

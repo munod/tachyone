@@ -8,6 +8,14 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Soft-target support in the frozen-trunk head fitter (B-21 S0).** `choice` records may
+  now carry a soft distribution as `target` (teacher labels): validated and normalised in
+  `training/fit_choice_bank.py`, Brier against the distribution in `arm_loss`, and the arm
+  recipe records `target_mode` (L-011). Additive — integer targets keep the exact legacy
+  path. Used by the S0 control-vs-treatment experiment (gate NOT met: soft labels did not
+  beat one-hot on the held-out hard/natural slice; trunk soft-label work dropped by the
+  pre-registered kill-switch, see `BACKLOG.md` **B-21**).
+
 - **Gradient clipping in the trainer (B-20).** `GRAD_CLIP_MAX_NORM = 1.0` before every
   optimizer step in `training/finetune_rlcd.py` — the first B-20 mixture retrain collapsed
   into uniform output from one unclipped update on heterogeneous batches; the loss-shape

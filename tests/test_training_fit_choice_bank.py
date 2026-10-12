@@ -106,6 +106,63 @@ def test_load_config(tmp_path: Path) -> None:
     assert config.choice_rank == 128
 
 
+def test_target_vector_rejects_bad_soft_targets() -> None:
+    from training.fit_choice_bank import _target_vector
+
+    record = {
+        "id": "x",
+        "target": [0.2, 0.2],
+        "criteria": {"a": "first", "b": "second", "c": "third"},
+        "instructions": "pick",
+    }
+    with pytest.raises(ValueError, match="entries"):
+        _target_vector(record)
+    record["target"] = [0.0, 0.0, 0.0]
+    with pytest.raises(ValueError, match="sums to zero"):
+        _target_vector(record)
+
+
+def test_target_vector_normalises_and_keeps_int_targets() -> None:
+    from training.fit_choice_bank import _target_vector
+
+    record = {
+        "id": "x",
+        "target": [1.0, 3.0, 0.0],
+        "criteria": {"a": "first", "b": "second", "c": "third"},
+        "instructions": "pick",
+    }
+    assert _target_vector(record) == [0.25, 0.75, 0.0]
+    assert _target_vector({**record, "target": 2}) == 2
+
+
+@pytest.mark.skipif(importlib.util.find_spec("torch") is None, reason="needs the train extra")
+def test_fit_accepts_soft_targets_and_records_the_mode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """B-21 S0: the treatment arm's only difference is a soft target vector per record."""
+    import training.fit_choice_bank as fit
+
+    hard = [json.loads(line) for line in _dataset(tmp_path).read_text().splitlines()]
+    soft_path = tmp_path / "soft.jsonl"
+    soft = []
+    for record in hard:
+        count = len(record["criteria"])
+        record = dict(record)
+        record["target"] = [1.0 / count] * count
+        soft.append(record)
+    soft_path.write_text("\n".join(json.dumps(record) for record in soft) + "\n", encoding="utf-8")
+    monkeypatch.setattr(fit, "load_encoder", lambda *args, **kwargs: _fake_encode)
+    report = fit.run(_config(tmp_path, data_path=str(soft_path), device="cpu", epochs=1))
+    assert report["mode"] == "fit"
+    for arm in ("control", "bank"):
+        recipe = json.loads(
+            (Path(report["arms"][arm]["dir"]) / FIT_RECIPE_ASSET).read_text(encoding="utf-8")
+        )
+        assert recipe["target_mode"] == "soft"
+    # a uniform soft target still yields finite losses (the fit runs to completion)
+    assert isinstance(report["arms"]["control"]["val_loss"], float)
+
+
 def test_dry_run_reports_the_plan_without_torch(tmp_path: Path) -> None:
     config = _config(tmp_path)
     report = run(config, dry_run=True)
