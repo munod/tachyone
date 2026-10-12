@@ -1195,8 +1195,20 @@ four misses are the genuinely hard items). The framing it buys: the decision eng
 on Speed/Cost/deployability, not on judging — and the encoder's calibration is now in the
 LLM's class while its coverage is what B-20 must keep growing. Cost is unmetered (local
 run; the encoder cost basis is not applied to a 26B) and the `(I/50)²` multiplier applies
-below 50 only. `qwen3.6:35b` was unusable as-is (the B-17 thinking quirk). Full table and
-notes: `docs/jevbench.md` *Dry-run re-measurement*.
+below 50 only. Full table and notes: `docs/jevbench.md` *Dry-run re-measurement*.
+
+*Addendum (2026-10-12):* the **second LLM reference row** — `qwen3.6:35b` (the store's 35B
+pair; there is no "3.5") in **think-off** mode — reads **Intelligence 70.9 / Calibration
+70.6 / Speed 52.0 / composite 67.3** (182/231 = 78.8%: easy 1.000, standard 0.917, hard
+0.613; ECE 0.1469; p50 10.7 s). The paired finding is the point: with its default reasoning
+the same model reads **162/165 = 98.2%** — `gemma4:26b`'s class — at p50 118.7 s; reasoning
+is worth **+15 accuracy points and ~11× latency**, and its failure mode is *degradation
+under budget* (7,000+ reasoning tokens on the hardest items, 6 timeouts at 600 s, the
+harness stopping on consecutive infra errors — partial pass preserved). Think-off needed a
+plumbing-only proxy (Ollama's OpenAI `/v1` shim ignores every thinking knob for this model;
+its native `/api/chat` honors `"think": false`). The B-17 quirk ("`qwen3.6` unusable") is
+thus **resolved and recorded**: it was budget truncation inside the reasoning, not a model
+defect.
 
 ---
 

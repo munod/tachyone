@@ -109,43 +109,65 @@ The full evidence (three attempts, loss shapes, fit bases) is `BACKLOG.md` **B-2
 queued follow-up is a redesign of the layer as a touch-up from the published trunk at a
 lower ratio.
 
-### The LLM-backend reference row (same protocol, 2026-10-11)
+### The LLM-backend reference rows (same protocol, 2026-10-11 and 2026-10-12)
 
 What a general LLM reads on the same 231 items — not a submission, a reference point for the
 two axes a decision engine trades away: `gemma4:26b` through the `llm` backend (local
-Ollama on a dedicated GPU; the B-20 training ran untouched on the other).
+Ollama on a dedicated GPU; the B-20 training ran untouched on the other), and a day later
+`qwen3.6:35b` (35.5B MoE — the store has no "3.5"; this is the 35B pair) in **think-off**
+mode.
 
-| Axis (public-only) | `v0.8.0` encoder | `v0.13.0` encoder | **LLM · gemma4:26b** |
-| --- | ---: | ---: | ---: |
-| Intelligence | 15.0 | 10.5 | **97.7** |
-| Calibration | 52.6 | 85.9 | **94.6** |
-| Speed | 84.9 | 85.0 | **44.2** |
-| Cost | 78.8 | 78.8 | *unmetered (see note)* |
-| **Composite** | **4.28** | **2.17** | **75.3** (see notes) |
+| Axis (public-only) | `v0.8.0` encoder | `v0.13.0` encoder | **LLM · gemma4:26b** | **LLM · qwen3.6:35b (think-off)** |
+| --- | ---: | ---: | ---: | ---: |
+| Intelligence | 15.0 | 10.5 | **97.7** | 70.9 |
+| Calibration | 52.6 | 85.9 | **94.6** | 70.6 |
+| Speed | 84.9 | 85.0 | 44.2 | **52.0** |
+| Cost | 78.8 | 78.8 | *unmetered (see note)* | *unmetered (see note)* |
+| **Composite** | **4.28** | **2.17** | **75.3** (see notes) | **67.3** (see notes) |
 
-Accuracy **227/231 (98.3%)** — easy 1.000, standard 1.000, hard 0.964 (`choice` 0.986,
-`noul` 0.986, `score` 0.944); ECE **0.0272**. The four misses are genuinely hard: a multi-hop
-credit calculation, a vulnerability-triage ladder, a trap item and a numeric `judge` item.
+`gemma4:26b` accuracy **227/231 (98.3%)** — easy 1.000, standard 1.000, hard 0.964 (`choice`
+0.986, `noul` 0.986, `score` 0.944); ECE **0.0272**. The four misses are genuinely hard: a
+multi-hop credit calculation, a vulnerability-triage ladder, a trap item and a numeric
+`judge` item.
+
+`qwen3.6:35b` (think-off) accuracy **182/231 (78.8%)** — easy **1.000** (48/48), standard
+0.917 (66/72), hard 0.613 (68/111); `choice` 0.827, `noul` 0.730, `score` 0.722; ECE
+**0.1469**. Raw p50 **10.7 s** / p95 14.5 s (adjusted 21.6 / 29.2 s).
+
+**The thinking finding (paired — the same 165 items, think-on vs think-off).** With its
+default reasoning, `qwen3.6:35b` reads **162/165 = 98.2%** — in `gemma4:26b`'s class — at
+p50 **118.7 s** / p95 330 s. Think-off reads 137/165 = 83.0% at p50 10.8 s. Reasoning is
+worth **+15 accuracy points and ~11× latency** for this model; the missing piece is not
+capability but *degradation under budget*: on the hardest items the reasoning runs 7,000+
+tokens at ~12 tok/s and hit the 600 s client wall (6 timeouts; the harness then stopped on
+consecutive infrastructure errors after 171 attempts — that partial pass is preserved as
+evidence). The completed think-off row is single-treatment throughout; the think-on figures
+are the paired subset only.
 
 **Notes (read before quoting the composite).**
-- **Speed is the trade**: raw p50 **11.0 s** / p95 84.7 s serial local inference (the board's
-  `×2 + 0.15 s` adjustment → 22.2 s / 169.6 s) against the encoder's ~70 ms. That gap *is*
-  the product thesis.
-- **Cost is unmetered**: the LLM ran locally with no metered price, and the October cost
+- **Speed is the trade**: raw p50 11.0 s (gemma4) / 10.7 s (qwen think-off) serial local
+  inference against the encoder's ~70 ms — and 118.7 s for qwen with reasoning. That gap
+  *is* the product thesis.
+- **Cost is unmetered**: both LLMs ran locally with no metered price, and the October cost
   basis ($0.00510 per 1,000 decisions) was priced for the encoder self-host — it is **not**
-  applied to a 26B row. At five times the per-token basis the composite would read ≈ 65
-  instead of 75.3; at ten times, ≈ 55.
+  applied to 26B/35B rows. At five times the per-token basis the gemma4 composite would read
+  ≈ 65 instead of 75.3; at ten times, ≈ 55.
 - The `(I/50)²` multiplier applies **below 50 only** (the board's formula) — above 50 the
   composite is the geometric mean alone.
-- Protocol: `qwen3.6:35b` was unusable as-is (the B-17 thinking quirk — empty content while
-  reasoning burns the budget), so the row is `gemma4:26b`; the harness client timeout was
-  raised 120 → 600 s in the local clone for slow local inference (plumbing only — no scoring
-  logic touched); models and runs kept in `/tmp/opencode/jev_dryrun/`.
+- Protocol (all plumbing only — no scoring logic touched): the harness client timeout was
+  raised 120 → 600 s in the local clone for slow local inference, and 600 → 1800 s for the
+  qwen think-on pass. Think-off needed a tiny local proxy because Ollama's OpenAI `/v1` shim
+  ignores every thinking knob for this model (`think:false`, `chat_template_kwargs`,
+  `/no_think`) while its native `/api/chat` honors `"think": false` — the proxy translates
+  one endpoint to the other (`/tmp/opencode/thinkoff_proxy.py`); runs and models kept in
+  `/tmp/opencode/jev_dryrun/`.
 
-The honest frame for the three rows: **the decision engine does not compete with an LLM
-judge on Intelligence — it competes on Speed, Cost and deployability**, and its calibration
-is now in the same class. What the encoder rows must keep fixing is the coverage the
-synthetic recipe never sees (that is B-20's job, running since 2026-10-10).
+The honest frame for the rows: **the decision engine does not compete with an LLM judge on
+Intelligence — it competes on Speed, Cost and deployability**, and its calibration is now in
+the same class. What the encoder rows must keep fixing is the coverage the synthetic recipe
+never sees — B-20 answered that directly (2026-10-10/12, three attempts, the mixture layer
+**not adopted**: a trade, not an improvement) and the queued follow-up is a touch-up from the
+published trunk at a lower ratio.
 
 ## What is pinned
 

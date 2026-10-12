@@ -88,8 +88,16 @@ failed) but **Intelligence 15.0 → 10.5** — the October artifact was the *mix
 0.750 → 0.250; the XNLI probe drop was the same loss). Bright side: `noul` 0.487 → 0.554
 and **`hard/trap` 0.000 → 0.500** (B-11/B-12 closed half the rubric-blindness). Composite
 4.28 → 2.17 (the `(I/50)²` multiplier). Verdict recorded in BACKLOG **B-13** +
-`docs/jevbench.md`; **B-20 opens the data cycle**: the natural-text layer back beside the
-synthetic recipe, public items evaluation-only for ever.
+`docs/jevbench.md` (B-20 later answered it — see above); public items evaluation-only for
+ever. Two **LLM reference rows** joined the table (2026-10-11/12, measurement only):
+`gemma4:26b` **I 97.7 / Cal 94.6 / Spd 44.2 / composite 75.3** (227/231 = 98.3%) and
+`qwen3.6:35b` think-off **70.9 / 70.6 / 52.0 / 67.3** (182/231 = 78.8%, p50 10.7 s). The
+paired finding: with default reasoning the same qwen reads **162/165 = 98.2%** — gemma4's
+class — at p50 118.7 s (thinking = **+15 accuracy points and ~11× latency**; its failure
+mode is degradation *under budget*, not lack of capability). The B-17 "`qwen3.6` unusable"
+quirk is **resolved and recorded**: budget truncation inside the reasoning, not a model
+defect; think-off runs through a plumbing-only proxy (Ollama's OpenAI shim ignores every
+thinking knob; its native `/api/chat` honors `"think": false`).
 
 **B-19 executed 2026-10-10 (routing quality, the L-013 follow-up; gates pre-registered
 `94df00c`, 20/20 PASS).** The docs' "~13–15% fall through to English" measured real:
