@@ -253,6 +253,15 @@ sha256-before/after guards built in. Full narrative with the evidence trail:
 - If a config OOMs, reduce per-device batch first, then sequence length, then LoRA rank.
 - Exact ceilings are measured and documented in M4-T6 (see B-002).
 
+### Training stability (B-20, 2026-10-11)
+
+The trainer clips the gradient norm to `GRAD_CLIP_MAX_NORM = 1.0` before **every** optimizer
+step. The constant exists because the first mixture retrain collapsed: heterogeneous batches
+(long policy documents beside short intents) produced one unclipped update and every head
+output uniform distributions for the rest of the run (loss flat at `ln k`). The loss-shape
+check (L-011) caught it — the per-epoch `train_loss` and `cell_monitor` lines are the
+evidence trail to read before trusting any run.
+
 ---
 
 ## 3. RLCD proper-scoring calibration (`training/finetune_rlcd.py`)

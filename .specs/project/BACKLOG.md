@@ -2103,7 +2103,7 @@ question, plus 677 Latin states without signal — `nl` losing 35% of its rows) 
 
 ---
 
-## B-20 · The mixture layer returns — natural text beside synthetic (the JevBench Intelligence follow-up) · **Gates pre-registered 2026-10-10, before any data edit or training**
+## B-20 · The mixture layer returns — natural text beside synthetic (the JevBench Intelligence follow-up) · **Done — executed 2026-10-10/12 in three recorded attempts (gates pre-registered `cf94dd9`); NOT adopted by owner decision — `v0.13.0` stays published; the layer is a trade, not an improvement**
 
 **Why.** The 2026-10-10 dry-run (BACKLOG **B-13** addendum) decomposed the board reading:
 **Calibration 52.6 → 85.9** (public ECE 0.0704 — P3's ≥ 60 target met) but **Intelligence
@@ -2180,6 +2180,43 @@ B-13's treatment reached `choice` 0.0695 at 1e-4). The `fit_bank` step of attemp
 an OOM by starting 8 seconds after the trainer exited (GPU still releasing) — the resumed
 chain adds a lead-in sleep. Gates T1–T5 stand unchanged; attempt 1's outputs stay in
 `checkpoints/en_b20` until the re-run replaces them.
+
+**Attempt 2 (2026-10-11) — the clipped retrain is healthy; gates read 12/19.** Loss shape
+sane all the way (`choice` 0.7832 → 0.1933 → 0.1606 → 0.1076 → 0.0866 → **0.0702** — the
+B-13 treatment class), full chain 8/8 `exit=0`, P3 stack rebuilt (choice cells mean 0.9684).
+Gates (`benchmarks/results/gates_b20_attempt2/`): T2 4/4 and T3 5/5 (multi byte-identical,
+pins intact) — but **T1**: `noul` ECE **0.4329** (accuracy fine at 0.9932 — the *map* was
+capped at 0.56, fitted on the legal P3 basis where this arm is weak) and **holdout accuracy
+0.9416 < 0.9700**; **T4**: Intelligence **12.2 < 15.0** (94/231), Calibration **49.0 < 60**,
+`hard/trap` 0.25 < 0.5, XNLI **0.285 < 0.45** (typed-decisions **0.306 → 0.409** and
+easy 0.417 → 0.479 / hard 0.342 → 0.405 were the genuine wins).
+
+**Attempt 3 (2026-10-11/12) — fit-side only (owner choice): the B-18 remedy extended to
+`noul`.** The knots and the `choice` cells refitted on the **served slices** (slice-balanced;
+the legal-basis knots had plateaued at 0.56 against accuracies of 0.99). Gates read **14/19**:
+**T1's P3 in-domain acceptance is RE-EARNED** (`en_current` choice/noul/score **0.0075 /
+0.0050 / 0.0041**, `en_split` 0.0077 / 0.0076 / 0.0000) with five-domain accuracy 0.9943 and
+answers immovable by construction (`noul` is T-invariant, `choice` argmax-preserving,
+`score` pinned). The five remaining NOT-mets are **model-side** and unchanged by fitting:
+holdout accuracy 0.9419, Intelligence 12.2, Calibration 49.0 (the bench reads raw probs —
+the arm's off-domain confidence is sharper than its accuracy; L-007/L-015), `hard/trap`
+0.25, XNLI 0.285. Backups: `checkpoints/en_b20_stack2_backup/`, attempt-2 gates in
+`gates_b20_attempt2/`, attempt-1 trunk in `checkpoints/en_b20_attempt1/`.
+
+**Adoption decision (owner, 2026-10-12): NOT adopted — `v0.13.0` stays published.** The
+mixture layer is a **trade, not an improvement**: it buys natural-text family coverage
+(typed-decisions 0.306 → 0.379–0.409, bench easy 0.417 → 0.479, hard 0.342 → 0.405,
+Intelligence 10.5 → 12.2) and costs template generalization and off-domain confidence
+(holdout accuracy 0.9825 → 0.9419, Calibration 85.9 → 49.0, XNLI 0.333 → 0.285, standard
+0.431 → 0.361, `hard/trap` 0.50 → 0.25). Gates pre-registered and never re-fixed; every
+attempt's numbers above stand as measured.
+
+**Follow-up (queued, unscoped):** redesign the layer — a **touch-up from the published trunk**
+at a lower mixture ratio instead of a from-scratch retrain — targeting the family gains
+without diluting the template banks. The three attempts' evidence (loss shapes, fit bases,
+the family-by-family deltas) is the starting material. Note also that batched GPU inference
+is not bitwise deterministic (one accuracy row and one probe read moved between identical
+runs — reported wherever quoted).
 
 ---
 

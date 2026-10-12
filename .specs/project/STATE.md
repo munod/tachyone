@@ -65,6 +65,20 @@ the v3 key); `benchmarks/compare.py` was **not** re-wired (the probes caveat car
 mass-vs-fitted distinction — deviation recorded). Full record: BACKLOG **B-16**.
 **Part 2 (queued):** the data/generalization cycle for `score/it` and the −0.1105 holdout gap.
 
+**B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three
+recorded attempts, NOT adopted.** Attempt 1 **collapsed** (uniform output; no gradient
+clipping in the trainer + long-document batches — `GRAD_CLIP_MAX_NORM = 1.0` added and
+recorded). Attempt 2 (clipped retrain, healthy loss shape `choice` → 0.0702) read **12/19**:
+the layer buys natural-text families (typed 0.306 → 0.409, bench easy 0.417 → 0.479, hard
+0.342 → 0.405, I 10.5 → 12.2) and costs template generalization and off-domain confidence
+(holdout 0.9825 → 0.9419, Calibration 85.9 → 49.0, XNLI 0.333 → 0.285, standard, trap).
+Attempt 3 (fit-side only — the B-18 remedy extended to `noul`, knots refitted on the served
+slices) re-earned **T1's P3 in-domain acceptance** (0.0075/0.0050/0.0041) → **14/19**, the
+remaining five NOT-mets model-side and unfittable. **Owner decision: not adopted —
+`v0.13.0` stays published; the mixture is a trade, not an improvement.** Queued follow-up:
+redesign the layer as a touch-up from the published trunk at a lower ratio. Full record
+with every attempt's numbers: BACKLOG **B-20**.
+
 **JevBench dry-run re-measured 2026-10-10 (measurement only, no submission — owner
 decision).** Same protocol as the 2026-10-02 diagnostic (231 public items at the pinned
 rev, 231/231 strict-valid): **Calibration 52.6 → 85.9** (public ECE 0.2369 → 0.0704 — P3's

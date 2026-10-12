@@ -303,6 +303,19 @@ Delivered 2026-10-02 (CHANGELOG `[Unreleased]`):
   arm's **1.0000**. Disclosed as measured: MASSIVE 0.058 → 0.051 (rows re-routed). Record
   in `BACKLOG.md` **B-19** (gates pre-registered `94df00c`).
 
+- **B-20: the mixture layer — executed in three attempts, NOT adopted** (`2026-10-10/12`).
+  The JevBench verdict said the synthetic-only recipe lacks natural-text coverage; the
+  pinned-source layer (MultiNLI/BoolQ/Banking77) + bench-shaped families came back beside
+  the 36k synthetic base (50,540 rows, 28.6%) under the pre-registered gates (`cf94dd9`).
+  Attempt 1 **collapsed** (no gradient clipping in the trainer + long-document batches —
+  `GRAD_CLIP_MAX_NORM = 1.0` added); attempt 2 (clipped, healthy) read 12/19 and attempt 3
+  (the B-18 fit remedy extended to `noul`) 14/19 with **P3 re-earned** (0.0075/0.0050/
+  0.0041). The layer is a **trade**: typed 0.306 → 0.409, bench easy 0.417 → 0.479, hard
+  0.342 → 0.405, I 10.5 → 12.2 — against holdout 0.9825 → 0.9419, Calibration 85.9 → 49.0,
+  XNLI 0.333 → 0.285, `standard` and `hard/trap`. **Not adopted — `v0.13.0` stays
+  published**; queued follow-up: a touch-up from the published trunk at a lower ratio.
+  Record: `BACKLOG.md` **B-20**.
+
 Carried-over ideas (canonical list: `.specs/project/BACKLOG.md`):
 
 - Provider registry for LLM backends (OpenAI-compatible, local llama.cpp).

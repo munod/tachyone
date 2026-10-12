@@ -6,6 +6,25 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Gradient clipping in the trainer (B-20).** `GRAD_CLIP_MAX_NORM = 1.0` before every
+  optimizer step in `training/finetune_rlcd.py` — the first B-20 mixture retrain collapsed
+  into uniform output from one unclipped update on heterogeneous batches; the loss-shape
+  check (L-011) caught it and the fix is recorded with the attempt.
+
+### Changed
+
+- **B-20 recorded (executed, NOT adopted).** The JevBench-driven mixture layer (pinned
+  MultiNLI/BoolQ/Banking77 + bench-shaped families beside the 36k synthetic base) was
+  trained in three recorded attempts under pre-registered gates (`cf94dd9`) and read 12/19
+  (clipped retrain) and 14/19 (fit-side redesign re-earning P3 at 0.0075/0.0050/0.0041).
+  The layer is a trade — typed-decisions 0.306 → 0.409, bench easy 0.417 → 0.479, hard
+  0.342 → 0.405, Intelligence 10.5 → 12.2 against holdout accuracy 0.9825 → 0.9419,
+  Calibration 85.9 → 49.0, XNLI 0.333 → 0.285 — so it is **not adopted** and `v0.13.0`
+  stays published. Full record: `BACKLOG.md` **B-20**; queued follow-up: a touch-up from
+  the published trunk at a lower mixture ratio.
+
 ## [0.13.0] - 2026-10-10
 
 ### Changed

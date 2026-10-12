@@ -2,9 +2,10 @@
 
 > **Status (2026-10-08):** JevBench was **set aside by decision** — its maintainer
 > changed the submission methodology upstream and Tachyone development continued
-> (2026-10-10: a **measurement-only dry-run** re-read the public set on the `v0.13.0`
-> artifact — see *Dry-run re-measurement* below — and B-20 opened the data cycle its
-> verdict points at).
+> (2026-10-10/12: a **measurement-only dry-run** re-read the public set on the `v0.13.0`
+> artifact and the **B-20** data cycle answered its verdict — three recorded attempts, the
+> mixture layer **not adopted** (a trade, not an improvement); see *Dry-run re-measurement*
+> below and `BACKLOG.md` **B-20**).
 > (`.specs/project/STATE.md`). Every JevBench number on this page belongs to the
 > **v0.8.0 artifact** and is kept as a measurement of that revision; it is **not**
 > re-measured for v0.9.0. The current release's numbers are in
@@ -96,9 +97,17 @@ natural-text families), the same loss the XNLI probe recorded (0.566 → 0.333).
 that, `noul` 0.487 → **0.554** and **`hard/trap` 0.000 → 0.500** — the B-11/B-12 label fixes
 closed half the rubric-blindness that capped Intelligence — and `hard/temporal_numeric`
 0.133 → 0.267. Routed and explicit-`en` are identical: every bench item is English and
-routes to `tachyone-en`. The verdict is recorded as measured — and **B-20** opens the data
-cycle to bring the natural-text layer back beside the synthetic recipe (public items stay
-evaluation-only for ever).
+routes to `tachyone-en`.
+
+**B-20 answered this verdict directly (2026-10-10/12) — and the answer is a trade.** The
+mixture layer came back beside the synthetic recipe in three recorded attempts (a trainer
+gradient-clipping fix along the way): Intelligence **10.5 → 12.2** with `easy` 0.417 → 0.479
+and `hard` 0.342 → 0.405 and typed-decisions 0.306 → 0.409 — but holdout accuracy
+0.9825 → 0.9419, Calibration 85.9 → **49.0**, XNLI 0.333 → 0.285, `standard` 0.431 → 0.361
+and `hard/trap` 0.50 → 0.25. **Not adopted (owner decision) — `v0.13.0` stays published.**
+The full evidence (three attempts, loss shapes, fit bases) is `BACKLOG.md` **B-20**; the
+queued follow-up is a redesign of the layer as a touch-up from the published trunk at a
+lower ratio.
 
 ### The LLM-backend reference row (same protocol, 2026-10-11)
 
