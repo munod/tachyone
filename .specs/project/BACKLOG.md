@@ -2330,6 +2330,13 @@ has no public items — a public I is a diagnostic, not the official score.
   `en_s1a_fit_bank`, `training/configs/{jev_mixture_s1a_union,jev_mixture_s1a_stage2,fit_bank_en_s1a}.json`,
   `data/{train_en_s1a,train_jev_sources,train_en_s1a_stage2,preds_en_s1a_*}.jsonl`,
   `benchmarks/results/gates_s1a{,_servedstack}/`.
+
+  *Program status (owner, 2026-10-13):* **paused after S1a** — `v0.13.0` stays published and
+  B-21 continues from this record whenever resumed. **S1b (counterfactual rubrics) is
+  queued** with its pre-registered gates unchanged (`hard/trap` ≥ 0.50, `standard` ≥ 0.50 up
+  vs S1a, non-regression N1–N7) and the S1a arm (`checkpoints/en_s1a*`) is the touch-up
+  base; the N7 off-domain-confidence question (bench ECE 0.29 vs 0.07) is open research
+  alongside it.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

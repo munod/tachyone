@@ -86,7 +86,9 @@ attempt-3 served stack 27.5; both disclosed). Holdout/five-domain/P3/multi all h
 (0.9721/0.9968/≤0.027/byte-identical) — the B-20 trade did not repeat. Sources are
 commercial-clean (WANLI cc-by-4.0 replaces the NC ANLI/ContractNLI, owner decision; the
 lock's `excluded` records them). The remaining gap is rubric-shaped → **S1b
-(counterfactual rubrics)** is the pre-registered next lever. Spec:
+(counterfactual rubrics)** is the pre-registered next lever. **Program paused here by
+owner decision (2026-10-13)** — `v0.13.0` stays published; B-21 resumes from this record
+with S1b queued and the S1a arm as its touch-up base. Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three
