@@ -2338,12 +2338,37 @@ has no public items — a public I is a diagnostic, not the official score.
   `data/{train_en_s1a,train_jev_sources,train_en_s1a_stage2,preds_en_s1a_*}.jsonl`,
   `benchmarks/results/gates_s1a{,_servedstack}/`.
 
-  *Program status (owner, 2026-10-13):* **paused after S1a** — `v0.13.0` stays published and
+  *Program status (owner, 2026-10-13):* paused after S1a — `v0.13.0` stays published and
   B-21 continues from this record whenever resumed. **S1b (counterfactual rubrics) is
   queued** with its pre-registered gates unchanged (`hard/trap` ≥ 0.50, `standard` ≥ 0.50 up
   vs S1a, non-regression N1–N7) and the S1a arm (`checkpoints/en_s1a*`) is the touch-up
   base; the N7 off-domain-confidence question (bench ECE 0.29 vs 0.07) is open research
-  alongside it.
+  alongside it. **Resumed 2026-10-13 (owner) — S1b executing.**
+
+  *S1b run parameters pinned 2026-10-13, before any data edit:* factor = the
+  **counterfactual-rubric family only** (W1.2; one factor per arm, L-012). Generator: a new
+  `counterfactual` family in `training/build_jev_families.py` over committed content
+  `training/data/jev/counterfactual.json` — every draw emits a **pair** of records sharing
+  the drawn case facts and the question, with the governing rubric minimally altered in
+  exactly one declared clause (a `change` audit field ships on both records); the pair is
+  emitted only when the base and counterfactual trees **disagree** on the target (draws
+  resampled inside the record's own seeded rng, bounded — the flip *is* the lesson); labels
+  text-derived from the two trees (ADR-0014/15), never index-derived. Three shapes over
+  both primitives: `noul` policy-conditions (bench `policy`/`adequacy` shape), `noul`
+  defined-term (the `trap` shape, incl. `surface_answer`), `choice` rubric-override/band
+  (the `routing`/`intent` shape, one shared option vocabulary). Counts: 3,200 pairs =
+  6,400 records (`jev_families.json` gains `counterfactual: 6400`, seed 1; the S1b part
+  builds alone through the new `--families` filter); the public-overlap assertion runs on
+  every build as usual. Mixture: `training/configs/jev_mixture_s1b.json` = the
+  counterfactual rows + 25% seeded replay of `data/train_en_s1a.jsonl` (seed 2) →
+  `data/train_en_s1b.jsonl` (8,000 rows); the arm union (`jev_mixture_s1b_union.json`) =
+  the S1a union + the counterfactual rows, feeding the bank fit/prototypes. Touch-up:
+  `interleave_continue --adapter checkpoints/en_s1a --out checkpoints/en_s1b --epochs 0,1
+  --data data/train_en_s1b.jsonl --learning-rate 2e-5 --seed 2 --choice-rank 128
+  --max-len 512` (the S1a stage-2 recipe run twice through); then the S1a packaging chain
+  unchanged onto `checkpoints/en_s1b_fit_bank` and the S1a gate harness (N1–N7 + probes +
+  the 231-item measurement-only dry-run), N7 read under **both** packagings and both
+  disclosed. Gates: the pre-registered S1b movers + the full non-regression set.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
