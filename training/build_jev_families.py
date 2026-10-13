@@ -18,6 +18,12 @@ found missing (``.specs/features/jevbench/spec.md``):
                       differ in exactly one declared clause, so the correct answer flips
                       between the two records (``change`` names the clause). It teaches
                       *reading the rubric* instead of matching surface to answer.
+- ``policy_trap``   — a decision policy over *trusted* metadata with an exception clause
+                      and tempting untrusted text that pushes the naive answer (the
+                      ``adversarial``/``trap`` shape — provenance is the lesson).
+- ``tradeoff``      — a numbered precedence policy where several rules trigger and only the
+                      highest-ranked applies (the ``tradeoff`` shape); drawn arity
+                      (2…20 options) and permuted option order (W1.4).
 
 Every record is assembled **three ways from the same draw**: the text, the shipped
 ``rule.facts`` and the shipped ``rule.tree``; the ``target`` is
@@ -65,6 +71,8 @@ FAMILIES: tuple[str, ...] = (
     "temporal_numeric",
     "adequacy",
     "counterfactual",
+    "policy_trap",
+    "tradeoff",
 )
 
 #: Families whose builder emits records in pairs (shared facts, one rubric clause apart).
@@ -295,6 +303,59 @@ def load_content(directory: str | Path = DEFAULT_CONTENT_DIR) -> dict[str, dict[
                     raise BuildError(
                         f"{family}.case {case['key']}: base and counterfactual are identical"
                     )
+        elif family == "policy_trap":
+            _require_keys(data, ("outcomes", "cases"), family)
+            for case in data["cases"]:
+                _require_keys(
+                    case,
+                    ("key", "pool", "policy", "question", "facts", "noise", "tree"),
+                    f"{family}.case",
+                )
+                _validate_fact_specs(case["key"], case["facts"])
+                if len(case["pool"]) < 3:
+                    raise BuildError(f"{family}.case {case['key']}: pool needs >= 3 outcomes")
+                unknown = _tree_labels(case["tree"]) - set(data["outcomes"])
+                if unknown:
+                    raise BuildError(
+                        f"{family}.case {case['key']}: unknown tree outcomes {sorted(unknown)}"
+                    )
+                off_pool = _tree_labels(case["tree"]) - set(case["pool"])
+                if off_pool:
+                    raise BuildError(
+                        f"{family}.case {case['key']}: tree targets outcomes outside the pool "
+                        f"{sorted(off_pool)}"
+                    )
+                for entry in case["noise"]:
+                    _require_keys(entry, ("text", "surface"), f"{family}.case {case['key']}.noise")
+                    if entry["surface"] not in data["outcomes"]:
+                        raise BuildError(
+                            f"{family}.case {case['key']}: noise surface {entry['surface']!r} "
+                            "is not an outcome"
+                        )
+        elif family == "tradeoff":
+            _require_keys(
+                data,
+                (
+                    "orgs",
+                    "policy_titles",
+                    "question",
+                    "precedence_blurb",
+                    "rule_template",
+                    "case_line",
+                    "noise_line",
+                    "default_rule",
+                    "themes",
+                    "actions",
+                    "targets",
+                    "no_rule_action",
+                ),
+                family,
+            )
+            for theme in data["themes"]:
+                _require_keys(theme, ("theme", "trigger", "noise"), f"{family}.theme")
+            for action in data["actions"]:
+                _require_keys(action, ("key", "desc"), f"{family}.action")
+            _require_keys(data["no_rule_action"], ("key", "desc"), f"{family}.no_rule_action")
         else:  # adequacy
             _require_keys(data, ("question", "criteria", "requests", "quotes", "responses"), family)
             for request in data["requests"]:
@@ -371,8 +432,30 @@ def tree_fact_names(tree: Any) -> set[str]:
     return names
 
 
+def _tree_labels(tree: Any) -> set[str]:
+    """String label values a tree can return (select branch values and their else)."""
+    if not isinstance(tree, Mapping) or "op" not in tree:
+        return set()
+    if tree["op"] == "select":
+        labels: set[str] = set()
+        for _condition, value in tree["when"]:
+            labels.update(_tree_labels(value))
+        labels.update(_tree_labels(tree["else"]))
+        return labels
+    if tree["op"] == "const" and isinstance(tree.get("value"), str):
+        return {str(tree["value"])}
+    return set()
+
+
 def slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
+
+
+def _permuted(criteria: Mapping[str, Any], rng: random.Random) -> dict[str, Any]:
+    """Option order per record (W1.4: positional debiasing — never a fixed slot)."""
+    items = list(criteria.items())
+    rng.shuffle(items)
+    return dict(items)
 
 
 def _record(
@@ -749,7 +832,7 @@ def _multi_hop_record(index: int, rng: random.Random, content: Mapping[str, Any]
     state += "\n".join(statements)
     state += "\n" + incident
     state += extra_clauses
-    criteria = {str(unit["key"]): str(unit["desc"]) for unit in options}
+    criteria = _permuted({str(unit["key"]): str(unit["desc"]) for unit in options}, rng)
     return _record(
         index,
         "multi_hop",
@@ -896,9 +979,13 @@ def _payout_record(index: int, rng: random.Random, data: Mapping[str, Any]) -> d
     }
     options = [str(outcome["key"]) for outcome in payout["outcomes"]]
     target = as_target(evaluate(tree, facts), options=options)
-    criteria = {
-        str(outcome["key"]): str(outcome["desc"]).format(cap=cap) for outcome in payout["outcomes"]
-    }
+    criteria = _permuted(
+        {
+            str(outcome["key"]): str(outcome["desc"]).format(cap=cap)
+            for outcome in payout["outcomes"]
+        },
+        rng,
+    )
     return _record(
         index,
         "temporal_numeric",
@@ -1028,12 +1115,151 @@ def _counterfactual_pair(
     return records
 
 
+def _policy_trap_record(
+    index: int, rng: random.Random, content: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Trusted metadata decides; the untrusted text only tempts (the adversarial shape).
+
+    The tree reads the trusted facts alone — provenance is the lesson. Arity is drawn
+    (3..8 outcomes, target included) and the option order is permuted (W1.4).
+    """
+    data = content["policy_trap"]
+    cases = list(data["cases"])
+    outcomes = {str(key): str(value) for key, value in data["outcomes"].items()}
+    case = cases[index % len(cases)]
+    pool = [str(key) for key in case["pool"]]
+    facts = draw_facts(case["facts"], rng)
+    target = as_target(evaluate(case["tree"], facts), options=pool)
+    noise = rng.choice(list(case["noise"]))
+    stated = "; ".join(
+        render_fact(name, case["facts"][name], value)
+        for name, value in facts.items()
+        if case["facts"][name]["kind"] != "derived"
+    )
+    arity = rng.randint(3, min(8, len(pool)))
+    others = [key for key in pool if key != target]
+    picked = [target, *rng.sample(others, arity - 1)]
+    criteria = _permuted({key: outcomes[key] for key in picked}, rng)
+    state = (
+        f"{case['policy']}\n\nTrusted metadata: {stated}.\n"
+        f"Untrusted text also present in the ticket: {noise['text']}."
+    )
+    return _record(
+        index,
+        "policy_trap",
+        state=state,
+        instructions=str(case["question"]),
+        criteria=criteria,
+        target=target,
+        facts=facts,
+        tree=case["tree"],
+        extra={"surface_answer": str(noise["surface"])},
+    )
+
+
+def _tradeoff_record(index: int, rng: random.Random, content: Mapping[str, Any]) -> dict[str, Any]:
+    """Numbered precedence: several rules trigger and only the highest-ranked applies.
+
+    The win index is drawn first and the triggers decomposed around it (L-010 — never a
+    rank prior); the no-rule default wins when the draw says no rule fires. Arity is drawn
+    (2..20 candidates: the default, the named actions and never-winning distractors) and the
+    option order is permuted (W1.4).
+    """
+    data = content["tradeoff"]
+    actions = list(data["actions"])
+    themes = list(data["themes"])
+    default = dict(data["no_rule_action"])
+    org = rng.choice(list(data["orgs"]))
+    title = rng.choice(list(data["policy_titles"]))
+    code = f"{rng.choice(['SP', 'EP', 'TA', 'CR'])}-{rng.randint(2, 9)}"
+    rev = rng.randint(2, 9)
+    effective = (
+        f"{rng.randint(1, 28)} "
+        f"{rng.choice(['January', 'March', 'June', 'September', 'November'])} "
+        f"{rng.choice([2025, 2026])}"
+    )
+    ref = f"#{rng.randint(10000, 99999)}"
+
+    arity = rng.randint(2, 20)
+    picked = rng.sample(actions, arity - 1)
+    options: dict[str, str] = {str(default["key"]): str(default["desc"])}
+    for action in picked:
+        options[str(action["key"])] = str(action["desc"])
+
+    count = rng.randint(2, 5)
+    chosen = rng.sample(themes, count)
+    rule_actions = [str(rng.choice(picked)["key"]) for _ in range(count)]
+    win = rng.randint(0, count)  # count = no rule fires (L-010: the default draws too)
+    triggers: list[bool] = []
+    statements: list[str] = []
+    rules: list[str] = []
+    facts: dict[str, Any] = {}
+    for position, theme in enumerate(chosen):
+        name = f"t{position}"
+        if position < win:
+            fired = False
+        elif position == win:
+            fired = True
+        else:
+            fired = rng.random() < 0.5
+        triggers.append(fired)
+        facts[name] = fired
+        statements.append(
+            render_fact(
+                name,
+                {
+                    "kind": "bool",
+                    "yes": str(theme["trigger"]),
+                    "no": f"nothing about {str(theme['theme']).lower()}",
+                },
+                fired,
+            )
+        )
+        rules.append(
+            str(data["rule_template"]).format(
+                rank=position + 1,
+                theme=str(theme["theme"]),
+                trigger=str(theme["trigger"]),
+                action=rule_actions[position],
+                target=rng.choice(list(data["targets"])),
+            )
+        )
+
+    when = [
+        [{"op": "fact", "name": f"t{position}"}, {"op": "const", "value": action_key}]
+        for position, action_key in enumerate(rule_actions)
+    ]
+    tree = {"op": "select", "when": when, "else": {"op": "const", "value": str(default["key"])}}
+    target = as_target(evaluate(tree, facts), options=list(options))
+
+    state = f"{org} - {title} {code} (rev. {rev}, effective {effective})\n\n"
+    state += str(data["precedence_blurb"]) + "\n"
+    state += "\n".join(rules) + "\n"
+    state += str(data["default_rule"]).format(action=str(default["key"])) + "\n\n"
+    state += str(data["case_line"]).format(ref=ref, stated="; ".join(statements))
+    state += "\n" + str(data["noise_line"]).format(
+        noise=rng.choice([str(theme["noise"]) for theme in chosen])
+    )
+    return _record(
+        index,
+        "tradeoff",
+        state=state,
+        instructions=str(data["question"]).format(code=code, ref=ref),
+        criteria=_permuted(options, rng),
+        target=target,
+        facts=facts,
+        tree=tree,
+    )
+
+
 _BUILDERS: dict[str, Callable[[int, random.Random, Mapping[str, Any]], dict[str, Any]]] = {
     "long_policy": _long_policy_record,
     "trap": _trap_record,
     "multi_hop": _multi_hop_record,
     "temporal_numeric": _temporal_record,
     "adequacy": _adequacy_record,
+    "policy_trap": _policy_trap_record,
+    "tradeoff": _tradeoff_record,
 }
 
 _PAIR_BUILDERS: dict[

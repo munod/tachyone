@@ -1,0 +1,99 @@
+{
+ "_comment": "Committed content for the tradeoff family (B-21 S1c, W1.3): a numbered precedence policy where several rules trigger and ONLY the highest-ranked applies - the bench 'tradeoff' shape. The builder draws the arity first (2..20 candidate actions including never-winning distractors and the no-rule default), draws the winning rule first and decomposes the triggers around it (L-010 - never a rank prior), permutes the option order, and derives the label from the tree (ADR-0014/15). Rule themes are paired with their trigger wording; actions/targets are drawn from the pools.",
+ "orgs": ["HELIO ANALYTICS", "ALDERMOOR INDUSTRIES SE", "BRIGHTLINE HOME APPLIANCES", "NORTHWIND LOGISTICS", "VERDANT PAYMENTS", "ORCHARD UNIVERSITY PRESS", "SABLE TELECOM", "KESTREL FREIGHT"],
+ "policy_titles": ["SUPPORT ROUTING POLICY", "SERVICE DESK ESCALATION POLICY", "TICKET ACTION POLICY", "CUSTOMER REQUEST ROUTING POLICY"],
+ "question": "Apply policy {code} to ticket {ref} and choose the single action the agent must take now.",
+ "precedence_blurb": "Precedence. When more than one rule below applies to a ticket, the agent performs ONLY the action of the highest-ranked applicable rule now. Lower-ranked requests are noted on the ticket and handled after the higher-ranked item is closed.",
+ "rule_template": "R{rank} {theme}. Applies when {trigger}. Action: {action}. Target: {target}.",
+ "case_line": "Ticket {ref} facts: {stated}.",
+ "noise_line": "The customer's message also asks for {noise}.",
+ "default_rule": "If no rule above applies, the ticket is handled by the standard flow (Action: {action}).",
+ "themes": [
+  {
+   "theme": "Cross-organization data exposure",
+   "trigger": "the customer can see data that belongs to a different organization",
+   "noise": "a screenshot attached to the ticket"
+  },
+  {
+   "theme": "Suspected account takeover",
+   "trigger": "the login pattern matches a known takeover signature",
+   "noise": "a password reset link"
+  },
+  {
+   "theme": "Payment captured twice",
+   "trigger": "the same invoice was captured twice",
+   "noise": "a receipt showing only one capture"
+  },
+  {
+   "theme": "Personal data deletion request",
+   "trigger": "the customer asks for personal data to be deleted",
+   "noise": "a link to the marketing preferences page"
+  },
+  {
+   "theme": "Production outage for a paid tier",
+   "trigger": "a paid-tier tenant reports a full production outage",
+   "noise": "a status page screenshot"
+  },
+  {
+   "theme": "Safety recall notice",
+   "trigger": "the product falls under an active safety recall",
+   "noise": "the product's marketing leaflet"
+  },
+  {
+   "theme": "Regulatory deadline inside 48 hours",
+   "trigger": "a regulatory filing deadline falls inside 48 hours",
+   "noise": "a calendar reminder for next month"
+  },
+  {
+   "theme": "Invoice above the manual limit",
+   "trigger": "the invoice total exceeds the manual handling limit",
+   "noise": "a partial pro-forma invoice"
+  },
+  {
+   "theme": "Contractual penalty clause engaged",
+   "trigger": "the service credits trigger a contractual penalty clause",
+   "noise": "the signed cover page of the contract"
+  },
+  {
+   "theme": "Suspected fraud pattern",
+   "trigger": "the transaction pattern matches the fraud watchlist",
+   "noise": "a friendly note from the account manager"
+  },
+  {
+   "theme": "Data residency exception",
+   "trigger": "the requested storage region violates the residency commitment",
+   "noise": "the region picker screenshot"
+  },
+  {
+   "theme": "Credential sharing detected",
+   "trigger": "one account is used concurrently from two declared locations",
+   "noise": "the travel plan of the account owner"
+  }
+ ],
+ "actions": [
+  {"key": "escalate_to_security", "desc": "Escalate the ticket to Security."},
+  {"key": "escalate_to_engineering", "desc": "Escalate the ticket to Engineering."},
+  {"key": "escalate_to_privacy_office", "desc": "Escalate the ticket to the Privacy Office."},
+  {"key": "escalate_to_compliance", "desc": "Escalate the ticket to Compliance."},
+  {"key": "escalate_to_duty_manager", "desc": "Escalate the ticket to the duty manager."},
+  {"key": "refund_and_close", "desc": "Refund the charge and close the ticket."},
+  {"key": "issue_service_credit", "desc": "Issue service credits and note the ticket."},
+  {"key": "request_refund_review", "desc": "Request a refund review from Billing."},
+  {"key": "freeze_the_account", "desc": "Freeze the account pending verification."},
+  {"key": "force_password_reset", "desc": "Force a password reset for the account."},
+  {"key": "open_incident_bridge", "desc": "Open an incident bridge and page the on-call."},
+  {"key": "pause_the_shipment", "desc": "Pause the shipment at the nearest depot."},
+  {"key": "recall_the_batch", "desc": "Recall the batch and notify the safety officer."},
+  {"key": "file_the_filing", "desc": "File the regulatory submission today."},
+  {"key": "request_manager_approval", "desc": "Request manager approval before acting."},
+  {"key": "request_more_evidence", "desc": "Request more evidence from the customer."},
+  {"key": "route_to_data_residency", "desc": "Route the request to the data residency team."},
+  {"key": "verify_account_ownership", "desc": "Verify account ownership before acting."},
+  {"key": "schedule_callback", "desc": "Schedule a callback with the account owner."},
+  {"key": "apply_standard_sla", "desc": "Apply the standard SLA response."},
+  {"key": "send_legal_notice", "desc": "Send the standard legal notice."},
+  {"key": "merge_the_duplicates", "desc": "Merge the duplicate records and note the ticket."}
+ ],
+ "targets": ["within 30 minutes", "within 2 hours", "same business day", "within 24 hours", "before the next billing run"],
+ "no_rule_action": {"key": "handle_by_standard_flow", "desc": "Handle the ticket by the standard flow."}
+}

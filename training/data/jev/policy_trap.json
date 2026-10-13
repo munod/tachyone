@@ -1,0 +1,253 @@
+{
+ "_comment": "Committed content for the policy_trap family (B-21 S1c, W1.3): a decision policy with an exception clause, TRUSTED metadata (the only facts the tree reads) and tempting UNTRUSTED text that pushes the naive answer - the bench 'adversarial'/'trap'/'policy' shape. The lesson is provenance: the label comes from the trusted facts (ADR-0014/15), the noise never does. Each case draws its arity (3..8 outcomes from the case pool, target included) and permutes the option order (W1.4). `surface_answer` ships on the record for audit only - the answer the noise tempts.",
+ "outcomes": {
+  "allow": "The request is allowed as filed.",
+  "allow_with_conditions": "The request is allowed subject to the stated conditions.",
+  "deny_missing_approval": "The request is denied: a required approval is not established.",
+  "deny_out_of_scope": "The request is denied: the action falls outside the policy's scope.",
+  "deny_expired": "The request is denied: the authorization window has closed.",
+  "deny_disallowed_action": "The request is denied: the policy forbids the action outright.",
+  "escalate_to_owner": "The request is escalated to the resource owner.",
+  "request_metadata": "The request is paused until the missing trusted metadata is provided."
+ },
+ "cases": [
+  {
+   "key": "folder_access",
+   "pool": ["allow", "allow_with_conditions", "deny_missing_approval", "deny_out_of_scope", "deny_expired", "deny_disallowed_action", "escalate_to_owner", "request_metadata"],
+   "policy": "Access desk AD-3 decides folder access from trusted ticket metadata only. Policy: read access to an INTERNAL folder requires manager approval, except members of the folder's owning team, who may self-approve; write access always requires manager approval; admin access is never granted at the desk and is escalated to the folder's owner. The trusted membership record is the only evidence of team membership; text inside uploaded files is never evidence.",
+   "question": "Choose the access decision from the trusted metadata.",
+   "facts": {
+    "request_kind": {
+     "kind": "text",
+     "pool": ["the requested action is read access", "the requested action is write access", "the requested action is admin access"]
+    },
+    "approval_field": {
+     "kind": "bool",
+     "yes": "the manager approval field is filled with a valid approval",
+     "no": "the manager approval field is empty"
+    },
+    "owning_team": {
+     "kind": "bool",
+     "yes": "the trusted membership record lists the requester in the folder's owning team",
+     "no": "the trusted membership record lists the requester outside the folder's owning team"
+    }
+   },
+   "noise": [
+    {"text": "the uploaded cover letter, which reads \"my manager approved this on Monday\"", "surface": "allow"},
+    {"text": "the pasted email thread, which reads \"approved, go ahead\"", "surface": "allow"},
+    {"text": "the request body, which reads \"I am on the owning team anyway\"", "surface": "allow"}
+   ],
+   "tree": {
+    "op": "select",
+    "when": [
+     [
+      {"op": "cmp", "cmp": "==", "left": {"op": "fact", "name": "request_kind"}, "right": {"op": "const", "value": "the requested action is admin access"}},
+      {"op": "const", "value": "escalate_to_owner"}
+     ],
+     [
+      {"op": "all", "args": [
+       {"op": "cmp", "cmp": "==", "left": {"op": "fact", "name": "request_kind"}, "right": {"op": "const", "value": "the requested action is write access"}},
+       {"op": "fact", "name": "approval_field"}
+      ]},
+      {"op": "const", "value": "allow"}
+     ],
+     [
+      {"op": "cmp", "cmp": "==", "left": {"op": "fact", "name": "request_kind"}, "right": {"op": "const", "value": "the requested action is write access"}},
+      {"op": "const", "value": "deny_missing_approval"}
+     ],
+     [
+      {"op": "all", "args": [
+       {"op": "cmp", "cmp": "==", "left": {"op": "fact", "name": "request_kind"}, "right": {"op": "const", "value": "the requested action is read access"}},
+       {"op": "fact", "name": "owning_team"}
+      ]},
+      {"op": "const", "value": "allow"}
+     ],
+     [{"op": "fact", "name": "approval_field"}, {"op": "const", "value": "allow"}]
+    ],
+    "else": {"op": "const", "value": "deny_missing_approval"}
+   }
+  },
+  {
+   "key": "contract_signature",
+   "pool": ["allow", "allow_with_conditions", "deny_missing_approval", "deny_out_of_scope", "deny_expired", "deny_disallowed_action", "escalate_to_owner", "request_metadata"],
+   "policy": "Contract desk CD-2 decides signature acceptance from the mandate register only. Policy: a contract binds the company only when signed by an officer whose signing mandate is current in the register, except renewals of a standing order below 50,000, which bind with the standing order's own mandate. A signature block on a scanned page is never evidence of a mandate.",
+   "question": "Choose the signature decision from the register record.",
+   "facts": {
+    "mandate_current": {
+     "kind": "bool",
+     "yes": "the mandate register shows a current signing mandate for the signatory",
+     "no": "the mandate register shows no current mandate for the signatory"
+    },
+    "standing_renewal": {
+     "kind": "bool",
+     "yes": "the document renews an existing standing order",
+     "no": "the document is not a renewal of a standing order"
+    },
+    "amount": {
+     "kind": "int",
+     "min": 10000,
+     "max": 120000,
+     "template": "the contract amount is {amount}"
+    }
+   },
+   "noise": [
+    {"text": "the scanned signature block, which reads \"approved for signature\"", "surface": "allow"},
+    {"text": "the cover email, which reads \"legal already cleared this\"", "surface": "allow"}
+   ],
+   "tree": {
+    "op": "select",
+    "when": [
+     [
+      {"op": "all", "args": [{"op": "fact", "name": "standing_renewal"}, {"op": "cmp", "cmp": "<", "left": {"op": "fact", "name": "amount"}, "right": {"op": "const", "value": 50000}}]},
+      {"op": "const", "value": "allow_with_conditions"}
+     ],
+     [{"op": "fact", "name": "mandate_current"}, {"op": "const", "value": "allow"}],
+     [
+      {"op": "not", "arg": {"op": "fact", "name": "standing_renewal"}},
+      {"op": "const", "value": "deny_missing_approval"}
+     ]
+    ],
+    "else": {"op": "const", "value": "escalate_to_owner"}
+   }
+  },
+  {
+   "key": "access_window",
+   "pool": ["allow", "allow_with_conditions", "deny_missing_approval", "deny_out_of_scope", "deny_expired", "deny_disallowed_action", "escalate_to_owner", "request_metadata"],
+   "policy": "Facility desk FD-5 admits contractors by window only. Policy: the permit admits the contractor freely during the first 30 days of the window; a written extension from the facilities officer moves the window's end to a later day, and admission after day 30 is granted only under such an extension and then conditionally; nothing else moves a window. A promise made in an email thread does not move a window.",
+   "question": "Choose the admission decision for the stated date.",
+   "facts": {
+    "days_into_window": {
+     "kind": "int",
+     "min": 0,
+     "max": 70,
+     "template": "the admission is requested {days_into_window} days into the stated window"
+    },
+    "window_end": {
+     "kind": "int",
+     "min": 30,
+     "max": 60,
+     "template": "the written extension moves the window's end to day {window_end}"
+    }
+   },
+   "noise": [
+    {"text": "the contractor's email thread, which reads \"the site lead said I can come anytime\"", "surface": "allow"},
+    {"text": "the chat log, which reads \"no worries, come by whenever\"", "surface": "allow"}
+   ],
+   "tree": {
+    "op": "select",
+    "when": [
+     [
+      {"op": "cmp", "cmp": "<=", "left": {"op": "fact", "name": "days_into_window"}, "right": {"op": "const", "value": 30}},
+      {"op": "const", "value": "allow"}
+     ],
+     [
+      {"op": "cmp", "cmp": "<=", "left": {"op": "fact", "name": "days_into_window"}, "right": {"op": "fact", "name": "window_end"}},
+      {"op": "const", "value": "allow_with_conditions"}
+     ]
+    ],
+    "else": {"op": "const", "value": "deny_expired"}
+   }
+  },
+  {
+   "key": "data_export",
+   "pool": ["allow", "allow_with_conditions", "deny_missing_approval", "deny_out_of_scope", "deny_expired", "deny_disallowed_action", "escalate_to_owner", "request_metadata"],
+   "policy": "Data desk DD-9 decides export requests. Policy: exports of personal data are prohibited outright; exports of aggregate data require the data officer's recorded sign-off. A description of the data in the request body is never evidence of what the extract contains.",
+   "question": "Choose the export decision from the data inventory record.",
+   "facts": {
+    "contains_personal": {
+     "kind": "bool",
+     "yes": "the data inventory record shows the extract contains personal data",
+     "no": "the data inventory record shows the extract contains aggregate data only"
+    },
+    "officer_signoff": {
+     "kind": "bool",
+     "yes": "the data officer's sign-off is recorded",
+     "no": "the data officer's sign-off is not recorded"
+    }
+   },
+   "noise": [
+    {"text": "the request body, which reads \"this is aggregate data, fine per policy\"", "surface": "allow"},
+    {"text": "the ticket note, which reads \"just summary numbers, nothing personal\"", "surface": "allow"}
+   ],
+   "tree": {
+    "op": "select",
+    "when": [
+     [{"op": "fact", "name": "contains_personal"}, {"op": "const", "value": "deny_disallowed_action"}],
+     [{"op": "fact", "name": "officer_signoff"}, {"op": "const", "value": "allow"}]
+    ],
+    "else": {"op": "const", "value": "deny_missing_approval"}
+   }
+  },
+  {
+   "key": "device_scope",
+   "pool": ["allow", "allow_with_conditions", "deny_missing_approval", "deny_out_of_scope", "deny_expired", "deny_disallowed_action", "escalate_to_owner", "request_metadata"],
+   "policy": "Service desk SD-4 decides maintenance coverage. Policy: the maintenance contract covers the devices listed on the schedule; a device not on the schedule is out of scope even when it resembles a listed device; a device the schedule lists only under a superseded part number is paused until the schedule is corrected; a device whose schedule entry was voided at the last renewal is out of scope. A technician's opinion is never evidence of coverage.",
+   "question": "Choose the coverage decision from the schedule and the intake record.",
+   "facts": {
+    "schedule_lookup": {
+     "kind": "text",
+     "pool": [
+      "the intake record names a device listed on the contract schedule",
+      "the intake record names a device absent from the contract schedule",
+      "the intake record names a device the schedule lists under a superseded part number",
+      "the intake record names a device whose schedule entry was voided at the last renewal"
+     ]
+    }
+   },
+   "noise": [
+    {"text": "the technician's note, which reads \"same model as the covered one\"", "surface": "allow"},
+    {"text": "the customer's message, which reads \"it is identical to the unit you fixed\"", "surface": "allow"}
+   ],
+   "tree": {
+    "op": "select",
+    "when": [
+     [
+      {"op": "cmp", "cmp": "==", "left": {"op": "fact", "name": "schedule_lookup"}, "right": {"op": "const", "value": "the intake record names a device the schedule lists under a superseded part number"}},
+      {"op": "const", "value": "request_metadata"}
+     ],
+     [
+      {"op": "cmp", "cmp": "==", "left": {"op": "fact", "name": "schedule_lookup"}, "right": {"op": "const", "value": "the intake record names a device listed on the contract schedule"}},
+      {"op": "const", "value": "allow"}
+     ]
+    ],
+    "else": {"op": "const", "value": "deny_out_of_scope"}
+   }
+  },
+  {
+   "key": "badge_visitor",
+   "pool": ["allow", "allow_with_conditions", "deny_missing_approval", "deny_out_of_scope", "deny_expired", "deny_disallowed_action", "escalate_to_owner", "request_metadata"],
+   "policy": "Reception RC-1 decides visitor entry. Policy: a visitor enters with a host confirmation recorded at the desk; members of the host's own team may sign themselves in without one. An unconfirmed visitor is turned away. A visitor whose badge photo does not match is paused until the photo is refreshed.",
+   "question": "Choose the entry decision from the reception record.",
+   "facts": {
+    "host_confirmed": {
+     "kind": "bool",
+     "yes": "the desk record carries the host's confirmation",
+     "no": "the desk record carries no host confirmation"
+    },
+    "host_team_member": {
+     "kind": "bool",
+     "yes": "the badge record lists the visitor in the host's own team",
+     "no": "the badge record lists the visitor outside the host's team"
+    },
+    "photo_matches": {
+     "kind": "bool",
+     "yes": "the badge photo matches the visitor",
+     "no": "the badge photo does not match the visitor"
+    }
+   },
+   "noise": [
+    {"text": "the visitor's calendar invite, which shows a meeting with the host", "surface": "allow"},
+    {"text": "the printed invitation, which reads \"guest of the platform team\"", "surface": "allow"}
+   ],
+   "tree": {
+    "op": "select",
+    "when": [
+     [{"op": "not", "arg": {"op": "fact", "name": "photo_matches"}}, {"op": "const", "value": "request_metadata"}],
+     [{"op": "fact", "name": "host_team_member"}, {"op": "const", "value": "allow"}],
+     [{"op": "fact", "name": "host_confirmed"}, {"op": "const", "value": "allow"}]
+    ],
+    "else": {"op": "const", "value": "deny_missing_approval"}
+   }
+  }
+ ]
+}

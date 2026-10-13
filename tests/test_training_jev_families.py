@@ -78,6 +78,14 @@ def test_every_committed_content_file_validates() -> None:
                 "escalate",
                 "request_info",
             }, case["key"]
+    trap_cases = content["policy_trap"]["cases"]
+    assert len(trap_cases) >= 6
+    assert len(content["policy_trap"]["outcomes"]) >= 8
+    for case in trap_cases:
+        assert len(case["pool"]) >= 3, case["key"]
+        assert case["noise"], case["key"]
+    assert len(content["tradeoff"]["themes"]) >= 12
+    assert len(content["tradeoff"]["actions"]) >= 20
 
 
 def test_add_months_clamped_handles_month_end_and_leap_years() -> None:
@@ -213,8 +221,11 @@ def test_label_distribution_is_balanced_enough_to_train_on(
         for space in _label_spaces(family, counts):
             total = sum(space.values())
             assert len(space) >= 2, family
+            # Small spaces keep the 10% prior-proof floor; drawn-arity spaces (W1.4's many
+            # options) must hold at least 40% of the uniform share instead.
+            floor = 0.10 if len(space) <= 6 else 0.4 / len(space)
             for label, count in space.items():
-                assert count / total >= 0.10, f"{family}/{label} is only {count}/{total}"
+                assert count / total >= floor, f"{family}/{label} is only {count}/{total}"
     # the two exhaustive choice shapes are pinned exactly: five routing bands and the
     # three settlement outcomes.
     routing = {
@@ -322,6 +333,57 @@ def test_counterfactual_pairs_flip_and_share_their_facts(
             else:
                 assert int(record["target"]) in (0, 1)
                 assert int(record.get("surface_answer", record["target"])) in (0, 1)
+
+
+def test_policy_trap_draws_arity_permutes_and_ships_the_tempting_answer(
+    built: tuple[dict[str, Any], list[dict[str, Any]]],
+) -> None:
+    """Provenance is the lesson: the noise tempts, the trusted facts decide (W1.3/W1.4)."""
+    _, records = built
+    traps = [record for record in records if record["source"] == "synthetic:jev:policy_trap"]
+    assert traps
+    content = load_content(DEFAULT_CONTENT_DIR)
+    outcomes = set(content["policy_trap"]["outcomes"])
+    sizes: set[int] = set()
+    target_positions: set[int] = set()
+    biting = 0
+    for record in traps:
+        assert record["type"] == "choice"
+        assert record["target"] in record["criteria"]
+        assert set(record["criteria"]) <= outcomes, record["id"]
+        sizes.add(len(record["criteria"]))
+        target_positions.add(list(record["criteria"]).index(record["target"]))
+        surface = record["surface_answer"]
+        assert surface in outcomes, record["id"]
+        if surface != record["target"]:
+            biting += 1
+    assert min(sizes) >= 3 and max(sizes) >= 6, sizes
+    assert len(target_positions) >= 3, "option order must be permuted (W1.4)"
+    assert biting >= len(traps) // 3, "the tempting text must disagree with the target often"
+
+
+def test_tradeoff_covers_the_many_option_regime_and_the_default(
+    built: tuple[dict[str, Any], list[dict[str, Any]]],
+) -> None:
+    """Precedence with drawn arity 2..20; the no-rule default wins some records (L-010)."""
+    _, records = built
+    rows = [record for record in records if record["source"] == "synthetic:jev:tradeoff"]
+    assert rows
+    content = load_content(DEFAULT_CONTENT_DIR)
+    default_key = str(content["tradeoff"]["no_rule_action"]["key"])
+    pool = {str(action["key"]) for action in content["tradeoff"]["actions"]} | {default_key}
+    sizes: set[int] = set()
+    target_positions: set[int] = set()
+    defaults = 0
+    for record in rows:
+        assert record["target"] in record["criteria"]
+        assert set(record["criteria"]) <= pool, record["id"]
+        sizes.add(len(record["criteria"]))
+        target_positions.add(list(record["criteria"]).index(record["target"]))
+        defaults += record["target"] == default_key
+    assert min(sizes) >= 2 and max(sizes) >= 15, sizes
+    assert len(target_positions) >= 3, "option order must be permuted (W1.4)"
+    assert defaults >= 100, "the no-rule default must draw as a winner (L-010)"
 
 
 def test_build_is_deterministic(tmp_path: Path) -> None:
