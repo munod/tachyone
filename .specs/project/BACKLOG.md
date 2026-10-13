@@ -2369,6 +2369,32 @@ has no public items — a public I is a diagnostic, not the official score.
   unchanged onto `checkpoints/en_s1b_fit_bank` and the S1a gate harness (N1–N7 + probes +
   the 231-item measurement-only dry-run), N7 read under **both** packagings and both
   disclosed. Gates: the pre-registered S1b movers + the full non-regression set.
+
+  *Outcome (2026-10-13) — **read 16/19: `hard/trap` mover met, `standard` mover NOT met;
+  N7 NOT met (third consecutive) and N2 marginally missed on the quoted packaging —
+  numbers stand as measured**.* Training ran as pinned (two interleaved epochs @ 2e-5 over
+  8,000 rows = 3,200 counterfactual pairs + 25% seeded replay; losses descended, no
+  collapse; the bank-fit encode hit one benign allocator OOM warning and recovered — run
+  noise, disclosed). The factor did what it teaches: **`hard/trap` 0.250 → 0.500** (held at
+  the v0.13.0 level — mover PASS), `policy` 0.500 → 0.583, `fact` 0.500 → 0.583,
+  `long_policy` 0.316 → 0.368, `easy` held at 0.521 — at the now-fourth recorded instance
+  of the in-domain/off-domain and natural/template trades (L-007/L-015): `judge_hard`
+  0.471 → 0.235, `adequacy` 0.500 → 0.417, `multi_hop` 0.278 → 0.222, so `standard` reads
+  26/72 = **0.361** (up vs S1a 0.347, below the 0.50 gate) and `hard` 0.315 → 0.297.
+  Intelligence 8.2 → 8.9 (composite 1.03 → 1.24). Non-regression: N1 **0.9777** (best yet,
+  above S1a's 0.9721), N3 0.9957, N5 3/3 byte-identical + sha pins, N6 Speed 85.0 (p50
+  69.5 ms), N4 XNLI **0.412** (S1a 0.565 — down but over the 0.333 floor; typed 0.287,
+  MASSIVE 0.070 reported) — but **N2 NOT met on the quoted packaging** (en_split `noul` ECE
+  0.0503 vs the 0.05 line, 3e-4 over; the served packaging reads 0.0049) and **N7 NOT met**
+  (Calibration 37.6 / bench ECE 0.312 on the P3-standard stack, 26.0 / 0.370 on the served
+  stack — both disclosed; third miss after B-20's 49.0 and S1a's 41.6/27.5). Gates read
+  twice, one-set, exactly as pinned. **On the pre-registered contract the stage gate is NOT
+  met** (`standard` mover + N2 + N7) — never re-fixed; both arms keep their numbers and
+  `v0.13.0` stays published. Artifacts: `checkpoints/en_s1b` / `en_s1b_fit_bank`,
+  `training/configs/{jev_mixture_s1b,jev_mixture_s1b_union,fit_bank_en_s1b}.json`,
+  `data/{train_jev_counterfactual,train_en_s1b,train_en_s1b_union,calibration_holdout_preds_en_s1b}.jsonl`,
+  `benchmarks/results/gates_s1b{,_servedstack}/`,
+  `/tmp/opencode/jev_dryrun/results_s1b{,f}.jsonl`.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

@@ -8,6 +8,19 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Counterfactual-rubric family (B-21 S1b).** `training/build_jev_families.py` grows a
+  `counterfactual` family over committed content (`training/data/jev/counterfactual.json`,
+  12 cases in three shapes: `noul` policy-conditions, `noul` defined-term/trap, `choice`
+  rubric-override/band with one shared outcome vocabulary). Every draw emits a **pair**
+  sharing the drawn case facts and the question, with the governing rubric minimally
+  altered in exactly one declared clause (a `change` audit field ships on both records); a
+  pair is emitted only when the base and counterfactual trees **disagree** on the target —
+  the flip is the lesson. Labels are text-derived from the two trees (ADR-0014/15). New
+  `--families` filter builds a subset; pair families require an even count. Built 6,400
+  records with zero public-item collisions and balanced labels (binary exactly even).
+  Mixture recipes `jev_mixture_s1b.json` (counterfactual + 25% seeded replay of the S1a
+  union) and `jev_mixture_s1b_union.json`.
+
 - **S1a data layer (B-21).** `alisawuffles/WANLI` (cc-by-4.0) pinned in
   `training/data/jev_sources.lock.json` as the commercial-safe adversarial-NLI source;
   `facebook/anli` and `kiddothe2b/contract-nli` recorded under `excluded` for their
@@ -36,6 +49,17 @@ All notable changes to this project are documented here. The format is based on
   check (L-011) caught it and the fix is recorded with the attempt.
 
 ### Changed
+
+- **S1b recorded (executed; stage gate NOT met).** The counterfactual-rubric touch-up from
+  the S1a arm (3,200 pairs + 25% seeded replay, two interleaved epochs @ 2e-5) read 16/19
+  under the pre-registered gates. The factor does what it teaches — `hard/trap` **0.250 →
+  0.500** (held at the v0.13.0 level), `policy`/`fact` back to 0.583, `easy` held 0.521,
+  holdout accuracy best-ever **0.9777** — and it pays the trade again (L-007/L-015, fourth
+  instance): `judge_hard` 0.471 → 0.235, so the `standard` mover is NOT met (0.361 < 0.50),
+  N2 misses by 3e-4 on the quoted packaging (en_split `noul` ECE 0.0503) and **N7 is NOT
+  met again** (Calibration 37.6 / 26.0 across the two packagings, both disclosed).
+  Intelligence 8.2 → 8.9. Numbers stand as measured, never re-fixed; `v0.13.0` stays
+  published. Full record: `BACKLOG.md` **B-21**.
 
 - **B-20 recorded (executed, NOT adopted).** The JevBench-driven mixture layer (pinned
   MultiNLI/BoolQ/Banking77 + bench-shaped families beside the 36k synthetic base) was

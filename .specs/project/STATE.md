@@ -87,9 +87,15 @@ attempt-3 served stack 27.5; both disclosed). Holdout/five-domain/P3/multi all h
 commercial-clean (WANLI cc-by-4.0 replaces the NC ANLI/ContractNLI, owner decision; the
 lock's `excluded` records them). The remaining gap is rubric-shaped → **S1b
 (counterfactual rubrics)** is the pre-registered next lever. Paused after S1a by owner
-decision (2026-10-13), **resumed the same day — S1b executing** with its run parameters
-pinned in BACKLOG **B-21** before any data edit (counterfactual pairs only, 25% replay
-touch-up from the S1a arm; `v0.13.0` stays published until an adoption decision). Spec:
+decision (2026-10-13), **resumed the same day and S1b executed** (run parameters pinned in
+BACKLOG **B-21** before any data edit: counterfactual pairs only, 25% replay touch-up from
+the S1a arm; `v0.13.0` stays published until an adoption decision). **S1b read 16/19:**
+the factor did what it teaches — **`hard/trap` 0.250 → 0.500** (mover PASS, held at the
+v0.13.0 level), `policy`/`fact` back to 0.583, `easy` held 0.521, N1 best-ever 0.9777 —
+but the trade pattern again (4th instance of L-007/L-015): `judge_hard` 0.471 → 0.235 so
+`standard` 0.361 < 0.50 (mover NOT met), N2 marginally missed (en_split `noul` ECE 0.0503
+on the quoted packaging) and **N7 NOT met again** (Calibration 37.6/26.0 both packagings).
+Stage gate NOT met on the pre-registered contract — never re-fixed. Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three
