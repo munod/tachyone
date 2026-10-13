@@ -1,11 +1,17 @@
 # JevBench
 
-> **Status (2026-10-08):** JevBench was **set aside by decision** — its maintainer
-> changed the submission methodology upstream and Tachyone development continued
-> (2026-10-10/12: a **measurement-only dry-run** re-read the public set on the `v0.13.0`
-> artifact and the **B-20** data cycle answered its verdict — three recorded attempts, the
-> mixture layer **not adopted** (a trade, not an improvement); see *Dry-run re-measurement*
-> below and `BACKLOG.md` **B-20**).
+> **Status (2026-10-13):** the submission is **closed by us** — issue
+> [`#182`](https://github.com/fstandhartinger/jevbench/issues/182) was closed with thanks;
+> we focus on model improvements (B-21) and may re-submit later through the maintainer's
+> new channel ([benchmarkheaven.com/submit](https://benchmarkheaven.com/submit) — free
+> regular queue, 48h paid fast lane; the board moved to **v1.6.1**, where *Capability* is
+> the mean of Intelligence and Calibration — friendly to the `v0.13.0` stack). JevBench
+> remains **measurement-only** for us; public items are evaluation-only for ever. History:
+> 2026-10-08 the project was set aside when the maintainer changed the submission
+> methodology upstream; 2026-10-10/12 a **measurement-only dry-run** re-read the public set
+> on the `v0.13.0` artifact and the **B-20** data cycle answered its verdict — three
+> recorded attempts, the mixture layer **not adopted** (a trade, not an improvement); see
+> *Dry-run re-measurement* below and `BACKLOG.md` **B-20**.
 > (`.specs/project/STATE.md`). Every JevBench number on this page belongs to the
 > **v0.8.0 artifact** and is kept as a measurement of that revision; it is **not**
 > re-measured for v0.9.0. The current release's numbers are in

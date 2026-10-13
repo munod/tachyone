@@ -1145,10 +1145,17 @@ Full record: `.specs/features/jevbench/tasks.md` JB-8.
       direction removed. Reaching ≤ 0.15 needs bench-difficulty legal data or the P2
       capability fix, not another fit. Full record: spec *P3 results*, tasks JB-13.
 - [x] P4: **done (2026-10-02)** — [`fstandhartinger/jevbench#182`](https://github.com/fstandhartinger/jevbench/issues/182) filed (offline
-      artifact: pinned weights `1c88ebef`, licences, inference command smoke-tested, asset
-      sha256s, the public diagnostic, cost basis, benchmark-directed-data disclosure, method
-      `bb05a335` + METHOD sha256); `docs/jevbench.md` and CHANGELOG carry the same set, and
-      `.specs/features/jevbench/submission-issue.md` keeps the verbatim body.
+  artifact following the `#158` pattern; the body names the
+  artifact: pinned weights `1c88ebef`, licences, inference command smoke-tested, asset
+  sha256s, the public diagnostic, cost basis, benchmark-directed-data disclosure, method
+  `bb05a335` + METHOD sha256); `docs/jevbench.md` and CHANGELOG carry the same set, and
+  `.specs/features/jevbench/submission-issue.md` keeps the verbatim body. **Closed by us
+  2026-10-13** with thanks: the maintainer had moved new submissions to
+  `benchmarkheaven.com/submit` (2026-10-07) and we chose to spend the time on model
+  improvements (B-21) instead; a future re-submission goes through that form with the
+  then-published artifact (the board's v1.6 method makes *Capability* the mean of
+  Intelligence and Calibration, which favours the P3-calibrated `v0.13.0` stack over the
+  issue's original `1c88ebef` pin).
 
 **Risks / notes.** Hard tier (30% weight) may stay at chance for a similarity encoder — it
 contributes 0 rather than negative (cc clipped), so the multiplier is decided by

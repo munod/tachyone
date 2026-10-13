@@ -123,7 +123,12 @@ class — at p50 118.7 s (thinking = **+15 accuracy points and ~11× latency**; 
 mode is degradation *under budget*, not lack of capability). The B-17 "`qwen3.6` unusable"
 quirk is **resolved and recorded**: budget truncation inside the reasoning, not a model
 defect; think-off runs through a plumbing-only proxy (Ollama's OpenAI shim ignores every
-thinking knob; its native `/api/chat` honors `"think": false`).
+thinking knob; its native `/api/chat` honors `"think": false`). **Submission closed by us
+2026-10-13**: issue `fstandhartinger/jevbench#182` closed with thanks — the maintainer had
+moved new submissions to `benchmarkheaven.com/submit` and the time goes to model
+improvements (B-21); a future re-submission uses that form and the then-published artifact
+(the board's v1.6 *Capability* = mean(Intelligence, Calibration) favours the P3-calibrated
+`v0.13.0` stack). JevBench stays measurement-only.
 
 **B-19 executed 2026-10-10 (routing quality, the L-013 follow-up; gates pre-registered
 `94df00c`, 20/20 PASS).** The docs' "~13–15% fall through to English" measured real:
