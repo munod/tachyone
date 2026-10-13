@@ -2395,6 +2395,39 @@ has no public items — a public I is a diagnostic, not the official score.
   `data/{train_jev_counterfactual,train_en_s1b,train_en_s1b_union,calibration_holdout_preds_en_s1b}.jsonl`,
   `benchmarks/results/gates_s1b{,_servedstack}/`,
   `/tmp/opencode/jev_dryrun/results_s1b{,f}.jsonl`.
+
+  *S1c run parameters pinned 2026-10-13, before any data edit:* factor = the
+  **reasoning-shaped family layer + arity** (W1.3/W1.4 — the pre-registered stage as one
+  arm; L-012). Two new committed content files and builders in
+  `training/build_jev_families.py`: **`policy_trap`** (a decision policy over *trusted*
+  metadata with an exception clause and tempting untrusted text that pushes the naive
+  answer — the bench `adversarial`/`trap`/`policy` shape; decision vocabulary shared per
+  family) and **`tradeoff`** (a numbered precedence policy where several rules trigger and
+  **only the highest-ranked applies** — the bench `tradeoff` shape; lower-ranked triggers
+  are drawn as distractors). The existing **`temporal_numeric`** and **`multi_hop`**
+  families join the arm (neither has ever been in an S1 arm's training stream). All four
+  emit **choice records with per-record option-order permutation** (W1.4's positional
+  debiasing); `policy_trap` and `tradeoff` additionally **draw the arity** from their
+  outcome/action pools — `tradeoff` covers the many-option regime (2…20 candidates incl.
+  never-winning distractors), `policy_trap` 3…8; `multi_hop`/`temporal_numeric` keep their
+  natural arities. Labels remain tree-derived over drawn facts (ADR-0014/15; the tradeoff
+  win-index is drawn first and the triggers decomposed around it, L-010 — never a rank
+  prior). Counts: 1,600 per family = 6,400 rows (`jev_families.json` counts updated; the
+  S1c part builds alone via `--families temporal_numeric,multi_hop,policy_trap,tradeoff`).
+  Mixture: `jev_mixture_s1c.json` = those rows + 25% seeded replay of
+  `data/train_en_s1b_union.jsonl` (seed 2) → 8,000 rows; arm union
+  (`jev_mixture_s1c_union.json`) = S1b union + the reasoning rows. Touch-up:
+  `interleave_continue --adapter checkpoints/en_s1b --out checkpoints/en_s1c --epochs 0,1
+  --data data/train_en_s1c.jsonl --learning-rate 2e-5 --seed 2 --choice-rank 128
+  --max-len 512` — base **`en_s1b`** (the cumulative arm the spec's "S1a+b+c together"
+  expects; `en_s1a` was rejected: it would drop the S1b rubric-reading factor). Then the
+  S1b packaging chain unchanged (both packagings read and disclosed) and gate harness.
+  Gates: the pre-registered S1c movers — named families up (measured on the public
+  counterparts: `temporal_numeric` 15, `multi_hop` 18, `tradeoff` 6; `policy_trap` has no
+  public items and is reported through its closest public proxies `trap`/`adversarial`/
+  `policy`) and full-suite **I ≥ 22** — plus N1–N7. **`judge_hard` (17 items, S1b's
+  biggest loss) is deliberately outside the factor** (its `adequacy` shape is a follow-up
+  arm candidate); its number is reported as measured.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
