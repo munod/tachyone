@@ -1,0 +1,728 @@
+{
+ "_comment": "Committed content for the counterfactual-rubric family (B-21 S1b, W1.2). Every case is authored as a PAIR: base and counterfactual share the drawn facts and the question, and differ in exactly one declared rubric clause (`change` records it). The builder emits the pair only when the two trees disagree on the target - the flip is the lesson (read the rubric, not the surface). Labels come from the two trees (ADR-0014/15), never from an index. Facts declare how each fact is drawn AND how it is worded (kind: bool/int/text/derived); `state_frame` formats {rubric} and {stated}; a variant that carries `rubric` embeds its clause in the state, one that carries `instructions` puts it in the question (both locations exist in the bench).",
+ "cases": [
+  {
+   "key": "service_credit_authorization",
+   "shape": "noul_policy",
+   "change": "who may report: base 'an account owner' vs counterfactual 'any account user'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.",
+   "instructions": "Under the policy as written, does the case qualify for the service credit? Answer under the policy exactly as written; a condition the case does not establish counts as unmet.",
+   "facts": {
+    "report_days": {
+     "kind": "int",
+     "min": 1,
+     "max": 25,
+     "template": "the outage was reported {report_days} days after it began"
+    },
+    "is_owner": {
+     "kind": "bool",
+     "yes": "the report was filed by the account owner",
+     "no": "the report was filed by a named user on the account who is not the owner"
+    }
+   },
+   "base": {
+    "rubric": "Service credit policy: a service credit is issued only when the outage is reported within 14 days of the outage and by an account owner.",
+    "tree": {
+     "op": "all",
+     "args": [
+      {
+       "op": "cmp",
+       "cmp": "<=",
+       "left": {"op": "fact", "name": "report_days"},
+       "right": {"op": "const", "value": 14}
+      },
+      {"op": "fact", "name": "is_owner"}
+     ]
+    }
+   },
+   "counterfactual": {
+    "rubric": "Service credit policy: a service credit is issued only when the outage is reported within 14 days of the outage and by any account user.",
+    "tree": {
+     "op": "cmp",
+     "cmp": "<=",
+     "left": {"op": "fact", "name": "report_days"},
+     "right": {"op": "const", "value": 14}
+    }
+   }
+  },
+  {
+   "key": "warranty_holder",
+   "shape": "noul_policy",
+   "change": "who the warranty pays for: base 'the original buyer' vs counterfactual 'the registered keeper'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.",
+   "instructions": "Under the warranty terms as written, is the repair covered?",
+   "facts": {
+    "original_buyer": {
+     "kind": "bool",
+     "yes": "the claimant is the original buyer of the device",
+     "no": "the claimant bought the device second-hand"
+    },
+    "registered_keeper": {
+     "kind": "bool",
+     "yes": "the claimant is the registered keeper in the device register",
+     "no": "the device register lists someone else as the keeper"
+    }
+   },
+   "base": {
+    "rubric": "Warranty terms: the repair warranty pays only when the claimant is the original buyer of the device.",
+    "tree": {"op": "fact", "name": "original_buyer"}
+   },
+   "counterfactual": {
+    "rubric": "Warranty terms: the repair warranty pays only when the claimant is the registered keeper in the device register.",
+    "tree": {"op": "fact", "name": "registered_keeper"}
+   }
+  },
+  {
+   "key": "late_fee_notice",
+   "shape": "noul_policy",
+   "change": "the notice window: base 'at least 7 days' vs counterfactual 'at least 14 days'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.",
+   "instructions": "Under the policy as written, is the late fee properly applied?",
+   "facts": {
+    "notice_days": {
+     "kind": "int",
+     "min": 3,
+     "max": 20,
+     "template": "the notice was sent {notice_days} days before the due date"
+    }
+   },
+   "base": {
+    "rubric": "Billing policy: a late fee is applied only when the account was notified at least 7 days before the due date.",
+    "tree": {
+     "op": "cmp",
+     "cmp": ">=",
+     "left": {"op": "fact", "name": "notice_days"},
+     "right": {"op": "const", "value": 7}
+    }
+   },
+   "counterfactual": {
+    "rubric": "Billing policy: a late fee is applied only when the account was notified at least 14 days before the due date.",
+    "tree": {
+     "op": "cmp",
+     "cmp": ">=",
+     "left": {"op": "fact", "name": "notice_days"},
+     "right": {"op": "const", "value": 14}
+    }
+   }
+  },
+  {
+   "key": "bundle_discount",
+   "shape": "noul_policy",
+   "change": "the condition operator: base 'items and total' vs counterfactual 'items or total'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.",
+   "instructions": "Under the policy as written, does the bundle discount apply?",
+   "facts": {
+    "eligible_items": {
+     "kind": "int",
+     "min": 1,
+     "max": 5,
+     "template": "the order contains {eligible_items} eligible items"
+    },
+    "eligible_total": {
+     "kind": "int",
+     "min": 120,
+     "max": 280,
+     "template": "the eligible total is {eligible_total} dollars"
+    }
+   },
+   "base": {
+    "rubric": "Discount policy: the bundle discount applies when the order contains at least 3 eligible items and the eligible total reaches 200 dollars.",
+    "tree": {
+     "op": "all",
+     "args": [
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "eligible_items"},
+       "right": {"op": "const", "value": 3}
+      },
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "eligible_total"},
+       "right": {"op": "const", "value": 200}
+      }
+     ]
+    }
+   },
+   "counterfactual": {
+    "rubric": "Discount policy: the bundle discount applies when the order contains at least 3 eligible items or the eligible total reaches 200 dollars.",
+    "tree": {
+     "op": "any",
+     "args": [
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "eligible_items"},
+       "right": {"op": "const", "value": 3}
+      },
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "eligible_total"},
+       "right": {"op": "const", "value": 200}
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "diagnostic_working_order",
+   "shape": "noul_defined_term",
+   "change": "what 'in working order' means: base 'full diagnostic without error' vs counterfactual 'full diagnostic without error and battery above 80%'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.\n{note}",
+   "instructions": "Does this device qualify for the replacement plan under the definition above?",
+   "facts": {
+    "diagnostic_ok": {
+     "kind": "bool",
+     "yes": "the device completed the full diagnostic without error",
+     "no": "the diagnostic stopped on a sensor error before the end"
+    },
+    "battery": {
+     "kind": "int",
+     "min": 55,
+     "max": 100,
+     "template": "the battery held {battery} percent charge at inspection"
+    }
+   },
+   "base": {
+    "rubric": "The replacement plan replaces devices that are not in working order within the first year. Standard DR-2 counts a device as in working order only when it completes the full diagnostic without error.",
+    "note": "Agent note: the owner says the device works fine; likely in working order, so no replacement.",
+    "surface_answer": 0,
+    "tree": {
+     "op": "not",
+     "arg": {"op": "fact", "name": "diagnostic_ok"}
+    }
+   },
+   "counterfactual": {
+    "rubric": "The replacement plan replaces devices that are not in working order within the first year. Standard DR-2 counts a device as in working order only when it completes the full diagnostic without error and holds battery charge above 80 percent at inspection.",
+    "note": "Agent note: the owner says the device works fine; likely in working order, so no replacement.",
+    "surface_answer": 0,
+    "tree": {
+     "op": "not",
+     "arg": {
+      "op": "all",
+      "args": [
+       {"op": "fact", "name": "diagnostic_ok"},
+       {
+        "op": "cmp",
+        "cmp": ">",
+        "left": {"op": "fact", "name": "battery"},
+        "right": {"op": "const", "value": 80}
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "visit_day_scan",
+   "shape": "noul_defined_term",
+   "change": "what starts a visit day: base 'scanned at both entry and exit' vs counterfactual 'scanned at entry'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.\n{note}",
+   "instructions": "Does this stay count as a visit day under the definition above?",
+   "facts": {
+    "entry_scan": {
+     "kind": "bool",
+     "yes": "the guest badge was scanned at the entry gate",
+     "no": "the entry gate recorded no badge scan"
+    },
+    "exit_scan": {
+     "kind": "bool",
+     "yes": "the guest badge was scanned at the exit gate",
+     "no": "the exit gate recorded no badge scan"
+    }
+   },
+   "base": {
+    "rubric": "The island annual pass covers 6 visit days per calendar month. Ordinance O-9 counts a visit day only when the guest badge is scanned at both the entry gate and the exit gate.",
+    "note": "Desk note: the guest spent the whole day on the island; likely a visit day.",
+    "surface_answer": 1,
+    "tree": {
+     "op": "all",
+     "args": [
+      {"op": "fact", "name": "entry_scan"},
+      {"op": "fact", "name": "exit_scan"}
+     ]
+    }
+   },
+   "counterfactual": {
+    "rubric": "The island annual pass covers 6 visit days per calendar month. Ordinance O-9 counts a visit day only when the guest badge is scanned at the entry gate.",
+    "note": "Desk note: the guest spent the whole day on the island; likely a visit day.",
+    "surface_answer": 1,
+    "tree": {"op": "fact", "name": "entry_scan"}
+   }
+  },
+  {
+   "key": "resident_tariff",
+   "shape": "noul_defined_term",
+   "change": "the register window: base 'at least 12 months' vs counterfactual 'at least 6 months'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.\n{note}",
+   "instructions": "Does the claimant qualify for the reduced tariff under the definition above?",
+   "facts": {
+    "months_registered": {
+     "kind": "int",
+     "min": 2,
+     "max": 24,
+     "template": "the address has been on the city register for {months_registered} months"
+    },
+    "primary_address": {
+     "kind": "bool",
+     "yes": "the address on the register is the claimant's primary address",
+     "no": "the address on the register is the claimant's secondary address"
+    }
+   },
+   "base": {
+    "rubric": "The reduced tariff applies to residents. Tariff rule T-11 counts a resident as a claimant whose primary address has been on the city register for at least 12 months.",
+    "note": "Desk note: the claimant has lived in the city for years; likely a resident.",
+    "surface_answer": 1,
+    "tree": {
+     "op": "all",
+     "args": [
+      {"op": "fact", "name": "primary_address"},
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "months_registered"},
+       "right": {"op": "const", "value": 12}
+      }
+     ]
+    }
+   },
+   "counterfactual": {
+    "rubric": "The reduced tariff applies to residents. Tariff rule T-11 counts a resident as a claimant whose primary address has been on the city register for at least 6 months.",
+    "note": "Desk note: the claimant has lived in the city for years; likely a resident.",
+    "surface_answer": 1,
+    "tree": {
+     "op": "all",
+     "args": [
+      {"op": "fact", "name": "primary_address"},
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "months_registered"},
+       "right": {"op": "const", "value": 6}
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "household_bulk",
+   "shape": "noul_defined_term",
+   "change": "what a household shares: base 'one kitchen and one utility account' vs counterfactual 'one kitchen'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.\n{note}",
+   "instructions": "Does this group qualify for the bulk rate under the definition above?",
+   "facts": {
+    "shared_kitchen": {
+     "kind": "bool",
+     "yes": "the group shares one kitchen",
+     "no": "the members cook in separate kitchens"
+    },
+    "shared_utility": {
+     "kind": "bool",
+     "yes": "the group shares one utility account",
+     "no": "the members hold separate utility accounts"
+    },
+    "group_size": {
+     "kind": "int",
+     "min": 2,
+     "max": 6,
+     "template": "the group has {group_size} members"
+    }
+   },
+   "base": {
+    "rubric": "The bulk rate serves households of four or more. Standard S-2 counts a household as a group that shares one kitchen and one utility account.",
+    "note": "Desk note: they cook together every evening; likely one household.",
+    "surface_answer": 1,
+    "tree": {
+     "op": "all",
+     "args": [
+      {"op": "fact", "name": "shared_kitchen"},
+      {"op": "fact", "name": "shared_utility"},
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "group_size"},
+       "right": {"op": "const", "value": 4}
+      }
+     ]
+    }
+   },
+   "counterfactual": {
+    "rubric": "The bulk rate serves households of four or more. Standard S-2 counts a household as a group that shares one kitchen.",
+    "note": "Desk note: they cook together every evening; likely one household.",
+    "surface_answer": 1,
+    "tree": {
+     "op": "all",
+     "args": [
+      {"op": "fact", "name": "shared_kitchen"},
+      {
+       "op": "cmp",
+       "cmp": ">=",
+       "left": {"op": "fact", "name": "group_size"},
+       "right": {"op": "const", "value": 4}
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "risk_figure_bands",
+   "shape": "choice_band",
+   "change": "which figure the bands score: base 'the gross figure' vs counterfactual 'the net figure'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.",
+   "instructions": "What outcome does the exception request get under the rules above?",
+   "criteria": {
+    "approve": "The request is approved as filed.",
+    "request_info": "More information is requested before the request is decided.",
+    "escalate": "The request is escalated to the review board.",
+    "decline": "The request is declined."
+   },
+   "facts": {
+    "gross_figure": {
+     "kind": "int",
+     "min": 5,
+     "max": 90,
+     "template": "the assessment tool returns a gross risk figure of {gross_figure}"
+    },
+    "net_figure": {
+     "kind": "int",
+     "min": 5,
+     "max": 90,
+     "template": "the net risk figure after controls is {net_figure}"
+    }
+   },
+   "base": {
+    "rubric": "Exception routing uses the risk bands: figures 0 to 24 are approved; 25 to 49 get request_info; 50 to 74 are escalated; 75 and above are declined. The scored figure is the tool's gross figure.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "gross_figure"},
+        "right": {"op": "const", "value": 24}
+       },
+       {"op": "const", "value": "approve"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "gross_figure"},
+        "right": {"op": "const", "value": 49}
+       },
+       {"op": "const", "value": "request_info"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "gross_figure"},
+        "right": {"op": "const", "value": 74}
+       },
+       {"op": "const", "value": "escalate"}
+      ]
+     ],
+     "else": {"op": "const", "value": "decline"}
+    }
+   },
+   "counterfactual": {
+    "rubric": "Exception routing uses the risk bands: figures 0 to 24 are approved; 25 to 49 get request_info; 50 to 74 are escalated; 75 and above are declined. The scored figure is the tool's net figure.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "net_figure"},
+        "right": {"op": "const", "value": 24}
+       },
+       {"op": "const", "value": "approve"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "net_figure"},
+        "right": {"op": "const", "value": 49}
+       },
+       {"op": "const", "value": "request_info"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "net_figure"},
+        "right": {"op": "const", "value": 74}
+       },
+       {"op": "const", "value": "escalate"}
+      ]
+     ],
+     "else": {"op": "const", "value": "decline"}
+    }
+   }
+  },
+  {
+   "key": "police_override",
+   "shape": "choice_band",
+   "change": "the override's outcome: base 'approved' vs counterfactual 'escalated' (the override lives in the question text)",
+   "state_frame": "Claim: {stated}.",
+   "instructions": "What outcome does the claim get? Claim routing: amounts under 500 dollars are approved; amounts from 500 to 2000 dollars get request_info; amounts above 2000 dollars are escalated. Override: when a police report is on file, the claim is approved regardless of amount.",
+   "criteria": {
+    "approve": "The claim is approved as filed.",
+    "request_info": "More information is requested before the claim is decided.",
+    "escalate": "The claim is escalated to the review board.",
+    "decline": "The claim is declined."
+   },
+   "facts": {
+    "claim_amount": {
+     "kind": "int",
+     "min": 200,
+     "max": 3000,
+     "template": "the claim amount is {claim_amount} dollars"
+    },
+    "police_report": {
+     "kind": "bool",
+     "yes": "a police report is on file",
+     "no": "no police report is on file"
+    }
+   },
+   "base": {
+    "instructions": "What outcome does the claim get? Claim routing: amounts under 500 dollars are approved; amounts from 500 to 2000 dollars get request_info; amounts above 2000 dollars are escalated. Override: when a police report is on file, the claim is approved regardless of amount.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {"op": "fact", "name": "police_report"},
+       {"op": "const", "value": "approve"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<",
+        "left": {"op": "fact", "name": "claim_amount"},
+        "right": {"op": "const", "value": 500}
+       },
+       {"op": "const", "value": "approve"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "claim_amount"},
+        "right": {"op": "const", "value": 2000}
+       },
+       {"op": "const", "value": "request_info"}
+      ]
+     ],
+     "else": {"op": "const", "value": "escalate"}
+    }
+   },
+   "counterfactual": {
+    "instructions": "What outcome does the claim get? Claim routing: amounts under 500 dollars are approved; amounts from 500 to 2000 dollars get request_info; amounts above 2000 dollars are escalated. Override: when a police report is on file, the claim is escalated regardless of amount.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {"op": "fact", "name": "police_report"},
+       {"op": "const", "value": "escalate"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<",
+        "left": {"op": "fact", "name": "claim_amount"},
+        "right": {"op": "const", "value": 500}
+       },
+       {"op": "const", "value": "approve"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "claim_amount"},
+        "right": {"op": "const", "value": 2000}
+       },
+       {"op": "const", "value": "request_info"}
+      ]
+     ],
+     "else": {"op": "const", "value": "escalate"}
+    }
+   }
+  },
+  {
+   "key": "delay_measure",
+   "shape": "choice_band",
+   "change": "which delay is counted: base \"the carrier's stated delay\" vs counterfactual 'the tracking log delay'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.",
+   "instructions": "What outcome does the compensation request get under the rules above?",
+   "criteria": {
+    "approve": "The compensation is approved as filed.",
+    "request_info": "More information is requested before the request is decided.",
+    "escalate": "The request is escalated to the review board.",
+    "decline": "The compensation is declined."
+   },
+   "facts": {
+    "stated_delay": {
+     "kind": "int",
+     "min": 0,
+     "max": 20,
+     "template": "the carrier states a delay of {stated_delay} days"
+    },
+    "tracked_delay": {
+     "kind": "int",
+     "min": 0,
+     "max": 20,
+     "template": "the tracking log shows {tracked_delay} days of delay"
+    }
+   },
+   "base": {
+    "rubric": "Compensation is decided by the counted delay: 0 to 1 days are declined; 2 to 5 days get request_info; 6 to 14 days are approved; 15 days and above are escalated. The counted delay is the carrier's stated delay.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "stated_delay"},
+        "right": {"op": "const", "value": 1}
+       },
+       {"op": "const", "value": "decline"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "stated_delay"},
+        "right": {"op": "const", "value": 5}
+       },
+       {"op": "const", "value": "request_info"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "stated_delay"},
+        "right": {"op": "const", "value": 14}
+       },
+       {"op": "const", "value": "approve"}
+      ]
+     ],
+     "else": {"op": "const", "value": "escalate"}
+    }
+   },
+   "counterfactual": {
+    "rubric": "Compensation is decided by the counted delay: 0 to 1 days are declined; 2 to 5 days get request_info; 6 to 14 days are approved; 15 days and above are escalated. The counted delay is the delay the tracking log shows.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "tracked_delay"},
+        "right": {"op": "const", "value": 1}
+       },
+       {"op": "const", "value": "decline"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "tracked_delay"},
+        "right": {"op": "const", "value": 5}
+       },
+       {"op": "const", "value": "request_info"}
+      ],
+      [
+       {
+        "op": "cmp",
+        "cmp": "<=",
+        "left": {"op": "fact", "name": "tracked_delay"},
+        "right": {"op": "const", "value": 14}
+       },
+       {"op": "const", "value": "approve"}
+      ]
+     ],
+     "else": {"op": "const", "value": "escalate"}
+    }
+   }
+  },
+  {
+   "key": "missing_documents",
+   "shape": "choice_band",
+   "change": "the missing-documents outcome: base 'request_info' vs counterfactual 'decline'",
+   "state_frame": "{rubric}\n\nIn this case: {stated}.",
+   "instructions": "What outcome does the request get under the rules above?",
+   "criteria": {
+    "approve": "The request is approved as filed.",
+    "request_info": "More information is requested before the request is decided.",
+    "escalate": "The request is escalated to the review board.",
+    "decline": "The request is declined."
+   },
+   "facts": {
+    "in_scheme": {
+     "kind": "bool",
+     "yes": "the request falls inside the scheme",
+     "no": "the request falls outside the scheme"
+    },
+    "documents_complete": {
+     "kind": "bool",
+     "yes": "every required document is on file",
+     "no": "one or more required documents are missing"
+    },
+    "documents_agree": {
+     "kind": "bool",
+     "yes": "the documents on file agree with each other",
+     "no": "the documents on file contradict each other"
+    }
+   },
+   "base": {
+    "rubric": "Document review rules: requests outside the scheme are declined; requests in the scheme with missing documents get request_info; complete documents that agree are approved; complete documents that contradict each other are escalated.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {"op": "not", "arg": {"op": "fact", "name": "in_scheme"}},
+       {"op": "const", "value": "decline"}
+      ],
+      [
+       {"op": "not", "arg": {"op": "fact", "name": "documents_complete"}},
+       {"op": "const", "value": "request_info"}
+      ],
+      [
+       {"op": "fact", "name": "documents_agree"},
+       {"op": "const", "value": "approve"}
+      ]
+     ],
+     "else": {"op": "const", "value": "escalate"}
+    }
+   },
+   "counterfactual": {
+    "rubric": "Document review rules: requests outside the scheme are declined; requests in the scheme with missing documents are declined; complete documents that agree are approved; complete documents that contradict each other are escalated.",
+    "tree": {
+     "op": "select",
+     "when": [
+      [
+       {"op": "not", "arg": {"op": "fact", "name": "in_scheme"}},
+       {"op": "const", "value": "decline"}
+      ],
+      [
+       {"op": "not", "arg": {"op": "fact", "name": "documents_complete"}},
+       {"op": "const", "value": "decline"}
+      ],
+      [
+       {"op": "fact", "name": "documents_agree"},
+       {"op": "const", "value": "approve"}
+      ]
+     ],
+     "else": {"op": "const", "value": "escalate"}
+    }
+   }
+  }
+ ]
+}

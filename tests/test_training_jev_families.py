@@ -62,6 +62,22 @@ def test_every_committed_content_file_validates() -> None:
     assert len(content["trap"]["cases"]) >= 6
     assert len(content["long_policy"]["routing"]["bands"]) == 5
     assert len(content["adequacy"]["requests"]) >= 5
+    cases = content["counterfactual"]["cases"]
+    assert len(cases) >= 12
+    assert {case["shape"] for case in cases} == {
+        "noul_policy",
+        "noul_defined_term",
+        "choice_band",
+    }
+    for case in cases:
+        assert case["base"]["tree"] != case["counterfactual"]["tree"], case["key"]
+        if case["shape"] == "choice_band":
+            assert set(case["criteria"]) == {
+                "approve",
+                "decline",
+                "escalate",
+                "request_info",
+            }, case["key"]
 
 
 def test_add_months_clamped_handles_month_end_and_leap_years() -> None:
@@ -216,7 +232,7 @@ def test_label_distribution_is_balanced_enough_to_train_on(
 
 
 def _label_spaces(family: str, counts: dict[str, int]) -> list[dict[str, int]]:
-    """Two families mix two independent label spaces; balance is judged inside each one."""
+    """Some families mix two independent label spaces; balance is judged inside each one."""
     if family == "long_policy":
         routing = {key: value for key, value in counts.items() if key.startswith("level")}
         coverage = {key: value for key, value in counts.items() if not key.startswith("level")}
@@ -225,6 +241,10 @@ def _label_spaces(family: str, counts: dict[str, int]) -> list[dict[str, int]]:
         binary = {key: value for key, value in counts.items() if key in ("0", "1")}
         settlement = {key: value for key, value in counts.items() if key not in ("0", "1")}
         return [binary, settlement]
+    if family == "counterfactual":
+        binary = {key: value for key, value in counts.items() if key in ("0", "1")}
+        choice = {key: value for key, value in counts.items() if key not in ("0", "1")}
+        return [binary, choice]
     return [counts]
 
 
@@ -274,6 +294,34 @@ def test_trap_records_ship_the_surface_answer_and_actually_trap(
         if int(record["target"]) != int(surface):
             differing += 1
     assert differing >= 100, "the agent note must disagree with the defined answer often enough"
+
+
+def test_counterfactual_pairs_flip_and_share_their_facts(
+    built: tuple[dict[str, Any], list[dict[str, Any]]],
+) -> None:
+    """The S1b lesson is the flip: same drawn facts, one rubric clause apart, other answer."""
+    _, records = built
+    pairs: dict[str, list[dict[str, Any]]] = {}
+    for record in records:
+        if record["source"] == "synthetic:jev:counterfactual":
+            pairs.setdefault(record["pair"]["id"], []).append(record)
+    assert len(pairs) >= 3000
+    for pair_id, members in pairs.items():
+        assert len(members) == 2, pair_id
+        base = next(record for record in members if record["pair"]["role"] == "base")
+        cf = next(record for record in members if record["pair"]["role"] == "counterfactual")
+        assert base["pair"]["change"] == cf["pair"]["change"]
+        assert base["pair"]["change"].strip(), pair_id
+        assert base["rule"]["facts"] == cf["rule"]["facts"], pair_id
+        assert base["target"] != cf["target"], pair_id
+        assert base["id"] != cf["id"], pair_id
+        assert (base["state"], base["instructions"]) != (cf["state"], cf["instructions"]), pair_id
+        for record in (base, cf):
+            if record["type"] == "choice":
+                assert record["target"] in record["criteria"]
+            else:
+                assert int(record["target"]) in (0, 1)
+                assert int(record.get("surface_answer", record["target"])) in (0, 1)
 
 
 def test_build_is_deterministic(tmp_path: Path) -> None:

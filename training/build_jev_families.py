@@ -14,6 +14,10 @@ found missing (``.specs/features/jevbench/spec.md``):
                       leap years) and deductible/cap settlement arithmetic.
 - ``adequacy``      — request/response judged against explicit constraints (the judge-tier
                       proxy).
+- ``counterfactual`` — **pairs** (B-21 S1b): the same drawn case under two rubrics that
+                      differ in exactly one declared clause, so the correct answer flips
+                      between the two records (``change`` names the clause). It teaches
+                      *reading the rubric* instead of matching surface to answer.
 
 Every record is assembled **three ways from the same draw**: the text, the shipped
 ``rule.facts`` and the shipped ``rule.tree``; the ``target`` is
@@ -31,7 +35,7 @@ import argparse
 import json
 import random
 import re
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import date, timedelta
 from itertools import pairwise
 from pathlib import Path
@@ -60,7 +64,14 @@ FAMILIES: tuple[str, ...] = (
     "multi_hop",
     "temporal_numeric",
     "adequacy",
+    "counterfactual",
 )
+
+#: Families whose builder emits records in pairs (shared facts, one rubric clause apart).
+_PAIR_FAMILIES: frozenset[str] = frozenset({"counterfactual"})
+
+#: How many draws one pair may burn trying to find a target flip before content is wrong.
+_FLIP_TRIES = 128
 
 #: noul criteria shared by the boolean families, in the bench's semantic shape.
 NOUL_CRITERIA: dict[str, str] = {
@@ -242,6 +253,48 @@ def load_content(directory: str | Path = DEFAULT_CONTENT_DIR) -> dict[str, dict[
                 ("orgs", "file_refs", "question", "doc", "deductible", "caps", "outcomes"),
                 f"{family}.payout_band",
             )
+        elif family == "counterfactual":
+            _require_keys(data, ("cases",), family)
+            for case in data["cases"]:
+                _require_keys(
+                    case,
+                    (
+                        "key",
+                        "shape",
+                        "change",
+                        "state_frame",
+                        "instructions",
+                        "facts",
+                        "base",
+                        "counterfactual",
+                    ),
+                    f"{family}.case",
+                )
+                if case["shape"] not in {"noul_policy", "noul_defined_term", "choice_band"}:
+                    raise BuildError(
+                        f"{family}.case {case['key']}: unknown shape {case['shape']!r}"
+                    )
+                if case["shape"] == "choice_band" and not case.get("criteria"):
+                    raise BuildError(f"{family}.case {case['key']}: choice_band needs criteria")
+                if not str(case["change"]).strip():
+                    raise BuildError(f"{family}.case {case['key']}: change must name the clause")
+                _validate_fact_specs(case["key"], case["facts"])
+                for role in ("base", "counterfactual"):
+                    variant = case[role]
+                    if not isinstance(variant, Mapping):
+                        raise BuildError(f"{family}.case {case['key']}.{role} must be an object")
+                    _require_keys(variant, ("tree",), f"{family}.case {case['key']}.{role}")
+                    if not (variant.get("rubric") or variant.get("instructions")):
+                        raise BuildError(
+                            f"{family}.case {case['key']}.{role}: needs a rubric or "
+                            "instructions clause to differ by"
+                        )
+                if case["base"].get("rubric") == case["counterfactual"].get("rubric") and case[
+                    "base"
+                ].get("instructions") == case["counterfactual"].get("instructions"):
+                    raise BuildError(
+                        f"{family}.case {case['key']}: base and counterfactual are identical"
+                    )
         else:  # adequacy
             _require_keys(data, ("question", "criteria", "requests", "quotes", "responses"), family)
             for request in data["requests"]:
@@ -917,6 +970,64 @@ def _adequacy_record(index: int, rng: random.Random, content: Mapping[str, Any])
     )
 
 
+def _counterfactual_pair(
+    index: int, rng: random.Random, content: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """One counterfactual pair (B-21 S1b): same drawn facts, one rubric clause apart, flipped.
+
+    The pair is emitted only when the base and counterfactual trees **disagree** on the
+    target — the flip is the lesson (read the rubric, not the surface). Draws are
+    resampled inside the record's own seeded rng, so the build stays deterministic.
+    """
+    cases = list(content["counterfactual"]["cases"])
+    case = cases[index % len(cases)]
+    criteria = case.get("criteria")
+    options = [str(key) for key in criteria] if isinstance(criteria, Mapping) else None
+    facts: dict[str, Any] = {}
+    base_target: int | str = 0
+    cf_target: int | str = 1
+    for _ in range(_FLIP_TRIES):
+        facts = draw_facts(case["facts"], rng)
+        base_target = as_target(evaluate(case["base"]["tree"], facts), options=options)
+        cf_target = as_target(evaluate(case["counterfactual"]["tree"], facts), options=options)
+        if base_target != cf_target:
+            break
+    else:
+        raise BuildError(
+            f"counterfactual[{index}] ({case['key']}): {_FLIP_TRIES} draws never flip the "
+            "target — the two rubrics agree on every draw the facts can produce"
+        )
+    stated = "; ".join(
+        render_fact(name, case["facts"][name], value)
+        for name, value in facts.items()
+        if case["facts"][name]["kind"] != "derived"
+    )
+    pair_id = f"jev-counterfactual-{index:05d}"
+    records: list[dict[str, Any]] = []
+    for role, target in (("base", base_target), ("counterfactual", cf_target)):
+        variant = case[role]
+        record = _record(
+            index,
+            "counterfactual",
+            state=str(case["state_frame"]).format(
+                rubric=str(variant.get("rubric", "")),
+                stated=stated,
+                note=str(variant.get("note", "")),
+            ),
+            instructions=str(variant.get("instructions", case["instructions"])),
+            criteria=dict(criteria) if isinstance(criteria, Mapping) else dict(NOUL_CRITERIA),
+            target=target,
+            facts=facts,
+            tree=dict(variant["tree"]),
+            extra={"pair": {"id": pair_id, "role": role, "change": str(case["change"])}},
+        )
+        record["id"] = f"{pair_id}-{'a' if role == 'base' else 'b'}"
+        if "surface_answer" in variant:
+            record["surface_answer"] = int(variant["surface_answer"])
+        records.append(record)
+    return records
+
+
 _BUILDERS: dict[str, Callable[[int, random.Random, Mapping[str, Any]], dict[str, Any]]] = {
     "long_policy": _long_policy_record,
     "trap": _trap_record,
@@ -924,6 +1035,10 @@ _BUILDERS: dict[str, Callable[[int, random.Random, Mapping[str, Any]], dict[str,
     "temporal_numeric": _temporal_record,
     "adequacy": _adequacy_record,
 }
+
+_PAIR_BUILDERS: dict[
+    str, Callable[[int, random.Random, Mapping[str, Any]], list[dict[str, Any]]]
+] = {"counterfactual": _counterfactual_pair}
 
 
 # --------------------------------------------------------------------------- build
@@ -935,18 +1050,36 @@ def build(
     content_dir: str | Path = DEFAULT_CONTENT_DIR,
     out_path: str | Path = DEFAULT_OUT,
     public_dir: str | Path | None = None,
+    families: Sequence[str] | None = None,
 ) -> dict[str, Any]:
-    """Generate every family's records, audit-collide them, write the file, report."""
+    """Generate every family's records, audit-collide them, write the file, report.
+
+    ``families`` builds a subset (the S1b mixture needs the counterfactual rows alone);
+    the default is every family. Pair families emit two records per draw.
+    """
     config = load_config(config_path)
     content = load_content(content_dir)
     seed = int(config["seed"])
+    selected = tuple(families) if families is not None else FAMILIES
+    unknown = set(selected) - set(FAMILIES)
+    if unknown:
+        raise BuildError(f"unknown families: {sorted(unknown)}")
+    if not selected:
+        raise BuildError("no families selected")
     records: list[dict[str, Any]] = []
     per_family: dict[str, int] = {}
-    for family in FAMILIES:
+    for family in selected:
         count = int(config["counts"][family])
-        builder = _BUILDERS[family]
-        for index in range(count):
-            records.append(builder(index, record_rng(seed, family, index), content))
+        if family in _PAIR_FAMILIES:
+            if count % 2:
+                raise BuildError(f"{family}: count must be even (records ship in pairs)")
+            builder = _PAIR_BUILDERS[family]
+            for index in range(count // 2):
+                records.extend(builder(index, record_rng(seed, family, index), content))
+        else:
+            single = _BUILDERS[family]
+            for index in range(count):
+                records.append(single(index, record_rng(seed, family, index), content))
         per_family[family] = count
 
     if public_dir is not None:
@@ -959,7 +1092,7 @@ def build(
             handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
 
     targets: dict[str, dict[str, int]] = {}
-    for family in FAMILIES:
+    for family in per_family:
         counts: dict[str, int] = {}
         for record in records:
             if record["source"] == f"synthetic:jev:{family}":
@@ -991,16 +1124,27 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="the jevbench datasets/public directory: refuse to write if any record collides",
     )
+    parser.add_argument(
+        "--families",
+        default=None,
+        help="comma-separated subset of families to build (default: all)",
+    )
     return parser
 
 
 def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(list(argv) if argv is not None else None)
+    families = (
+        [name.strip() for name in args.families.split(",") if name.strip()]
+        if args.families
+        else None
+    )
     report = build(
         config_path=args.config,
         content_dir=args.content_dir,
         out_path=args.out,
         public_dir=args.public_dir,
+        families=families,
     )
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
