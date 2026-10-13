@@ -140,6 +140,14 @@ def iter_parquet(path: Path) -> Iterator[dict[str, Any]]:
             yield {name: values[index] for name, values in columns.items()}
 
 
+def iter_jsonl(path: Path) -> Iterator[dict[str, Any]]:
+    """Stream a JSONL file as plain dicts (stdlib — the WANLI pin ships JSONL)."""
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                yield json.loads(line)
+
+
 def mnli_pairs(row: dict[str, Any]) -> Iterator[tuple[str, str, int]]:
     """Yield ``(premise, hypothesis, label)`` pairs from one pinned-card row.
 
@@ -167,6 +175,21 @@ def mnli_record(premise: str, hypothesis: str, label: int, ordinal: int) -> dict
         "instructions": XNLI_INSTRUCTION,
         "criteria": dict(XNLI_CRITERIA),
         "target": XNLI_LABELS[label],
+        "lang": "en",
+    }
+
+
+def wanli_record(premise: str, hypothesis: str, gold: str, ordinal: int) -> dict[str, Any]:
+    """One XNLI-shaped `choice` record from a WANLI pair; ``gold`` names the label directly."""
+    if gold not in XNLI_LABELS:
+        raise BuildError(f"WANLI gold label {gold!r} not in {tuple(XNLI_LABELS)}")
+    return {
+        "id": f"src-wanli-{ordinal:05d}",
+        "type": "choice",
+        "state": f"Premise: {premise}\nHypothesis: {hypothesis}",
+        "instructions": XNLI_INSTRUCTION,
+        "criteria": dict(XNLI_CRITERIA),
+        "target": gold,
         "lang": "en",
     }
 
@@ -300,11 +323,18 @@ def build(
             banking_record(row["text"], int(row["label"]), names, descriptions, k, rng, ordinal)
         )
 
+    # WANLI: adversarial NLI pairs (the commercial-safe ANLI substitute, lock pin 2026-10-12).
+    rng = random.Random(f"{seed}:wanli")
+    rows = iter_jsonl(_require(directory / "wanli.jsonl", "wanli"))
+    for ordinal, row in enumerate(reservoir(rows, counts.get("wanli", 0), rng)):
+        records.append(wanli_record(row["premise"], row["hypothesis"], row["gold"], ordinal))
+
     # Source attribution carries the pin (which exact revision produced these bytes).
     per_source = {
         "src-mnli-": f"multi_nli@{lock['sources']['multi_nli']['revision'][:12]}",
         "src-boolq-": f"boolq@{lock['sources']['boolq']['revision'][:12]}",
         "src-bank77-": f"banking77@{lock['sources']['banking77']['revision'][:12]}",
+        "src-wanli-": f"wanli@{lock['sources']['wanli']['revision'][:12]}",
     }
     for record in records:
         record["source"] = next(

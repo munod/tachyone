@@ -2290,6 +2290,46 @@ has no public items — a public I is a diagnostic, not the official score.
   `training/configs/s0_control.json`/`s0_soft.json`, `data/s0_*.jsonl`;
   `training/fit_choice_bank.py` gained additive soft-target support (+tests,
   `target_mode` in the arm recipe, L-011).
+
+- **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5.
+  *Run parameters pinned 2026-10-12 before any data edit — owner decision on licences:*
+  ANLI R2/R3 (`facebook/anli`, cc-by-nc-4.0) and ContractNLI (port cc-by-nc-sa-4.0) are
+  **rejected** — the published Hub weights must stay commercially clean — and replaced by
+  **WANLI** (`alisawuffles/WANLI`, **cc-by-4.0**, adversarial NLI — ANLI's role) plus the
+  contract/long-policy shape served by MultiNLI's long genres + BoolQ passages + the in-repo
+  `long_policy` family. Natural layer = `multi_nli` 5,000 + `boolq` 3,000 + `banking77`
+  3,000 + **`wanli` 6,000** (new lock pin). Mechanism = **staged touch-up continuation from
+  the published trunk** (`checkpoints/en`), interleaved primitives (`interleave_continue`,
+  the B-14 machinery): Stage 1 natural layer **2 epochs @ 5e-5**; Stage 2 five-domain
+  synthetic 36k + **25% natural replay** **1 epoch @ 2e-5**; seed 2; the rest the fine-tune
+  recipe (r16/α32, choice_rank 128, gradient clip 1.0). Gates: the S1a mover plus the full
+  non-regression set N1–N7.
+
+  *Outcome (2026-10-12/13) — **read 13/15; non-regression 13/13; mover NOT met; N7 NOT
+  met — numbers stand as measured**.* Training ran as a two-stage interleaved touch-up
+  (stage 1 natural 2 epochs @ 5e-5 → noul 0.2341/choice 0.4236; stage 2 synthetic + 25%
+  replay 1 epoch @ 2e-5 → 0.1120/0.1269/0.2773; no collapse — the new gradient clip in
+  `interleave_continue` earned its keep). ANLI/ContractNLI replaced by **WANLI** per the
+  owner's licence decision; the fetcher accepts JSONL pins; `build_jev_mixture` gained the
+  seeded `replay` knob. Gates read twice (disclosed, one-set): the P3-standard packaging
+  (legal-basis temperatures/knots + served-slice cells — the published architecture) is the
+  quoted read; the served-slices packaging (attempt-3 method) is preserved in
+  `gates_s1a_servedstack/`. **Non-regression all green**: holdout **0.9721** ≥ 0.97 (B-20's
+  crash did not repeat), five-domain 0.9968, P3 ECE 0.0008/0.0186/0.0053 (served packaging
+  0.0008/0.0024/0.0053), multi byte-identical 3/3 + sha pins, Speed 85.0 (p50 69 ms), and
+  **XNLI 0.333 → 0.565** (typed 0.302, MASSIVE 0.054 reported). **Mover NOT met**: `easy`
+  acc 0.417 → **0.521** (cc 18.5 → **33.1**, below the 40 target; `intent` family 0.250 →
+  0.583). **N7 NOT met in both packagings** (41.6 legal / 27.5 served; bench ECE 0.292 vs
+  published 0.070) — the arm's off-domain confidence is genuinely sharper than its accuracy;
+  packaging choice moved the axis but did not clear it. Bench side: Intelligence 10.5 →
+  8.2 (`standard` 0.431 → 0.347, `hard` 0.342 → 0.315, `trap` 0.500 → 0.250 — the B-11/B-12
+  rubric-reading fix traded away) while `easy`/`tool_selection`/`tradeoff` rose. The
+  pattern is now the third recorded instance of the in-domain/off-domain and natural/template
+  trades (L-007/L-015): the natural layer buys NLI/intent and costs rubric-reading — which
+  is precisely the S1b counterfactual-rubric target. Artifacts: `checkpoints/en_s1a` /
+  `en_s1a_fit_bank`, `training/configs/{jev_mixture_s1a_union,jev_mixture_s1a_stage2,fit_bank_en_s1a}.json`,
+  `data/{train_en_s1a,train_jev_sources,train_en_s1a_stage2,preds_en_s1a_*}.jsonl`,
+  `benchmarks/results/gates_s1a{,_servedstack}/`.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

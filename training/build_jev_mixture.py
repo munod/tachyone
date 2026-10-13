@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,8 @@ from training.build_jev_sources import BuildError
 _ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = _ROOT / "training" / "configs" / "jev_mixture.json"
 
-_CONFIG_KEYS = {"parts", "out"}
+_CONFIG_KEYS = {"parts", "out", "replay"}
+_REQUIRED_CONFIG_KEYS = {"parts", "out"}
 _REQUIRED_RECORD_KEYS = ("id", "type", "state", "instructions", "target", "lang")
 
 
@@ -33,10 +35,25 @@ def load_config(path: str | Path = DEFAULT_CONFIG) -> dict[str, Any]:
     unknown = set(data) - _CONFIG_KEYS
     if unknown:
         raise BuildError(f"unknown config keys: {sorted(unknown)}")
-    if _CONFIG_KEYS - set(data):
-        raise BuildError(f"missing config keys: {sorted(_CONFIG_KEYS - set(data))}")
+    if _REQUIRED_CONFIG_KEYS - set(data):
+        raise BuildError(f"missing config keys: {sorted(_REQUIRED_CONFIG_KEYS - set(data))}")
     if not isinstance(data["parts"], list) or not data["parts"]:
         raise BuildError("parts must be a non-empty list")
+    if "replay" in data:
+        replay = data["replay"]
+        if not isinstance(replay, dict) or set(replay) != {"part", "ratio", "seed"}:
+            raise BuildError("replay must be exactly {part, ratio, seed}")
+        if not isinstance(replay.get("part"), str) or not replay["part"]:
+            raise BuildError("replay.part must be a path")
+        ratio = replay.get("ratio")
+        if (
+            not isinstance(ratio, (int, float))
+            or isinstance(ratio, bool)
+            or not 0 < float(ratio) <= 1
+        ):
+            raise BuildError("replay.ratio must be a number in (0, 1]")
+        if not isinstance(replay.get("seed"), int):
+            raise BuildError("replay.seed must be an int")
     return data
 
 
@@ -82,6 +99,34 @@ def build(
         records.extend(part_records)
         per_part[str(part)] = len(part_records)
 
+    # Optional replay (B-21 S1a): a seeded sample of one part at a fixed ratio of the
+    # base stream — the staged curriculum's retention mechanism, never a naive concat.
+    replay_report: dict[str, Any] | None = None
+    if "replay" in config:
+        replay = config["replay"]
+        path = (
+            Path(replay["part"])
+            if Path(replay["part"]).is_absolute()
+            else _ROOT / str(replay["part"])
+        )
+        pool = read_part(path)
+        want = round(float(replay["ratio"]) * len(records))
+        sample = random.Random(replay["seed"]).sample(pool, min(want, len(pool)))
+        for record in sample:
+            record_id = str(record["id"])
+            previous = seen.get(record_id)
+            if previous is not None and previous != path.name:
+                raise BuildError(f"duplicate record id {record_id!r}: {previous} and {path.name}")
+            seen[record_id] = path.name
+        records.extend(sample)
+        per_part[f"{replay['part']}#replay"] = len(sample)
+        replay_report = {
+            "part": replay["part"],
+            "ratio": float(replay["ratio"]),
+            "seed": replay["seed"],
+            "sampled": len(sample),
+        }
+
     out = (
         Path(out_path)
         if out_path is not None
@@ -112,6 +157,7 @@ def build(
         "out": str(out),
         "total": len(records),
         "per_part": per_part,
+        "replay": replay_report,
         "per_type": dict(sorted(per_type.items())),
         "per_source": dict(sorted(per_source.items())),
         "unique_ids": len(seen),

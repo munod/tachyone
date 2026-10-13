@@ -8,6 +8,20 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **S1a data layer (B-21).** `alisawuffles/WANLI` (cc-by-4.0) pinned in
+  `training/data/jev_sources.lock.json` as the commercial-safe adversarial-NLI source;
+  `facebook/anli` and `kiddothe2b/contract-nli` recorded under `excluded` for their
+  non-commercial licences (owner decision 2026-10-12 — the published weights stay
+  commercially usable). `training/fetch_jev_sources` accepts JSONL pins;
+  `training/build_jev_sources` converts WANLI pairs into the XNLI-shaped `choice` records;
+  `training/build_jev_mixture` gained a seeded `replay` knob (staged-curriculum retention:
+  a ratio-sampled part beside the base stream, strict validation, cross-file id uniqueness).
+
+- **Gradient clipping in the continuation loop (B-20's guard, extended).**
+  `training/interleave_continue.py` now clips the gradient norm to the trainer's
+  `GRAD_CLIP_MAX_NORM` before every optimizer step — the loop predates the B-20 collapse
+  fix and would have run the same long-document mixture unclipped.
+
 - **Soft-target support in the frozen-trunk head fitter (B-21 S0).** `choice` records may
   now carry a soft distribution as `target` (teacher labels): validated and normalised in
   `training/fit_choice_bank.py`, Brier against the distribution in `arm_loss`, and the arm

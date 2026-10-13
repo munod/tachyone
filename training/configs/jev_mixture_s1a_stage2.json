@@ -1,0 +1,12 @@
+{
+  "_comment": "S1a stage 2 (BACKLOG B-21): the five-domain synthetic stream with a 25% seeded natural replay - the staged curriculum's retention mechanism (never a naive concatenation, B-20's lesson). Stage 1 is the natural layer itself (data/train_jev_sources.jsonl, incl. the WANLI pin).",
+  "parts": [
+    "data/train_en_domains.jsonl"
+  ],
+  "replay": {
+    "part": "data/train_jev_sources.jsonl",
+    "ratio": 0.25,
+    "seed": 2
+  },
+  "out": "data/train_en_s1a_stage2.jsonl"
+}

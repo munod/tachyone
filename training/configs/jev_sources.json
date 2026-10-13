@@ -4,7 +4,8 @@
   "counts": {
     "multi_nli": 5000,
     "boolq": 3000,
-    "banking77": 3000
+    "banking77": 3000,
+    "wanli": 6000
   },
   "distractors_per_choice": 4
 }

@@ -113,3 +113,16 @@ def test_sha256_matches_the_hash_of_the_bytes(tmp_path: Path) -> None:
     other = tmp_path / "other.bin"
     other.write_bytes(b"differ")
     assert sha256(path) != sha256(other)
+
+
+def test_continuation_clips_with_the_trainers_constant() -> None:
+    """B-20's collapse guard must hold in the continuation loop too (S1a runs it on a
+    long-document mixture; one unclipped update collapsed a whole run once)."""
+    import inspect
+
+    from training import interleave_continue
+    from training.finetune_rlcd import GRAD_CLIP_MAX_NORM
+
+    assert interleave_continue.GRAD_CLIP_MAX_NORM is GRAD_CLIP_MAX_NORM
+    source = inspect.getsource(interleave_continue.continue_interleaved)
+    assert source.count("clip_grad_norm_") == 2  # one before each optimizer.step() site

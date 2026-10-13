@@ -127,3 +127,66 @@ def test_real_mixture_covers_every_part_with_unique_ids(tmp_path: Path) -> None:
     assert report["unique_ids"] <= report["total"]
     # the treatment arm must carry all three sources: domains + sources + families
     assert {"synthetic", "multi_nli", "long_policy"} <= set(report["per_source"])
+
+
+def test_replay_adds_a_seeded_sample_at_the_ratio(tmp_path: Path) -> None:
+    """B-21 S1a: the replay part is sampled at ratio of the base stream, seeded (L-011)."""
+    base = tmp_path / "base.jsonl"
+    pool = tmp_path / "pool.jsonl"
+    _write(base, [_record(f"b{i}") for i in range(8)])
+    _write(pool, [_record(f"p{i}") for i in range(10)])
+    config = tmp_path / "mixture.json"
+    config.write_text(
+        json.dumps(
+            {
+                "parts": [str(base)],
+                "replay": {"part": str(pool), "ratio": 0.25, "seed": 2},
+                "out": "out.jsonl",
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = build(config, out_path=tmp_path / "out.jsonl")
+    assert report["total"] == 8 + 2  # round(0.25 * 8)
+    assert report["replay"] == {"part": str(pool), "ratio": 0.25, "seed": 2, "sampled": 2}
+    assert report["unique_ids"] == 10
+    assert str(pool) + "#replay" in report["per_part"]
+    again = build(config, out_path=tmp_path / "out2.jsonl")
+    assert again["replay"]["sampled"] == 2  # same seed, same sample size
+
+
+def test_replay_config_is_strictly_validated(tmp_path: Path) -> None:
+    base = tmp_path / "base.jsonl"
+    _write(base, [_record("b0")])
+    for name, replay in [
+        ("bad keys", {"part": "p", "ratio": 0.5}),
+        ("bad ratio", {"part": "p", "ratio": 0, "seed": 1}),
+        ("bad seed", {"part": "p", "ratio": 0.5, "seed": "x"}),
+    ]:
+        config = tmp_path / f"{name.replace(' ', '_')}.json"
+        config.write_text(
+            json.dumps({"parts": [str(base)], "replay": replay, "out": "out.jsonl"}),
+            encoding="utf-8",
+        )
+        with pytest.raises(BuildError):
+            load_config(config)
+
+
+def test_replay_ids_colliding_across_files_are_refused(tmp_path: Path) -> None:
+    base = tmp_path / "base.jsonl"
+    pool = tmp_path / "pool.jsonl"
+    _write(base, [_record("same")])
+    _write(pool, [_record("same")])
+    config = tmp_path / "mixture.json"
+    config.write_text(
+        json.dumps(
+            {
+                "parts": [str(base)],
+                "replay": {"part": str(pool), "ratio": 1.0, "seed": 1},
+                "out": "out.jsonl",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(BuildError, match="duplicate record id"):
+        build(config, out_path=tmp_path / "out.jsonl")

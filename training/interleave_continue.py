@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from training.finetune_rlcd import (
+    GRAD_CLIP_MAX_NORM,
     choice_head_modules,
     choice_head_payload,
     choice_target_index,
@@ -355,9 +356,19 @@ def continue_interleaved(args: argparse.Namespace) -> dict[str, Any]:
             loss.backward()
             accumulations += 1
             if accumulations % grad_accum == 0:
+                # B-20: clip before stepping — the same guard the joint trainer carries.
+                # Long documents beside short intents collapsed an unclipped run once.
+                torch.nn.utils.clip_grad_norm_(
+                    [p for group in optimizer.param_groups for p in group["params"]],
+                    GRAD_CLIP_MAX_NORM,
+                )
                 optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
         if accumulations % grad_accum != 0:
+            torch.nn.utils.clip_grad_norm_(
+                [p for group in optimizer.param_groups for p in group["params"]],
+                GRAD_CLIP_MAX_NORM,
+            )
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
         means = " ".join(

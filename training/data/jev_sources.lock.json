@@ -39,6 +39,18 @@
       "license_note": "metadata read at the pinned revision",
       "sha256": "3c648a31689f4ab3acbd4f4f4d120944bb521cf6ba57da77aa87c57e8979be81",
       "purpose": "choice: user utterance -> one of 77 banking intents (routing/intent families; option descriptions are authored in training/data/jev_banking77_descriptions.json)"
+    },
+    "wanli": {
+      "repo": "alisawuffles/WANLI",
+      "revision": "61c95318fd71c55b6ba355d76253254615f387ec",
+      "file": "train.jsonl",
+      "url": "https://huggingface.co/datasets/alisawuffles/WANLI",
+      "license": [
+        "cc-by-4.0"
+      ],
+      "license_note": "metadata read at the pinned revision",
+      "sha256": "85058cf017a911e89242dc29fa0a4ddaad3664cb923dc0a82145fdda14b694e5",
+      "purpose": "choice: premise+hypothesis -> entailment/neutral/contradiction (adversarial NLI, the hard/adversarial taxonomy; the commercial-safe cc-by-4.0 substitute for facebook/anli, owner decision 2026-10-12)"
     }
   },
   "excluded": {
@@ -51,6 +63,16 @@
       "repo": "SetFit/sst5",
       "license": "unspecified",
       "reason": "licence unspecified in the repository card metadata — excluded until reviewed (tev1 DATA_SOURCES.md flags it for the same reason)"
+    },
+    "anli": {
+      "repo": "facebook/anli",
+      "license": "cc-by-nc-4.0",
+      "reason": "non-commercial licence — the published Hub weights must stay commercially clean (owner decision 2026-10-12); replaced by WANLI (alisawuffles/WANLI, cc-by-4.0)"
+    },
+    "contractnli": {
+      "repo": "kiddothe2b/contract-nli",
+      "license": "cc-by-nc-sa-4.0",
+      "reason": "non-commercial licence — same decision as anli; the contract/long-policy shape is served by MultiNLI long genres + BoolQ passages + the in-repo long_policy family"
     }
   }
 }

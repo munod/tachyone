@@ -55,8 +55,8 @@ def load_lock(path: str | Path = DEFAULT_LOCK) -> dict[str, Any]:
         sha = source["sha256"]
         if sha and (len(sha) != _HEX64 or any(c not in "0123456789abcdef" for c in sha)):
             raise LockError(f"source {name!r}: sha256 must be 64 lowercase hex chars")
-        if not source["file"].endswith(".parquet"):
-            raise LockError(f"source {name!r}: expected a pinned parquet file")
+        if not source["file"].endswith((".parquet", ".jsonl")):
+            raise LockError(f"source {name!r}: expected a pinned parquet or jsonl file")
         if not source["license"]:
             raise LockError(f"source {name!r}: licence metadata must be recorded")
     for name, excluded in data["excluded"].items():

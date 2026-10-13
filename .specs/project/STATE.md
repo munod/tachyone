@@ -76,8 +76,18 @@ soft-label trunk work dropped by the kill-switch** (control 0.3257/0.0435 vs tre
 0.3330/0.0438 on the 958-row slice — accuracy noise-level, ECE unchanged). Diagnosis: the
 hard/natural slice is capability-limited (chance-level) and well calibrated — the hedging
 failure mode lives on the bench's `hard` tier, not here; the gap is capability, so the
-Intelligence work is W1 (data) + W2 (cross-encoder distillation), both still open. Spec:
-`.specs/features/jevbench-intel/spec.md`; contract + S0 record: BACKLOG **B-21**.
+Intelligence work is W1 (data) + W2 (cross-encoder distillation), both still open.
+**S1a executed 2026-10-12/13 (natural layer + staged curriculum touch-up) — read 13/15:
+non-regression 13/13, mover and N7 NOT met.** The layer buys NLI/intent (**XNLI 0.333 →
+0.565**; `easy` 0.417 → 0.521, `intent` 0.250 → 0.583) and costs rubric-reading
+(`standard` 0.431 → 0.347, `trap` 0.500 → 0.250) plus off-domain confidence (N7: bench ECE
+0.29 vs 0.07 in both packagings — the published P3-standard stack reads 41.6, the
+attempt-3 served stack 27.5; both disclosed). Holdout/five-domain/P3/multi all held
+(0.9721/0.9968/≤0.027/byte-identical) — the B-20 trade did not repeat. Sources are
+commercial-clean (WANLI cc-by-4.0 replaces the NC ANLI/ContractNLI, owner decision; the
+lock's `excluded` records them). The remaining gap is rubric-shaped → **S1b
+(counterfactual rubrics)** is the pre-registered next lever. Spec:
+`.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three
 recorded attempts, NOT adopted.** Attempt 1 **collapsed** (uniform output; no gradient

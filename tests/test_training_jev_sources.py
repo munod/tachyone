@@ -28,6 +28,7 @@ from training.build_jev_sources import (
     boolq_record,
     build,
     intent_group,
+    iter_jsonl,
     load_config,
     load_descriptions,
     mnli_pairs,
@@ -35,6 +36,7 @@ from training.build_jev_sources import (
     normalized,
     reservoir,
     sample_distractors,
+    wanli_record,
 )
 from training.build_jev_sources import (
     DEFAULT_CONFIG as BUILDER_CONFIG,
@@ -75,9 +77,9 @@ def _fake_source(**overrides: Any) -> dict[str, Any]:
     return source
 
 
-def test_committed_lock_names_the_three_reviewed_sources() -> None:
+def test_committed_lock_names_the_four_reviewed_sources() -> None:
     lock = load_lock(DEFAULT_LOCK)
-    assert set(lock["sources"]) == {"multi_nli", "boolq", "banking77"}
+    assert set(lock["sources"]) == {"multi_nli", "boolq", "banking77", "wanli"}
     for name, source in lock["sources"].items():
         assert len(source["revision"]) == 40, name
         assert source["url"] == f"https://huggingface.co/datasets/{source['repo']}", name
@@ -86,10 +88,16 @@ def test_committed_lock_names_the_three_reviewed_sources() -> None:
 
 
 def test_excluded_sources_record_the_exact_licence_words() -> None:
-    """AG News and SST-5 stay out until reviewed — tev1's DATA_SOURCES.md says the same."""
+    """AG News and SST-5 stay out until reviewed — tev1's DATA_SOURCES.md says the same.
+
+    ANLI and ContractNLI stay out for **non-commercial** licences (owner decision
+    2026-10-12): the published Hub weights must remain commercially usable.
+    """
     lock = load_lock(DEFAULT_LOCK)
     assert lock["excluded"]["ag_news"]["license"] == "unknown"
     assert lock["excluded"]["sst5"]["license"] == "unspecified"
+    assert lock["excluded"]["anli"]["license"] == "cc-by-nc-4.0"
+    assert lock["excluded"]["contractnli"]["license"] == "cc-by-nc-sa-4.0"
     for entry in lock["excluded"].values():
         assert entry["reason"]
 
@@ -122,6 +130,24 @@ def test_load_lock_rejects_broken_locks(tmp_path: Path, name: str, mutation: Any
     path.write_text(json.dumps(lock), encoding="utf-8")
     with pytest.raises(LockError):
         load_lock(path)
+
+
+def test_iter_jsonl_streams_dicts_and_skips_blank_lines(tmp_path: Path) -> None:
+    path = tmp_path / "rows.jsonl"
+    path.write_text('{"a": 1}\n\n{"a": 2}\n', encoding="utf-8")
+    assert list(iter_jsonl(path)) == [{"a": 1}, {"a": 2}]
+
+
+def test_wanli_record_is_xnli_shaped_and_rejects_unknown_gold() -> None:
+    record = wanli_record("The town has a curfew.", "The curfew is enforced.", "neutral", 7)
+    assert record["id"] == "src-wanli-00007"
+    assert record["type"] == "choice"
+    assert record["instructions"] == XNLI_INSTRUCTION
+    assert record["target"] == "neutral"
+    assert record["target"] in XNLI_LABELS
+    assert "Premise: The town has a curfew." in record["state"]
+    with pytest.raises(BuildError, match="gold label"):
+        wanli_record("p", "h", "non-entailment", 0)
 
 
 def test_download_streams_to_the_destination(tmp_path: Path) -> None:
@@ -184,7 +210,16 @@ def test_config_is_strict_and_pins_every_sampled_source() -> None:
     assert isinstance(config["seed"], int)
     assert config["distractors_per_choice"] == 4
     lock = load_lock(DEFAULT_LOCK)
-    assert set(config["counts"]) == set(lock["sources"]) == {"multi_nli", "boolq", "banking77"}
+    assert (
+        set(config["counts"])
+        == set(lock["sources"])
+        == {
+            "multi_nli",
+            "boolq",
+            "banking77",
+            "wanli",
+        }
+    )
     for count in config["counts"].values():
         assert count > 0
 
@@ -302,7 +337,7 @@ def test_build_end_to_end_produces_wire_valid_records(tmp_path: Path) -> None:
     report = build(out_path=out)
     config = load_config(BUILDER_CONFIG)
     assert report["total"] == sum(config["counts"].values())
-    assert report["per_type"] == {"choice": 8000, "noul": 3000}
+    assert report["per_type"] == {"choice": 14000, "noul": 3000}
     assert report["checked_against_public"] is False
 
     lines = out.read_text(encoding="utf-8").splitlines()
