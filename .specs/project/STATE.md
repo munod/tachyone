@@ -104,7 +104,13 @@ the cleanest non-regression of the programme (N1 best-ever 0.9908, N2 green both
 packagings, XNLI 0.515) — but **`standard` flat at 0.361** is the binding tier
 (`extraction`/`routing`/`ordinal`/`judge_hard` stuck near chance), `I ≥ 22` NOT met and
 **N7 NOT met again** (46.5/22.0; fourth miss). The S1c arm is the best measured candidate
-base for the next stage; `v0.13.0` stays published. Spec:
+base for the next stage; `v0.13.0` stays published. **S1d (judge/standard shapes) executed
+2026-10-14 — read 16/20, both movers NOT met and N1/N7 broken — NOT adopted:** the judge
+shape transfers (`judge_hard` 0.235 → 0.412, `adequacy` → 0.583) but `extraction`/`routing`
+stay flat (risk **R7 realised** — template-regular taxonomy families teach their own
+surface, not the bench's narrative skill) and the touch-up traded `policy` 0.750 → 0.333
+and cost N1 (0.9908 → 0.9692). **`en_s1c` remains the best base** (composite 2.61 vs
+2.10). Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three

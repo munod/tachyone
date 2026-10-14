@@ -50,6 +50,17 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **S1d recorded (executed; both movers NOT met, non-regression broken — NOT adopted).**
+  The judge/standard shape-layer touch-up from the S1c arm read 16/20 and splits cleanly:
+  the **judge shape transfers** (`judge_hard` 0.235 → 0.412, `adequacy` 0.417 → 0.583) but
+  the new `extraction`/`routing` families stay **flat** on the bench (0.250 / 0.167) —
+  risk R7 realised: template-regular taxonomy families teach their own surface, not the
+  bench's narrative status-tracking — and the touch-up traded `policy` 0.750 → 0.333 and
+  cost N1 (0.9908 → 0.9692, below the line). `standard` fell to 0.306, I 12.2 → 11.4 (easy
+  cc still rose to 47.6). N7 NOT met again (36.2/29.0). Numbers stand as measured;
+  `checkpoints/en_s1c` remains the best measured base and `v0.13.0` stays published. Full
+  record: `BACKLOG.md` **B-21**.
+
 - **S1c recorded (executed; `I ≥ 22` NOT met — the named-family mover substantially
   met).** The reasoning-family + arity touch-up from the S1b arm (6,400 rows: the new
   `policy_trap`/`tradeoff` families plus `temporal_numeric`/`multi_hop`, drawn arity 2…20

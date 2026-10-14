@@ -2482,6 +2482,32 @@ has no public items — a public I is a diagnostic, not the official score.
   *Gates:* **`judge_hard` acc ≥ 0.50** (up vs S1c 0.235) · **`standard` acc ≥ 0.50** (up vs
   S1c 0.361) · named family movers `extraction`/`routing`/`adequacy` up vs S1c (reported) ·
   full-suite I reported as the programme diagnostic · **N1–N7**.
+
+  *Outcome (2026-10-14) — **read 16/20: both movers NOT met, N1 and N7 NOT met — the arm
+  breaks the non-regression set and is NOT adopted; numbers stand as measured**.* The
+  factor split cleanly into what transfers and what does not. **`adequacy` transfers**:
+  `judge_hard` 0.235 → **0.412** (+3 items), `adequacy` 0.417 → **0.583** (+2) — the judge
+  shape is real capability. **`extraction`/`routing` do NOT transfer**: both flat at their
+  S1c numbers (0.250 / 0.167 — at or below chance) despite 2,000 generated rows each —
+  **risk R7 realised**: taxonomy-shaped families with regular templates teach their own
+  surface, not the bench's narrative status-tracking / surface-vs-rule reading. The touch-up
+  also **traded `policy` 0.750 → 0.333** (−5 items, the S1c `policy_trap` gains) and cost
+  **N1 0.9908 → 0.9692** (below the 0.9700 line — the first N1 failure of the programme);
+  `standard` fell 0.361 → 0.306 and I 12.2 → 11.4 (easy cc still rose to **47.6**, hard
+  0.369). N7 NOT met again (36.2 / 29.0 — fifth). Everything else held: N2 green in both
+  packagings, N3 0.9929, N4 XNLI 0.516 + typed 0.332 + MASSIVE 0.071, N5 3/3 byte-identical
+  + sha pins, N6 Speed 85.0. **On the pre-registered contract both mover gates and the
+  non-regression set fail** — never re-fixed; **`checkpoints/en_s1c` remains the best
+  measured base** (composite 2.61 vs 2.10) and `v0.13.0` stays published. Artifacts:
+  `checkpoints/en_s1d` / `en_s1d_fit_bank`,
+  `training/configs/{jev_mixture_s1d,jev_mixture_s1d_union,fit_bank_en_s1d}.json`,
+  `training/data/jev/{extraction,routing}.json`,
+  `data/{train_jev_shapes_s1d,train_en_s1d,train_en_s1d_union,calibration_holdout_preds_en_s1d}.jsonl`,
+  `benchmarks/results/gates_s1d{,_servedstack}/`,
+  `/tmp/opencode/jev_dryrun/results_s1d{,f}.jsonl`. Development note: the public-overlap
+  assertion caught **7 records** whose generated state was a bench item's text (one template
+  had crept into the extraction content) and the text was rewritten before any training —
+  the guard worked as designed.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
