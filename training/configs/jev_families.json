@@ -1,14 +1,16 @@
 {
-  "_comment": "Recipe for training/build_jev_families.py (B-13 P2, JB-4/JB-5; counterfactual added by B-21 S1b, policy_trap/tradeoff + S1c counts by B-21 S1c). Committed content lives in training/data/jev/*.json; this file only fixes the seed and the per-family record counts. Output data/train_jev_families.jsonl is gitignored - config + content is the reproducible recipe (L-011). counterfactual counts RECORDS and ships in pairs (3,200 pairs = 6,400 records).",
+  "_comment": "Recipe for training/build_jev_families.py (B-13 P2, JB-4/JB-5; counterfactual by B-21 S1b, policy_trap/tradeoff + S1c counts by B-21 S1c, extraction/routing + S1d counts by B-21 S1d). Committed content lives in training/data/jev/*.json; this file only fixes the seed and the per-family record counts. Output data/train_jev_families.jsonl is gitignored - config + content is the reproducible recipe (L-011). counterfactual counts RECORDS and ships in pairs (3,200 pairs = 6,400 records).",
   "seed": 1,
   "counts": {
     "long_policy": 800,
     "trap": 640,
     "multi_hop": 1600,
     "temporal_numeric": 1600,
-    "adequacy": 700,
+    "adequacy": 2000,
     "counterfactual": 6400,
     "policy_trap": 1600,
-    "tradeoff": 1600
+    "tradeoff": 1600,
+    "extraction": 2000,
+    "routing": 2000
   }
 }

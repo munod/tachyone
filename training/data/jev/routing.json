@@ -1,0 +1,165 @@
+{
+ "_comment": "Committed content for the routing family (B-21 S1d): specialist routing where the mapping's override clause beats the request's surface flavour (the bench 'routing'/'routing_hard'/'tool_selection' shape). The question carries the mapping plus one override clause; the request always looks like the other side (flavour), and a trailing clause states whether the override's trigger holds. The builder draws the winning branch first (L-010 - never a specialist prior) and decomposes the facts around it; labels come from the tree (ADR-0014/15); option order is permuted (W1.4 hygiene).",
+ "question": "Which specialist should take this request?",
+ "mapping_line": "Requests about {trigger} use {specialist}.",
+ "specialists": [
+  {"key": "math_agent", "desc": "Numerical, quantitative and unit-conversion work."},
+  {"key": "coding_agent", "desc": "Writing or editing code and running test suites."},
+  {"key": "data_entry", "desc": "Entering or updating records in a system of record."},
+  {"key": "scheduling_agent", "desc": "Booking, moving or cancelling appointments and slots."},
+  {"key": "billing_agent", "desc": "Invoices, charges, refunds and payment plans."},
+  {"key": "translation_agent", "desc": "Translation and localization of texts."},
+  {"key": "research_agent", "desc": "Looking up facts, policies, statutes and references."},
+  {"key": "triage_agent", "desc": "Classifying and routing unstructured incidents."}
+ ],
+ "task_types": [
+  {
+   "key": "word_problem",
+   "trigger": "word problems about counts, totals or unit conversions",
+   "specialist": "math_agent",
+   "requests": [
+    "Find the least common multiple of 18 and 24.",
+    "Convert 35 gallons to liters and round to one decimal.",
+    "Split a bill of 240 across 7 guests and report each share."
+   ]
+  },
+  {
+   "key": "record_update",
+   "trigger": "entering or updating records in a system of record",
+   "specialist": "data_entry",
+   "requests": [
+    "Update the customer record with the new postcode.",
+    "Enter yesterday's 14 orders into the ledger.",
+    "Correct the duplicate vendor entry in the master table."
+   ]
+  },
+  {
+   "key": "appointment",
+   "trigger": "booking, moving or cancelling appointments",
+   "specialist": "scheduling_agent",
+   "requests": [
+    "Move Tuesday's site visit to Thursday afternoon.",
+    "Book the first available dentist slot next week.",
+    "Cancel the recurring Friday standup for the holidays."
+   ]
+  },
+  {
+   "key": "invoice_question",
+   "trigger": "invoices, charges and refunds",
+   "specialist": "billing_agent",
+   "requests": [
+    "Explain the extra 12 euros on invoice INV-4471.",
+    "Refund the duplicate charge from last Tuesday.",
+    "Set up a payment plan for the outstanding balance."
+   ]
+  },
+  {
+   "key": "text_translation",
+   "trigger": "translation and localization of texts",
+   "specialist": "translation_agent",
+   "requests": [
+    "Translate the onboarding email into Portuguese.",
+    "Localize the checkout strings for the German site.",
+    "Proofread the French release notes before publishing."
+   ]
+  },
+  {
+   "key": "fact_lookup",
+   "trigger": "looking up facts, policies and references",
+   "specialist": "research_agent",
+   "requests": [
+    "Find the retention period for payroll records under the 2024 policy.",
+    "Look up the warranty clause that covers water damage.",
+    "Check which standard the lab must certify against this year."
+   ]
+  },
+  {
+   "key": "complaint_triage",
+   "trigger": "classifying unstructured complaints and incidents",
+   "specialist": "triage_agent",
+   "requests": [
+    "Classify this customer complaint and route it to the right queue.",
+    "Summarize the outage report and assign a severity.",
+    "Sort the weekend's feedback tickets by theme."
+   ]
+  },
+  {
+   "key": "code_change",
+   "trigger": "writing or editing code and running tests",
+   "specialist": "coding_agent",
+   "requests": [
+    "Add a retry loop to the sync script.",
+    "Fix the failing assertion in the parser test.",
+    "Refactor the date helper to handle leap years."
+   ]
+  }
+ ],
+ "overrides": [
+  {
+   "clause": "Requests that edit files and run tests use coding_agent, even when the request looks code-related.",
+   "specialist": "coding_agent",
+   "trigger": "the request edits files and runs tests",
+   "no_trigger": "the request touches no files and runs no tests",
+   "flavours": [
+    "the numbers come out of a JSON export",
+    "the list lives in a repository's fixture file",
+    "the values were printed by a build script"
+   ]
+  },
+  {
+   "clause": "Requests that mention a refund use billing_agent, even if they read like support complaints.",
+   "specialist": "billing_agent",
+   "trigger": "the request mentions a refund",
+   "no_trigger": "the request mentions no refund",
+   "flavours": [
+    "the message opens with an angry complaint",
+    "the tone reads like a support escalation",
+    "the ticket was filed under the complaints queue"
+   ]
+  },
+  {
+   "clause": "Requests that handle personal data use data_entry, even if they look analytical.",
+   "specialist": "data_entry",
+   "trigger": "the request handles personal data",
+   "no_trigger": "the request handles no personal data",
+   "flavours": [
+    "the work looks like a statistics exercise",
+    "the numbers resemble a forecasting model",
+    "the output is a table of aggregates"
+   ]
+  },
+  {
+   "clause": "Requests that must land today use scheduling_agent, even if they read like routine admin.",
+   "specialist": "scheduling_agent",
+   "trigger": "the request must land today",
+   "no_trigger": "the request has no same-day deadline",
+   "flavours": [
+    "the wording sounds like routine back-office work",
+    "the task reads like a weekly maintenance chore",
+    "the phrasing suggests a standing assignment"
+   ]
+  },
+  {
+   "clause": "Requests that quote a legal clause use research_agent, even if they look like billing disputes.",
+   "specialist": "research_agent",
+   "trigger": "the request quotes a legal clause",
+   "no_trigger": "the request quotes no legal clause",
+   "flavours": [
+    "the complaint is about a late fee",
+    "the message disputes an invoice line",
+    "the ticket asks for a chargeback"
+   ]
+  },
+  {
+   "clause": "Requests that name an urgent outage use triage_agent, even if they look like routine maintenance.",
+   "specialist": "triage_agent",
+   "trigger": "the request names an urgent outage",
+   "no_trigger": "the request names no urgent outage",
+   "flavours": [
+    "the task reads like scheduled maintenance",
+    "the wording is a routine health check",
+    "the job looks like a periodic cleanup"
+   ]
+  }
+ ]
+}

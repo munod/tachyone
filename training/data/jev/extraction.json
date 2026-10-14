@@ -1,0 +1,47 @@
+{
+ "_comment": "Committed content for the extraction family (B-21 S1d): rubric-guided extraction. The tracked variant states several candidate mentions with statuses (confirmed / considered / cancelled / hypothetical) and the rubric selects the FINAL CONFIRMED one - ignore cancelled plans and hypothetical alternatives, 'unknown' when nothing is confirmed (the bench 'extraction' shape, both tiers). The simple variant is the single-mention 'easy' shape. Labels are the drawn values plus 'unknown', derived from the mention facts through the tree (ADR-0014/15); option order is permuted (W1.4 hygiene).",
+ "fields": [
+  {"name": "delivery method", "values": ["courier", "pickup", "post", "bike_courier", "locker_delivery"]},
+  {"name": "payment method", "values": ["paypal", "cash", "bank_transfer", "card", "voucher"]},
+  {"name": "priority", "values": ["low", "normal", "high", "urgent"]},
+  {"name": "contact channel", "values": ["phone", "email", "chat", "post"]},
+  {"name": "pickup point", "values": ["depot", "locker", "post_office", "reception"]},
+  {"name": "service tier", "values": ["basic", "standard", "premium", "enterprise"]}
+ ],
+ "mention_templates": {
+  "confirmed": [
+   "confirmed {value} for the job",
+   "{value} is confirmed for the job",
+   "the booking now reads {value}",
+   "we went ahead with {value}"
+  ],
+  "considered": [
+   "we considered {value}",
+   "{value} was floated as an option",
+   "an early draft had {value}"
+  ],
+  "cancelled": [
+   "the {value} plan was cancelled",
+   "{value} was dropped from the schedule"
+  ],
+  "hypothetical": [
+   "if approved, we might use {value}",
+   "{value} remains a possibility awaiting approval"
+  ],
+  "asked": [
+   "the customer asked about {value} but did not change anything",
+   "a side question mentioned {value} without effect"
+  ]
+ },
+ "simple_templates": [
+  "Payment went through with {value} last Tuesday evening.",
+  "Ticket #4172 - Priority: {value} - the plotter in the annex is jammed.",
+  "We are on the {value} plan since March.",
+  "Please reach me by {value} about the renewal.",
+  "The order ships to the {value} as agreed.",
+  "Settled in the end: {value}."
+ ],
+ "question_tracked": "Return the {field} that is finally confirmed. Disregard cancelled plans and hypothetical alternatives. Answer unknown when nothing is confirmed.",
+ "question_simple": "Which {field} does the message name?",
+ "unknown_option": {"key": "unknown", "desc": "No final value is confirmed in the message."}
+}

@@ -1,0 +1,12 @@
+{
+  "_comment": "S1d touch-up mixture (BACKLOG B-21, pre-registered 2026-10-13): the judge/standard shape rows (the one factor - adequacy + extraction + routing) with a 25% seeded replay of everything the arm has seen. Build the shape part with: uv run python -m training.build_jev_families --families adequacy,extraction,routing --out data/train_jev_shapes_s1d.jsonl --public-dir /path/to/jevbench/datasets/public",
+  "parts": [
+    "data/train_jev_shapes_s1d.jsonl"
+  ],
+  "replay": {
+    "part": "data/train_en_s1c_union.jsonl",
+    "ratio": 0.25,
+    "seed": 2
+  },
+  "out": "data/train_en_s1d.jsonl"
+}

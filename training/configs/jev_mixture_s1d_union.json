@@ -1,0 +1,8 @@
+{
+  "_comment": "S1d arm union (BACKLOG B-21): everything the arm has seen - the S1c union plus the judge/standard shape rows. Reproduces the fit_bank/prototypes input for checkpoints/en_s1d_fit_bank.",
+  "parts": [
+    "data/train_en_s1c_union.jsonl",
+    "data/train_jev_shapes_s1d.jsonl"
+  ],
+  "out": "data/train_en_s1d_union.jsonl"
+}

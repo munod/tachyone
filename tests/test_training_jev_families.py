@@ -86,6 +86,13 @@ def test_every_committed_content_file_validates() -> None:
         assert case["noise"], case["key"]
     assert len(content["tradeoff"]["themes"]) >= 12
     assert len(content["tradeoff"]["actions"]) >= 20
+    assert len(content["extraction"]["fields"]) >= 6
+    for field in content["extraction"]["fields"]:
+        assert len(field["values"]) >= 3, field["name"]
+    routing = content["routing"]
+    assert len(routing["specialists"]) >= 8
+    assert len(routing["task_types"]) >= 8
+    assert len(routing["overrides"]) >= 6
 
 
 def test_add_months_clamped_handles_month_end_and_leap_years() -> None:
@@ -384,6 +391,63 @@ def test_tradeoff_covers_the_many_option_regime_and_the_default(
     assert min(sizes) >= 2 and max(sizes) >= 15, sizes
     assert len(target_positions) >= 3, "option order must be permuted (W1.4)"
     assert defaults >= 100, "the no-rule default must draw as a winner (L-010)"
+
+
+def test_extraction_tracks_the_final_confirmed_mention(
+    built: tuple[dict[str, Any], list[dict[str, Any]]],
+) -> None:
+    """The rubric is the lesson: last confirmed mention wins, `unknown` when none (S1d)."""
+    _, records = built
+    rows = [record for record in records if record["source"] == "synthetic:jev:extraction"]
+    assert rows
+    content = load_content(DEFAULT_CONTENT_DIR)
+    values = {str(value) for field in content["extraction"]["fields"] for value in field["values"]}
+    unknown_key = str(content["extraction"]["unknown_option"]["key"])
+    sizes: set[int] = set()
+    target_positions: set[int] = set()
+    unknowns = 0
+    for record in rows:
+        assert record["type"] == "choice"
+        assert record["target"] in record["criteria"]
+        assert set(record["criteria"]) <= values | {unknown_key}, record["id"]
+        sizes.add(len(record["criteria"]))
+        target_positions.add(list(record["criteria"]).index(record["target"]))
+        unknowns += record["target"] == unknown_key
+    assert min(sizes) >= 3 and max(sizes) >= 6, sizes
+    assert len(target_positions) >= 3, "option order must be permuted (W1.4)"
+    assert 150 <= unknowns <= 900, f"the unknown fallback must draw: {unknowns}"
+
+
+def test_routing_override_beats_the_surface_flavour(
+    built: tuple[dict[str, Any], list[dict[str, Any]]],
+) -> None:
+    """The override clause wins over the request's look; both branches draw (L-010)."""
+    _, records = built
+    rows = [record for record in records if record["source"] == "synthetic:jev:routing"]
+    assert rows
+    content = load_content(DEFAULT_CONTENT_DIR)
+    known = {str(s["key"]) for s in content["routing"]["specialists"]}
+    sizes: set[int] = set()
+    target_positions: set[int] = set()
+    fired_yes = fired_no = 0
+    for record in rows:
+        assert record["type"] == "choice"
+        assert record["target"] in record["criteria"]
+        assert set(record["criteria"]) <= known, record["id"]
+        assert 3 <= len(record["criteria"]) <= 5, record["id"]
+        sizes.add(len(record["criteria"]))
+        target_positions.add(list(record["criteria"]).index(record["target"]))
+        if record["rule"]["facts"]["override_trigger"]:
+            fired_yes += 1
+        else:
+            fired_no += 1
+    assert len(target_positions) >= 3, "option order must be permuted (W1.4)"
+    assert fired_yes >= 200 and fired_no >= 200, (fired_yes, fired_no)
+    counts: dict[str, int] = {}
+    for record in rows:
+        counts[str(record["target"])] = counts.get(str(record["target"]), 0) + 1
+    assert len(counts) >= 8, counts
+    assert min(counts.values()) / len(rows) >= 0.05, counts
 
 
 def test_build_is_deterministic(tmp_path: Path) -> None:

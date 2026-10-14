@@ -24,6 +24,11 @@ found missing (``.specs/features/jevbench/spec.md``):
 - ``tradeoff``      — a numbered precedence policy where several rules trigger and only the
                       highest-ranked applies (the ``tradeoff`` shape); drawn arity
                       (2…20 options) and permuted option order (W1.4).
+- ``extraction``    — rubric-guided extraction: candidate mentions with statuses and the
+                      rubric selecting the final confirmed one, ``unknown`` when nothing is
+                      confirmed (the ``extraction`` shape, both tiers).
+- ``routing``       — specialist routing where the mapping's override clause beats the
+                      request's surface flavour (the ``routing``/``tool_selection`` shape).
 
 Every record is assembled **three ways from the same draw**: the text, the shipped
 ``rule.facts`` and the shipped ``rule.tree``; the ``target`` is
@@ -73,6 +78,8 @@ FAMILIES: tuple[str, ...] = (
     "counterfactual",
     "policy_trap",
     "tradeoff",
+    "extraction",
+    "routing",
 )
 
 #: Families whose builder emits records in pairs (shared facts, one rubric clause apart).
@@ -356,6 +363,55 @@ def load_content(directory: str | Path = DEFAULT_CONTENT_DIR) -> dict[str, dict[
             for action in data["actions"]:
                 _require_keys(action, ("key", "desc"), f"{family}.action")
             _require_keys(data["no_rule_action"], ("key", "desc"), f"{family}.no_rule_action")
+        elif family == "extraction":
+            _require_keys(
+                data,
+                (
+                    "fields",
+                    "mention_templates",
+                    "simple_templates",
+                    "question_tracked",
+                    "question_simple",
+                    "unknown_option",
+                ),
+                family,
+            )
+            for field in data["fields"]:
+                _require_keys(field, ("name", "values"), f"{family}.field")
+                if len(field["values"]) < 3:
+                    raise BuildError(f"{family}.field {field['name']!r}: needs >= 3 values")
+            for status in ("confirmed", "considered", "cancelled", "hypothetical", "asked"):
+                if not data["mention_templates"].get(status):
+                    raise BuildError(f"{family}.mention_templates: missing {status!r}")
+            _require_keys(data["unknown_option"], ("key", "desc"), f"{family}.unknown_option")
+        elif family == "routing":
+            _require_keys(
+                data,
+                (
+                    "question",
+                    "mapping_line",
+                    "specialists",
+                    "task_types",
+                    "overrides",
+                ),
+                family,
+            )
+            known = set()
+            for specialist in data["specialists"]:
+                _require_keys(specialist, ("key", "desc"), f"{family}.specialist")
+                known.add(str(specialist["key"]))
+            for task in data["task_types"]:
+                _require_keys(task, ("key", "trigger", "specialist", "requests"), f"{family}.task")
+                if str(task["specialist"]) not in known:
+                    raise BuildError(f"{family}.task {task['key']}: unknown specialist")
+            for override in data["overrides"]:
+                _require_keys(
+                    override,
+                    ("clause", "specialist", "trigger", "no_trigger", "flavours"),
+                    f"{family}.override",
+                )
+                if str(override["specialist"]) not in known:
+                    raise BuildError(f"{family}.override: unknown specialist")
         else:  # adequacy
             _require_keys(data, ("question", "criteria", "requests", "quotes", "responses"), family)
             for request in data["requests"]:
@@ -499,11 +555,13 @@ def _long_policy_record(
 ) -> dict[str, Any]:
     data = content["long_policy"]
     if index % 2 == 0:
-        return _routing_record(index, rng, data)
+        return _long_policy_routing_record(index, rng, data)
     return _coverage_record(index, rng, data)
 
 
-def _routing_record(index: int, rng: random.Random, data: Mapping[str, Any]) -> dict[str, Any]:
+def _long_policy_routing_record(
+    index: int, rng: random.Random, data: Mapping[str, Any]
+) -> dict[str, Any]:
     routing = data["routing"]
     org = rng.choice(list(data["orgs"]))
     title = rng.choice(list(data["doc_titles"]))
@@ -1252,6 +1310,166 @@ def _tradeoff_record(index: int, rng: random.Random, content: Mapping[str, Any])
     )
 
 
+def _extraction_record(
+    index: int, rng: random.Random, content: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Rubric-guided extraction: the final confirmed mention, ``unknown`` when none (S1d).
+
+    The tracked variant states 2..4 candidate mentions with statuses and the rubric
+    (final confirmed; ignore cancelled plans and hypothetical alternatives) decides; the
+    simple variant is the single-mention ``easy`` shape. The winning mention is drawn first
+    (L-010) and the statuses decomposed around it; labels are the mention facts through
+    the tree (ADR-0014/15); option order is permuted (W1.4 hygiene).
+    """
+    data = content["extraction"]
+    field = rng.choice(list(data["fields"]))
+    values = [str(value) for value in field["values"]]
+    unknown = dict(data["unknown_option"])
+    mentioned: list[str] = []
+    facts: dict[str, Any] = {}
+    if rng.random() < 0.4:  # simple (easy) shape
+        value = rng.choice(values)
+        mentioned.append(value)
+        facts["m0_value"] = value
+        tree: dict[str, Any] = {"op": "fact", "name": "m0_value"}
+        state = rng.choice(list(data["simple_templates"])).format(value=value)
+        question = str(data["question_simple"]).format(field=str(field["name"]))
+    else:  # tracked (standard) shape
+        count = rng.randint(2, 4)
+        picks = rng.sample(values, count)
+        non_confirmed = ["considered", "cancelled", "hypothetical", "asked"]
+        if rng.random() < 0.25:  # nothing confirmed -> the unknown fallback draws too
+            win_pos = None
+            statuses = [rng.choice(non_confirmed) for _ in range(count)]
+        else:
+            win_pos = rng.randrange(count)
+            statuses = [
+                (
+                    "confirmed"
+                    if pos == win_pos
+                    else (
+                        rng.choice(non_confirmed)
+                        if pos > win_pos
+                        else rng.choice([*non_confirmed, "confirmed"])
+                    )
+                )
+                for pos in range(count)
+            ]
+        clauses: list[str] = []
+        when: list[list[Any]] = []
+        for pos, (value, status) in enumerate(zip(picks, statuses, strict=True)):
+            facts[f"m{pos}_value"] = value
+            facts[f"m{pos}_status"] = status
+            mentioned.append(value)
+            clauses.append(rng.choice(list(data["mention_templates"][status])).format(value=value))
+        for pos in reversed(range(count)):
+            when.append(
+                [
+                    {
+                        "op": "cmp",
+                        "cmp": "==",
+                        "left": {"op": "fact", "name": f"m{pos}_status"},
+                        "right": {"op": "const", "value": "confirmed"},
+                    },
+                    {"op": "fact", "name": f"m{pos}_value"},
+                ]
+            )
+        tree = {"op": "select", "when": when, "else": {"op": "const", "value": str(unknown["key"])}}
+        state = ". ".join(clause[0].upper() + clause[1:] for clause in clauses) + "."
+        question = str(data["question_tracked"]).format(field=str(field["name"]))
+
+    options: dict[str, str] = {}
+    for value in mentioned:
+        options[value] = value
+    options[str(unknown["key"])] = str(unknown["desc"])
+    spare = [value for value in values if value not in options]
+    for value in rng.sample(spare, min(2, len(spare))):
+        options[value] = value
+    target = as_target(evaluate(tree, facts), options=list(options))
+    return _record(
+        index,
+        "extraction",
+        state=state,
+        instructions=question,
+        criteria=_permuted(options, rng),
+        target=target,
+        facts=facts,
+        tree=tree,
+    )
+
+
+def _routing_record(index: int, rng: random.Random, content: Mapping[str, Any]) -> dict[str, Any]:
+    """Specialist routing: the mapping's override clause beats the request's surface (S1d).
+
+    The question carries three mapping lines plus one override clause; the request always
+    wears the override's surface flavour. The winning branch is drawn first (L-010 — never
+    a specialist prior) and the facts decomposed around it; labels come from the tree
+    (ADR-0014/15); option order is permuted (W1.4 hygiene).
+    """
+    data = content["routing"]
+    specialists = {str(s["key"]): str(s["desc"]) for s in data["specialists"]}
+    override = rng.choice(list(data["overrides"]))
+    drawn = rng.sample(list(data["task_types"]), 3)
+    type_keys = [str(t["key"]) for t in drawn]
+    type_specs = [str(t["specialist"]) for t in drawn]
+    override_spec = str(override["specialist"])
+    win = rng.randrange(4)  # 0 = the override fires (L-010: it draws like the types)
+    host = rng.randrange(3) if win == 0 else win - 1
+    fired = win == 0
+
+    request = rng.choice(list(drawn[host]["requests"]))
+    flavour = rng.choice(list(override["flavours"]))
+    trigger_text = str(override["trigger"] if fired else override["no_trigger"])
+    state = (
+        f"{request} {flavour[0].upper()}{flavour[1:]}. {trigger_text[0].upper()}{trigger_text[1:]}."
+    )
+    facts: dict[str, Any] = {"override_trigger": fired, "type": type_keys[host]}
+    tree: dict[str, Any] = {
+        "op": "select",
+        "when": [
+            [{"op": "fact", "name": "override_trigger"}, {"op": "const", "value": override_spec}],
+            *[
+                [
+                    {
+                        "op": "cmp",
+                        "cmp": "==",
+                        "left": {"op": "fact", "name": "type"},
+                        "right": {"op": "const", "value": key},
+                    },
+                    {"op": "const", "value": spec},
+                ]
+                for key, spec in zip(type_keys, type_specs, strict=True)
+            ],
+        ],
+        "else": {"op": "const", "value": type_specs[0]},
+    }
+    options: dict[str, str] = {override_spec: specialists[override_spec]}
+    for spec in type_specs:
+        options[spec] = specialists[spec]
+    instructions = (
+        str(data["question"])
+        + " "
+        + " ".join(
+            str(data["mapping_line"]).format(
+                trigger=str(task["trigger"]), specialist=str(task["specialist"])
+            )
+            for task in drawn
+        )
+    )
+    instructions += " " + str(override["clause"])
+    target = as_target(evaluate(tree, facts), options=list(options))
+    return _record(
+        index,
+        "routing",
+        state=state,
+        instructions=instructions,
+        criteria=_permuted(options, rng),
+        target=target,
+        facts=facts,
+        tree=tree,
+    )
+
+
 _BUILDERS: dict[str, Callable[[int, random.Random, Mapping[str, Any]], dict[str, Any]]] = {
     "long_policy": _long_policy_record,
     "trap": _trap_record,
@@ -1260,6 +1478,8 @@ _BUILDERS: dict[str, Callable[[int, random.Random, Mapping[str, Any]], dict[str,
     "adequacy": _adequacy_record,
     "policy_trap": _policy_trap_record,
     "tradeoff": _tradeoff_record,
+    "extraction": _extraction_record,
+    "routing": _routing_record,
 }
 
 _PAIR_BUILDERS: dict[
