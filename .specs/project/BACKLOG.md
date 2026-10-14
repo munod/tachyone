@@ -2517,7 +2517,38 @@ has no public items — a public I is a diagnostic, not the official score.
   untried architecture lever and the honest path for `extraction`/`routing`: narrative data
   or teacher, not template — risk R7's lesson); (c) the **N7** off-domain-confidence
   research (fifth miss: 36.2/29.0); (d) the **adoption/publication decision** on the S1c
-  arm (S5 needs all gates green on one set).
+  arm (S5 needs all gates green on one set). **Resumed 2026-10-14 (owner) — S2 executing.**
+
+  *S2 run parameters pinned 2026-10-14, before any data edit:* the pre-registered stage (W2
+  redirect — the cross-encoder is a **training-time instrument**; the serving path stays
+  single-pass by default). Two new training-time modules, no wire/asset change:
+  **1. teacher** — `training/train_cross_encoder.py`: a joint scorer over
+  `[state ⊕ question ⊕ option]` (one logit per option, softmaxed over the record's own
+  options; listwise log loss) with the **aux NLI head** (entail/neutral/contradict over
+  (state, option), supervised directly by the arm's NLI rows — `multi_nli`/`wanli` are
+  already 3-option choice records) and the distractor contrast ("which option does the
+  state contradict") implicit in the listwise softmax. Backbone `answerdotai/
+  ModernBERT-large`, LoRA r16/α32 (ADR-0005) + fresh heads, trained on the **choice rows of
+  `data/train_en_s1c_union.jsonl`** (the arm's pool as shipped), 2 epochs @ 2e-5, seed 2,
+  batch 8 × grad-accum 8, max-len 512; the teacher is never served on the default path.
+  **2. distillation** — `training/distil_cross_encoder.py`: the teacher's per-option
+  distributions on the same choice rows at **T=2**, blended `0.5·one_hot + 0.5·p_teacher`
+  (the S0-pinned recipe) as soft `target` vectors aligned with criterion order (the S0
+  machinery: `fit_choice_bank` `target_mode: soft`; `score` keeps hard labels — the W3
+  guard). **Student** = the bank-head fit on the **frozen `checkpoints/en_s1c` trunk**
+  (W2's named target; the S0 kill-switch keeps soft-label *trunk* work out — this is head
+  work) → `checkpoints/en_s2_fit_bank`, then the S1c packaging chain unchanged and the gate
+  harness (both packagings read and disclosed). **Serving-variant measurement (the gate's
+  condition):** the cross-encoder answering `choice`/`noul` with one batched forward over
+  the question's options (K batched sequences), raw per-question latency measured on the
+  same L4 loopback **at the measured arities** (the bench's public choice arity 2…6; the
+  training regime 2…20 reported alongside). The variant qualifies only at **p50 ≤ 150 ms
+  and JevBench Speed ≥ 70**; if it qualifies, its accuracy read becomes the stage's
+  candidate serving stack and the **adoption decision is the owner's** (it would replace
+  the single-pass `choice` path behind the ADR-0016 seam; legacy assets must still load).
+  *Gates (pre-registered, unchanged):* **`hard` cc ≥ 20 (acc ≥ 0.469) and I ≥ 30**, read on
+  the stage's serving stack (the distilled single-pass student unless the variant
+  qualifies) · the serving variant only if p50 ≤ 150 ms at the measured arities · **N1–N7**.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
