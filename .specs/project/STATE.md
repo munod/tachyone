@@ -95,7 +95,16 @@ v0.13.0 level), `policy`/`fact` back to 0.583, `easy` held 0.521, N1 best-ever 0
 but the trade pattern again (4th instance of L-007/L-015): `judge_hard` 0.471 → 0.235 so
 `standard` 0.361 < 0.50 (mover NOT met), N2 marginally missed (en_split `noul` ECE 0.0503
 on the quoted packaging) and **N7 NOT met again** (Calibration 37.6/26.0 both packagings).
-Stage gate NOT met on the pre-registered contract — never re-fixed. Spec:
+Stage gate NOT met on the pre-registered contract — never re-fixed. **S1c (reasoning
+families + arity) executed 2026-10-13 — read 17/19:** the factor moved what it targets
+(`adversarial` 0.167 → 0.500, `policy` → 0.750, `tradeoff` → 0.833, `temporal_numeric` →
+0.267; `multi_hop` flat 4/18), `easy` cc 33.1 → **44.7**, `hard` back above chance
+(0.351), **Intelligence 8.9 → 12.2** (composite **2.61**, above the published 2.17) with
+the cleanest non-regression of the programme (N1 best-ever 0.9908, N2 green both
+packagings, XNLI 0.515) — but **`standard` flat at 0.361** is the binding tier
+(`extraction`/`routing`/`ordinal`/`judge_hard` stuck near chance), `I ≥ 22` NOT met and
+**N7 NOT met again** (46.5/22.0; fourth miss). The S1c arm is the best measured candidate
+base for the next stage; `v0.13.0` stays published. Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three

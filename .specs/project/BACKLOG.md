@@ -2428,6 +2428,33 @@ has no public items — a public I is a diagnostic, not the official score.
   `policy`) and full-suite **I ≥ 22** — plus N1–N7. **`judge_hard` (17 items, S1b's
   biggest loss) is deliberately outside the factor** (its `adequacy` shape is a follow-up
   arm candidate); its number is reported as measured.
+
+  *Outcome (2026-10-13) — **read 17/19: named-family mover substantially met, `I ≥ 22`
+  NOT met (12.2), N7 NOT met (fourth) — numbers stand as measured**.* Training ran as
+  pinned (two interleaved epochs @ 2e-5 over 8,000 rows = 6,400 reasoning rows + 25%
+  replay; losses descended, no collapse). The factor moved what it targets: **`adversarial`
+  0.167 → 0.500** (the `policy_trap` provenance lesson, ×3), **`policy` 0.583 → 0.750**,
+  **`tradeoff` 0.667 → 0.833**, **`temporal_numeric` 0.200 → 0.267** (back to the v0.13.0
+  level), `ambiguous` 0.429 → 0.571, `probability` 0.300 → 0.400, `long_policy` → 0.421,
+  `fact` → 0.667, `intent` → 0.500; `multi_hop` **flat at 4/18** (the reader's
+  strict-inequality flagged it on rounding — recorded as flat) and `trap` 0.500 → 0.375.
+  Tiers: **`easy` 0.521 → 0.604 (cc 33.1 → 44.7**, the spec's "toward cc ≈ 48"), **`hard`
+  0.297 → 0.351** (back above chance), `standard` **flat 0.361** — the binding tier of the
+  whole programme (`extraction` 0.250, `routing` 0.167, `ordinal` 0.417, `judge_hard` 0.235
+  all stuck near chance). **Intelligence 8.9 → 12.2** (94/231; composite 1.24 → **2.61**,
+  above the published 2.17 for the first time). Non-regression is the cleanest of the
+  programme: **N1 0.9908** (best ever), **N2 green in both packagings** (the S1b marginal
+  miss healed: en_split `noul` 0.0410), N3 0.9961, N4 XNLI **0.515** + typed 0.314 +
+  MASSIVE 0.071, N5 3/3 byte-identical + sha pins, N6 Speed 85.0 (p50 69.7 ms) — and
+  **N7 NOT met again** (Calibration 46.5 / bench ECE 0.267 standard stack, 22.0 / 0.3898
+  served; fourth miss after B-20's 49.0, S1a's 41.6, S1b's 37.6). **Stage gate NOT met**
+  (`I ≥ 22`) — never re-fixed; `v0.13.0` stays published and the S1c arm stands as the
+  best measured candidate base for the next stage. Artifacts: `checkpoints/en_s1c` /
+  `en_s1c_fit_bank`, `training/configs/{jev_mixture_s1c,jev_mixture_s1c_union,fit_bank_en_s1c}.json`,
+  `training/data/jev/{policy_trap,tradeoff}.json`,
+  `data/{train_jev_reasoning_s1c,train_en_s1c,train_en_s1c_union,calibration_holdout_preds_en_s1c}.jsonl`,
+  `benchmarks/results/gates_s1c{,_servedstack}/`,
+  `/tmp/opencode/jev_dryrun/results_s1c{,f}.jsonl`.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

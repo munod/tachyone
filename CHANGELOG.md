@@ -50,6 +50,19 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **S1c recorded (executed; `I ≥ 22` NOT met — the named-family mover substantially
+  met).** The reasoning-family + arity touch-up from the S1b arm (6,400 rows: the new
+  `policy_trap`/`tradeoff` families plus `temporal_numeric`/`multi_hop`, drawn arity 2…20
+  and permuted option order, + 25% replay) read 17/19. It moved what it targets —
+  `adversarial` 0.167 → 0.500, `policy` → 0.750, `tradeoff` → 0.833, `temporal_numeric` →
+  0.267 — and lifted `easy` to cc 44.7 and `hard` back above chance: **Intelligence 8.9 →
+  12.2**, composite **2.61** (above the published 2.17 for the first time), with the
+  cleanest non-regression of the programme (N1 0.9908 best-ever, N2 green in both
+  packagings, XNLI 0.515). Not met: `I ≥ 22` (12.2) and **N7** (Calibration 46.5 / 22.0 —
+  fourth miss); `standard` stays flat at 0.361 and is now the binding tier. Numbers stand
+  as measured, never re-fixed; `v0.13.0` stays published. Full record: `BACKLOG.md`
+  **B-21**.
+
 - **S1b recorded (executed; stage gate NOT met).** The counterfactual-rubric touch-up from
   the S1a arm (3,200 pairs + 25% seeded replay, two interleaved epochs @ 2e-5) read 16/19
   under the pre-registered gates. The factor does what it teaches — `hard/trap` **0.250 →
