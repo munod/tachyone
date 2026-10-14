@@ -57,6 +57,7 @@ _CONFIG_KEYS = {
     "val_split",
     "nli_weight",
     "max_records",
+    "gradient_checkpointing",
 }
 
 
@@ -77,6 +78,7 @@ class TeacherConfig:
     val_split: float = 0.1
     nli_weight: float = 0.5
     max_records: int | None = None
+    gradient_checkpointing: bool = True
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TeacherConfig:
@@ -173,6 +175,8 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
 
     tokenizer = AutoTokenizer.from_pretrained(config.model_id)
     encoder = AutoModel.from_pretrained(config.model_id)
+    if config.gradient_checkpointing:
+        encoder.gradient_checkpointing_enable()
     linear_names = {
         name.split(".")[-1]
         for name, module in encoder.named_modules()
@@ -191,6 +195,8 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
         target_modules=target_modules,
     )
     model = get_peft_model(encoder, lora)
+    if config.gradient_checkpointing:
+        model.enable_input_require_grads()  # type: ignore[attr-defined]
     model.to(device)
     model.train()
 
@@ -233,17 +239,12 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
         hidden = model(**batch).last_hidden_state
         return _mean_pool(hidden, batch["attention_mask"])
 
-    def option_logits(records_batch: list[dict[str, Any]]) -> tuple[Any, list[tuple[int, int]]]:
-        pairs: list[tuple[str, str]] = []
-        spans: list[tuple[int, int]] = []
-        for record in records_batch:
-            options = criterion_texts(record)
-            question = question_text(record)
-            start = len(pairs)
-            pairs.extend((str(record["state"]), f"{question} {option}") for option in options)
-            spans.append((start, len(pairs)))
+    def option_logits(record: dict[str, Any]) -> Any:
+        options = criterion_texts(record)
+        question = question_text(record)
+        pairs = [(str(record["state"]), f"{question} {option}") for option in options]
         pooled = encode_pairs(pairs)
-        return score_head(pooled).squeeze(-1), spans
+        return score_head(pooled).squeeze(-1)
 
     def gold_index(record: dict[str, Any]) -> int:
         target = record["target"]
@@ -251,37 +252,29 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
             return int(target)
         return list(record["criteria"]).index(str(target))
 
-    def record_loss(records_batch: list[dict[str, Any]]) -> Any:
-        logits, spans = option_logits(records_batch)
-        losses = []
-        for record, (start, end) in zip(records_batch, spans, strict=True):
-            gold = torch.tensor([gold_index(record)], device=device)
-            losses.append(F.cross_entropy(logits[start:end].unsqueeze(0), gold))
-        loss = torch.stack(losses).mean()
-        nli_rows = [record for record in records_batch if is_nli_record(record)]
-        if nli_rows:
-            nli_logits = nli_head(encode_texts([str(r["state"]) for r in nli_rows]))
-            nli_targets = torch.tensor([nli_class_index(r) for r in nli_rows], device=device)
-            loss = loss + config.nli_weight * F.cross_entropy(nli_logits, nli_targets)
+    def record_loss(record: dict[str, Any]) -> Any:
+        # One record per forward: arities run to 20 options, so the batch is the *gradient*
+        # accumulation (batch_size x grad_accum records), never the forward (OOM otherwise).
+        logits = option_logits(record)
+        gold = torch.tensor([gold_index(record)], device=device)
+        loss = F.cross_entropy(logits.unsqueeze(0), gold)
+        if is_nli_record(record):
+            nli_logits = nli_head(encode_texts([str(record["state"])]))
+            nli_target = torch.tensor([nli_class_index(record)], device=device)
+            loss = loss + config.nli_weight * F.cross_entropy(nli_logits, nli_target)
         return loss
 
     def evaluate(records_batch: Sequence[dict[str, Any]]) -> dict[str, float]:
         correct = 0
         total_loss = 0.0
-        chunks = 0
         with torch.no_grad():
-            for start in range(0, len(records_batch), config.batch_size):
-                chunk = list(records_batch[start : start + config.batch_size])
-                logits, spans = option_logits(chunk)
-                for record, (a, b) in zip(chunk, spans, strict=True):
-                    gold = gold_index(record)
-                    total_loss += float(
-                        F.cross_entropy(
-                            logits[a:b].unsqueeze(0), torch.tensor([gold], device=device)
-                        )
-                    )
-                    correct += int(int(logits[a:b].argmax()) == gold)
-                chunks += 1
+            for record in records_batch:
+                logits = option_logits(record)
+                gold = gold_index(record)
+                total_loss += float(
+                    F.cross_entropy(logits.unsqueeze(0), torch.tensor([gold], device=device))
+                )
+                correct += int(int(logits.argmax()) == gold)
         return {
             "loss": total_loss / max(1, len(records_batch)),
             "accuracy": correct / max(1, len(records_batch)),
@@ -295,19 +288,19 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
         "train_loss": [],
         "val": [],
     }
+    per_step = config.batch_size * config.grad_accum  # the effective batch, in records
     for epoch in range(config.epochs):
         order = shuffled(train_records, seed=f"{config.seed}:{epoch}")
         losses = []
         optimizer.zero_grad()
-        for step, start in enumerate(range(0, len(order), config.batch_size)):
-            chunk = list(order[start : start + config.batch_size])
-            loss = record_loss(chunk) / config.grad_accum
+        for index, record in enumerate(order):
+            loss = record_loss(record) / per_step
             loss.backward()
-            if (step + 1) % config.grad_accum == 0 or start + config.batch_size >= len(order):
+            losses.append(float(loss) * per_step)
+            if (index + 1) % per_step == 0 or index + 1 == len(order):
                 torch.nn.utils.clip_grad_norm_(parameters, GRAD_CLIP_MAX_NORM)
                 optimizer.step()
                 optimizer.zero_grad()
-            losses.append(float(loss) * config.grad_accum)
         val = evaluate(val_records)
         report["train_loss"].append({"epoch": epoch, "loss": sum(losses) / max(1, len(losses))})
         report["val"].append({"epoch": epoch, **val})

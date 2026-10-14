@@ -13,5 +13,6 @@
   "lora_alpha": 32,
   "lora_dropout": 0.05,
   "val_split": 0.1,
-  "nli_weight": 0.5
+  "nli_weight": 0.5,
+  "gradient_checkpointing": true
 }
