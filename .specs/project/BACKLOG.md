@@ -2508,6 +2508,16 @@ has no public items — a public I is a diagnostic, not the official score.
   assertion caught **7 records** whose generated state was a bench item's text (one template
   had crept into the extraction content) and the text was rewritten before any training —
   the guard worked as designed.
+
+  *Program status (owner, 2026-10-14):* **paused after S1d** — `v0.13.0` stays published
+  and B-21 continues from this record whenever resumed. The best measured base is
+  `checkpoints/en_s1c` (composite 2.61; N-set clean except N7). Open options at resume,
+  owner's call: (a) the **clean judge arm** — `adequacy`-only, the one S1d factor that
+  transferred (`judge_hard` 0.235 → 0.412); (b) **S2 cross-encoder distillation** (W2 — the
+  untried architecture lever and the honest path for `extraction`/`routing`: narrative data
+  or teacher, not template — risk R7's lesson); (c) the **N7** off-domain-confidence
+  research (fifth miss: 36.2/29.0); (d) the **adoption/publication decision** on the S1c
+  arm (S5 needs all gates green on one set).
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
