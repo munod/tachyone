@@ -2455,6 +2455,33 @@ has no public items — a public I is a diagnostic, not the official score.
   `data/{train_jev_reasoning_s1c,train_en_s1c,train_en_s1c_union,calibration_holdout_preds_en_s1c}.jsonl`,
   `benchmarks/results/gates_s1c{,_servedstack}/`,
   `/tmp/opencode/jev_dryrun/results_s1c{,f}.jsonl`.
+
+  *S1d (judge/standard shape layer) — gates and run parameters pre-registered 2026-10-13,
+  before any data edit:* `standard` flat at 0.361 is the programme's binding tier
+  (`extraction` 0.250, `routing` 0.167, `ordinal` 0.417, `judge_hard` 0.235 — all near
+  chance), so the factor is the **judge/standard shape layer** (one arm, L-012): the
+  existing **`adequacy`** family (request/response judged against explicit constraints —
+  the `judge_hard`/`adequacy` shape, 29 public items, never in an S1 stream) plus two new
+  families — **`extraction`** (rubric-guided multi-mention extraction: candidate spans with
+  statuses and a rubric selecting the final confirmed one, `unknown` fallback, and a
+  single-mention variant for the `easy` shape — 24 public items, the largest family) and
+  **`routing`** (specialist routing where the mapping's override clause beats the request's
+  surface flavour — the `routing`/`routing_hard`/`tool_selection` shape, 17 public items).
+  Labels text-derived from trees over drawn facts (ADR-0014/15 — the extraction tree
+  references the mention facts and the routing tree the trigger facts, never a loop index);
+  option order permuted (W1.4 hygiene), arity natural per family. **`intent`/`ordinal`/
+  `policy` stay outside the factor** and are reported as measured. Counts: 2,000 per family
+  = 6,000 rows (`jev_families.json` counts updated; the S1d part builds alone via
+  `--families adequacy,extraction,routing`). Mixture: `jev_mixture_s1d.json` = those rows +
+  25% seeded replay of `data/train_en_s1c_union.jsonl` (seed 2) → 7,500 rows; arm union
+  (`jev_mixture_s1d_union.json`) = the S1c union + the shape rows. Touch-up:
+  `interleave_continue --adapter checkpoints/en_s1c --out checkpoints/en_s1d --epochs 0,1
+  --data data/train_en_s1d.jsonl --learning-rate 2e-5 --seed 2 --choice-rank 128
+  --max-len 512` — base **`en_s1c`** (the cumulative arm and the best measured). Then the
+  S1c packaging chain unchanged (both packagings read and disclosed) and gate harness.
+  *Gates:* **`judge_hard` acc ≥ 0.50** (up vs S1c 0.235) · **`standard` acc ≥ 0.50** (up vs
+  S1c 0.361) · named family movers `extraction`/`routing`/`adequacy` up vs S1c (reported) ·
+  full-suite I reported as the programme diagnostic · **N1–N7**.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
