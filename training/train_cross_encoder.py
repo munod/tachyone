@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import random
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -58,6 +59,8 @@ _CONFIG_KEYS = {
     "nli_weight",
     "max_records",
     "gradient_checkpointing",
+    "criterion_presentation",
+    "warmup_fraction",
 }
 
 
@@ -79,6 +82,8 @@ class TeacherConfig:
     nli_weight: float = 0.5
     max_records: int | None = None
     gradient_checkpointing: bool = True
+    criterion_presentation: str = "mixed"
+    warmup_fraction: float = 0.05
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TeacherConfig:
@@ -116,6 +121,27 @@ def is_nli_record(record: dict[str, Any]) -> bool:
 
 def nli_class_index(record: dict[str, Any]) -> int:
     return NLI_LABELS.index(str(record["target"]))
+
+
+def criterion_texts_for(record: dict[str, Any], presentation: str) -> list[str]:
+    """The option texts the teacher scores, in one presentation (S2-v2 augmentation).
+
+    ``training`` is the ``key: description`` pair the student's ``criterion_texts``
+    produces; ``bare`` is the description alone — the form that read better at bench time
+    (the S2-v shim-vs-integrated difference: I 30.4 vs 25.5). ``mixed`` training draws one
+    of the two per record so the teacher is robust to either at serving.
+    """
+    criteria = record.get("criteria")
+    if not isinstance(criteria, dict):
+        return criterion_texts(record)
+    items = [(str(key), value) for key, value in criteria.items()]
+    if presentation == "bare":
+        return [str(value) if isinstance(value, str) and value else key for key, value in items]
+    if presentation == "training":
+        return [
+            f"{key}: {value}" if isinstance(value, str) and value else key for key, value in items
+        ]
+    raise ValueError(f"unknown criterion presentation {presentation!r}")
 
 
 def soft_targets_from_logits(
@@ -215,6 +241,11 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
         *nli_head.parameters(),
     ]
     optimizer = torch.optim.AdamW(parameters, lr=config.learning_rate)
+    total_steps = max(1, math.ceil(len(train_records) / (config.batch_size * config.grad_accum)))
+    warmup = max(1, int(total_steps * config.warmup_fraction))
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer, lambda step: min(1.0, (step + 1) / warmup)
+    )
 
     def encode_pairs(pairs: list[tuple[str, str]]) -> Any:
         batch = tokenizer(
@@ -239,8 +270,8 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
         hidden = model(**batch).last_hidden_state
         return _mean_pool(hidden, batch["attention_mask"])
 
-    def option_logits(record: dict[str, Any]) -> Any:
-        options = criterion_texts(record)
+    def option_logits(record: dict[str, Any], presentation: str) -> Any:
+        options = criterion_texts_for(record, presentation)
         question = question_text(record)
         pairs = [(str(record["state"]), f"{question} {option}") for option in options]
         pooled = encode_pairs(pairs)
@@ -252,10 +283,10 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
             return int(target)
         return list(record["criteria"]).index(str(target))
 
-    def record_loss(record: dict[str, Any]) -> Any:
+    def record_loss(record: dict[str, Any], presentation: str) -> Any:
         # One record per forward: arities run to 20 options, so the batch is the *gradient*
         # accumulation (batch_size x grad_accum records), never the forward (OOM otherwise).
-        logits = option_logits(record)
+        logits = option_logits(record, presentation)
         gold = torch.tensor([gold_index(record)], device=device)
         loss = F.cross_entropy(logits.unsqueeze(0), gold)
         if is_nli_record(record):
@@ -264,12 +295,14 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
             loss = loss + config.nli_weight * F.cross_entropy(nli_logits, nli_target)
         return loss
 
-    def evaluate(records_batch: Sequence[dict[str, Any]]) -> dict[str, float]:
+    def evaluate(
+        records_batch: Sequence[dict[str, Any]], presentation: str = "training"
+    ) -> dict[str, float]:
         correct = 0
         total_loss = 0.0
         with torch.no_grad():
             for record in records_batch:
-                logits = option_logits(record)
+                logits = option_logits(record, presentation)
                 gold = gold_index(record)
                 total_loss += float(
                     F.cross_entropy(logits.unsqueeze(0), torch.tensor([gold], device=device))
@@ -288,22 +321,31 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
         "train_loss": [],
         "val": [],
     }
+
+    def presentation_for(record: dict[str, Any], epoch: int) -> str:
+        if config.criterion_presentation != "mixed":
+            return config.criterion_presentation
+        draw = random.Random(f"{config.seed}:{epoch}:{record['id']}").random()
+        return "training" if draw < 0.5 else "bare"
+
     per_step = config.batch_size * config.grad_accum  # the effective batch, in records
     for epoch in range(config.epochs):
         order = shuffled(train_records, seed=f"{config.seed}:{epoch}")
         losses = []
         optimizer.zero_grad()
         for index, record in enumerate(order):
-            loss = record_loss(record) / per_step
+            loss = record_loss(record, presentation_for(record, epoch)) / per_step
             loss.backward()
             losses.append(float(loss) * per_step)
             if (index + 1) % per_step == 0 or index + 1 == len(order):
                 torch.nn.utils.clip_grad_norm_(parameters, GRAD_CLIP_MAX_NORM)
                 optimizer.step()
+                scheduler.step()
                 optimizer.zero_grad()
         val = evaluate(val_records)
+        val_bare = evaluate(val_records, "bare")
         report["train_loss"].append({"epoch": epoch, "loss": sum(losses) / max(1, len(losses))})
-        report["val"].append({"epoch": epoch, **val})
+        report["val"].append({"epoch": epoch, **val, "accuracy_bare": val_bare["accuracy"]})
         # L-011 loss-shape check: collapse or divergence fails loudly, not after the fit.
         if not math.isfinite(val["loss"]) or val["accuracy"] < 0.2:
             raise RuntimeError(

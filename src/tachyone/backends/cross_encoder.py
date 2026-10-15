@@ -108,6 +108,29 @@ class CrossEncoderScorer:
         return [float(value) for value in logits]
 
 
+class CrossEncoderEnsemble:
+    """Two or more teachers answering as one: the **mean of the per-option logits**.
+
+    The S2-v2 strengthening (BACKLOG B-21): one teacher per GPU, and the average is itself
+    a calibration lever. The cost is N batched forwards per question — the ≤ 150 ms gate
+    still applies to the mean-latency read.
+    """
+
+    def __init__(self, scorers: Sequence[CrossScorerLike]) -> None:
+        if not scorers:
+            raise ValueError("the ensemble needs at least one scorer")
+        self._scorers = list(scorers)
+
+    def score(
+        self, state_text: str, question_text: str, criterion_texts: Sequence[str]
+    ) -> list[float]:
+        votes = [
+            scorer.score(state_text, question_text, criterion_texts) for scorer in self._scorers
+        ]
+        width = len(votes[0])
+        return [sum(row[position] for row in votes) / len(votes) for position in range(width)]
+
+
 def maybe_cross_encoder(
     *,
     checkpoint_id: str | None = None,
@@ -119,21 +142,27 @@ def maybe_cross_encoder(
     Two spec shapes (mirroring ``TACHYONE_ADAPTERS``): a bare directory applies to every
     checkpoint; ``checkpoint_id=dir[,checkpoint_id=dir...]`` scopes the override to the
     named checkpoints — the variant is an **en-arm** change and must never leak into the
-    untouched multi arm (S2-v V4). The legacy path depends on this returning ``None``:
-    nothing loads, nothing changes.
+    untouched multi arm (S2-v V4). A directory value may join several teachers with ``+``
+    (the S2-v2 ensemble). The legacy path depends on this returning ``None``: nothing
+    loads, nothing changes.
     """
     spec = os.environ.get(CROSS_ENCODER_ENV, "").strip()
     if not spec:
         return None
     if "=" not in spec:
-        teacher_dir = spec
+        teacher_spec = spec
     else:
-        teacher_dir = ""
+        teacher_spec = ""
         for part in spec.split(","):
             key, _, value = part.partition("=")
             if key.strip() == (checkpoint_id or ""):
-                teacher_dir = value.strip()
+                teacher_spec = value.strip()
                 break
-        if not teacher_dir:
+        if not teacher_spec:
             return None
-    return CrossEncoderScorer(teacher_dir, models_dir=models_dir, device=device)
+    directories = [part.strip() for part in teacher_spec.split("+") if part.strip()]
+    scorers: list[CrossScorerLike] = [
+        CrossEncoderScorer(directory, models_dir=models_dir, device=device)
+        for directory in directories
+    ]
+    return scorers[0] if len(scorers) == 1 else CrossEncoderEnsemble(scorers)

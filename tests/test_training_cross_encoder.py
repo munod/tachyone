@@ -16,6 +16,7 @@ import pytest
 from training.train_cross_encoder import (
     NLI_LABELS,
     TeacherConfig,
+    criterion_texts_for,
     is_nli_record,
     load_config,
     nli_class_index,
@@ -82,3 +83,11 @@ def test_teacher_config_round_trips(tmp_path: Path) -> None:
     path = tmp_path / "config.json"
     path.write_text(json.dumps(config.to_dict()), encoding="utf-8")
     assert load_config(path) == config
+
+
+def test_criterion_presentations_cover_the_measured_difference() -> None:
+    record = {"criteria": {"math_agent": "Numbers.", "coding_agent": ""}}
+    assert criterion_texts_for(record, "training") == ["math_agent: Numbers.", "coding_agent"]
+    assert criterion_texts_for(record, "bare") == ["Numbers.", "coding_agent"]
+    with pytest.raises(ValueError, match="presentation"):
+        criterion_texts_for(record, "loud")

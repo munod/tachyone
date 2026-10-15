@@ -10,7 +10,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from tachyone.backends.cross_encoder import maybe_cross_encoder
+import pytest
+
+from tachyone.backends.cross_encoder import CrossEncoderEnsemble, maybe_cross_encoder
 from tachyone.backends.encoder import EncoderModel
 from tachyone.primitives import (
     ChoiceAnswer,
@@ -132,3 +134,17 @@ def test_maybe_cross_encoder_scopes_per_checkpoint(monkeypatch) -> None:
     except (FileNotFoundError, RuntimeError):
         scorer = "resolved"
     assert scorer is not None
+
+
+def test_ensemble_averages_the_teachers_logits() -> None:
+    class Fixed:
+        def __init__(self, logits):
+            self.logits = logits
+
+        def score(self, state_text, question_text, criterion_texts):
+            return list(self.logits)
+
+    ensemble = CrossEncoderEnsemble([Fixed([1.0, 3.0]), Fixed([3.0, 1.0])])
+    assert ensemble.score("s", "q", ["a", "b"]) == [2.0, 2.0]
+    with pytest.raises(ValueError, match="at least one scorer"):
+        CrossEncoderEnsemble([])
