@@ -15,6 +15,7 @@ from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
+from tachyone.backends.cross_encoder import maybe_cross_encoder
 from tachyone.backends.encoder import (
     MODEL_IDS,
     EncoderModel,
@@ -81,6 +82,7 @@ def _build_model(
         temperatures=temperatures,
         choice_bank=choice_bank,
         confidence=calibration,
+        cross_encoder=maybe_cross_encoder(models_dir=_DEFAULT_MODELS_DIR, device=device),
     )
 
 

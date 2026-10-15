@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from tachyone.agent import Agent
 from tachyone.backends.base import PredictionResult
+from tachyone.backends.cross_encoder import CrossScorerLike, maybe_cross_encoder
 from tachyone.calibration import (
     confidence,
     interpolate_confidence,
@@ -37,6 +38,7 @@ from tachyone.primitives import (
     ChoiceAnswer,
     ChoiceQuestion,
     NoulAnswer,
+    NoulCriteria,
     NoulQuestion,
     Question,
     ScoreAnswer,
@@ -644,12 +646,14 @@ class EncoderModel:
         temperatures: Mapping[str, float] | None = None,
         choice_bank: ChoiceHeadBank | None = None,
         confidence: ConfidenceCalibration | None = None,
+        cross_encoder: CrossScorerLike | None = None,
     ) -> None:
         self._encode = encode
         self._temperature = temperature
         self._temperatures = dict(temperatures or {})
         self._choice_bank = choice_bank
         self._confidence = confidence
+        self._cross_encoder = cross_encoder
 
     @property
     def choice_bank(self) -> ChoiceHeadBank | None:
@@ -678,6 +682,49 @@ class EncoderModel:
                 return specific
         return self._temperatures.get(kind, self._temperature)
 
+    def _overridden_answer(
+        self,
+        scorer: CrossScorerLike,
+        state_embedding_text: str,
+        question: Question,
+        lang: str | None,
+    ) -> Answer:
+        """``choice``/``noul`` from the cross-encoder's own forward (S2-v V6).
+
+        The fitted P3 knobs are bypassed on purpose: the teacher's softmax *is* the
+        calibration. ``score`` never reaches here.
+        """
+        if isinstance(question, NoulQuestion):
+            criteria = question.criteria
+            pairs: list[tuple[str, str]] = []
+            if isinstance(criteria, NoulCriteria):
+                for key, value in (("true", criteria.true), ("false", criteria.false)):
+                    text = value if isinstance(value, str) and value else key
+                    pairs.append(
+                        (key, f"{key}: {text}" if isinstance(value, str) and value else key)
+                    )
+            if not pairs:
+                pairs = [("true", "true"), ("false", "false")]
+            texts = [text for _, text in pairs]
+            keys = [key for key, _ in pairs]
+            logits = scorer.score(state_embedding_text, _question_text(question), texts)
+            probabilities = _softmax(logits)
+            true_position = keys.index("true")
+            return NoulAnswer(noul=probabilities[true_position] if probabilities else 0.5)
+        texts = _criterion_texts(question)
+        logits = scorer.score(state_embedding_text, _question_text(question), texts)
+        probabilities = _softmax(logits)
+        options = list(question.criteria)  # ChoiceQuestion: score is routed elsewhere
+        distribution = {
+            str(option): probabilities[position] for position, option in enumerate(options)
+        }
+        best = max(distribution, key=lambda option: distribution[option])
+        return ChoiceAnswer(
+            choice=best,
+            probabilities=distribution,
+            confidence=_served_confidence(None, "choice", lang, distribution, None),
+        )
+
     def answer_state(
         self,
         state: State,
@@ -687,9 +734,12 @@ class EncoderModel:
         choice_head: str | None = None,
     ) -> dict[str, Answer]:
         state_embedding_text = state_text(state)
+        override = self._cross_encoder
         texts = [state_embedding_text]
         plan: list[tuple[str, Question, int, list[int]]] = []
         for question_id, question in questions.items():
+            if override is not None and isinstance(question, (NoulQuestion, ChoiceQuestion)):
+                continue  # answered from the scorer's own forward (S2-v V6)
             texts.append(_question_text(question))
             question_index = len(texts) - 1
             criterion_indices: list[int] = []
@@ -698,74 +748,85 @@ class EncoderModel:
                 criterion_indices.append(len(texts) - 1)
             plan.append((question_id, question, question_index, criterion_indices))
 
-        embeddings = self._encode(texts)
-        state_embedding = embeddings[0]
-        calibration = self._confidence
-        strength = calibration.strength(state_embedding) if calibration is not None else None
         answers: dict[str, Answer] = {}
-        for question_id, question, question_index, criterion_indices in plan:
-            question_embedding = embeddings[question_index]
-            # Calibration key (B-16): state + localized question, detection-penalized.
-            # An explicit ``lang`` (offline tools) wins; the serve path passes ``None``.
-            q_lang = lang if lang is not None else calibration_language(state, question)
-            if isinstance(question, NoulQuestion):
-                raw = _cosine(question_embedding, state_embedding)
-                if strength is not None and calibration is not None and calibration.noul_knots:
-                    # P3: the answer keeps its own direction, the evidence sets the volume.
-                    level = calibration.noul_confidence(strength)
-                    answers[question_id] = NoulAnswer(noul=level if raw >= 0.0 else 1.0 - level)
-                    continue
-                score = raw / self._temp("noul", q_lang)
-                answers[question_id] = NoulAnswer(noul=min(1.0, max(0.0, _sigmoid(score))))
-                continue
-            scores = [
-                _cosine(state_embedding, embeddings[index])
-                + _cosine(question_embedding, embeddings[index])
-                for index in criterion_indices
-            ]
-            if isinstance(question, ChoiceQuestion):
-                # One head per choice question: hint → lexical gate → shared (ADR-0016 §2).
-                scorer = (
-                    self._choice_bank.select(question, hint=choice_head)
-                    if self._choice_bank is not None
-                    else None
-                )
-                if scorer is not None:
-                    residual = scorer.residual(
-                        state_embedding,
-                        question_embedding,
-                        [embeddings[index] for index in criterion_indices],
+        if override is not None:
+            for question_id, question in questions.items():
+                if isinstance(question, (NoulQuestion, ChoiceQuestion)):
+                    answers[question_id] = self._overridden_answer(
+                        override, state_embedding_text, question, lang
                     )
-                    scores = [base + extra for base, extra in zip(scores, residual, strict=True)]
-                probabilities = _softmax(scores, self._temp("choice", q_lang))
-                options = list(question.criteria)
-                distribution = {
-                    option: probabilities[position] for position, option in enumerate(options)
-                }
-                best = max(distribution, key=lambda option: distribution[option])
-                answers[question_id] = ChoiceAnswer(
-                    choice=best,
-                    probabilities=distribution,
-                    confidence=_served_confidence(
-                        calibration, "choice", q_lang, distribution, strength
-                    ),
-                )
-            else:
-                probabilities = _softmax(scores, self._temp("score", q_lang))
-                level_distribution = {
-                    position: probabilities[position] for position in range(len(question.criteria))
-                }
-                expected = sum(
-                    position * probability for position, probability in level_distribution.items()
-                )
-                answers[question_id] = ScoreAnswer(
-                    score=expected,
-                    legend=dict(enumerate(question.criteria)),
-                    probabilities=level_distribution,
-                    confidence=_served_confidence(
-                        calibration, "score", q_lang, level_distribution, strength
-                    ),
-                )
+        if override is None or plan:
+            embeddings = self._encode(texts)
+            state_embedding = embeddings[0]
+            calibration = self._confidence
+            strength = calibration.strength(state_embedding) if calibration is not None else None
+            for question_id, question, question_index, criterion_indices in plan:
+                question_embedding = embeddings[question_index]
+                # Calibration key (B-16): state + localized question, detection-penalized.
+                # An explicit ``lang`` (offline tools) wins; the serve path passes ``None``.
+                q_lang = lang if lang is not None else calibration_language(state, question)
+                if isinstance(question, NoulQuestion):
+                    raw = _cosine(question_embedding, state_embedding)
+                    if strength is not None and calibration is not None and calibration.noul_knots:
+                        # P3: the answer keeps its own direction, the evidence sets the volume.
+                        level = calibration.noul_confidence(strength)
+                        answers[question_id] = NoulAnswer(noul=level if raw >= 0.0 else 1.0 - level)
+                        continue
+                    score = raw / self._temp("noul", q_lang)
+                    answers[question_id] = NoulAnswer(noul=min(1.0, max(0.0, _sigmoid(score))))
+                    continue
+                scores = [
+                    _cosine(state_embedding, embeddings[index])
+                    + _cosine(question_embedding, embeddings[index])
+                    for index in criterion_indices
+                ]
+                if isinstance(question, ChoiceQuestion):
+                    # One head per choice question: hint → lexical gate → shared (ADR-0016 §2).
+                    scorer = (
+                        self._choice_bank.select(question, hint=choice_head)
+                        if self._choice_bank is not None
+                        else None
+                    )
+                    if scorer is not None:
+                        residual = scorer.residual(
+                            state_embedding,
+                            question_embedding,
+                            [embeddings[index] for index in criterion_indices],
+                        )
+                        scores = [
+                            base + extra for base, extra in zip(scores, residual, strict=True)
+                        ]
+                    probabilities = _softmax(scores, self._temp("choice", q_lang))
+                    options = list(question.criteria)
+                    distribution = {
+                        option: probabilities[position] for position, option in enumerate(options)
+                    }
+                    best = max(distribution, key=lambda option: distribution[option])
+                    answers[question_id] = ChoiceAnswer(
+                        choice=best,
+                        probabilities=distribution,
+                        confidence=_served_confidence(
+                            calibration, "choice", q_lang, distribution, strength
+                        ),
+                    )
+                else:
+                    probabilities = _softmax(scores, self._temp("score", q_lang))
+                    level_distribution = {
+                        position: probabilities[position]
+                        for position in range(len(question.criteria))
+                    }
+                    expected = sum(
+                        position * probability
+                        for position, probability in level_distribution.items()
+                    )
+                    answers[question_id] = ScoreAnswer(
+                        score=expected,
+                        legend=dict(enumerate(question.criteria)),
+                        probabilities=level_distribution,
+                        confidence=_served_confidence(
+                            calibration, "score", q_lang, level_distribution, strength
+                        ),
+                    )
         return answers
 
 
@@ -781,6 +842,7 @@ class EncoderCheckpoint:
         temperatures: Mapping[str, float] | None = None,
         choice_bank: ChoiceHeadBank | None = None,
         confidence: ConfidenceCalibration | None = None,
+        cross_encoder: CrossScorerLike | None = None,
     ) -> None:
         self.info = info
         self.model = EncoderModel(
@@ -789,6 +851,7 @@ class EncoderCheckpoint:
             temperatures=temperatures,
             choice_bank=choice_bank,
             confidence=confidence,
+            cross_encoder=cross_encoder,
         )
 
     def predict(
@@ -1136,6 +1199,7 @@ def load_checkpoint(
         temperatures=temperatures,
         choice_bank=choice_bank,
         confidence=confidence,
+        cross_encoder=maybe_cross_encoder(models_dir=models_dir, device=device),
     )
 
 
