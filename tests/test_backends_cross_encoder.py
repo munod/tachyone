@@ -125,9 +125,10 @@ def test_maybe_cross_encoder_scopes_per_checkpoint(monkeypatch) -> None:
     # scoped specs match only the named checkpoint: the multi arm keeps the legacy path
     assert maybe_cross_encoder(checkpoint_id="tachyone-multi") is None
     # the named checkpoint resolves to a scorer (loading fails here only because the
-    # teacher directory is fake - the routing decision itself is what this asserts)
+    # teacher directory is fake or the train extra is absent - the routing decision
+    # itself is what this asserts)
     try:
         scorer = maybe_cross_encoder(checkpoint_id="tachyone-en")
-    except FileNotFoundError:
+    except (FileNotFoundError, RuntimeError):
         scorer = "resolved"
     assert scorer is not None
