@@ -2579,6 +2579,38 @@ has no public items — a public I is a diagnostic, not the official score.
   attempt preserved as `results_s2variant_attempt1_broken.jsonl` — the harness's
   no-overwrite guard tripped twice while a dict-`state` rendering bug in the shim was
   fixed to reuse the router's canonical `state_text`).
+
+  *S2-v (variant validation programme + Phase-2 gate) — pre-registered 2026-10-15 before
+  any code edit (owner decision: adopt the variant as the candidate serving path and
+  dedicate the whole cycle to proving it is real).* The hypothesis to try to kill: **the
+  cross-encoder variant's bench gains (I 30.4 / Cal 63.6 / composite 22.26) are real and
+  carry no hidden regression outside the main read set.** Phase 3 (the v0.14 decision) is
+  the owner's, only after Phase 1/2, on one set.
+
+  **Phase 1 — the kill-set (any failure kills the hypothesis; never re-fixed):**
+  **V1 probes / R7 external validity** (`benchmarks.compare`, same rows, same scoring):
+  XNLI ≥ **0.333** floor; typed-decisions and MASSIVE reported against the S1c row.
+  **V2 in-domain non-regression on the variant**: five-domain ≥ **0.9900** (N3 line),
+  holdout ≥ **0.9700** (N1 line), split reported. **V3 in-domain confidence (N2 line)**:
+  per-primitive ECE ≤ **0.05** on `en_current`/`en_split` (variant probabilities are the
+  teacher's softmax **with the fitted P3 knobs bypassed** — the distribution *is* the
+  calibration; a W5 refit on variant predictions is a follow-up, not part of this read).
+  **V4 routed multi + routing**: multi checkpoint-alone byte-identical (N5); the routed
+  pair (en = variant, multi unchanged) reported against the S1c routed rows; the router's
+  misroute rate holds at the B-19 level (0.05%). **V5 fast-path/ONNX**: engineering read —
+  whether the K-batched variant fits the fast-path buckets and the ONNX export; "needs its
+  own export" is a valid, disclosed outcome. **V6 ADR-0016 seam**: the variant integrates
+  as an **opt-in scoring override** in `EncoderModel.answer_state` (`choice`/`noul` → one
+  batched forward over the criteria; `score` untouched; `TACHYONE_CROSS_ENCODER=<dir>`
+  opt-in, absent ⇒ the legacy path byte-identical); the `ChoiceHeadBank`/
+  `choice_head.json` shape untouched and legacy assets must still load.
+
+  **Phase 2 — the candidate gate (owner's simple gate, pre-registered):** **N1 green**
+  (variant holdout ≥ 0.9700) · **N7 ≥ 60** (JevBench Calibration on the variant's bench
+  read) · **latency ≤ 150 ms** (raw p50 at the measured arities) · **no regression in
+  multi** (byte-identical + routed pair not below the S1c row) · **no regression in
+  routing** (misroute rate holds). All five ⇒ the variant is the **official candidate**;
+  anything less ⇒ the numbers stand and the owner re-decides.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
