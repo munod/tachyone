@@ -2549,6 +2549,36 @@ has no public items — a public I is a diagnostic, not the official score.
   *Gates (pre-registered, unchanged):* **`hard` cc ≥ 20 (acc ≥ 0.469) and I ≥ 30**, read on
   the stage's serving stack (the distilled single-pass student unless the variant
   qualifies) · the serving variant only if p50 ≤ 150 ms at the measured arities · **N1–N7**.
+
+  *Outcome (2026-10-15) — **stage gate NOT met on the default path; the serving variant
+  QUALIFIES for the latency condition and reads the best numbers of the programme —
+  adoption is the owner's call; numbers stand as measured**.* The teacher trained clean
+  (30,211/3,357 choice train/val rows incl. 9,901 NLI rows for the aux head; val accuracy
+  0.795 → **0.849**, loss 0.473 → 0.353, no collapse; first attempt died on CUDA OOM — one
+  stacked forward over 8 records × 20-option arity — `exit=1`, fixed by per-record forwards
+  `b67f600`, effective batch unchanged; the run took 4.6h on one L4). **The distilled
+  single-pass student (the default path) did not carry the lever**: hard cc **3.7** (acc
+  0.360) and I **11.9** — both movers NOT met — and the soft-target head fit **cost N4**
+  (**XNLI 0.515 → 0.279**, below the 0.333 floor — first break) plus N7 again (34.4/23.6 —
+  sixth miss). Everything else held: N1 0.9895, N2 green in both packagings, N3 0.9955,
+  N5 3/3 byte-identical + sha pins, N6 Speed 85.0. **The cross-encoder serving variant
+  (one batched forward per question) qualifies**: raw **p50 52.8 ms** / p95 313.2 ms at the
+  measured arities (the gate's ≤ 150 ms) with Speed 87.0, and it reads **I 30.4** (121/231:
+  `easy` 0.896, `standard` 0.542, `hard` 0.351), **Calibration 63.6**, composite **22.26** —
+  against 2.17 published and 2.61 for the best single-pass arm. **`hard` cc 2.2 stays under
+  the 20 gate on both paths** — the hard tier is capability-limited beyond joint attention.
+  **Variant probes (XNLI/MASSIVE/typed) are UNMEASURED** — the R7 external-validity read is
+  a prerequisite of any adoption. Findings recorded: W2's lever is real but lives in the
+  JOINT architecture — distilling it into the decomposable head does not carry it (S0's
+  caveat confirmed by number) — and the variant's confidence is bench-calibrated (63.6, the
+  programme's first Calibration read ≥ 60). Artifacts: `checkpoints/en_s2_teacher` /
+  `en_s2_fit_bank`, `training/{train_cross_encoder,distil_cross_encoder}.py`,
+  `training/configs/{cross_encoder_s2,fit_bank_en_s2}.json`,
+  `data/train_en_s1c_distilled.jsonl`, `benchmarks/results/gates_s2{,_servedstack}/`,
+  `/tmp/opencode/jev_dryrun/results_s2{,f,variant}.jsonl` (+ the broken first variant
+  attempt preserved as `results_s2variant_attempt1_broken.jsonl` — the harness's
+  no-overwrite guard tripped twice while a dict-`state` rendering bug in the shim was
+  fixed to reuse the router's canonical `state_text`).
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

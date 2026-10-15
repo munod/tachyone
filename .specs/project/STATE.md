@@ -110,11 +110,16 @@ shape transfers (`judge_hard` 0.235 → 0.412, `adequacy` → 0.583) but `extrac
 stay flat (risk **R7 realised** — template-regular taxonomy families teach their own
 surface, not the bench's narrative skill) and the touch-up traded `policy` 0.750 → 0.333
 and cost N1 (0.9908 → 0.9692). **`en_s1c` remains the best base** (composite 2.61 vs
-2.10). **Program paused here by owner decision (2026-10-14)** — `v0.13.0` stays published;
-on resume the open options are the clean judge arm (adequacy-only, the one factor that
-transferred), **S2 cross-encoder distillation** (the untried architecture lever — also the
-honest path for `extraction`/`routing`: narrative data or teacher, not template), the N7
-research (fifth miss), and the adoption/publication decision on the S1c arm. Spec:
+2.10). Paused here by owner decision (2026-10-14) and **resumed the same day — S2
+(cross-encoder distillation) executed 2026-10-15:** the stage gate NOT met on the default
+path, but the **serving variant QUALIFIES for the latency gate and reads the best numbers
+of the programme**. The distilled single-pass student carries no lever (I 11.9, hard cc
+3.7; the soft-target fit even cost the XNLI floor — **0.279**), while the **cross-encoder
+serving variant** (one batched forward per question) measures **p50 52.8 ms** (gate ≤ 150)
+and reads **I 30.4 / Cal 63.6 / composite 22.26** (`easy` 0.896, `standard` 0.542, `hard`
+0.351 — hard cc 2.2 stays under the 20 gate on both paths). W2's lever is real but lives in
+the **joint** architecture — S0's caveat confirmed by number. **Variant probes unmeasured**
+(the R7 read is a prerequisite of adoption — owner's call). Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three

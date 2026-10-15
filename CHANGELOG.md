@@ -50,6 +50,19 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **S2 recorded (executed; stage gate NOT met on the default path — the serving variant
+  qualifies for the latency gate and is the best read of the programme).** The
+  cross-encoder teacher (joint `[state ⊕ question ⊕ option]` scorer, listwise softmax, aux
+  NLI head on 9,901 NLI rows) trained to val accuracy 0.849; distilling its per-option
+  distributions (T=2, 0.5 blend) into the single-pass bank head moved nothing (I 11.9,
+  hard cc 3.7) and cost the XNLI floor (0.515 → 0.279) — S0's caveat confirmed: the lever
+  does not survive the decomposable head. The **cross-encoder serving variant** (one batched
+  forward per question) measures **p50 52.8 ms** at the measured arities (the gate's ≤ 150
+  ms condition) and reads **I 30.4 / Calibration 63.6 / composite 22.26** (easy 0.896,
+  standard 0.542, hard 0.351) against 2.17 published. `hard` cc 2.2 stays under the 20 gate
+  on both paths. Variant probes unmeasured — the R7 read is a prerequisite of adoption
+  (owner's call). Numbers stand as measured. Full record: `BACKLOG.md` **B-21**.
+
 - **S1d recorded (executed; both movers NOT met, non-regression broken — NOT adopted).**
   The judge/standard shape-layer touch-up from the S1c arm read 16/20 and splits cleanly:
   the **judge shape transfers** (`judge_hard` 0.235 → 0.412, `adequacy` 0.417 → 0.583) but
