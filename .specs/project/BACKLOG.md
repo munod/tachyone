@@ -2640,6 +2640,34 @@ has no public items — a public I is a diagnostic, not the official score.
   student) would need a fresh cycle and a fresh gate. Artifacts:
   `src/tachyone/backends/cross_encoder.py`, `benchmarks/results/gates_s2v/`,
   `benchmarks/results/probe_*_s2v.json`, `/tmp/opencode/jev_dryrun/results_s2v.jsonl`.
+
+  *S2-v2 (strong teacher + re-validation) — gates and run parameters pre-registered
+  2026-10-15 before any training (owner decision: option 1 — the hypothesis gets one more
+  cycle, with the 2 GPUs used to its advantage).* The measured gap is **teacher in-domain
+  quality** (2-epoch LoRA, union val 0.849 → 0.82 in-template), so the teacher is
+  strengthened on exactly that axis and re-validated through the same standard machinery.
+
+  **Teacher v2 recipe (pinned):** an **ensemble of two teachers — one per GPU, trained in
+  parallel** (seeds 2 and 3; no distributed code, and averaging logits is itself a
+  calibration lever for the N7 axis). Each: `answerdotai/ModernBERT-large`, LoRA **r32/α64**
+  (double the rank — the joint task is capacity-hungry), **5 epochs** @ 2e-5 with 5% linear
+  warmup, gradient clip 1.0, per-record forwards **without** gradient checkpointing (the
+  per-record batch fits the L4 and the checkpointing cost ~2× wall), batch_size ×
+  grad_accum = 64 records/optimizer step as before. Data: the same choice pool
+  (`data/train_en_s1c_union.jsonl`) with the **criterion-presentation augmentation** — each
+  record scored under either `key: description` (the training-faithful form) or the bare
+  `description` (the form that read better at bench time: shim I 30.4 vs integrated I
+  25.5 — a measured difference, disclosed and now trained-for) drawn 50/50 so the teacher
+  is robust to either at serving. Serving variant: the **mean of the two teachers' logits**
+  (two batched forwards; expect ~2× the single p50 — the ≤ 150 ms gate still applies).
+
+  **Re-validation (the same kill-set and candidate gate, re-registered fresh):** Phase 1
+  V1–V6 exactly as S2-v, with the in-domain movers now explicit — **M1**: the variant holds
+  the student's in-domain level (five-domain ≥ **0.9900**, holdout ≥ **0.9700**); **M2**:
+  the bench gains are retained (`easy` ≥ **0.85**, `standard` reported). **Phase 2 — the
+  candidate gate (unchanged):** N1 green · **N7 ≥ 60** · **latency ≤ 150 ms** · no
+  regression in multi · no regression in routing. All five ⇒ the variant is the official
+  candidate (Phase 3, v0.14 — the owner's, on one set). Anything less ⇒ the numbers stand.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
