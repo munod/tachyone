@@ -109,13 +109,31 @@ class CrossEncoderScorer:
 
 
 def maybe_cross_encoder(
-    *, models_dir: str | None = None, device: str = "auto"
+    *,
+    checkpoint_id: str | None = None,
+    models_dir: str | None = None,
+    device: str = "auto",
 ) -> CrossScorerLike | None:
-    """The opt-in scorer from :data:`CROSS_ENCODER_ENV`, or ``None`` when unset.
+    """The opt-in scorer from :data:`CROSS_ENCODER_ENV`, or ``None`` when unset/unmatched.
 
-    The legacy path depends on this returning ``None``: nothing loads, nothing changes.
+    Two spec shapes (mirroring ``TACHYONE_ADAPTERS``): a bare directory applies to every
+    checkpoint; ``checkpoint_id=dir[,checkpoint_id=dir...]`` scopes the override to the
+    named checkpoints — the variant is an **en-arm** change and must never leak into the
+    untouched multi arm (S2-v V4). The legacy path depends on this returning ``None``:
+    nothing loads, nothing changes.
     """
-    teacher_dir = os.environ.get(CROSS_ENCODER_ENV, "").strip()
-    if not teacher_dir:
+    spec = os.environ.get(CROSS_ENCODER_ENV, "").strip()
+    if not spec:
         return None
+    if "=" not in spec:
+        teacher_dir = spec
+    else:
+        teacher_dir = ""
+        for part in spec.split(","):
+            key, _, value = part.partition("=")
+            if key.strip() == (checkpoint_id or ""):
+                teacher_dir = value.strip()
+                break
+        if not teacher_dir:
+            return None
     return CrossEncoderScorer(teacher_dir, models_dir=models_dir, device=device)

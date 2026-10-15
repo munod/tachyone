@@ -118,3 +118,16 @@ def test_legacy_path_is_byte_identical_without_the_knob() -> None:
 def test_maybe_cross_encoder_is_off_without_the_env(monkeypatch) -> None:
     monkeypatch.delenv("TACHYONE_CROSS_ENCODER", raising=False)
     assert maybe_cross_encoder() is None
+
+
+def test_maybe_cross_encoder_scopes_per_checkpoint(monkeypatch) -> None:
+    monkeypatch.setenv("TACHYONE_CROSS_ENCODER", "tachyone-en=/nonexistent-teacher")
+    # scoped specs match only the named checkpoint: the multi arm keeps the legacy path
+    assert maybe_cross_encoder(checkpoint_id="tachyone-multi") is None
+    # the named checkpoint resolves to a scorer (loading fails here only because the
+    # teacher directory is fake - the routing decision itself is what this asserts)
+    try:
+        scorer = maybe_cross_encoder(checkpoint_id="tachyone-en")
+    except FileNotFoundError:
+        scorer = "resolved"
+    assert scorer is not None

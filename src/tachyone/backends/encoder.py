@@ -1199,7 +1199,9 @@ def load_checkpoint(
         temperatures=temperatures,
         choice_bank=choice_bank,
         confidence=confidence,
-        cross_encoder=maybe_cross_encoder(models_dir=models_dir, device=device),
+        cross_encoder=maybe_cross_encoder(
+            checkpoint_id=info.id, models_dir=models_dir, device=device
+        ),
     )
 
 
