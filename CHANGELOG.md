@@ -50,6 +50,20 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **S2-v recorded (validation executed; the kill-set killed the hypothesis — the variant
+  is NOT the official candidate).** The owner's 3-phase plan ran as pre-registered: Phase 1
+  proved the bench gains carry a **hidden regression outside the main read set** —
+  in-domain accuracy **0.8233/0.8101** (five-domain/holdout vs the single-pass 0.9955/
+  0.9895; N1 line 0.9700) and raw `noul` ECE **0.47–0.51** on the evals — while latency
+  (**36.9 ms** p50), multi byte-identical, the routed pair at the B-19 level, the
+  **ADR-0016 seam** (opt-in `TACHYONE_CROSS_ENCODER` override, legacy path byte-identical,
+  per-checkpoint scoping) and XNLI **0.371** all held. The Phase-2 gate (N1 green · N7 ≥
+  60 · ≤ 150 ms · multi/routing no-regression) fails on N1/N7 (bench Cal 49.8 on the
+  standard machinery vs the shim's 63.6 — the criterion-text presentation differs;
+  disclosed). Diagnosis: the architecture is sound; the gap is **teacher in-domain
+  quality** (2-epoch LoRA, union val 0.849). Numbers stand; Phase 3 (v0.14) is the
+  owner's. Full record: `BACKLOG.md` **B-21**.
+
 - **S2 recorded (executed; stage gate NOT met on the default path — the serving variant
   qualifies for the latency gate and is the best read of the programme).** The
   cross-encoder teacher (joint `[state ⊕ question ⊕ option]` scorer, listwise softmax, aux

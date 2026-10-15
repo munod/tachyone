@@ -2611,6 +2611,35 @@ has no public items — a public I is a diagnostic, not the official score.
   multi** (byte-identical + routed pair not below the S1c row) · **no regression in
   routing** (misroute rate holds). All five ⇒ the variant is the **official candidate**;
   anything less ⇒ the numbers stand and the owner re-decides.
+
+  *Outcome (2026-10-15) — **the kill-set killed the hypothesis as written: the hidden
+  regression is real; the Phase-2 gate fails on N1/N7/V2/V3 — the variant is NOT the
+  official candidate; numbers stand, Phase 3 is the owner's**.* The plan did exactly what
+  it was for: the bench gains are paid **outside the main read set**. **In-domain accuracy
+  crashes**: five-domain **0.8233** and holdout **0.8101** against the single-pass 0.9955 /
+  0.9895 (the N1 line is 0.9700) — the teacher (2-epoch LoRA, union val 0.849) is simply
+  ~0.82 on the in-template task the student solves at 0.99+ — and the variant's raw `noul`
+  confidence on those evals is badly calibrated (ECE **0.47–0.51**; `choice` 0.010–0.015 ✓
+  and `score` 0.005–0.013 ✓ untouched — one plumbing artifact found and fixed mid-read:
+  the first predicts ran without `--temperature`, inflating the score ECE to 0.45; re-read
+  with the shipped temperatures). What held: **latency 36.9 ms p50** (Speed 87.6), **multi
+  byte-identical 3/3**, the **routed pair not below B-19** (0.9960/0.9828/0.9993), the
+  **ADR-0016 seam** (opt-in override, legacy path byte-identical, bank untouched), XNLI
+  **0.371** (over the floor; the student's distilled head read 0.279), typed 0.351,
+  MASSIVE 0.153. The integrated bench read is **I 25.5 / Cal 49.8 / composite 14.09**
+  (`easy` 0.896, `standard` 0.472, `hard` 0.324; p50 36.9 ms) — below the shim read
+  (I 30.4 / Cal 63.6) whose criterion texts were the bare descriptions instead of the
+  training-faithful `key: description` pairs; the discrepancy is disclosed and both reads
+  fail the gate on N1/V2 regardless. **V5**: the fast path keeps serving `score`/embeddings
+  (the variant's K-batched forward runs eager — no CUDA-graph buckets for variable K); the
+  teacher needs its own merged ONNX export (the pin's valid disclosed outcome). **V6**: the
+  seam landed as pinned (`TACHYONE_CROSS_ENCODER`, per-checkpoint scoping so the override
+  never leaks into `multi`). Diagnosis for Phase 3: the architecture is sound (latency,
+  routing, seam, probes all green) and the gap is **teacher in-domain quality** — a
+  stronger teacher (more epochs / full fine-tune / in-domain distillation *from* the
+  student) would need a fresh cycle and a fresh gate. Artifacts:
+  `src/tachyone/backends/cross_encoder.py`, `benchmarks/results/gates_s2v/`,
+  `benchmarks/results/probe_*_s2v.json`, `/tmp/opencode/jev_dryrun/results_s2v.jsonl`.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

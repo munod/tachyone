@@ -119,7 +119,14 @@ serving variant** (one batched forward per question) measures **p50 52.8 ms** (g
 and reads **I 30.4 / Cal 63.6 / composite 22.26** (`easy` 0.896, `standard` 0.542, `hard`
 0.351 — hard cc 2.2 stays under the 20 gate on both paths). W2's lever is real but lives in
 the **joint** architecture — S0's caveat confirmed by number. **Variant probes unmeasured**
-(the R7 read is a prerequisite of adoption — owner's call). Spec:
+(the R7 read is a prerequisite of adoption — owner's call). **S2-v validation executed
+2026-10-15 — the kill-set killed the hypothesis as written:** the hidden regression the
+owner feared is real — in-domain accuracy **0.82** (vs 0.99+ single-pass; the N1 line
+0.9700) and raw `noul` ECE **0.47** on the evals — while latency (36.9 ms), multi
+(byte-identical), routing (routed pair at B-19 level), the ADR-0016 seam and XNLI (0.371)
+all held. Phase-2 gate fails on N1/N7/V2/V3; the variant is **not** the official
+candidate. Diagnosis: the architecture is sound and the gap is **teacher in-domain
+quality**. Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three
