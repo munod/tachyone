@@ -2738,6 +2738,20 @@ has no public items — a public I is a diagnostic, not the official score.
   **full P3 (peakedness × strength knots + cells, B-16/B-18) on the variant's predictions**
   is the identified completion — never fitted on bench items (the legal + served bases), the
   same discipline as the published fit.
+
+  *S2-v3-p3 (the full P3 for the variant) — pinned 2026-10-16 before the fit:* the standard
+  tools on the variant's own predictions — `training.fit_confidence` (legal basis; one
+  command, both runtime assets in the standard schema: per-primitive temperatures with
+  `score` pinned + the `peakedness × strength` `noul` knots) and
+  `training.fit_cell_confidence` (served slices, `--balance-slices`, the B-18 cells) —
+  stored beside the first teacher and applied **in the variant path**: the `noul` answer
+  keeps the teacher's direction and takes its **volume from the knots vs the state's
+  prototype strength** (exactly the published P3 hedge), `choice` keeps its
+  temperature-softmax probabilities and reports confidence through the fitted cells. The
+  class/argmax of every answer is unchanged (the noul direction sign and the choice argmax
+  are preserved by construction), so the accuracy gates remain invariant. **Gate: N7 ≥ 60
+  with the full Phase-2 set re-read** — all five ⇒ the variant is the **official candidate**
+  and Phase 3 (v0.14) goes to the owner on one set.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
