@@ -2770,6 +2770,35 @@ has no public items — a public I is a diagnostic, not the official score.
   student's 85.9 comes with I 12.2 and a much lower raw accuracy; ECE rewards the hedge the
   variant does not need). Phase-2 gate: **4/5** under either presentation — the numbers
   stand and the candidate decision is the owner's.
+
+  *Phase-3 decision (owner, 2026-10-16):* **the cross-encoder variant IS the official
+  candidate serving path** — declared with N7 at 51.5 (55.9 on the bare presentation)
+  disclosed against the gate's 60, by owner decision adjusting that single line with the
+  recorded rationale: the Calibration axis as measured **rewards under-confident weak
+  models** (the published student reads 85.9 at I 12.2; the variant reads 51.5 at **I
+  38.3** with in-domain ECE 0.003–0.028), so the accuracy story is taken as primary and the
+  off-domain confidence axis becomes the paired **research item (S2-v4)**. The candidate
+  configuration is pinned as measured: `checkpoints/en_s2v3_teacher_{a,b}` (the ensemble,
+  mean logits) behind `TACHYONE_CROSS_ENCODER="tachyone-en=...a+...b"`, the standard P3
+  assets beside the first teacher (temperatures + knots + cells + bank), the
+  `key: description` presentation (the bare form, Cal 55.9, stays measured and available),
+  score on the single-pass `checkpoints/en_s2_fit_bank`. **v0.14 publication is a separate
+  decision** (S5 one-set discipline) and is not made here.
+
+  *S2-v4 (N7 research — off-domain confidence) — pinned 2026-10-16 before the fit:* the
+  programme's open question since B-20: why does confidence track accuracy in-domain
+  (ECE 0.003) and not off-domain (bench ECE 0.22–0.24)? **R1 diagnosis**: the ECE/accuracy
+  decomposition of the variant's probabilities **by slice** (five-domain eval, legal basis,
+  the arm's natural rows, the reasoning-family rows, the bench) and per primitive — the
+  deliverable is the location of the miscalibration, published whatever it says. **R2 fix
+  attempt**: refit the calibration on a basis that **carries the hard/natural slices** —
+  the variant's predictions on a seeded held-out sample of the arm's natural + reasoning
+  rows (the model is frozen; the bench and the probes are never fit targets) — with the
+  strength-conditioned mechanism kept (knots + cells) and, if R1 shows the choice
+  probabilities need it, a **strength-conditioned choice temperature** (the knots
+  mechanism generalised to `choice`, still probability-only). **Gate: N7 ≥ 60 on the bench
+  with the invariance holds** — every accuracy number unchanged (class/argmax invariance)
+  and the in-domain V3 ECE stays ≤ 0.05 (the refit must not break the in-domain read).
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
