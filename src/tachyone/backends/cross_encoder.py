@@ -37,6 +37,28 @@ class CrossScorerLike(Protocol):
         """One logit per criterion text, in order (softmaxed by the caller)."""
         ...
 
+    def temperature(self, kind: str, lang: str | None = None) -> float:
+        """The fitted softmax temperature for ``kind`` (1.0 without a calibration)."""
+        ...
+
+
+def _load_calibration(directory: str | Path) -> dict[str, float]:
+    """Flatten a ``training.fit_calibration`` report into ``{kind[, :lang] -> T}``.
+
+    The W5 refit for the variant (BACKLOG B-21 S2-v3-f): probability-only, so the argmax
+    is invariant by construction — the same contract as the published stack's fit.
+    """
+    path = Path(directory) / "temperature_calibration.json"
+    if not path.exists():
+        return {}
+    report = json.loads(path.read_text(encoding="utf-8"))
+    flat: dict[str, float] = {}
+    for kind, entry in (report.get("per_primitive") or {}).items():
+        flat[str(kind)] = float(entry.get("temperature", 1.0))
+        for lang, sub in (entry.get("by_language") or {}).items():
+            flat[f"{kind}:{lang}"] = float(sub.get("temperature", 1.0))
+    return flat
+
 
 class CrossEncoderScorer:
     """The trained S2 teacher: joint ``[state ⊕ question ⊕ option]`` scorer (W2)..
@@ -53,6 +75,7 @@ class CrossEncoderScorer:
         models_dir: str | None = None,
         device: str = "auto",
         max_len: int = 512,
+        temperatures: dict[str, float] | None = None,
     ) -> None:
         try:
             import torch  # pyright: ignore[reportMissingImports]
@@ -86,6 +109,12 @@ class CrossEncoderScorer:
         self._head = head
         self._device = resolved
         self._max_len = max_len
+        self._temperatures = dict(temperatures or {})
+
+    def temperature(self, kind: str, lang: str | None = None) -> float:
+        if lang and f"{kind}:{lang}" in self._temperatures:
+            return self._temperatures[f"{kind}:{lang}"]
+        return self._temperatures.get(kind, 1.0)
 
     def score(
         self, state_text: str, question_text: str, criterion_texts: Sequence[str]
@@ -116,10 +145,18 @@ class CrossEncoderEnsemble:
     still applies to the mean-latency read.
     """
 
-    def __init__(self, scorers: Sequence[CrossScorerLike]) -> None:
+    def __init__(
+        self, scorers: Sequence[CrossScorerLike], *, temperatures: dict[str, float] | None = None
+    ) -> None:
         if not scorers:
             raise ValueError("the ensemble needs at least one scorer")
         self._scorers = list(scorers)
+        self._temperatures = dict(temperatures or {})
+
+    def temperature(self, kind: str, lang: str | None = None) -> float:
+        if lang and f"{kind}:{lang}" in self._temperatures:
+            return self._temperatures[f"{kind}:{lang}"]
+        return self._temperatures.get(kind, 1.0)
 
     def score(
         self, state_text: str, question_text: str, criterion_texts: Sequence[str]
@@ -161,8 +198,15 @@ def maybe_cross_encoder(
         if not teacher_spec:
             return None
     directories = [part.strip() for part in teacher_spec.split("+") if part.strip()]
+    temperatures = _load_calibration(directories[0])
     scorers: list[CrossScorerLike] = [
-        CrossEncoderScorer(directory, models_dir=models_dir, device=device)
+        CrossEncoderScorer(
+            directory, models_dir=models_dir, device=device, temperatures=temperatures
+        )
         for directory in directories
     ]
-    return scorers[0] if len(scorers) == 1 else CrossEncoderEnsemble(scorers)
+    return (
+        scorers[0]
+        if len(scorers) == 1
+        else CrossEncoderEnsemble(scorers, temperatures=temperatures)
+    )

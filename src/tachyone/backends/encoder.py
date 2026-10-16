@@ -708,12 +708,12 @@ class EncoderModel:
             texts = [text for _, text in pairs]
             keys = [key for key, _ in pairs]
             logits = scorer.score(state_embedding_text, _question_text(question), texts)
-            probabilities = _softmax(logits)
+            probabilities = _softmax(logits, scorer.temperature("noul", lang))
             true_position = keys.index("true")
             return NoulAnswer(noul=probabilities[true_position] if probabilities else 0.5)
         texts = _criterion_texts(question)
         logits = scorer.score(state_embedding_text, _question_text(question), texts)
-        probabilities = _softmax(logits)
+        probabilities = _softmax(logits, scorer.temperature("choice", lang))
         options = list(question.criteria)  # ChoiceQuestion: score is routed elsewhere
         distribution = {
             str(option): probabilities[position] for position, option in enumerate(options)
@@ -752,8 +752,9 @@ class EncoderModel:
         if override is not None:
             for question_id, question in questions.items():
                 if isinstance(question, (NoulQuestion, ChoiceQuestion)):
+                    q_lang = lang if lang is not None else calibration_language(state, question)
                     answers[question_id] = self._overridden_answer(
-                        override, state_embedding_text, question, lang
+                        override, state_embedding_text, question, q_lang
                     )
         if override is None or plan:
             embeddings = self._encode(texts)

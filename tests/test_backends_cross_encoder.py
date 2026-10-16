@@ -8,6 +8,7 @@ byte-identical (additive extension). GPU loading is exercised by the cycle, not 
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 
 import pytest
@@ -37,6 +38,9 @@ class _FakeScorer:
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, tuple[str, ...]]] = []
+
+    def temperature(self, kind: str, lang: str | None = None) -> float:
+        return 1.0
 
     def score(
         self, state_text: str, question_text: str, criterion_texts: Sequence[str]
@@ -141,6 +145,9 @@ def test_ensemble_averages_the_teachers_logits() -> None:
         def __init__(self, logits):
             self.logits = logits
 
+        def temperature(self, kind, lang=None):
+            return 1.0
+
         def score(self, state_text, question_text, criterion_texts):
             return list(self.logits)
 
@@ -148,3 +155,42 @@ def test_ensemble_averages_the_teachers_logits() -> None:
     assert ensemble.score("s", "q", ["a", "b"]) == [2.0, 2.0]
     with pytest.raises(ValueError, match="at least one scorer"):
         CrossEncoderEnsemble([])
+
+
+def test_calibration_flattens_the_fit_and_the_argmax_cannot_move(tmp_path) -> None:
+    from tachyone.backends.cross_encoder import _load_calibration
+
+    assert _load_calibration(tmp_path) == {}  # no file -> raw softmax
+    (tmp_path / "temperature_calibration.json").write_text(
+        json.dumps(
+            {
+                "per_primitive": {
+                    "choice": {"temperature": 1.4, "by_language": {"en": {"temperature": 1.2}}},
+                    "noul": {"temperature": 0.8, "by_language": {}},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    flat = _load_calibration(tmp_path)
+    assert flat == {"choice": 1.4, "choice:en": 1.2, "noul": 0.8}
+    scorer = _FakeScorer()
+    scorer.temperatures = flat  # type: ignore[attr-defined]
+
+    class Calibrated(_FakeScorer):
+        def temperature(self, kind, lang=None):
+            if lang and f"{kind}:{lang}" in flat:
+                return flat[f"{kind}:{lang}"]
+            return flat.get(kind, 1.0)
+
+    from tachyone.primitives import Question
+
+    model = EncoderModel(_encode, cross_encoder=Calibrated())
+    question: dict[str, Question] = {
+        "q": ChoiceQuestion(instructions="Pick.", criteria={"a": "aaaaaa", "b": "bb"})
+    }
+    hot = EncoderModel(_encode, cross_encoder=_FakeScorer()).answer_state("s", question)["q"]
+    warm = model.answer_state("s", question)["q"]
+    assert isinstance(hot, ChoiceAnswer) and isinstance(warm, ChoiceAnswer)
+    assert warm.choice == hot.choice  # the temperature moves probabilities, never the answer
+    assert warm.probabilities != hot.probabilities
