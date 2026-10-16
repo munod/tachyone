@@ -2723,6 +2723,21 @@ has no public items — a public I is a diagnostic, not the official score.
   published stack's B-16/B-18 fit). **Gate: N7 ≥ 60 with the full Phase-2 set re-read**
   (N1 green · latency ≤ 150 ms · multi/routing no-regression) — all five ⇒ the variant is
   the **official candidate** and Phase 3 (v0.14) goes to the owner on one set.
+
+  *S2-v3-f outcome (2026-10-16) — **the refit is in and moves N7 46.4 → 51.2; the gate is
+  4/5 — the numbers stand and Phase 3 goes to the owner**.* The fit (legal basis
+  `calibration_holdout.jsonl`, `training.fit_calibration`, ECE-minimising) landed at
+  **choice 1.5 / noul 1.25** — the teacher was overconfident exactly as the ECE read
+  suggested — and the re-read held every accuracy number **identical** (N1 0.9897,
+  five-domain 0.9952, `easy` 1.000, I 38.3; the argmax invariance held by construction and
+  by test) while the bench Calibration rose **46.4 → 51.2** (ECE 0.268 → 0.244), composite
+  34.31 → **35.16**, latency 76.5 ms, multi byte-identical, routed pair at the B-19 level,
+  V3 in-domain ECE green (`choice` 0.0009–0.0029, `noul` 0.0026–0.0038). **N7 is still 8.8
+  points short of 60.** The remaining gap is the same class of work that took the published
+  stack from raw to 85.9: this refit applied the **temperature only** (as pinned); the
+  **full P3 (peakedness × strength knots + cells, B-16/B-18) on the variant's predictions**
+  is the identified completion — never fitted on bench items (the legal + served bases), the
+  same discipline as the published fit.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

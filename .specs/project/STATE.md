@@ -126,7 +126,14 @@ owner feared is real — in-domain accuracy **0.82** (vs 0.99+ single-pass; the 
 (byte-identical), routing (routed pair at B-19 level), the ADR-0016 seam and XNLI (0.371)
 all held. Phase-2 gate fails on N1/N7/V2/V3; the variant is **not** the official
 candidate. Diagnosis: the architecture is sound and the gap is **teacher in-domain
-quality**. Spec:
+quality**. **S2-v2/v3 executed 2026-10-16 — the defect was found, fixed and the gate is
+now 4/5:** the per-primitive read isolated the hidden regression as a training-pool defect
+(the teacher never saw `noul` rows — it answered them zero-shot), the v3 continuation
+(choice + noul) holds the student level in-domain (five-domain **0.9952** vs 0.9955, N1
+**0.9897**) while keeping the bench gains (**easy 1.000**, I **38.3**, composite **35.16**,
+p50 76.5 ms), and the W5 temperature refit moved N7 46.4 → **51.2** (argmax-invariant).
+**N7 is 8.8 short of 60** — the identified completion is the full P3 (knots + cells) on the
+variant's predictions; Phase 3 (v0.14) is the owner's. Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three

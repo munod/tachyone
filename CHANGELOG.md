@@ -50,6 +50,19 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **S2-v2/v3 recorded (the defect found and fixed; the candidate gate is 4/5).** The
+  strong-teacher cycle (2-GPU ensemble: LoRA r32, 5 epochs + criterion-presentation
+  augmentation, then a `choice`+`noul` continuation) turned the S2-v finding around: the
+  hidden in-domain regression was a **training-pool defect** (the teacher answered `noul`
+  zero-shot — the pool was pinned `choice`-only), and with `noul` supervised the variant
+  **holds the student level** (five-domain 0.9952 vs 0.9955, holdout 0.9897, per-primitive
+  ECE green) while keeping the bench gains (**easy 1.000**, standard 0.542, hard 0.432 —
+  **I 38.3**, composite **35.16** vs 2.17 published, p50 76.5 ms). The W5 temperature
+  refit (choice 1.5 / noul 1.25, legal basis, argmax-invariant) moved N7 46.4 → **51.2** —
+  **8.8 short of 60**; the identified completion is the full P3 (knots + cells) on the
+  variant's predictions. Phase-2 gate 4/5; Phase 3 (v0.14) is the owner's. Full record:
+  `BACKLOG.md` **B-21**.
+
 - **S2-v recorded (validation executed; the kill-set killed the hypothesis — the variant
   is NOT the official candidate).** The owner's 3-phase plan ran as pre-registered: Phase 1
   proved the bench gains carry a **hidden regression outside the main read set** —
