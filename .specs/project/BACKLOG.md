@@ -2699,6 +2699,30 @@ has no public items — a public I is a diagnostic, not the official score.
   `--temperature` this time (the plumbing artifact found twice). **Gates: identical — the
   S2-v2 kill-set (V1–V6) + M1/M2 + the Phase-2 candidate gate** (N1 green · N7 ≥ 60 ·
   latency ≤ 150 ms · multi/routing no-regression), re-registered fresh.
+
+  *S2-v3 outcome (2026-10-16) — **read 14/15: the `noul` fix landed exactly as diagnosed;
+  the only gate left is N7 (calibration), whose fix is the documented W5 follow-up**.*
+  The continuation teachers (choice + noul pool, 2 epochs @ 1e-5) read val 0.946/0.940 and
+  the variant now **holds the student level in-domain**: five-domain **0.9952** (student
+  0.9955), holdout **0.9897** (N1 green), per-primitive ECE all green (`noul` 0.0024–0.0038
+  — from chance-level 0.49 to fully calibrated), while keeping the bench gains: **`easy`
+  1.000 (48/48)**, `standard` 0.542, `hard` 0.432 — **I 38.3** (135/231), composite
+  **34.31** (published 2.17). Latency p50 **76.2 ms** (Speed 83.7), multi byte-identical,
+  routed pair at the B-19 level, XNLI 0.402, typed 0.377, MASSIVE 0.141, seam green.
+  **N7 NOT met (46.4, ECE 0.268)** — the variant's probabilities are raw by pin; the W5
+  refit is the named follow-up (below). Phase-2 gate: **4/5** — the numbers stand.
+
+  *S2-v3-f (the W5 calibration refit) — pinned 2026-10-16 before the fit:* extract the
+  ensemble's predictions on the **legal basis** (`data/calibration_holdout.jsonl`, the B-16
+  split — never the test split) through the integrated variant path
+  (`training.predict --out-predictions`), fit the temperature with the standard tool
+  (`training.fit_calibration`, ECE-minimising, per-primitive + per-language), store it as
+  `temperature_calibration.json` beside the first teacher and apply it in the variant path
+  (softmax temperature only — **the argmax cannot move**, so every accuracy gate is
+  invariant by construction; the refit touches probabilities alone, exactly like the
+  published stack's B-16/B-18 fit). **Gate: N7 ≥ 60 with the full Phase-2 set re-read**
+  (N1 green · latency ≤ 150 ms · multi/routing no-regression) — all five ⇒ the variant is
+  the **official candidate** and Phase 3 (v0.14) goes to the owner on one set.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
