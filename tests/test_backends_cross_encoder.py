@@ -42,10 +42,6 @@ class _FakeScorer:
     def temperature(self, kind: str, lang: str | None = None) -> float:
         return 1.0
 
-    @property
-    def calibration(self):
-        return None
-
     def score(
         self, state_text: str, question_text: str, criterion_texts: Sequence[str]
     ) -> list[float]:
@@ -152,10 +148,6 @@ def test_ensemble_averages_the_teachers_logits() -> None:
         def temperature(self, kind, lang=None):
             return 1.0
 
-        @property
-        def calibration(self):
-            return None
-
         def score(self, state_text, question_text, criterion_texts):
             return list(self.logits)
 
@@ -202,41 +194,3 @@ def test_calibration_flattens_the_fit_and_the_argmax_cannot_move(tmp_path) -> No
     assert isinstance(hot, ChoiceAnswer) and isinstance(warm, ChoiceAnswer)
     assert warm.choice == hot.choice  # the temperature moves probabilities, never the answer
     assert warm.probabilities != hot.probabilities
-
-
-def test_choice_probabilities_take_the_cells_reliability() -> None:
-    """S2-v4 R2: the fitted cells set the peak and the tail rescales (argmax preserved)."""
-
-    class _Cal:
-        def __init__(self, value):
-            self.value = value
-            self.noul_knots = None
-
-        def strength(self, embedding):
-            return 0.9
-
-        def cell_confidence(self, kind, lang, distribution, strength):
-            return self.value
-
-    class Mapped:
-        cal = _Cal(0.6)
-
-        def temperature(self, kind, lang=None):
-            return 1.0
-
-        @property
-        def calibration(self):
-            return self.cal
-
-        def score(self, state_text, question_text, criterion_texts):
-            return [float(len(t)) for t in criterion_texts]
-
-    model = EncoderModel(_encode, cross_encoder=Mapped())
-    answer = model.answer_state(
-        "s", {"q": ChoiceQuestion(instructions="Pick.", criteria={"a": "aaaaaa", "b": "bb"})}
-    )["q"]
-    assert isinstance(answer, ChoiceAnswer)
-    assert answer.choice == "a"
-    assert answer.probabilities["a"] == pytest.approx(0.6)
-    assert answer.confidence == pytest.approx(0.6)
-    assert sum(answer.probabilities.values()) == pytest.approx(1.0)

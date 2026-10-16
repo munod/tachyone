@@ -688,14 +688,11 @@ class EncoderModel:
         state_embedding_text: str,
         question: Question,
         lang: str | None,
-        strength: float | None = None,
     ) -> Answer:
         """``choice``/``noul`` from the cross-encoder's own forward (S2-v V6).
 
-        The softmax takes the fitted temperature and the P3 the variant carries beside
-        itself (S2-v3-p3): the ``noul`` direction comes from the teacher and its **volume**
-        from the knots vs the prototype strength — the published hedge. ``score`` never
-        reaches here.
+        The fitted P3 knobs are bypassed on purpose: the teacher's softmax *is* the
+        calibration. ``score`` never reaches here.
         """
         if isinstance(question, NoulQuestion):
             criteria = question.criteria
@@ -713,12 +710,7 @@ class EncoderModel:
             logits = scorer.score(state_embedding_text, _question_text(question), texts)
             probabilities = _softmax(logits, scorer.temperature("noul", lang))
             true_position = keys.index("true")
-            positive = probabilities[true_position] if probabilities else 0.5
-            calibration = scorer.calibration
-            if calibration is not None and strength is not None and calibration.noul_knots:
-                level = calibration.noul_confidence(strength)
-                return NoulAnswer(noul=level if positive >= 0.5 else 1.0 - level)
-            return NoulAnswer(noul=positive)
+            return NoulAnswer(noul=probabilities[true_position] if probabilities else 0.5)
         texts = _criterion_texts(question)
         logits = scorer.score(state_embedding_text, _question_text(question), texts)
         probabilities = _softmax(logits, scorer.temperature("choice", lang))
@@ -727,21 +719,10 @@ class EncoderModel:
             str(option): probabilities[position] for position, option in enumerate(options)
         }
         best = max(distribution, key=lambda option: distribution[option])
-        # S2-v4 R2: the fitted cells map (peakedness x strength) to the reliability of the
-        # top answer; the distribution takes that value as its peak and the tail rescales
-        # proportionally - probability-only, so the argmax cannot move.
-        mapped = _served_confidence(scorer.calibration, "choice", lang, distribution, strength)
-        peak = distribution[best]
-        if mapped is not None and 0.0 < peak < 1.0 and abs(mapped - peak) > 1e-9:
-            scale = (1.0 - mapped) / (1.0 - peak)
-            distribution = {
-                option: (mapped if option == best else probability * scale)
-                for option, probability in distribution.items()
-            }
         return ChoiceAnswer(
             choice=best,
             probabilities=distribution,
-            confidence=mapped if mapped is not None else peak,
+            confidence=_served_confidence(None, "choice", lang, distribution, None),
         )
 
     def answer_state(
@@ -769,14 +750,11 @@ class EncoderModel:
 
         answers: dict[str, Answer] = {}
         if override is not None:
-            strength = None
-            if override.calibration is not None:
-                strength = override.calibration.strength(self._encode([state_embedding_text])[0])
             for question_id, question in questions.items():
                 if isinstance(question, (NoulQuestion, ChoiceQuestion)):
                     q_lang = lang if lang is not None else calibration_language(state, question)
                     answers[question_id] = self._overridden_answer(
-                        override, state_embedding_text, question, q_lang, strength
+                        override, state_embedding_text, question, q_lang
                     )
         if override is None or plan:
             embeddings = self._encode(texts)
