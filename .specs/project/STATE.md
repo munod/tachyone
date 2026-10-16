@@ -134,10 +134,13 @@ now 4/5:** the per-primitive read isolated the hidden regression as a training-p
 p50 76.5 ms), and the W5 temperature refit moved N7 46.4 → **51.2** (argmax-invariant).
 **N7 is 8.8 short of 60** — the identified completion is the full P3 (knots + cells) on the
 variant's predictions; Phase 3 (v0.14) is the owner's. **The full P3 ran 2026-10-16 and N7
-stays at 51.5** (the bare-presentation diagnostic 55.9): the fit is in-domain and the bench
-is the off-domain case — the programme's classic N7 question. Gate 4/5 under both
-presentations; the variant's accuracy story (I 38.3, easy 1.000, in-domain 0.9952, 97.6 ms)
-stands and the candidate decision is the owner's. Spec:
+stays in the 46–52 band** (51.5 recorded, 46.4 on the stable re-read; bare presentation
+55.9): the fit is in-domain and the bench is the off-domain case — the programme's classic
+N7 question. **The owner declared the variant the official candidate (2026-10-16)** with
+N7 disclosed, and the S2-v4 research cycle closed: R1 localised the miscalibration
+(reasoning-noul 0.586 acc / 0.926 conf; bench choice 0.590/0.788; bench score 0.389/0.844
+on the single-pass path) and R2 was a **negative result** (the mixed-basis refit made both
+regimes worse) — the confidence gap needs data in the weak regime, not a fit. Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three

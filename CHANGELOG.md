@@ -50,6 +50,23 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **S2-v4 recorded (the N7 research cycle: R1 diagnosis, R2 negative) + the Phase-3
+  declaration.** The owner declared the cross-encoder variant the **official candidate**
+  (N7 disclosed at the measured band 46–52 against the gate's 60, with the recorded
+  rationale that the Calibration axis rewards under-confident weak models). The research
+  cycle's R1 decomposed the variant's confidence by slice: calibrated everywhere on legal
+  data (ECE ≤ 0.026) except the reasoning rows' `noul` (0.586 acc / 0.926 conf), with the
+  bench carrying that signature plus a `choice` block (0.590/0.788) and the single-pass
+  `score` block (0.389/0.844); strength does not separate the regimes, peakedness
+  partially does. R2 (the mixed-basis refit + cells-mapped choice peak) is a **negative
+  result** — both regimes got worse — and is reverted; the honest conclusion is that the
+  confidence gap needs **data in the weak regime**, not a fit (R7 in its calibration form).
+  Measurement disclosures: an unreconstructed state discrepancy between the 51.5 and 46.4
+  reads of the nominal same configuration (both preserved; the current state is stable),
+  one bench read silently blocked by the harness's no-overwrite guard (recovered), and an
+  uncommitted record edit lost to a cleanup `git reset --hard` (rewritten). Full record:
+  `BACKLOG.md` **B-21**.
+
 - **S2-v3-p3 recorded (the full P3 for the variant; N7 stays 51.5 — gate 4/5).** The
   standard P3 machinery (fit_confidence knots + fit_cell_confidence cells on the variant's
   own predictions, legal + served bases) moved the bench Calibration 51.2 → 51.5 — flat,
