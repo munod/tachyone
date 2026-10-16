@@ -2752,6 +2752,24 @@ has no public items — a public I is a diagnostic, not the official score.
   are preserved by construction), so the accuracy gates remain invariant. **Gate: N7 ≥ 60
   with the full Phase-2 set re-read** — all five ⇒ the variant is the **official candidate**
   and Phase 3 (v0.14) goes to the owner on one set.
+
+  *S2-v3-p3 outcome (2026-10-16) — **the full P3 is in and N7 stays 51.5: the gate is 4/5
+  under both presentations; Phase 3 goes to the owner with the complete picture**.* The
+  standard fit landed (knots + cells + the bank, score pinned — one `fit_cells` correction
+  along the way: the B-18 cells are the `choice` map, `--kinds choice,noul` crashed on the
+  noul rows' shape and the chain's own recipe was used) and moved N7 **51.2 → 51.5** (ECE
+  0.242) — flat, because the fit is in-domain and the bench is the off-domain case: the
+  programme's classic N7 problem. The class/argmax invariance held (every accuracy number
+  identical: N1 0.9897, five-domain 0.9952, `easy` 1.000, I 38.3); the strength encode cost
+  ~20 ms (p50 **97.6 ms**, still under the gate); V3 in-domain ECE green. The disclosed
+  **presentation diagnostic** (the S2-v2 augmentation pin allows either form at serving):
+  the bare-description form reads **Cal 55.9** (ECE 0.220, 134/231) vs the integrated
+  `key: description` 51.5 (135/231) — better, still short of 60. **The variant's accuracy
+  story is exceptional and its bench confidence is the one open axis** — the same N7
+  off-domain-confidence question the programme has carried since B-20 (the published
+  student's 85.9 comes with I 12.2 and a much lower raw accuracy; ECE rewards the hedge the
+  variant does not need). Phase-2 gate: **4/5** under either presentation — the numbers
+  stand and the candidate decision is the owner's.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)

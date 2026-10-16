@@ -133,7 +133,11 @@ now 4/5:** the per-primitive read isolated the hidden regression as a training-p
 **0.9897**) while keeping the bench gains (**easy 1.000**, I **38.3**, composite **35.16**,
 p50 76.5 ms), and the W5 temperature refit moved N7 46.4 → **51.2** (argmax-invariant).
 **N7 is 8.8 short of 60** — the identified completion is the full P3 (knots + cells) on the
-variant's predictions; Phase 3 (v0.14) is the owner's. Spec:
+variant's predictions; Phase 3 (v0.14) is the owner's. **The full P3 ran 2026-10-16 and N7
+stays at 51.5** (the bare-presentation diagnostic 55.9): the fit is in-domain and the bench
+is the off-domain case — the programme's classic N7 question. Gate 4/5 under both
+presentations; the variant's accuracy story (I 38.3, easy 1.000, in-domain 0.9952, 97.6 ms)
+stands and the candidate decision is the owner's. Spec:
 `.specs/features/jevbench-intel/spec.md`; contract + S0/S1a records: BACKLOG **B-21**.
 
 **B-20 executed 2026-10-10/12 (the mixture layer; gates pre-registered `cf94dd9`) — three

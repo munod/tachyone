@@ -50,6 +50,18 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **S2-v3-p3 recorded (the full P3 for the variant; N7 stays 51.5 — gate 4/5).** The
+  standard P3 machinery (fit_confidence knots + fit_cell_confidence cells on the variant's
+  own predictions, legal + served bases) moved the bench Calibration 51.2 → 51.5 — flat,
+  because the fit is in-domain and the bench is the off-domain case (the programme's classic
+  N7 question). The disclosed presentation diagnostic reads 55.9 with bare criterion
+  descriptions. Every accuracy number stayed identical (class/argmax invariance, by
+  construction and by test); latency 97.6 ms (the strength encode), still under the gate.
+  The variant's accuracy story is exceptional (I 38.3, `easy` 1.000, in-domain 0.9952,
+  composite 35.16 vs 2.17 published) and bench confidence is the one open axis. Gate 4/5
+  under both presentations; the candidate decision (Phase 3, v0.14) is the owner's. Full
+  record: `BACKLOG.md` **B-21**.
+
 - **S2-v2/v3 recorded (the defect found and fixed; the candidate gate is 4/5).** The
   strong-teacher cycle (2-GPU ensemble: LoRA r32, 5 epochs + criterion-presentation
   augmentation, then a `choice`+`noul` continuation) turned the S2-v finding around: the
