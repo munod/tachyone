@@ -91,3 +91,17 @@ def test_criterion_presentations_cover_the_measured_difference() -> None:
     assert criterion_texts_for(record, "bare") == ["Numbers.", "coding_agent"]
     with pytest.raises(ValueError, match="presentation"):
         criterion_texts_for(record, "loud")
+
+
+def test_noul_criteria_keep_the_canonical_false_true_order() -> None:
+    """The 0/1 gold is the index over (false, true) - never the dict's own order (S2-v3)."""
+    record = {"criteria": {"true": "Yes.", "false": "No."}}
+    assert criterion_texts_for(record, "training") == ["false: No.", "true: Yes."]
+    assert criterion_texts_for(record, "bare") == ["No.", "Yes."]
+
+
+def test_v3_config_knobs_exist() -> None:
+    config = TeacherConfig(types="choice,noul", resume_from="checkpoints/en_s2v2_teacher_a")
+    assert config.types == "choice,noul"
+    assert config.resume_from == "checkpoints/en_s2v2_teacher_a"
+    assert TeacherConfig().types == "choice"  # legacy recipes reproduce unchanged

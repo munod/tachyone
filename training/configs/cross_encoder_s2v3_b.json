@@ -1,0 +1,22 @@
+{
+  "_comment": "S2-v3 the noul fix (b, seed 3) - BACKLOG B-21 pre-registered 2026-10-16. Continues the S2-v2 teacher (LoRA + heads load trainable) on the FULL pool: choice + noul rows (the v2 defect: noul was never supervised and sat at chance). 2 epochs @ 1e-5 - gentle, the choice strength is measured at 0.993 in-domain and must be kept. Same presentation augmentation and NLI aux head; checkpointing on + expandable_segments (the disclosed memory plumbing).",
+  "model_id": "answerdotai/ModernBERT-large",
+  "data_path": "data/train_en_s1c_union.jsonl",
+  "out_dir": "checkpoints/en_s2v3_teacher_b",
+  "resume_from": "checkpoints/en_s2v2_teacher_b",
+  "types": "choice,noul",
+  "epochs": 2,
+  "learning_rate": 1e-5,
+  "batch_size": 8,
+  "grad_accum": 8,
+  "max_len": 512,
+  "seed": 3,
+  "lora_rank": 32,
+  "lora_alpha": 64,
+  "lora_dropout": 0.05,
+  "val_split": 0.1,
+  "nli_weight": 0.5,
+  "gradient_checkpointing": true,
+  "criterion_presentation": "mixed",
+  "warmup_fraction": 0.05
+}

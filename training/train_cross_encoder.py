@@ -61,6 +61,8 @@ _CONFIG_KEYS = {
     "gradient_checkpointing",
     "criterion_presentation",
     "warmup_fraction",
+    "types",
+    "resume_from",
 }
 
 
@@ -84,6 +86,8 @@ class TeacherConfig:
     gradient_checkpointing: bool = True
     criterion_presentation: str = "mixed"
     warmup_fraction: float = 0.05
+    types: str = "choice"
+    resume_from: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TeacherConfig:
@@ -135,6 +139,9 @@ def criterion_texts_for(record: dict[str, Any], presentation: str) -> list[str]:
     if not isinstance(criteria, dict):
         return criterion_texts(record)
     items = [(str(key), value) for key, value in criteria.items()]
+    if {key for key, _ in items} == {"false", "true"}:
+        # noul gold is the 0/1 target over the canonical (false, true) order
+        items.sort(key=lambda item: item[0] != "false")
     if presentation == "bare":
         return [str(value) if isinstance(value, str) and value else key for key, value in items]
     if presentation == "training":
@@ -188,7 +195,11 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
     try:
         import torch  # pyright: ignore[reportMissingImports]
         import torch.nn.functional as F  # pyright: ignore[reportMissingImports]
-        from peft import LoraConfig, get_peft_model  # pyright: ignore[reportMissingImports]
+        from peft import (  # pyright: ignore[reportMissingImports]
+            LoraConfig,
+            PeftModel,
+            get_peft_model,
+        )
         from transformers import (  # pyright: ignore[reportMissingImports]
             AutoModel,
             AutoTokenizer,
@@ -220,7 +231,11 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
         bias="none",
         target_modules=target_modules,
     )
-    model = get_peft_model(encoder, lora)
+    if config.resume_from:
+        # Continue a trained teacher (S2-v3): its LoRA and heads load trainable.
+        model = PeftModel.from_pretrained(encoder, config.resume_from, is_trainable=True)
+    else:
+        model = get_peft_model(encoder, lora)
     if config.gradient_checkpointing:
         model.enable_input_require_grads()  # type: ignore[attr-defined]
     model.to(device)
@@ -229,9 +244,14 @@ def _train(config: TeacherConfig) -> dict[str, Any]:
     hidden_size = int(encoder.config.hidden_size)
     score_head = torch.nn.Linear(hidden_size, 1).to(device)
     nli_head = torch.nn.Linear(hidden_size, len(NLI_LABELS)).to(device)
+    if config.resume_from:
+        resume = Path(config.resume_from)
+        score_head.load_state_dict(torch.load(resume / "score_head.pt", map_location=device))
+        nli_head.load_state_dict(torch.load(resume / "nli_head.pt", map_location=device))
 
+    wanted = {part.strip() for part in config.types.split(",") if part.strip()}
     records = list(read_records(config.data_path, limit=config.max_records))
-    choice_records = [r for r in records if r.get("type") == "choice"]
+    choice_records = [r for r in records if r.get("type") in wanted]
     train_records, val_records = split_records(
         choice_records, val_fraction=config.val_split, seed=config.seed
     )
