@@ -2668,6 +2668,37 @@ has no public items — a public I is a diagnostic, not the official score.
   candidate gate (unchanged):** N1 green · **N7 ≥ 60** · **latency ≤ 150 ms** · no
   regression in multi · no regression in routing. All five ⇒ the variant is the official
   candidate (Phase 3, v0.14 — the owner's, on one set). Anything less ⇒ the numbers stand.
+
+  *S2-v2 outcome (2026-10-16) — **read 9/15: the strong teacher moved everything, M1 still
+  NOT met — and the per-primitive read isolated the cause as a training-pool defect, not a
+  wall**.* Teachers a/b trained clean (val 0.822→**0.900** / 0.797→**0.907**, bare ≈ training
+  ≈ 0.90 — the presentation augmentation works; both `exit=0` after the no-checkpointing
+  attempt OOM'd and was restarted checkpointing-on with `expandable_segments`, disclosed).
+  The ensemble read: **I 25.5 → 33.1** (127/231), composite 14.09 → **25.13**, `easy` 0.896
+  → **0.979**, `standard` 0.472 → 0.500, `hard` 0.324 → 0.396; latency p50 **75.2 ms** (the
+  two ensemble forwards, well under the 150 ms gate); multi byte-identical, routed pair at
+  the B-19 level, XNLI 0.350, typed 0.376, MASSIVE 0.141. In-domain rose only 0.8233 →
+  **0.8452** (holdout 0.8359) — M1/V2 still NOT met — but the **per-primitive decomposition
+  is the finding**: `choice` **0.993** in-domain (student 0.997) and `score` identical,
+  while **`noul` sits at 0.49–0.55** (student 0.99–1.00) with ECE 0.37–0.50. The cause is
+  in the pre-registration itself: the S2 teacher pool was pinned as the **choice rows**
+  only and `train_cross_encoder` filters `type == "choice"` — the teacher answers `noul`
+  **zero-shot** (two criterion texts it never trained against), which is exactly the
+  chance-level primitive dragging N1/V2 and the bench Calibration (49.7). The variant's
+  architecture is not the wall; the missing `noul` supervision is.
+
+  *S2-v3 (the `noul` fix — continuation teachers) — run parameters and gates pre-registered
+  2026-10-16 before any training:* the defect is a missing supervision, so the fix is
+  targeted: **continue the two v2 teachers** (one per GPU, parallel) **on the full pool —
+  `choice` + `noul` rows** of `data/train_en_s1c_union.jsonl` (`train_cross_encoder` grows
+  a `types` knob: `choice,noul`, gold index over the criterion order `false, true` exactly
+  as the student trains it), **2 epochs @ 1e-5** (gentle — the choice strength is already
+  measured at 0.993 in-domain and must be kept), seed 2/3 continuity, the same presentation
+  augmentation and NLI aux head; `gradient_checkpointing` on + `expandable_segments`
+  (the disclosed memory plumbing). The runner's V2/V3 predicts also pass
+  `--temperature` this time (the plumbing artifact found twice). **Gates: identical — the
+  S2-v2 kill-set (V1–V6) + M1/M2 + the Phase-2 candidate gate** (N1 green · N7 ≥ 60 ·
+  latency ≤ 150 ms · multi/routing no-regression), re-registered fresh.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
