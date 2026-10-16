@@ -207,15 +207,6 @@ def test_calibration_flattens_the_fit_and_the_argmax_cannot_move(tmp_path) -> No
 def test_choice_probabilities_take_the_cells_reliability() -> None:
     """S2-v4 R2: the fitted cells set the peak and the tail rescales (argmax preserved)."""
 
-    class Mapped(_FakeScorer):
-        def __init__(self):
-            super().__init__()
-            self.cal = _Cal(0.6)
-
-        @property
-        def calibration(self):
-            return self.cal
-
     class _Cal:
         def __init__(self, value):
             self.value = value
@@ -226,6 +217,19 @@ def test_choice_probabilities_take_the_cells_reliability() -> None:
 
         def cell_confidence(self, kind, lang, distribution, strength):
             return self.value
+
+    class Mapped:
+        cal = _Cal(0.6)
+
+        def temperature(self, kind, lang=None):
+            return 1.0
+
+        @property
+        def calibration(self):
+            return self.cal
+
+        def score(self, state_text, question_text, criterion_texts):
+            return [float(len(t)) for t in criterion_texts]
 
     model = EncoderModel(_encode, cross_encoder=Mapped())
     answer = model.answer_state(
