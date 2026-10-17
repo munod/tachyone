@@ -2799,6 +2799,46 @@ has no public items — a public I is a diagnostic, not the official score.
   mechanism generalised to `choice`, still probability-only). **Gate: N7 ≥ 60 on the bench
   with the invariance holds** — every accuracy number unchanged (class/argmax invariance)
   and the in-domain V3 ECE stays ≤ 0.05 (the refit must not break the in-domain read).
+
+  *S2-v4 outcome (2026-10-16) — **R1 delivered the diagnosis; R2 is a negative result
+  (recorded as measured, code reverted); the declared candidate stands**.* **R1 (the
+  decomposition, the research deliverable):** the variant's confidence tracks accuracy
+  everywhere on legal data (`choice` ECE 0.001-0.017, `noul` 0.003-0.026) **except the
+  reasoning rows' `noul`** - accuracy 0.586 at confidence 0.926 (ECE 0.34) - and the bench
+  carries that signature plus two more blocks: `choice` 139 items at 0.590/0.788 (ECE 0.25)
+  and `score` 18 items at 0.389/0.844 (ECE 0.64, the **single-pass** score path and the
+  candidate's weakest block). **Strength does not separate the regimes** (reasoning-noul and
+  natural-noul share strength ~0.90 at accuracies 0.59 vs 0.83; bench mean 0.857 vs legal
+  0.90-0.97) while **peakedness partially does** (0.93 vs 0.99). **R2 (negative):** the
+  mixed-basis refit (legal + natural + reasoning predictions) with the cells-mapped choice
+  peak made the read **worse** (N7 51.5 -> 44.7; the in-domain V3 broke at `noul` ECE
+  0.083-0.092) - one fit cannot serve both regimes. The honest conclusion: **the confidence
+  gap needs data in the weak regime, not a fit** (R7 in its calibration form). **Measurement
+  disclosures (as found):** the restored configuration re-reads N7 **46.4** (stable across
+  repeats) while the pipeline3 read of the nominal same state recorded **51.5** - an
+  unreconstructed state discrepancy, both preserved; one bench read was silently blocked by
+  the harness's no-overwrite guard (recovered); one uncommitted record edit was lost to a
+  cleanup `git reset --hard` and two BACKLOG writes silently no-opped on unmatched anchors
+  (all rewritten or in the process of being). The gate conclusion is robust across the
+  observed spread (**46-52 < 60**) and the Phase-3 declaration stands on the accuracy
+  story with N7 disclosed wherever it lands in that spread.
+
+  *S2-v5 (weak-regime data - the R1 fix) - pinned 2026-10-17 before any generation:* the
+  factor is **LLM-teacher-generated narrative rows in the weak shapes**: `gemma4:26b` with
+  **thinking on** (the pinned instrument; the S0 paired finding, +15 accuracy points), 4
+  rows per call from **varied scenario seeds** (never bench items - evaluation-only for
+  ever): **(a) narrative `choice` 2,000 rows** - routing/extraction/intent-style decisions
+  over varied natural prose (the S1d lesson: narrative texture, not templates) - and
+  **(b) reasoning `noul` 1,500 rows** - policy/trap/adequacy-style judgments over
+  narratives (the weak R1 slice). Labels are the teacher's own answers; in-house generated
+  (commercial-clean); every row runs `assert_no_public_overlap`; L-010 balance audited
+  before training. **Training:** the v3 teachers continue (one per GPU) on the generated
+  rows + **25% replay** of `data/train_en_s1c_union.jsonl` (retention), **1 epoch @ 1e-5**.
+  **Gates (pre-registered):** **G1** the R1 weak slices move - reasoning-noul accuracy
+  >= **0.80** (from 0.586) with ECE <= **0.15**; **G2** the bench read - **N7 >= 60** (the
+  fix-through-data hypothesis) with **I >= 38.3 held**; **G3** the Phase-2 set - N1 green,
+  latency <= 150 ms, multi/routing no-regression, probe floors. All three => the candidate
+  strengthens and the N7 line closes; anything less => the numbers stand as measured.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
