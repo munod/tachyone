@@ -2839,6 +2839,29 @@ has no public items — a public I is a diagnostic, not the official score.
   fix-through-data hypothesis) with **I >= 38.3 held**; **G3** the Phase-2 set - N1 green,
   latency <= 150 ms, multi/routing no-regression, probe floors. All three => the candidate
   strengthens and the N7 line closes; anything less => the numbers stand as measured.
+
+  *S2-v5 outcome (2026-10-17) — **G1 NOT met (accuracy), G2 NOT met (N7 55.2 < 60; I 33.2
+  < 38.3 held), G3 met - the fix-through-data hypothesis is partially confirmed and the
+  numbers stand as measured**.* Generation: 3,029 rows (1,529 narrative `choice` + 1,500
+  reasoning `noul`; 87% of the pinned 3,500 - the seed queue exhausted, disclosed), zero
+  public-item collisions, L-010 audited (choice labels ~600 unique with a max count of 5 -
+  no prior; `noul` 66/34 disclosed), state lengths 446-1093 chars of genuine narrative
+  prose (the S1d lesson honoured). The teachers continued clean (both `exit=0`). **The
+  calibration moved the most it ever has**: bench N7 **46-52 -> 55.2** (ECE 0.24 -> 0.224)
+  and the R1 weak slice's ECE **0.340 -> 0.1455** (G1's ECE half met) - but **the accuracy
+  paid for it**: reasoning-noul accuracy 0.586 -> **0.473** (G1's accuracy gate 0.80 badly
+  missed), bench I **38.3 -> 33.2** (`standard` 0.542 -> 0.472, `hard` 0.432 -> 0.414; `easy`
+  held at 1.000) - the L-007/L-015 trade again, now as data-style drift: the continuation
+  shifted the teachers toward the generated narrative style and away from the family's
+  formal rule-tree rows, with only 757 replay rows to anchor them. G3 clean throughout (N1
+  0.9845, five-domain 0.9933, V3 ECE green, latency 77.8 ms, multi byte-identical, routed
+  pair at the B-19 level, typed 0.390 up, XNLI 0.342). **Diagnosis for the next cycle:** the
+  hypothesis direction is right (data moves the calibration axis where fits could not) and
+  the recipe needs retention and style coverage - a larger replay, family-style and
+  narrative-style mixed, and the reasoning-noul regenerated in both styles. The declared
+  candidate remains the v3 configuration (accuracy-first, I 38.3 / N7 46-52); the v5
+  configuration is published as the measured calibration-first alternative (I 33.2 / N7
+  55.2) - the serving choice between them is the owner's.
 - **S1a** natural layer + curriculum: `easy` cc ≥ **40** (acc ≥ 0.571) vs shipped 18.5
 - **S1b** + counterfactual rubrics: `hard/trap` ≥ **0.50** held/up and `standard` acc ≥ **0.50**
   (up vs S1a — the sign B-20 got wrong)
